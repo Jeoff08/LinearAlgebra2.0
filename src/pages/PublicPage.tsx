@@ -46,13 +46,7 @@ export interface CategorizedTopic {
   examples: string[];
   category: "linear-algebra" | "calculus";
   categoryLabel: string;
-  subCategory?:
-    | "foundations"
-    | "limits"
-    | "derivatives"
-    | "derivatives-common"
-    | "implicit"
-    | "applications";
+  subCategory?: CalculusSubCategoryId;
   subCategoryLabel?: string;
 }
 
@@ -1166,6 +1160,12 @@ export default function PublicPage() {
                       {cat.id === "derivatives-common" && <FunctionSquare className="w-3.5 h-3.5" />}
                       {cat.id === "implicit" && <Sliders className="w-3.5 h-3.5" />}
                       {cat.id === "applications" && <TrendingUp className="w-3.5 h-3.5" />}
+                      {cat.id === "optimization" && <PieChart className="w-3.5 h-3.5" />}
+                      {cat.id === "lhopital" && <Binary className="w-3.5 h-3.5" />}
+                      {cat.id === "intro-integration" && <BookOpen className="w-3.5 h-3.5" />}
+                      {cat.id === "mvt-extrema" && <Activity className="w-3.5 h-3.5" />}
+                      {cat.id === "definite-integrals" && <Calculator className="w-3.5 h-3.5" />}
+                      {cat.id === "fundamental-theorem" && <Sparkles className="w-3.5 h-3.5" />}
                       {cat.id === "all" && <Layers className="w-3.5 h-3.5" />}
                       <span>{cat.label}</span>
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
@@ -1195,6 +1195,12 @@ export default function PublicPage() {
                     const isDerivCommon = topic.subCategory === "derivatives-common";
                     const isImplicit = topic.subCategory === "implicit";
                     const isApps = topic.subCategory === "applications";
+                    const isOpt = topic.subCategory === "optimization";
+                    const isLhopital = topic.subCategory === "lhopital";
+                    const isIntroInt = topic.subCategory === "intro-integration";
+                    const isMvt = topic.subCategory === "mvt-extrema";
+                    const isDefInt = topic.subCategory === "definite-integrals";
+                    const isFtc = topic.subCategory === "fundamental-theorem";
 
                     return (
                       <motion.article
@@ -1222,7 +1228,19 @@ export default function PublicPage() {
                                   ? "rgba(192, 132, 252, 0.6)"
                                   : isApps
                                     ? "rgba(251, 191, 36, 0.6)"
-                                    : "rgba(16, 185, 129, 0.6)",
+                                    : isOpt
+                                      ? "rgba(249, 115, 22, 0.6)"
+                                      : isLhopital
+                                        ? "rgba(236, 72, 153, 0.6)"
+                                        : isIntroInt
+                                          ? "rgba(34, 197, 94, 0.6)"
+                                          : isMvt
+                                            ? "rgba(168, 85, 247, 0.6)"
+                                            : isDefInt
+                                              ? "rgba(14, 165, 233, 0.6)"
+                                              : isFtc
+                                                ? "rgba(245, 158, 11, 0.6)"
+                                                : "rgba(16, 185, 129, 0.6)",
                           boxShadow: isDark
                             ? "0 12px 30px -5px rgba(16, 185, 129, 0.25)"
                             : "0 12px 24px -5px rgba(16, 185, 129, 0.15)",
@@ -1257,9 +1275,33 @@ export default function PublicPage() {
                                         ? isDark
                                           ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
                                           : "border-amber-300 bg-amber-100 text-amber-900"
-                                        : isDark
-                                          ? "border-emerald-500/30 bg-emerald-950/60 text-emerald-300"
-                                          : "border-emerald-300 bg-emerald-100/90 text-emerald-800"
+                                        : isOpt
+                                          ? isDark
+                                            ? "border-orange-500/40 bg-orange-950/60 text-orange-300"
+                                            : "border-orange-300 bg-orange-100 text-orange-900"
+                                          : isLhopital
+                                            ? isDark
+                                              ? "border-pink-500/40 bg-pink-950/60 text-pink-300"
+                                              : "border-pink-300 bg-pink-100 text-pink-900"
+                                            : isIntroInt
+                                              ? isDark
+                                                ? "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
+                                                : "border-emerald-300 bg-emerald-100 text-emerald-900"
+                                              : isMvt
+                                                ? isDark
+                                                  ? "border-violet-500/40 bg-violet-950/60 text-violet-300"
+                                                  : "border-violet-300 bg-violet-100 text-violet-900"
+                                                : isDefInt
+                                                  ? isDark
+                                                    ? "border-cyan-500/40 bg-cyan-950/60 text-cyan-300"
+                                                    : "border-cyan-300 bg-cyan-100 text-cyan-900"
+                                                  : isFtc
+                                                    ? isDark
+                                                      ? "border-yellow-500/40 bg-yellow-950/60 text-yellow-300"
+                                                      : "border-yellow-300 bg-yellow-100 text-yellow-900"
+                                                    : isDark
+                                                      ? "border-emerald-500/30 bg-emerald-950/60 text-emerald-300"
+                                                      : "border-emerald-300 bg-emerald-100/90 text-emerald-800"
                             }`}>
                               {isDeriv && <Zap className="w-3 h-3 text-lime-400" />}
                               {isLimits && <Activity className="w-3 h-3 text-teal-400" />}
@@ -1267,6 +1309,12 @@ export default function PublicPage() {
                               {isDerivCommon && <FunctionSquare className="w-3 h-3 text-sky-400" />}
                               {isImplicit && <Sliders className="w-3 h-3 text-purple-400" />}
                               {isApps && <TrendingUp className="w-3 h-3 text-amber-400" />}
+                              {isOpt && <PieChart className="w-3 h-3 text-orange-400" />}
+                              {isLhopital && <Binary className="w-3 h-3 text-pink-400" />}
+                              {isIntroInt && <BookOpen className="w-3 h-3 text-emerald-400" />}
+                              {isMvt && <Activity className="w-3 h-3 text-violet-400" />}
+                              {isDefInt && <Calculator className="w-3 h-3 text-cyan-400" />}
+                              {isFtc && <Sparkles className="w-3 h-3 text-yellow-400" />}
                               <span>{topic.subCategoryLabel || "Calculus 1"}</span>
                             </span>
 
