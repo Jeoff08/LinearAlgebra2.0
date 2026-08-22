@@ -43,9 +43,6 @@ export default function Navbar() {
               <span className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-[#00D2FF] to-sky-300">
                 Linear Algebra Lab
               </span>
-              <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold bg-cyan-950/70 border border-cyan-500/30 text-[#00D2FF]">
-                v2.0
-              </span>
             </div>
             <h1 className="m-0 font-[Fraunces] text-lg sm:text-2xl font-bold tracking-tight text-white transition-colors group-hover:text-[#00D2FF]">
               Math Workspace

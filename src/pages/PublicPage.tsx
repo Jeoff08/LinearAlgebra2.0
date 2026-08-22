@@ -46,7 +46,13 @@ export interface CategorizedTopic {
   examples: string[];
   category: "linear-algebra" | "calculus";
   categoryLabel: string;
-  subCategory?: "foundations" | "limits" | "derivatives";
+  subCategory?:
+    | "foundations"
+    | "limits"
+    | "derivatives"
+    | "derivatives-common"
+    | "implicit"
+    | "applications";
   subCategoryLabel?: string;
 }
 
@@ -590,7 +596,7 @@ export default function PublicPage() {
                       <h2 className={`m-0 font-[Fraunces] text-2xl sm:text-3xl font-bold ${
                         isDark ? "text-white" : "text-[#1F2329]"
                       }`}>
-                        Choose Topic Suite
+                        Choose Topic
                       </h2>
                       <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
                         isDark ? "bg-[#1F2329] text-[#B6FF2E] border-[#333A46]" : "bg-[#B6FF2E]/20 text-[#1F2329] border-[#B6FF2E]/40"
@@ -721,7 +727,7 @@ export default function PublicPage() {
                           : "bg-[#1F2329] text-white shadow-md group-hover:bg-black"
                       }`}
                     >
-                      <span>Open Suite</span>
+                      <span>Open Topic</span>
                       <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
                     </span>
                   </div>
@@ -842,7 +848,7 @@ export default function PublicPage() {
                           : "bg-[#1F2329] text-white shadow-md group-hover:bg-black"
                       }`}
                     >
-                      <span>Open Suite</span>
+                      <span>Open Topic</span>
                       <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
                     </span>
                   </div>
@@ -1157,6 +1163,9 @@ export default function PublicPage() {
                       {cat.id === "derivatives" && <Zap className="w-3.5 h-3.5" />}
                       {cat.id === "limits" && <Activity className="w-3.5 h-3.5" />}
                       {cat.id === "foundations" && <Compass className="w-3.5 h-3.5" />}
+                      {cat.id === "derivatives-common" && <FunctionSquare className="w-3.5 h-3.5" />}
+                      {cat.id === "implicit" && <Sliders className="w-3.5 h-3.5" />}
+                      {cat.id === "applications" && <TrendingUp className="w-3.5 h-3.5" />}
                       {cat.id === "all" && <Layers className="w-3.5 h-3.5" />}
                       <span>{cat.label}</span>
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
@@ -1183,6 +1192,9 @@ export default function PublicPage() {
                     const isDeriv = topic.subCategory === "derivatives";
                     const isLimits = topic.subCategory === "limits";
                     const isFound = topic.subCategory === "foundations";
+                    const isDerivCommon = topic.subCategory === "derivatives-common";
+                    const isImplicit = topic.subCategory === "implicit";
+                    const isApps = topic.subCategory === "applications";
 
                     return (
                       <motion.article
@@ -1204,7 +1216,13 @@ export default function PublicPage() {
                             ? "rgba(182, 255, 46, 0.6)" 
                             : isLimits 
                               ? "rgba(20, 184, 166, 0.6)" 
-                              : "rgba(16, 185, 129, 0.6)",
+                              : isDerivCommon
+                                ? "rgba(56, 189, 248, 0.6)"
+                                : isImplicit
+                                  ? "rgba(192, 132, 252, 0.6)"
+                                  : isApps
+                                    ? "rgba(251, 191, 36, 0.6)"
+                                    : "rgba(16, 185, 129, 0.6)",
                           boxShadow: isDark
                             ? "0 12px 30px -5px rgba(16, 185, 129, 0.25)"
                             : "0 12px 24px -5px rgba(16, 185, 129, 0.15)",
@@ -1227,13 +1245,28 @@ export default function PublicPage() {
                                   ? isDark
                                     ? "border-teal-500/40 bg-teal-950/60 text-teal-300"
                                     : "border-teal-300 bg-teal-100 text-teal-900"
-                                  : isDark
-                                    ? "border-emerald-500/30 bg-emerald-950/60 text-emerald-300"
-                                    : "border-emerald-300 bg-emerald-100/90 text-emerald-800"
+                                  : isDerivCommon
+                                    ? isDark
+                                      ? "border-sky-500/40 bg-sky-950/60 text-sky-300"
+                                      : "border-sky-300 bg-sky-100 text-sky-900"
+                                    : isImplicit
+                                      ? isDark
+                                        ? "border-purple-500/40 bg-purple-950/60 text-purple-300"
+                                        : "border-purple-300 bg-purple-100 text-purple-900"
+                                      : isApps
+                                        ? isDark
+                                          ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
+                                          : "border-amber-300 bg-amber-100 text-amber-900"
+                                        : isDark
+                                          ? "border-emerald-500/30 bg-emerald-950/60 text-emerald-300"
+                                          : "border-emerald-300 bg-emerald-100/90 text-emerald-800"
                             }`}>
                               {isDeriv && <Zap className="w-3 h-3 text-lime-400" />}
                               {isLimits && <Activity className="w-3 h-3 text-teal-400" />}
                               {isFound && <Compass className="w-3 h-3 text-emerald-400" />}
+                              {isDerivCommon && <FunctionSquare className="w-3 h-3 text-sky-400" />}
+                              {isImplicit && <Sliders className="w-3 h-3 text-purple-400" />}
+                              {isApps && <TrendingUp className="w-3 h-3 text-amber-400" />}
                               <span>{topic.subCategoryLabel || "Calculus 1"}</span>
                             </span>
 
