@@ -450,40 +450,40 @@ const CurveSketchingCalculator: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">f(x)</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">f(x)</label>
           <input
             type="text"
             value={functionStr}
             onChange={(e) => setFunctionStr(e.target.value)}
             placeholder="e.g., x^3 - 3x^2 + 2"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Start</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">Start</label>
           <input
             type="text"
             value={startPoint}
             onChange={(e) => setStartPoint(e.target.value)}
             placeholder="e.g., -3"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">End</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">End</label>
           <input
             type="text"
             value={endPoint}
             onChange={(e) => setEndPoint(e.target.value)}
             placeholder="e.g., 4"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
       </div>
 
       <button
         onClick={analyzeCurve}
-        className="w-full bg-[#1F2329] text-[#B6FF2E] py-3 rounded-lg font-medium hover:bg-[#282E37] transition shadow-md flex items-center justify-center gap-2"
+        className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-3 rounded-xl font-bold transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-2"
       >
         <BarChart3 className="w-5 h-5" />
         Analyze Curve

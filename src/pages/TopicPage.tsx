@@ -1,19 +1,32 @@
 // TopicPage.tsx
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { 
   Sparkles, 
   ChevronRight, 
   ChevronLeft, 
   ArrowLeft, 
+  ArrowRight,
   Calculator, 
   ChevronDown,
-  FlaskConical,
+  BookOpen,
   TrendingUp,
-  Binary
+  Binary,
+  Layers,
+  Landmark,
+  Activity,
+  Zap,
+  FunctionSquare,
+  Sliders,
+  Maximize2,
+  Clock,
+  List,
+  Check,
+  Copy
 } from "lucide-react";
 import LINEAR_TOPICS from "../data/topics/index";
-import ALL_CALCULUS_TOPICS from "../data/calculus-topics";
+import ALL_CALCULUS_TOPICS, { CALCULUS_SUB_CATEGORIES } from "../data/calculus-topics";
+import type { CalculusSubCategoryId } from "../data/calculus-topics";
 
 // Import all calculators (Linear Algebra)
 import SystemOfEquations from "../calculators/SystemOfEquations";
@@ -56,6 +69,7 @@ const TOPICS = [
       ...t, 
       category: "linear-algebra" as const,
       categoryLabel: "Linear Algebra",
+      subCategory: "linear-algebra",
       subCategoryLabel: "Linear Algebra"
     })),
   ...ALL_CALCULUS_TOPICS,
@@ -63,323 +77,55 @@ const TOPICS = [
 
 // Calculator Registry
 const CALCULATORS: Record<string, { name: string; description: string; component: React.ReactNode }> = {
-  determinant: {
-    name: "Determinant Calculator",
-    description: "Laplace expansion & cofactor calculation",
-    component: <DeterminantCalculator />
-  },
-  inverse: {
-    name: "Matrix Inverse (A⁻¹)",
-    description: "Invert 2x2, 3x3, 4x4 matrices step-by-step",
-    component: <MatrixInverse />
-  },
-  equations: {
-    name: "System of Linear Equations",
-    description: "Solve n equations & n variables (Gaussian elimination)",
-    component: <SystemOfEquations />
-  },
-  matrixops: {
-    name: "Matrix Operations",
-    description: "A+B, A-B, scalar mult & AB multiplication",
-    component: <MatrixOperations />
-  },
-  matrix: {
-    name: "Matrix Calculator",
-    description: "Matrix powers, scalar ops & conversions",
-    component: <MatrixCalculator />
-  },
-  rank: {
-    name: "Matrix Rank & Nullity",
-    description: "Row echelon reduction & rank theorem",
-    component: <RankCalculator />
-  },
-  transpose: {
-    name: "Transpose Calculator",
-    description: "Compute A^T and symmetry checks",
-    component: <TransposeCalculator />
-  },
-  vector: {
-    name: "Vector Calculator",
-    description: "Vector magnitudes, angles & normalization",
-    component: <VectorCalculator />
-  },
-  dot: {
-    name: "Dot Product (u · v)",
-    description: "Inner product, orthogonality & cosine",
-    component: <DotProduct />
-  },
-  cross: {
-    name: "Cross Product (u × v)",
-    description: "3D vector normal & cross product",
-    component: <CrossProduct />
-  },
-  projection: {
-    name: "Vector Projection (proj)",
-    description: "Orthogonal projection onto lines & planes",
-    component: <VectorProjection />
-  },
-  independence: {
-    name: "Linear Independence",
-    description: "Test vector sets for independence & dependence",
-    component: <LinearIndependence />
-  },
-  combination: {
-    name: "Linear Combination",
-    description: "Express target vector as c1 v1 + c2 v2",
-    component: <LinearCombination />
-  },
-  basis: {
-    name: "Basis & Dimension",
-    description: "Extract basis vectors and compute dim",
-    component: <BasisCalculator />
-  },
-  span: {
-    name: "Span Calculator",
-    description: "Determine if vector belongs to span",
-    component: <SpanCalculator />
-  },
-  eigen: {
-    name: "Eigenvalues & Eigenvectors",
-    description: "det(A - λI) = 0 characteristic polynomial",
-    component: <EigenCalculator />
-  },
-  diagonalization: {
-    name: "Matrix Diagonalization (PDP⁻¹)",
-    description: "Diagonalize square matrices & compute powers",
-    component: <Diagonalization />
-  },
-  lu: {
-    name: "LU Decomposition (PA = LU)",
-    description: "Lower-Upper factorization with pivoting",
-    component: <LUDecomposition />
-  },
-  qr: {
-    name: "QR Decomposition (A = QR)",
-    description: "Gram-Schmidt orthogonal Q and upper R",
-    component: <QRDecomposition />
-  },
-  svd: {
-    name: "SVD Calculator (UΣVᵀ)",
-    description: "Singular Value Decomposition",
-    component: <SVDCalculator />
-  },
-  leastsquares: {
-    name: "Least Squares Solver",
-    description: "Overdetermined systems & regression",
-    component: <LeastSquares />
-  },
-  transformation: {
-    name: "Linear Transformation",
-    description: "Matrix T(v) = Av geometric mappings",
-    component: <LinearTransformation />
-  },
-  quadratic: {
-    name: "Quadratic Form",
-    description: "Matrix x^T A x analysis & definiteness",
-    component: <QuadraticForm />
-  },
-  limit: {
-    name: "Limit Calculator",
-    description: "Evaluate limits & one-sided limits",
-    component: <LimitCalculator />
-  },
-  derivative: {
-    name: "Derivative Calculator",
-    description: "First & higher order derivatives step-by-step",
-    component: <DerivativeCalculator />
-  },
-  tangent: {
-    name: "Tangent Line Calculator",
-    description: "Tangent line equation and slope at a point",
-    component: <TangentLineCalculator />
-  },
-  curvesketch: {
-    name: "Curve & Function Sketcher",
-    description: "Intercepts, asymptotes, domain, and behavior",
-    component: <CurveSketchingCalculator />
-  },
-  continuity: {
-    name: "Continuity Calculator",
-    description: "Check function continuity and point behavior",
-    component: <ContinuityCalculator />
-  },
-  integral: {
-    name: "Definite & Indefinite Integral",
-    description: "Antiderivatives and area under curve",
-    component: <DefiniteIntegralCalculator />
-  }
+  determinant: { name: "Determinant Calculator", description: "Laplace expansion & cofactor calculation", component: <DeterminantCalculator /> },
+  inverse: { name: "Matrix Inverse (A⁻¹)", description: "Invert matrices step-by-step", component: <MatrixInverse /> },
+  equations: { name: "System of Linear Equations", description: "Gaussian elimination solver", component: <SystemOfEquations /> },
+  matrixops: { name: "Matrix Operations", description: "A+B, A-B, scalar mult & AB multiplication", component: <MatrixOperations /> },
+  matrix: { name: "Matrix Calculator", description: "Matrix powers & scalar ops", component: <MatrixCalculator /> },
+  rank: { name: "Matrix Rank & Nullity", description: "Row echelon reduction & rank", component: <RankCalculator /> },
+  transpose: { name: "Transpose Calculator", description: "Compute A^T and symmetry checks", component: <TransposeCalculator /> },
+  vector: { name: "Vector Calculator", description: "Vector magnitudes, angles & normalization", component: <VectorCalculator /> },
+  dot: { name: "Dot Product (u · v)", description: "Inner product, orthogonality & cosine", component: <DotProduct /> },
+  cross: { name: "Cross Product (u × v)", description: "3D vector normal & cross product", component: <CrossProduct /> },
+  projection: { name: "Vector Projection (proj)", description: "Orthogonal projection onto lines & planes", component: <VectorProjection /> },
+  independence: { name: "Linear Independence", description: "Test vector sets for independence", component: <LinearIndependence /> },
+  combination: { name: "Linear Combination", description: "Express target vector as c1 v1 + c2 v2", component: <LinearCombination /> },
+  basis: { name: "Basis & Dimension", description: "Extract basis vectors and compute dim", component: <BasisCalculator /> },
+  span: { name: "Span Calculator", description: "Determine if vector belongs to span", component: <SpanCalculator /> },
+  eigen: { name: "Eigenvalues & Eigenvectors", description: "det(A - λI) = 0 characteristic polynomial", component: <EigenCalculator /> },
+  diagonalization: { name: "Matrix Diagonalization (PDP⁻¹)", description: "Diagonalize square matrices", component: <Diagonalization /> },
+  lu: { name: "LU Decomposition (PA = LU)", description: "Lower-Upper factorization with pivoting", component: <LUDecomposition /> },
+  qr: { name: "QR Decomposition (A = QR)", description: "Gram-Schmidt orthogonal Q and upper R", component: <QRDecomposition /> },
+  svd: { name: "SVD Calculator (UΣVᵀ)", description: "Singular Value Decomposition", component: <SVDCalculator /> },
+  leastsquares: { name: "Least Squares Solver", description: "Overdetermined systems & regression", component: <LeastSquares /> },
+  transformation: { name: "Linear Transformation", description: "Matrix T(v) = Av geometric mappings", component: <LinearTransformation /> },
+  quadratic: { name: "Quadratic Form", description: "Matrix x^T A x analysis", component: <QuadraticForm /> },
+  limit: { name: "Limit Calculator", description: "Evaluate limits & one-sided limits", component: <LimitCalculator /> },
+  derivative: { name: "Derivative Calculator", description: "First & higher order derivatives", component: <DerivativeCalculator /> },
+  tangent: { name: "Tangent Line Calculator", description: "Tangent line equation and slope", component: <TangentLineCalculator /> },
+  curvesketch: { name: "Curve & Function Sketcher", description: "Intercepts, asymptotes & domain", component: <CurveSketchingCalculator /> },
+  continuity: { name: "Continuity Calculator", description: "Check function continuity", component: <ContinuityCalculator /> },
+  integral: { name: "Definite & Indefinite Integral", description: "Antiderivatives & area under curve", component: <DefiniteIntegralCalculator /> }
 };
 
-// Helper: Determine recommended calculator based on topic and active section content
-function getRecommendedCalculatorId(topicId: string, sectionTitle: string = "", sectionContent: string = ""): string {
-  const combined = `${topicId} ${sectionTitle} ${sectionContent}`.toLowerCase();
-
-  // Calculus-specific high priority keywords
-  if (combined.includes("limit") || combined.includes("approaches") || combined.includes("squeeze")) return "limit";
-  if (combined.includes("continuity") || combined.includes("discontinuous")) return "continuity";
-  if (combined.includes("tangent line") || combined.includes("equations-of-lines") || combined.includes("slope of line")) return "tangent";
-  if (combined.includes("derivative") || combined.includes("rate of change") || combined.includes("differentiab")) return "derivative";
-  if (combined.includes("integral") || combined.includes("antiderivative") || combined.includes("area under")) return "integral";
-  if (
-    combined.includes("function") ||
-    combined.includes("domain") ||
-    combined.includes("range") ||
-    combined.includes("polynomial") ||
-    combined.includes("rational") ||
-    combined.includes("exponential") ||
-    combined.includes("logarithmic") ||
-    combined.includes("trigonometric") ||
-    combined.includes("piecewise") ||
-    combined.includes("graph") ||
-    combined.includes("transformation") ||
-    combined.includes("inverse-function") ||
-    combined.includes("distance") ||
-    combined.includes("interval")
-  ) {
-    return "curvesketch";
-  }
-
-  // Section-specific high priority keywords (Linear Algebra)
-  if (combined.includes("cross product") || combined.includes("u × v") || combined.includes("u x v")) return "cross";
-  if (combined.includes("projection") || combined.includes("proj_") || combined.includes("orthogonal component")) return "projection";
-  if (combined.includes("dot product") || combined.includes("inner product") || combined.includes("angle between")) return "dot";
-  if (combined.includes("gram-schmidt") || combined.includes("qr decomp")) return "qr";
-  if (combined.includes("svd") || combined.includes("singular value")) return "svd";
-  if (combined.includes("lu decomp") || combined.includes("lu factor")) return "lu";
-  if (combined.includes("diagonaliz")) return "diagonalization";
-  if (combined.includes("eigenvalue") || combined.includes("eigenvector") || combined.includes("characteristic equation")) return "eigen";
-  if (combined.includes("least square") || combined.includes("normal equation")) return "leastsquares";
-  if (combined.includes("quadratic form") || combined.includes("definite")) return "quadratic";
-  if (combined.includes("transformation") || combined.includes("kernel") || combined.includes("range")) return "transformation";
-  if (combined.includes("basis") || combined.includes("dimension") || combined.includes("subspace")) return "basis";
-  if (combined.includes("independence") || combined.includes("linearly dependent") || combined.includes("linearly independent")) return "independence";
-  if (combined.includes("linear combination")) return "combination";
+// Helper to determine calculator
+function getRecommendedCalculatorId(topicId: string): string {
+  const combined = topicId.toLowerCase();
+  if (combined.includes("limit") || combined.includes("continuity")) return "limit";
+  if (combined.includes("derivative") || combined.includes("rate-of-change")) return "derivative";
+  if (combined.includes("tangent") || combined.includes("line")) return "tangent";
+  if (combined.includes("integral") || combined.includes("integration") || combined.includes("ftc")) return "integral";
+  if (combined.includes("function") || combined.includes("domain") || combined.includes("range") || combined.includes("interval")) return "curvesketch";
+  if (combined.includes("eigen")) return "eigen";
+  if (combined.includes("determinant")) return "determinant";
+  if (combined.includes("inverse")) return "inverse";
+  if (combined.includes("system") || combined.includes("gaussian")) return "equations";
+  if (combined.includes("rank")) return "rank";
   if (combined.includes("span")) return "span";
-  if (combined.includes("determinant") || combined.includes("cofactor") || combined.includes("cramer")) return "determinant";
-  if (combined.includes("inverse") || combined.includes("invertible") || combined.includes("adjugate") || combined.includes("a^-1") || combined.includes("a⁻¹")) return "inverse";
-  if (combined.includes("rank") || combined.includes("nullity") || combined.includes("row echelon")) return "rank";
-  if (combined.includes("transpose") || combined.includes("symmetric matrix")) return "transpose";
-  if (combined.includes("system of") || combined.includes("gaussian") || combined.includes("gauss-jordan")) return "equations";
-  if (combined.includes("multiplication") || combined.includes("addition") || combined.includes("product")) return "matrixops";
-
-  // Topic ID based fallback mappings
-  switch (topicId) {
-    // ── Derivatives ────────────────────────────────────────────────
-    case "introduction-to-derivatives":
-    case "derivative-as-a-rate-of-change":
-    case "geometric-interpretation-of-derivatives":
-    case "derivative-as-a-limit":
-    case "derivative-notation":
-    case "differentiability":
-    case "differentiability-vs-continuity":
-    case "basic-differentiation-rules":
-    case "constant-rule":
-    case "constant-multiple-rule":
-    case "power-rule":
-    case "sum-and-difference-rules":
-    case "product-rule":
-    case "quotient-rule":
-    case "chain-rule":
-    case "difference-quotient":
-      return "derivative";
-    case "tangent-lines":
-    case "normal-lines":
-      return "tangent";
-    // ── Limits & Continuity ───────────────────────────────────────
-    case "introduction-to-limits":
-    case "one-sided-limits":
-    case "two-sided-limits":
-    case "evaluating-limits-graphically":
-    case "evaluating-limits-numerically":
-    case "evaluating-limits-algebraically":
-    case "direct-substitution":
-    case "limit-laws":
-    case "factoring-and-canceling":
-    case "rationalizing-expressions":
-    case "squeeze-theorem":
-    case "special-trigonometric-limits":
-    case "infinite-limits":
-    case "limits-at-infinity":
-    case "vertical-asymptotes":
-    case "horizontal-asymptotes":
-    case "intermediate-value-theorem":
-      return "limit";
-    case "continuity":
-    case "continuity-on-an-interval":
-    case "types-of-discontinuities":
-      return "continuity";
-    // ── Foundations of Calculus ──────────────────────────────────
-    case "foundations-of-calculus":
-    case "real-numbers-and-intervals":
-    case "distance-and-midpoint":
-    case "equations-of-lines":
-    case "functions-and-function-notation":
-    case "domain-and-range":
-    case "graphs-of-functions":
-    case "transformations-of-functions":
-    case "piecewise-functions":
-    case "even-and-odd-functions":
-    case "increasing-and-decreasing-functions":
-    case "bounded-functions":
-    case "composition-of-functions":
-    case "inverse-functions":
-    case "algebraic-functions":
-    case "polynomial-functions":
-    case "rational-functions":
-    case "exponential-functions":
-    case "logarithmic-functions":
-    case "trigonometric-functions":
-    case "inverse-trigonometric-functions":
-      return "curvesketch";
-    // ── Linear Algebra ────────────────────────────────────────────
-    case "determinants":
-      return "determinant";
-    case "inverses":
-      return "inverse";
-    case "systems":
-    case "numerical-linear-algebra":
-    case "applications":
-      return "equations";
-    case "matrices":
-    case "foundations":
-      return "matrixops";
-    case "rank":
-      return "rank";
-    case "vectors":
-    case "complex-vector-spaces":
-      return "vector";
-    case "inner-product":
-      return "dot";
-    case "orthogonality":
-      return "projection";
-    case "independence-span":
-      return "independence";
-    case "change-of-basis":
-    case "fundamental-subspaces":
-      return "basis";
-    case "eigen":
-      return "eigen";
-    case "diagonalization":
-      return "diagonalization";
-    case "lu":
-    case "matrix-factorizations":
-      return "lu";
-    case "qr":
-      return "qr";
-    case "svd":
-      return "svd";
-    case "least-squares":
-    case "optimization":
-      return "leastsquares";
-    case "linear-transformations":
-      return "transformation";
-    case "quadratic-forms":
-      return "quadratic";
-    case "advanced-matrix-topics":
-      return "matrix";
-    default:
-      return "matrixops";
-  }
+  if (combined.includes("lu")) return "lu";
+  if (combined.includes("qr")) return "qr";
+  if (combined.includes("svd")) return "svd";
+  return "matrixops";
 }
 
 export default function TopicPage() {
@@ -387,42 +133,29 @@ export default function TopicPage() {
   const navigate = useNavigate();
   const topic = TOPICS.find((t) => t.id === id);
 
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
-  const [isEntering, setIsEntering] = useState(true);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
-  // Active calculator state
-  const [activeCalcId, setActiveCalcId] = useState<string>("matrixops");
-  const [isCalcSelectorOpen, setIsCalcSelectorOpen] = useState(false);
+  const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
 
   // Topic order & navigation
   const currentTopicIndex = useMemo(() => TOPICS.findIndex((t) => t.id === id), [id]);
   const prevTopic = currentTopicIndex > 0 ? TOPICS[currentTopicIndex - 1] : null;
   const nextTopic = currentTopicIndex < TOPICS.length - 1 ? TOPICS[currentTopicIndex + 1] : null;
 
-  // Entrance animation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsEntering(false);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [id]);
-
-  // Extract sections with numbers (1 to 10 etc)
+  // Extract sections with numbers
   const sections = useMemo(() => {
+    if (!topic?.details) return [];
     return Array.from(
-      topic?.details.matchAll(/^\s*(\d+)\.\s*(.+)$/gm) || [],
+      topic.details.matchAll(/^\s*(\d+)\.\s*(.+)$/gm) || []
     ).map((match) => ({
-      id: `topic-section-${match[1]}`,
       number: parseInt(match[1]),
       title: match[2].trim(),
-      content: match[0]
+      content: ""
     }));
   }, [topic]);
 
-  // Get the section content (between section headers)
+  // Section content parser
   const getSectionContent = (sectionNumber: number) => {
     if (!topic) return "";
     const details = topic.details;
@@ -446,549 +179,341 @@ export default function TopicPage() {
     }
   };
 
-  // ─── Parse an example matrix from section content ────────────────────────────
-  const parseExampleMatrix = (content: string): number[][] | null => {
-    // Match patterns like: A = [2 1]\n[1 1]  or  [[2, 1], [1, 1]]  or  [2 1; 1 1]
-    // Strategy 1: Find rows like "[2 1]" or "[2, 1]" across consecutive lines
-    const rowPattern = /\[([\d\s,\.\-]+)\]/g;
-    const rows: number[][] = [];
-    let match;
-    while ((match = rowPattern.exec(content)) !== null) {
-      const nums = match[1].split(/[,\s]+/).filter(Boolean).map(Number).filter(n => !isNaN(n));
-      if (nums.length >= 2 && nums.length <= 4) {
-        rows.push(nums);
-      }
-      if (rows.length >= 4) break; // cap at 4x4
-    }
-    if (rows.length >= 2) {
-      // Ensure all rows same length
-      const colLen = rows[0].length;
-      const square = rows.filter(r => r.length === colLen).slice(0, colLen);
-      if (square.length >= 2) return square;
-    }
-    // Strategy 2: consecutive number-only lines like  "2 1" / "1 1"
-    const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
-    const numLines: number[][] = [];
-    for (const line of lines) {
-      const parts = line.split(/[,\s]+/).filter(Boolean).map(Number);
-      if (parts.length >= 2 && parts.length <= 4 && parts.every(n => !isNaN(n))) {
-        numLines.push(parts);
-      }
-      if (numLines.length >= 4) break;
-    }
-    if (numLines.length >= 2) {
-      const colLen = numLines[0].length;
-      const sq = numLines.filter(r => r.length === colLen).slice(0, colLen);
-      if (sq.length >= 2) return sq;
-    }
-    return null;
+  const handleCopyExample = (text: string, idx: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(idx);
+    setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  // ─── Try in Calculator handler ────────────────────────────────────────────
-  const handleTryInCalculator = (sectionNumber: number) => {
-    const content = getSectionContent(sectionNumber);
-    const matrix = parseExampleMatrix(content);
-    // Fire a custom event that the live calculator listens for
-    const event = new CustomEvent('try-in-calculator', {
-      detail: { matrix, content, sectionNumber },
-      bubbles: true
-    });
-    document.dispatchEvent(event);
-    // Flash a visual hint on the right-side calculator header
-    const header = document.getElementById('live-calc-header');
-    if (header) {
-      header.classList.add('ring-2', 'ring-[#B6FF2E]', 'ring-offset-2');
-      setTimeout(() => header.classList.remove('ring-2', 'ring-[#B6FF2E]', 'ring-offset-2'), 1200);
+  const scrollToSection = (index: number) => {
+    setActiveSectionIndex(index);
+    const target = sectionRefs.current[index];
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
-  // Synchronize calculator based on active topic and active slide section
-  useEffect(() => {
-    if (!topic) return;
-    let sectionTitle = "";
-    let sectionContent = "";
-
-    if (currentSlide > 0 && sections[currentSlide - 1]) {
-      const section = sections[currentSlide - 1];
-      sectionTitle = section.title;
-      sectionContent = getSectionContent(section.number);
-    }
-
-    const recommendedId = getRecommendedCalculatorId(topic.id, sectionTitle, sectionContent);
-    setActiveCalcId(recommendedId);
-  }, [topic, currentSlide, sections]);
+  const calcId = topic ? getRecommendedCalculatorId(topic.id) : "matrixops";
+  const calculatorInfo = CALCULATORS[calcId] || CALCULATORS["matrixops"];
 
   if (!topic) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center">
-        <h2 className="font-[Fraunces] text-3xl text-[var(--heading)]">Topic not found</h2>
-        <p className="mt-3 text-[var(--muted)]">
-          Return to the <Link to="/" className="text-[#B6FF2E] hover:underline font-bold transition-colors">topics list</Link>.
-        </p>
+      <div className="min-h-screen bg-[#FDFBFB] pt-28 pb-16 px-4 text-center">
+        <h2 className="text-2xl font-bold text-[#111827]">Topic Not Found</h2>
+        <p className="text-[#6B7280] mt-2">The requested topic could not be located.</p>
+        <Link to="/?tab=topics" className="inline-block mt-4 text-[#7B1824] font-bold">
+          ← Back to Topics
+        </Link>
       </div>
     );
   }
 
-  // Navigation functions
-  const goToSlide = (index: number) => {
-    if (isTransitioning || index === currentSlide) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentSlide(index);
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 50);
-    }, 300);
-  };
+  return (
+    <div className="min-h-screen bg-[#FDFBFB] text-[#111827] pt-20 sm:pt-24 pb-16">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        
+        {/* Back Button */}
+        <div className="flex items-center justify-start">
+          <Link
+            to="/?tab=topics"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-xs font-bold text-[#374151] hover:bg-[#F9FAFB] transition-all shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>All Topics</span>
+          </Link>
+        </div>
 
-  const nextSlide = () => {
-    if (isTransitioning) return;
-    if (currentSlide < slides.length - 1) {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setCurrentSlide(prev => prev + 1);
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 50);
-      }, 300);
-    } else if (nextTopic) {
-      goToTopic(nextTopic.id);
-    }
-  };
+        {/* Sidebar + Main Topic Details Layout (Matching Image 4) */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          
+          {/* Left Sidebar (Categories) */}
+          <aside className="w-full lg:w-64 shrink-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+            <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#9CA3AF] px-2 mb-3">
+              Browse Topics
+            </div>
 
-  const prevSlide = () => {
-    if (isTransitioning) return;
-    if (currentSlide > 0) {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setCurrentSlide(prev => prev - 1);
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 50);
-      }, 300);
-    } else if (prevTopic) {
-      goToTopic(prevTopic.id);
-    }
-  };
+            <div className="flex flex-col gap-1 max-h-[580px] overflow-y-auto pr-1">
+              {topic.category === "linear-algebra" ? (
+                // Linear Algebra Topics List
+                (Array.isArray(LINEAR_TOPICS) ? LINEAR_TOPICS : [])
+                  .filter((t) => Boolean(t && t.id && t.title))
+                  .map((t) => {
+                    const isActive = topic.id === t.id;
+                    return (
+                      <Link
+                        key={t.id}
+                        to={`/topics/${t.id}`}
+                        className={`topic-sidebar-item ${isActive ? "active" : ""}`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <Layers className={`w-4 h-4 shrink-0 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />
+                          <span className="truncate">{t.title}</span>
+                        </div>
+                      </Link>
+                    );
+                  })
+              ) : (
+                // Calculus Categories List
+                CALCULUS_SUB_CATEGORIES.slice(1).map((cat) => {
+                  const isActive = topic.subCategory === cat.id;
+                  const count = ALL_CALCULUS_TOPICS.filter(t => t.subCategory === cat.id).length;
 
-  const goToTopic = (topicId: string) => {
-    setIsExiting(true);
-    setTimeout(() => {
-      setCurrentSlide(0);
-      setIsExiting(false);
-      setIsEntering(true);
-      navigate(`/topics/${topicId}`);
-    }, 250);
-  };
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        sessionStorage.setItem("returningTopicView", "topics-calculus");
+                        navigate("/?tab=topics");
+                      }}
+                      className={`topic-sidebar-item ${isActive ? "active" : ""}`}
+                    >
+                      <div className="flex items-center gap-2.5 truncate">
+                        {cat.id === "foundations" && <Landmark className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        {cat.id === "limits" && <Activity className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        {cat.id === "derivatives" && <Zap className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        {cat.id === "derivatives-common" && <FunctionSquare className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        {cat.id === "implicit" && <Sliders className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        {cat.id === "applications" && <TrendingUp className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        {cat.id === "optimization" && <Maximize2 className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        {cat.id === "lhopital" && <Binary className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        {cat.id === "intro-integration" && <BookOpen className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
+                        <span className="truncate">{cat.label}</span>
+                      </div>
+                      <span className="topic-sidebar-count">{count}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </aside>
 
-  // Create slides
-  const slides = [
-    {
-      id: 'overview',
-      type: 'overview' as const,
-      number: undefined,
-      component: (
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8 min-h-[420px]">
-          <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-[#B6FF2E]/10 blur-2xl pointer-events-none" />
-          <div className="relative">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <div className="flex items-center gap-2.5">
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold shadow-sm ${
-                  topic.category === "calculus"
-                    ? "bg-emerald-500 text-[#0c1f17]"
-                    : "bg-[#B6FF2E] text-[#1F2329]"
-                }`}>
-                  {topic.category === "calculus" ? (
-                    <TrendingUp className="w-3.5 h-3.5" />
-                  ) : (
-                    <Binary className="w-3.5 h-3.5" />
-                  )}
-                  <span>{(topic as any).subCategoryLabel || (topic.category === "calculus" ? "Calculus 1" : "Linear Algebra")}</span>
-                </span>
-                <span className="text-xs font-bold text-[var(--muted)]">
-                  {sections.length} sections &amp; lessons
-                </span>
+          {/* Right Main Topic Content */}
+          <main className="flex-1 w-full space-y-8">
+            
+            {/* Top Breadcrumb & Next Topic Header Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#E5E7EB] pb-4">
+              {/* Breadcrumb Pill */}
+              <div className="inline-flex items-center gap-2 rounded-xl border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1.5 text-xs font-semibold text-[#7B1824]">
+                <Landmark className="w-3.5 h-3.5" />
+                <span>{topic.subCategoryLabel || topic.categoryLabel}</span>
+                <span className="text-[#9CA3AF]">&gt;</span>
+                <span className="text-[#6B7280]">Overview</span>
+                <span className="text-[#9CA3AF]">&gt;</span>
+                <span className="font-bold text-[#7B1824]">{topic.title}</span>
               </div>
-              
+
+              {/* Next Topic Link */}
               {nextTopic && (
-                <button
-                  onClick={() => goToTopic(nextTopic.id)}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#B6FF2E] hover:underline"
+                <Link
+                  to={`/topics/${nextTopic.id}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#7B1824] hover:text-[#60101B] transition-colors"
                 >
                   <span>Next Topic: {nextTopic.title}</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               )}
             </div>
 
-            <h1 className="m-0 font-[Fraunces] text-3xl sm:text-4xl text-[var(--heading)] font-bold mb-3 tracking-tight">
-              {topic.title}
-            </h1>
-            <p className="text-[var(--muted)] leading-relaxed text-sm sm:text-base mb-6">
-              {topic.summary}
-            </p>
-            
-            {/* Table of Contents */}
-            <div className="mt-6 border-t border-[var(--line)] pt-5">
-              <h2 className="font-[Fraunces] text-lg font-bold text-[var(--heading)] flex items-center gap-2 mb-3">
-                <span className="text-[#B6FF2E]">📑</span> Table of Contents
-              </h2>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {sections.map((section, index) => {
-                  const slideIndex = index + 1;
-                  return (
-                    <button
-                      key={section.id}
-                      onClick={() => goToSlide(slideIndex)}
-                      onMouseEnter={() => setHoveredIndex(index)}
-                      onMouseLeave={() => setHoveredIndex(null)}
-                      className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-[#B6FF2E]/15 text-left border border-transparent hover:border-[#B6FF2E]/30"
-                    >
-                      <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-all duration-200 ${
-                        hoveredIndex === index
-                          ? "bg-[#B6FF2E] text-[#1F2329] shadow-md shadow-[#B6FF2E]/30 scale-105"
-                          : "bg-slate-200 text-slate-800 dark:bg-[#14171B] dark:text-[#B6FF2E] border border-[var(--line)]"
-                      }`}>
-                        {section.number}
-                      </span>
-                      <span className="text-xs sm:text-sm text-[var(--muted)] group-hover:text-[var(--heading)] font-semibold transition-colors duration-200 truncate">
-                        {section.title}
-                      </span>
-                      <span className="ml-auto text-xs text-[#B6FF2E] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        →
-                      </span>
-                    </button>
-                  );
-                })}
+            {/* Topic Main Header (Matching MathVerse style) */}
+            <div className="flex items-start gap-4 sm:gap-6">
+              {/* Icon Box */}
+              <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-[#7B1824] text-white font-serif text-2xl sm:text-3xl font-bold shrink-0 shadow-md shadow-[#7B1824]/20">
+                {topic.title.charAt(0)}
               </div>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    // Add each numbered section as a slide with full content visible
-    ...sections.map((section) => {
-      const content = getSectionContent(section.number);
-      
-      return {
-        id: section.id,
-        type: 'section' as const,
-        number: section.number,
-        title: section.title,
-        content: content,
-        component: (
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8 min-h-[420px]">
-            {/* Section Header */}
-            <div className="flex items-start gap-3.5 mb-5 pb-4 border-b border-[var(--line)]">
-              {/* Section Number Badge + Try Button (Linear Algebra only) */}
-              <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl text-lg font-bold shadow-lg ${
-                  topic.category === "calculus"
-                    ? "bg-emerald-500 text-[#0c1f17] shadow-emerald-500/20"
-                    : "bg-[#B6FF2E] text-[#1F2329] shadow-[#B6FF2E]/25"
-                }`}>
-                  {section.number}
-                </div>
-                {/* Try in Calculator Button (Only for Linear Algebra topics) */}
-                {topic.category !== "calculus" && (
-                  <button
-                    onClick={() => handleTryInCalculator(section.number)}
-                    title="Paste example from this section into the calculator →"
-                    className="group inline-flex items-center gap-0.5 rounded-lg border border-[#B6FF2E]/40 bg-[#B6FF2E]/10 px-1.5 py-0.5 text-[0.6rem] font-extrabold text-[#B6FF2E] transition-all hover:bg-[#B6FF2E] hover:text-[#1F2329] hover:border-[#B6FF2E] hover:shadow-md hover:shadow-[#B6FF2E]/30 active:scale-95 cursor-pointer whitespace-nowrap"
-                  >
-                    <FlaskConical className="w-2.5 h-2.5" />
-                    <span>Try</span>
-                  </button>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className={`text-[0.65rem] font-extrabold uppercase tracking-wider ${
-                  topic.category === "calculus" ? "text-emerald-400" : "text-[#B6FF2E]"
-                }`}>
-                  Section {section.number} of {sections.length}
-                </span>
-                <h2 className="font-[Fraunces] text-xl sm:text-2xl text-[var(--heading)] font-bold truncate mt-0.5">
-                  {section.title}
-                </h2>
-              </div>
-            </div>
 
-            {/* Section Content */}
-            <div className="pt-2">
-              <div
-                className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-[Fraunces] prose-headings:text-[var(--heading)] prose-p:text-[var(--muted)] prose-strong:text-[var(--heading)] prose-li:text-[var(--muted)] prose-ul:list-disc prose-ol:list-decimal leading-relaxed"
-                dangerouslySetInnerHTML={{ 
-                  __html: content
-                    .replace(/\n/g, "<br />")
-                    .replace(/```([^`]+)```/g, '<pre class="bg-slate-100 dark:bg-[#14171B] p-4 rounded-xl overflow-x-auto text-[#1F2329] dark:text-[#B6FF2E] border border-slate-300 dark:border-[#333A46] font-mono text-xs my-3"><code>$1</code></pre>')
-                }}
-              />
-            </div>
-          </div>
-        )
-      };
-    })
-  ];
+              <div className="space-y-2">
+                <h1 className="text-2xl sm:text-4xl font-extrabold text-[#111827] tracking-tight leading-tight">
+                  {topic.title}
+                </h1>
+                <p className="text-xs sm:text-base text-[#6B7280] leading-relaxed">
+                  {topic.summary}
+                </p>
 
-  // Navigate back
-  const handleBackToTopics = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsExiting(true);
-    setTimeout(() => {
-      sessionStorage.setItem("returningTopicView", isCalculusTopic ? "topics-calculus" : "topics-linear");
-      navigate('/');
-    }, 300);
-  };
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
-        nextSlide();
-      } else if (e.key === 'ArrowLeft') {
-        prevSlide();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSlide, isTransitioning, nextTopic, prevTopic]);
-
-  const isCalculusTopic = topic.category === "calculus";
-  const currentCalculator = CALCULATORS[activeCalcId] || CALCULATORS.determinant;
-
-  return (
-    <div className={
-      isCalculusTopic
-        ? "max-w-4xl mx-auto w-full relative px-2 sm:px-4"
-        : "grid grid-cols-1 lg:grid-cols-12 gap-6 relative max-w-[1680px] mx-auto w-full"
-    }>
-      
-      {/* Topic Content & Slide System */}
-      <div className={`${isCalculusTopic ? "w-full" : "lg:col-span-7"} space-y-5 relative`}>
-        {/* Reading Progress Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-slate-300 dark:bg-slate-800 z-50 rounded-full overflow-hidden">
-          <div
-            className={`h-full transition-all duration-300 ease-out ${
-              isCalculusTopic ? "bg-emerald-400" : "bg-[#B6FF2E]"
-            }`}
-            style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}
-          />
-        </div>
-
-        {/* Top Header Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
-          <Link 
-            to="/"
-            onClick={handleBackToTopics}
-            className={`group flex items-center gap-2 rounded-xl border border-[var(--line)] px-3.5 py-2 text-xs font-bold text-[var(--ink)] transition-all duration-200 bg-[var(--panel)] shadow-sm ${
-              isCalculusTopic ? "hover:border-emerald-400 hover:text-emerald-400" : "hover:border-[#B6FF2E] hover:text-[#B6FF2E]"
-            }`}
-          >
-            <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-1" />
-            <span>All Topics</span>
-          </Link>
-
-          {/* Prev / Next Topic Quick Switchers */}
-          <div className="flex items-center gap-2">
-            {prevTopic && (
-              <button
-                onClick={() => goToTopic(prevTopic.id)}
-                className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--panel)] text-[var(--muted)] transition-all ${
-                  isCalculusTopic ? "hover:border-emerald-400 hover:text-emerald-400" : "hover:border-[#B6FF2E] hover:text-[#B6FF2E]"
-                }`}
-                title={`Previous Topic: ${prevTopic.title}`}
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{prevTopic.title}</span>
-              </button>
-            )}
-            
-            <span className="text-xs font-mono font-bold text-[var(--muted)] px-2">
-              {currentSlide === 0 ? 'Overview' : `Section ${currentSlide} / ${slides.length - 1}`}
-            </span>
-
-            {nextTopic && (
-              <button
-                onClick={() => goToTopic(nextTopic.id)}
-                className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--panel)] transition-all ${
-                  isCalculusTopic ? "text-emerald-400 hover:border-emerald-400 hover:text-emerald-300" : "text-[#B6FF2E] hover:border-[#B6FF2E] hover:text-[#B6FF2E]"
-                }`}
-                title={`Next Topic: ${nextTopic.title}`}
-              >
-                <span className="hidden sm:inline">{nextTopic.title}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Slide Show Container */}
-        <div className="relative overflow-hidden min-h-[460px]">
-          <div 
-            className={`transition-all duration-500 ease-out ${
-              isExiting 
-                ? 'opacity-0 -translate-x-6 scale-98' 
-                : isEntering 
-                ? 'opacity-0 translate-x-6 scale-98' 
-                : 'opacity-100 translate-x-0 scale-100'
-            }`}
-          >
-            <div className="relative">
-              {slides.map((slide, index) => (
-                <div
-                  key={slide.id}
-                  className={`transition-all duration-300 ease-in-out ${
-                    index === currentSlide
-                      ? 'opacity-100 translate-x-0'
-                      : index < currentSlide
-                      ? 'opacity-0 -translate-x-6 pointer-events-none'
-                      : 'opacity-0 translate-x-6 pointer-events-none'
-                  } ${isTransitioning ? 'scale-98' : 'scale-100'}`}
-                  style={{
-                    position: index === currentSlide ? 'relative' : 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                  }}
-                >
-                  {slide.component}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Controls Bar */}
-        <div className="flex items-center justify-between gap-3 pb-3">
-          <button
-            onClick={prevSlide}
-            disabled={currentSlide === 0 && !prevTopic || isTransitioning}
-            className={`group flex items-center gap-2 rounded-xl border border-[var(--line)] px-4 py-2.5 text-xs sm:text-sm font-bold transition-all duration-200 bg-[var(--panel)] ${
-              currentSlide === 0 && !prevTopic || isTransitioning
-                ? 'opacity-50 cursor-not-allowed text-[var(--muted)]'
-                : isCalculusTopic 
-                  ? 'hover:border-emerald-400 hover:text-emerald-400 hover:shadow-md text-[var(--ink)]'
-                  : 'hover:border-[#B6FF2E] hover:text-[#B6FF2E] hover:shadow-md text-[var(--ink)]'
-            }`}
-          >
-            <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" />
-            <span>{currentSlide === 0 ? (prevTopic ? `Prev Topic` : 'Start') : 'Previous Section'}</span>
-          </button>
-
-          {/* Dots Indicator */}
-          <div className="flex gap-1.5 flex-wrap justify-center max-w-[220px]">
-            {slides.map((slide, index) => (
-              <button
-                key={slide.id}
-                onClick={() => goToSlide(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  index === currentSlide 
-                    ? isCalculusTopic ? 'w-8 bg-emerald-400' : 'w-8 bg-[#B6FF2E]' 
-                    : isCalculusTopic ? 'w-2 bg-[var(--muted)] hover:bg-emerald-400/60' : 'w-2 bg-[var(--muted)] hover:bg-[#B6FF2E]/60'
-                }`}
-                aria-label={slide.type === 'overview' ? 'Go to overview' : `Go to section ${slide.number}`}
-              />
-            ))}
-          </div>
-
-          <button
-            onClick={nextSlide}
-            disabled={currentSlide === slides.length - 1 && !nextTopic || isTransitioning}
-            className={`group flex items-center gap-2 rounded-xl border border-[var(--line)] px-4 py-2.5 text-xs sm:text-sm font-bold transition-all duration-200 bg-[var(--panel)] ${
-              currentSlide === slides.length - 1 && !nextTopic || isTransitioning
-                ? 'opacity-50 cursor-not-allowed text-[var(--muted)]'
-                : isCalculusTopic
-                  ? 'hover:border-emerald-400 hover:text-emerald-400 hover:shadow-md text-[var(--ink)]'
-                  : 'hover:border-[#B6FF2E] hover:text-[#B6FF2E] hover:shadow-md text-[var(--ink)]'
-            }`}
-          >
-            <span>{currentSlide === slides.length - 1 ? (nextTopic ? `Next: ${nextTopic.title}` : 'End') : 'Next Section'}</span>
-            <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-          </button>
-        </div>
-      </div>
-
-      {/* Right side: Dynamic Topic-Matched Calculator Sandbox (5 of 12 columns - Linear Algebra Only) */}
-      {!isCalculusTopic && (
-        <div className="lg:col-span-5 border-t lg:border-t-0 lg:border-l border-[var(--line)] pt-6 lg:pt-0 lg:pl-6">
-          <div className="sticky top-4 space-y-4">
-            
-            {/* Header with Calculator Selection Dropdown */}
-            <div id="live-calc-header" className="relative z-20 rounded-xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#B6FF2E] text-[#1F2329] shadow-sm">
-                    <Calculator className="w-4 h-4" />
-                  </div>
-                  <span className="font-[Fraunces] font-bold text-base text-[var(--heading)]">
-                    Live Topic Calculator
+                {/* Badges: Lessons & Time */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1 text-xs font-medium text-[#374151]">
+                    <BookOpen className="w-3.5 h-3.5 text-[#7B1824]" />
+                    {sections.length > 0 ? sections.length : topic.examples.length} Sections &amp; Lessons
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1 text-xs font-medium text-[#374151]">
+                    <Clock className="w-3.5 h-3.5 text-[#7B1824]" />
+                    2h 45m Estimated
                   </span>
                 </div>
+              </div>
+            </div>
 
-                <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full border border-[#B6FF2E]/40 text-[#B6FF2E] bg-[#1F2329]">
-                  Auto-Matched
-                </span>
+            {/* Table of Contents (2-Column Grid) */}
+            {sections.length > 0 && (
+              <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 text-base font-bold text-[#111827]">
+                  <List className="w-5 h-5 text-[#7B1824]" />
+                  <h2>Table of Contents</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                  {sections.map((section, idx) => (
+                    <div
+                      key={`toc-${section.number}`}
+                      onClick={() => scrollToSection(idx)}
+                      className={`toc-item cursor-pointer ${activeSectionIndex === idx ? "border-[#7B1824] bg-[#fbf3f5]" : ""}`}
+                    >
+                      <div className="toc-number">
+                        {section.number}
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-[#374151] flex-1 truncate">
+                        {section.title}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-[#9CA3AF] shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Interactive Calculator Banner / Toggle */}
+            <div className="rounded-2xl border border-[#d6b1b7] bg-[#fbf3f5] p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm shrink-0">
+                  <Calculator className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-[#111827]">
+                    {calculatorInfo.name}
+                  </h3>
+                  <p className="text-xs text-[#6B7280]">
+                    {calculatorInfo.description}
+                  </p>
+                </div>
               </div>
 
-              {/* Active Calculator Selector Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsCalcSelectorOpen(!isCalcSelectorOpen)}
-                  className="w-full flex items-center justify-between gap-2.5 rounded-xl border border-[var(--line)] bg-[var(--panel)] px-3.5 py-2 text-left transition-all hover:border-[#B6FF2E]"
+              <button
+                onClick={() => setShowCalculator(!showCalculator)}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all cursor-pointer"
+              >
+                <span>{showCalculator ? "Hide Calculator" : "Launch Interactive Solver"}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showCalculator ? "rotate-180" : ""}`} />
+              </button>
+            </div>
+
+            {/* Embedded Calculator */}
+            {showCalculator && (
+              <div className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-md">
+                {calculatorInfo.component}
+              </div>
+            )}
+
+            {/* Full Explanation & Sections Content */}
+            <section className="space-y-6">
+              <h2 className="text-xl font-bold text-[#111827] border-b border-[#E5E7EB] pb-3">
+                Comprehensive Lessons &amp; Explanations
+              </h2>
+
+              {sections.length > 0 ? (
+                sections.map((section, idx) => {
+                  const content = getSectionContent(section.number);
+
+                  return (
+                    <article
+                      key={`section-article-${section.number}`}
+                      ref={(el) => { sectionRefs.current[idx] = el; }}
+                      className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-sm space-y-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7B1824] text-white text-xs font-bold font-mono">
+                          {section.number}
+                        </div>
+                        <h3 className="text-lg font-bold text-[#111827]">
+                          {section.title}
+                        </h3>
+                      </div>
+
+                      <div className="text-sm text-[#4B5563] leading-relaxed whitespace-pre-line pt-2">
+                        {content || topic.details}
+                      </div>
+                    </article>
+                  );
+                })
+              ) : (
+                <article className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                  <div className="text-sm text-[#4B5563] leading-relaxed whitespace-pre-line">
+                    {topic.details}
+                  </div>
+                </article>
+              )}
+            </section>
+
+            {/* Examples Section */}
+            {topic.examples && topic.examples.length > 0 && (
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-[#111827] border-b border-[#E5E7EB] pb-3">
+                  Step-by-Step Verified Examples
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {topic.examples.map((example, idx) => (
+                    <div
+                      key={`example-${idx}`}
+                      className="rounded-2xl border border-[#E5E7EB] bg-white p-5 space-y-3 shadow-sm hover:border-[#d6b1b7] transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#d6b1b7] bg-[#fbf3f5] text-[#7B1824]">
+                          Example {idx + 1}
+                        </span>
+
+                        <button
+                          onClick={() => handleCopyExample(example, idx)}
+                          className="text-xs text-[#6B7280] hover:text-[#7B1824] inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          {copiedIndex === idx ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-green-600" />
+                              <span className="text-green-600">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-[#374151] font-mono leading-relaxed bg-[#F9FAFB] p-3 rounded-xl border border-[#E5E7EB]">
+                        {example}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Bottom Navigation (Prev / Next Topic) */}
+            <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-6">
+              {prevTopic ? (
+                <Link
+                  to={`/topics/${prevTopic.id}`}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-xs sm:text-sm font-bold text-[#374151] hover:bg-[#F9FAFB] transition-all shadow-sm"
                 >
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-[var(--heading)] truncate">
-                      {currentCalculator.name}
-                    </p>
-                    <p className="text-[0.65rem] text-[var(--muted)] truncate">
-                      {currentCalculator.description}
-                    </p>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-[#B6FF2E] transition-transform duration-200 ${isCalcSelectorOpen ? 'rotate-180' : ''}`} />
-                </button>
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Previous: {prevTopic.title}</span>
+                </Link>
+              ) : <div />}
 
-                {/* Dropdown to switch calculator manually if desired */}
-                {isCalcSelectorOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-72 overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-1.5 shadow-2xl backdrop-blur-xl">
-                    {Object.entries(CALCULATORS).map(([calcId, tool]) => (
-                      <button
-                        key={calcId}
-                        onClick={() => {
-                          setActiveCalcId(calcId);
-                          setIsCalcSelectorOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition-all ${
-                          activeCalcId === calcId
-                            ? 'bg-[#B6FF2E] text-[#1F2329] font-bold shadow-sm'
-                            : 'text-[var(--ink)] hover:bg-[#B6FF2E]/15'
-                        }`}
-                      >
-                        <span className="truncate">{tool.name}</span>
-                        {activeCalcId === calcId && <span className="text-[0.65rem]">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {nextTopic && (
+                <Link
+                  to={`/topics/${nextTopic.id}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md transition-all"
+                >
+                  <span>Next: {nextTopic.title}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
 
-            {/* Calculator Embed Area */}
-            <div className="rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-4 sm:p-5 shadow-lg shadow-black/5 overflow-hidden">
-              <div className="calculator-wrapper-theme">
-                {currentCalculator.component}
-              </div>
-            </div>
-
-            {/* Quick Help Tip */}
-            <div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--panel)] text-[0.7rem] text-[var(--muted)] flex items-start gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#B6FF2E] mt-0.5 flex-shrink-0" />
-              <p>
-                This calculator automatically synchronizes with the current topic (e.g. Inverses, Determinants, Eigenvalues, SVD, Vectors, Projections) and allows exporting answers to PDF!
-              </p>
-            </div>
-          </div>
+          </main>
         </div>
-      )}
+      </div>
     </div>
   );
 }

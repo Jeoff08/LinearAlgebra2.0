@@ -12,26 +12,17 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem("app_theme");
-    if (saved === "dark" || saved === "light") {
-      return saved;
-    }
-    // Default to dark mode for our rich blue & emerald aesthetic
-    return "dark";
+    // Always default to light mode to match the clean white reference design
+    localStorage.removeItem("app_theme");
+    return "light";
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-      root.classList.remove("light");
-      root.setAttribute("data-theme", "dark");
-    } else {
-      root.classList.add("light");
-      root.classList.remove("dark");
-      root.setAttribute("data-theme", "light");
-    }
-    localStorage.setItem("app_theme", theme);
+    root.classList.remove("dark");
+    root.classList.add("light");
+    root.setAttribute("data-theme", "light");
+    localStorage.setItem("app_theme", "light");
   }, [theme]);
 
   const toggleTheme = () => {

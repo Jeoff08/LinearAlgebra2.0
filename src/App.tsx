@@ -3,7 +3,6 @@ import Navbar from "./components/Navbar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import mathBg from "./assets/math.jpeg";
 import TopicPage from "./pages/TopicPage";
 import LoginPage from "./pages/LoginPage";
 import PublicPage from "./pages/PublicPage";
@@ -20,14 +19,8 @@ export default function App() {
       <AuthProvider>
         <HashRouter>
           <div className="app-shell">
-            <div className="ambient" aria-hidden>
-              <img
-                src={mathBg}
-                alt="Mathematics Background"
-                className="ambient-bg-img"
-              />
-              <div className="ambient-overlay" />
-            </div>
+            {/* Subtle math background pattern */}
+            <div className="math-bg-pattern" aria-hidden />
             <Navbar />
             <main>
               <Routes>
@@ -43,6 +36,7 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/topics" element={<Navigate to="/?tab=topics" replace />} />
                 <Route path="/calculator" element={<CalculatorApp />} />
                 <Route path="/calculators" element={<CalculatorsPage />} />
                 <Route path="/calculus-calculators" element={<CalculusCalculatorsPage />} />

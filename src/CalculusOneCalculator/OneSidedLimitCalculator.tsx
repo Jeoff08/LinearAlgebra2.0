@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle } from 'lucide-react';
 const OneSidedLimitCalculator: React.FC = () => {
   const [functionStr, setFunctionStr] = useState('1/x');
   const [point, setPoint] = useState('0');
-  const [side, setSide] = useState('left');
+  const [side, setSide] = useState<'left' | 'right'>('left');
   const [result, setResult] = useState<string>('');
   const [error, setError] = useState<string>('');
 
@@ -44,43 +44,58 @@ const OneSidedLimitCalculator: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">f(x)</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">f(x)</label>
           <input
             type="text"
             value={functionStr}
             onChange={(e) => setFunctionStr(e.target.value)}
             placeholder="e.g., 1/x"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">x →</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">x →</label>
           <input
             type="text"
             value={point}
             onChange={(e) => setPoint(e.target.value)}
             placeholder="e.g., 0"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Side</label>
-          <select
-            value={side}
-            onChange={(e) => setSide(e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition"
-          >
-            <option value="left">Left (-)</option>
-            <option value="right">Right (+)</option>
-          </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[#374151] mb-1">Direction</label>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-[#374151]">
+            <input
+              type="radio"
+              value="left"
+              checked={side === 'left'}
+              onChange={(e) => setSide(e.target.value as 'left')}
+              className="text-[#2563EB] focus:ring-[#2563EB]"
+            />
+            <span>From Left (x → a⁻)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-[#374151]">
+            <input
+              type="radio"
+              value="right"
+              checked={side === 'right'}
+              onChange={(e) => setSide(e.target.value as 'right')}
+              className="text-[#2563EB] focus:ring-[#2563EB]"
+            />
+            <span>From Right (x → a⁺)</span>
+          </label>
         </div>
       </div>
 
       <button
         onClick={calculate}
-        className="w-full bg-[#1F2329] text-[#B6FF2E] py-3 rounded-lg font-medium hover:bg-[#282E37] transition shadow-md"
+        className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-3 rounded-xl font-bold transition shadow-md shadow-blue-500/20 cursor-pointer"
       >
         Calculate One-Sided Limit
       </button>

@@ -339,35 +339,35 @@ const DefiniteIntegralCalculator: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">f(x)</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">f(x)</label>
           <div className="flex gap-2">
             <input
               type="text"
               value={functionStr}
               onChange={(e) => setFunctionStr(e.target.value)}
               placeholder="e.g., x^2"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+              className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Lower Bound (a)</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">Lower Bound (a)</label>
           <input
             type="text"
             value={lowerBound}
             onChange={(e) => setLowerBound(e.target.value)}
             placeholder="e.g., 0"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Upper Bound (b)</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">Upper Bound (b)</label>
           <input
             type="text"
             value={upperBound}
             onChange={(e) => setUpperBound(e.target.value)}
             placeholder="e.g., 1"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
       </div>
@@ -375,7 +375,7 @@ const DefiniteIntegralCalculator: React.FC = () => {
       <div className="flex gap-2">
         <select
           onChange={(e) => setFunctionStr(e.target.value)}
-          className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition bg-white text-sm"
+          className="px-3 py-2 border border-[#E5E7EB] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition bg-white text-[#111827] text-sm"
           value=""
         >
           <option value="">Quick Examples</option>
@@ -387,7 +387,7 @@ const DefiniteIntegralCalculator: React.FC = () => {
         </select>
         <button
           onClick={calculateDefiniteIntegral}
-          className="flex-1 bg-[#1F2329] text-[#B6FF2E] py-2 rounded-lg font-medium hover:bg-[#282E37] transition shadow-md flex items-center justify-center gap-2"
+          className="flex-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-2.5 rounded-xl font-bold transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-2"
         >
           <Sigma className="w-5 h-5" />
           Evaluate Integral

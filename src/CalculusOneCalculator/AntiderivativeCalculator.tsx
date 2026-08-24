@@ -1,454 +1,1127 @@
-// components/calculators/AntiderivativeCalculator.tsx
-import React, { useState } from 'react';
-import { Calculator, AlertCircle, CheckCircle, Info, Sigma } from 'lucide-react';
+import React, { useMemo, useState } from "react";
+import {
+  Calculator,
+  RotateCcw,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
+  Info,
+} from "lucide-react";
 
-interface AntiderivativeResult {
-  antiderivative: string;
-  indefiniteIntegral: string;
-  steps: string[];
-  message: string;
-  methodUsed: string;
-  validation: string;
+/* =========================================================
+   EXACT FRACTION
+========================================================= */
+
+interface Fraction {
+  n: number;
+  d: number;
 }
 
-const AntiderivativeCalculator: React.FC = () => {
-  const [functionStr, setFunctionStr] = useState('x^2');
-  const [result, setResult] = useState<AntiderivativeResult | null>(null);
-  const [error, setError] = useState<string>('');
+interface Term {
+  coefficient: Fraction;
+  exponent: number;
+  original: string;
+}
 
-  const parseFunction = (fn: string): ((x: number) => number) => {
-    const sanitized = fn
-      .replace(/sin\(/g, 'Math.sin(')
-      .replace(/cos\(/g, 'Math.cos(')
-      .replace(/tan\(/g, 'Math.tan(')
-      .replace(/log\(/g, 'Math.log10(')
-      .replace(/ln\(/g, 'Math.log(')
-      .replace(/sqrt\(/g, 'Math.sqrt(')
-      .replace(/e\^/g, 'Math.exp(')
-      .replace(/\^/g, '**')
-      .replace(/pi/g, 'Math.PI')
-      .replace(/π/g, 'Math.PI')
-      .replace(/e(?![xp])/g, 'Math.E');
-    return new Function('x', `return (${sanitized})`) as (x: number) => number;
+interface ResultTerm {
+  coefficient: Fraction;
+  exponent: number;
+}
+
+interface SolutionStep {
+  original: string;
+  coefficient: Fraction;
+  exponent: number;
+  resultCoefficient: Fraction;
+  resultExponent: number;
+  explanation: string;
+}
+
+/* =========================================================
+   FRACTION UTILITIES
+========================================================= */
+
+const gcd = (a: number, b: number): number => {
+  a = Math.abs(Math.trunc(a));
+  b = Math.abs(Math.trunc(b));
+
+  while (b !== 0) {
+    const r = a % b;
+    a = b;
+    b = r;
+  }
+
+  return a || 1;
+};
+
+const makeFraction = (
+  n: number,
+  d: number = 1
+): Fraction => {
+  if (d === 0) {
+    throw new Error("Division by zero.");
+  }
+
+  if (n === 0) {
+    return { n: 0, d: 1 };
+  }
+
+  if (d < 0) {
+    n = -n;
+    d = -d;
+  }
+
+  const g = gcd(n, d);
+
+  return {
+    n: n / g,
+    d: d / g,
   };
+};
 
-  const findAntiderivative = (fn: string): { result: string; method: string; steps: string[] } => {
-    const steps: string[] = [];
-    const expr = fn.trim();
-    let result = '';
-    let method = '';
+const addFraction = (
+  a: Fraction,
+  b: Fraction
+): Fraction => {
+  return makeFraction(
+    a.n * b.d + b.n * a.d,
+    a.d * b.d
+  );
+};
 
-    // Check for constant
-    if (expr.match(/^\d+$/)) {
-      const constant = parseFloat(expr);
-      result = `${constant}x`;
-      method = 'Constant Rule';
-      steps.push(`∫ ${constant} dx = ${constant}x + C`);
-      steps.push(`Formula: ∫k dx = kx + C`);
-      return { result, method, steps };
+const subtractFraction = (
+  a: Fraction,
+  b: Fraction
+): Fraction => {
+  return makeFraction(
+    a.n * b.d - b.n * a.d,
+    a.d * b.d
+  );
+};
+
+const multiplyFraction = (
+  a: Fraction,
+  b: Fraction
+): Fraction => {
+  return makeFraction(
+    a.n * b.n,
+    a.d * b.d
+  );
+};
+
+const divideFraction = (
+  a: Fraction,
+  b: Fraction
+): Fraction => {
+  if (b.n === 0) {
+    throw new Error("Division by zero.");
+  }
+
+  return makeFraction(
+    a.n * b.d,
+    a.d * b.n
+  );
+};
+
+const divideByInteger = (
+  a: Fraction,
+  value: number
+): Fraction => {
+  return makeFraction(
+    a.n,
+    a.d * value
+  );
+};
+
+const negateFraction = (
+  a: Fraction
+): Fraction => {
+  return makeFraction(-a.n, a.d);
+};
+
+const fractionEquals = (
+  a: Fraction,
+  b: Fraction
+): boolean => {
+  const x = makeFraction(a.n, a.d);
+  const y = makeFraction(b.n, b.d);
+
+  return x.n === y.n && x.d === y.d;
+};
+
+/* =========================================================
+   DECIMAL STRING → EXACT FRACTION
+========================================================= */
+
+const decimalToFraction = (
+  value: string
+): Fraction => {
+  const text = value.trim();
+
+  if (!text) {
+    return makeFraction(1);
+  }
+
+  if (text.includes("/")) {
+    const [numerator, denominator] =
+      text.split("/");
+
+    const n = parseInt(numerator, 10);
+    const d = parseInt(denominator, 10);
+
+    if (
+      Number.isNaN(n) ||
+      Number.isNaN(d) ||
+      d === 0
+    ) {
+      throw new Error(
+        `Invalid fraction: ${text}`
+      );
     }
 
-    // Check for power rule: x^n
-    const powerMatch = expr.match(/^x\^(\d+)$/);
-    if (powerMatch) {
-      const n = parseInt(powerMatch[1]);
-      if (n === -1) {
-        result = 'ln|x|';
-        method = 'Natural Log Rule';
-        steps.push(`∫ x^(-1) dx = ln|x| + C`);
-        steps.push(`Formula: ∫1/x dx = ln|x| + C`);
-      } else {
-        const newPower = n + 1;
-        result = `x^${newPower}/${newPower}`;
-        method = 'Power Rule';
-        steps.push(`∫ x^${n} dx = x^${n+1}/${n+1} + C`);
-        steps.push(`Formula: ∫x^n dx = x^(n+1)/(n+1) + C, n ≠ -1`);
-      }
-      return { result, method, steps };
+    return makeFraction(n, d);
+  }
+
+  if (!text.includes(".")) {
+    const n = parseInt(text, 10);
+
+    if (Number.isNaN(n)) {
+      throw new Error(
+        `Invalid number: ${text}`
+      );
     }
 
-    // Check for sin(x)
-    if (expr === 'sin(x)' || expr === 'sinx') {
-      result = '-cos(x)';
-      method = 'Sine Rule';
-      steps.push(`∫ sin(x) dx = -cos(x) + C`);
-      steps.push(`Formula: ∫sin(x) dx = -cos(x) + C`);
-      return { result, method, steps };
+    return makeFraction(n);
+  }
+
+  const negative = text.startsWith("-");
+  const unsigned = negative
+    ? text.substring(1)
+    : text;
+
+  const parts = unsigned.split(".");
+  const whole = parts[0] || "0";
+  const decimals = parts[1] || "";
+
+  const denominator =
+    Math.pow(10, decimals.length);
+
+  const numerator =
+    parseInt(whole, 10) * denominator +
+    parseInt(decimals || "0", 10);
+
+  return makeFraction(
+    negative ? -numerator : numerator,
+    denominator
+  );
+};
+
+/* =========================================================
+   FRACTION TEXT
+========================================================= */
+
+const fractionText = (
+  value: Fraction
+): string => {
+  const f = makeFraction(value.n, value.d);
+
+  if (f.d === 1) {
+    return String(f.n);
+  }
+
+  return `${f.n}/${f.d}`;
+};
+
+/* =========================================================
+   SUPERSCRIPTS
+========================================================= */
+
+const superscriptMap: Record<string, string> = {
+  "⁰": "0",
+  "¹": "1",
+  "²": "2",
+  "³": "3",
+  "⁴": "4",
+  "⁵": "5",
+  "⁶": "6",
+  "⁷": "7",
+  "⁸": "8",
+  "⁹": "9",
+};
+
+const convertSuperscripts = (
+  text: string
+): string => {
+  return text.replace(
+    /[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g,
+    (match) =>
+      match
+        .split("")
+        .map(
+          (char) =>
+            superscriptMap[char]
+        )
+        .join("")
+  );
+};
+
+/* =========================================================
+   NORMALIZE INPUT
+========================================================= */
+
+const normalizeInput = (
+  input: string
+): string => {
+  let value = convertSuperscripts(input);
+
+  value = value
+    .replace(/\s+/g, "")
+    .replace(/∫/g, "")
+    .replace(/dx/gi, "")
+    .replace(/[−–—]/g, "-")
+    .replace(/[×·]/g, "*")
+    .replace(/[()]/g, "");
+
+  /* x^5 → x5 */
+  value = value.replace(
+    /x\^(\d+)/gi,
+    "x$1"
+  );
+
+  /* Remove multiplication signs before x */
+  value = value.replace(
+    /(\d)\*x/gi,
+    "$1x"
+  );
+
+  if (!value) {
+    throw new Error(
+      "Please enter an expression."
+    );
+  }
+
+  /*
+    For this calculator we intentionally
+    support polynomial expressions only.
+
+    Valid:
+      4x5+3x2-7x+6
+      3x^4-2x+8
+      7x-5
+      10
+      2.5x3
+      3/2x2
+
+    Invalid:
+      sin(x)
+      e^x
+      ln(x)
+
+    Those require additional symbolic
+    integration rules.
+  */
+
+  if (
+    !/^[+\-0-9./x]+$/i.test(value)
+  ) {
+    throw new Error(
+      "This calculator currently supports polynomial antiderivatives only. Example: 4x5 + 3x2 - 7x + 6."
+    );
+  }
+
+  return value;
+};
+
+/* =========================================================
+   PARSE TERM
+========================================================= */
+
+const parseTerm = (
+  token: string
+): Term => {
+  const match = token.match(
+    /^([+-]?)(\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?)?(x(\d+)?)?$/i
+  );
+
+  if (!match) {
+    throw new Error(
+      `Invalid term: ${token}`
+    );
+  }
+
+  const sign =
+    match[1] === "-" ? -1 : 1;
+
+  const coefficientText =
+    match[2] || "";
+
+  const hasX = Boolean(match[3]);
+
+  const exponentText = match[4];
+
+  if (
+    !coefficientText &&
+    !hasX
+  ) {
+    throw new Error(
+      `Invalid term: ${token}`
+    );
+  }
+
+  let coefficient: Fraction;
+  let exponent: number;
+
+  if (hasX) {
+    if (!coefficientText) {
+      coefficient =
+        makeFraction(sign, 1);
+    } else {
+      const parsed =
+        decimalToFraction(
+          coefficientText
+        );
+
+      coefficient =
+        sign === -1
+          ? negateFraction(parsed)
+          : parsed;
     }
 
-    // Check for cos(x)
-    if (expr === 'cos(x)' || expr === 'cosx') {
-      result = 'sin(x)';
-      method = 'Cosine Rule';
-      steps.push(`∫ cos(x) dx = sin(x) + C`);
-      steps.push(`Formula: ∫cos(x) dx = sin(x) + C`);
-      return { result, method, steps };
-    }
+    exponent =
+      exponentText === undefined
+        ? 1
+        : parseInt(
+            exponentText,
+            10
+          );
+  } else {
+    const parsed =
+      decimalToFraction(
+        coefficientText
+      );
 
-    // Check for tan(x)
-    if (expr === 'tan(x)' || expr === 'tanx') {
-      result = '-ln|cos(x)|';
-      method = 'Tangent Rule';
-      steps.push(`∫ tan(x) dx = -ln|cos(x)| + C`);
-      steps.push(`Formula: ∫tan(x) dx = -ln|cos(x)| + C`);
-      return { result, method, steps };
-    }
+    coefficient =
+      sign === -1
+        ? negateFraction(parsed)
+        : parsed;
 
-    // Check for sec^2(x)
-    if (expr === 'sec(x)^2' || expr === 'sec^2(x)' || expr === 'sec²(x)') {
-      result = 'tan(x)';
-      method = 'Secant Squared Rule';
-      steps.push(`∫ sec²(x) dx = tan(x) + C`);
-      steps.push(`Formula: ∫sec²(x) dx = tan(x) + C`);
-      return { result, method, steps };
-    }
+    exponent = 0;
+  }
 
-    // Check for e^x
-    if (expr === 'e^x' || expr === 'exp(x)') {
-      result = 'e^x';
-      method = 'Exponential Rule';
-      steps.push(`∫ e^x dx = e^x + C`);
-      steps.push(`Formula: ∫e^x dx = e^x + C`);
-      return { result, method, steps };
-    }
+  if (exponent < 0) {
+    throw new Error(
+      "Negative exponents are not supported by this polynomial calculator."
+    );
+  }
 
-    // Check for 1/x or x^(-1)
-    if (expr === '1/x' || expr === 'x^(-1)' || expr === 'x^-1') {
-      result = 'ln|x|';
-      method = 'Natural Log Rule';
-      steps.push(`∫ 1/x dx = ln|x| + C`);
-      steps.push(`Formula: ∫1/x dx = ln|x| + C`);
-      return { result, method, steps };
-    }
-
-    // Check for sqrt(x) or x^(1/2)
-    if (expr === 'sqrt(x)' || expr === 'x^(1/2)' || expr === 'x^0.5') {
-      result = '(2/3)x^(3/2)';
-      method = 'Power Rule (Radical)';
-      steps.push(`∫ √x dx = (2/3)x^(3/2) + C`);
-      steps.push(`Formula: ∫x^(1/2) dx = x^(3/2)/(3/2) + C`);
-      return { result, method, steps };
-    }
-
-    // Check for 1/sqrt(x) or x^(-1/2)
-    if (expr === '1/sqrt(x)' || expr === 'x^(-1/2)' || expr === 'x^-0.5') {
-      result = '2√x';
-      method = 'Power Rule (Reciprocal Radical)';
-      steps.push(`∫ 1/√x dx = 2√x + C`);
-      steps.push(`Formula: ∫x^(-1/2) dx = x^(1/2)/(1/2) + C`);
-      return { result, method, steps };
-    }
-
-    // Check for ax^n pattern
-    const powerWithCoeff = expr.match(/^(\d+)\*?x\^(\d+)$/);
-    if (powerWithCoeff) {
-      const coeff = parseInt(powerWithCoeff[1]);
-      const n = parseInt(powerWithCoeff[2]);
-      if (n === -1) {
-        result = `${coeff}ln|x|`;
-        method = 'Log Rule with Coefficient';
-        steps.push(`∫ ${coeff}x^(-1) dx = ${coeff}ln|x| + C`);
-        steps.push(`Formula: ∫k/x dx = k·ln|x| + C`);
-      } else {
-        const newPower = n + 1;
-        const newCoeff = coeff / newPower;
-        result = `${newCoeff}x^${newPower}`;
-        method = 'Power Rule with Coefficient';
-        steps.push(`∫ ${coeff}x^${n} dx = ${newCoeff}x^${newPower} + C`);
-        steps.push(`Formula: ∫kx^n dx = k·x^(n+1)/(n+1) + C`);
-      }
-      return { result, method, steps };
-    }
-
-    // Check for linear combination: ax + b
-    const linearMatch = expr.match(/^(\d+)x\s*\+\s*(\d+)$/);
-    if (linearMatch) {
-      const a = parseInt(linearMatch[1]);
-      const b = parseInt(linearMatch[2]);
-      result = `${a/2}x² + ${b}x`;
-      method = 'Linear Combination';
-      steps.push(`∫ (${a}x + ${b}) dx = ${a/2}x² + ${b}x + C`);
-      steps.push(`Formula: ∫(ax + b) dx = (a/2)x² + bx + C`);
-      return { result, method, steps };
-    }
-
-    // Check for sin(ax)
-    const sinMatch = expr.match(/^sin\((\d+)x\)$/);
-    if (sinMatch) {
-      const a = parseInt(sinMatch[1]);
-      result = `-1/${a}cos(${a}x)`;
-      method = 'Sine Rule (Composite)';
-      steps.push(`∫ sin(${a}x) dx = -1/${a}cos(${a}x) + C`);
-      steps.push(`Formula: ∫sin(ax) dx = -(1/a)cos(ax) + C`);
-      return { result, method, steps };
-    }
-
-    // Check for cos(ax)
-    const cosMatch = expr.match(/^cos\((\d+)x\)$/);
-    if (cosMatch) {
-      const a = parseInt(cosMatch[1]);
-      result = `1/${a}sin(${a}x)`;
-      method = 'Cosine Rule (Composite)';
-      steps.push(`∫ cos(${a}x) dx = 1/${a}sin(${a}x) + C`);
-      steps.push(`Formula: ∫cos(ax) dx = (1/a)sin(ax) + C`);
-      return { result, method, steps };
-    }
-
-    // Check for e^(ax)
-    const expMatch = expr.match(/^e\^\((\d+)x\)$/);
-    if (expMatch) {
-      const a = parseInt(expMatch[1]);
-      result = `1/${a}e^(${a}x)`;
-      method = 'Exponential Rule (Composite)';
-      steps.push(`∫ e^(${a}x) dx = 1/${a}e^(${a}x) + C`);
-      steps.push(`Formula: ∫e^(ax) dx = (1/a)e^(ax) + C`);
-      return { result, method, steps };
-    }
-
-    // Check for polynomial
-    const polyMatch = expr.match(/^([\d\s+*x^]+)$/);
-    if (polyMatch && expr.includes('+')) {
-      const terms = expr.split('+').map(t => t.trim());
-      let integratedTerms: string[] = [];
-      let success = true;
-      
-      for (const term of terms) {
-        const termResult = findAntiderivative(term);
-        if (termResult.method === 'Unknown') {
-          success = false;
-          break;
-        }
-        integratedTerms.push(termResult.result);
-      }
-      
-      if (success) {
-        result = integratedTerms.join(' + ');
-        method = 'Sum of Terms (Linear Combination)';
-        steps.push(`∫ (${expr}) dx = ${result} + C`);
-        steps.push(`Applied integration rules to each term`);
-        return { result, method, steps };
-      }
-    }
-
-    // If nothing matches
-    method = 'Unknown';
-    result = `∫(${expr}) dx (Cannot be determined symbolically)`;
-    steps.push(`Unable to find antiderivative for: ${expr}`);
-    steps.push('Try simplifying the expression or use numerical methods');
-    return { result, method, steps };
+  return {
+    coefficient,
+    exponent,
+    original: token,
   };
+};
 
-  const calculateAntiderivative = () => {
-    try {
-      const f = parseFunction(functionStr);
-      
-      // Test function at a point to ensure it's valid
-      const testVal = f(1);
-      if (!isFinite(testVal)) {
-        setError('Invalid function. Please check your input.');
-        setResult(null);
-        return;
-      }
+/* =========================================================
+   PARSE COMPLETE EXPRESSION
+========================================================= */
 
-      const steps: string[] = [];
-      
-      steps.push(`📐 Finding antiderivative of f(x) = ${functionStr}`);
-      steps.push('');
+const parseExpression = (
+  input: string
+): Term[] => {
+  const normalized =
+    normalizeInput(input);
 
-      // Find antiderivative
-      const { result: antiderivative, method, steps: methodSteps } = findAntiderivative(functionStr);
+  /*
+    Split:
 
-      if (method === 'Unknown') {
-        steps.push('⚠️ Cannot find antiderivative symbolically');
-        steps.push('   Try using numerical integration methods');
-        steps.push(`   ∫${functionStr} dx cannot be expressed in elementary functions`);
-        
-        setResult({
-          antiderivative: `∫${functionStr} dx`,
-          indefiniteIntegral: `Cannot be expressed in elementary functions`,
-          steps,
-          message: 'Antiderivative not found in elementary functions',
-          methodUsed: 'None',
-          validation: 'Use numerical integration for specific bounds'
-        });
-        setError('');
-        return;
-      }
+    6x5-4x3+9x2-7x+2
 
-      steps.push(`Step 1: Identify the form of the function`);
-      steps.push(`   f(x) = ${functionStr}`);
-      steps.push(`   Method: ${method}`);
-      steps.push('');
+    into:
 
-      steps.push(`Step 2: Apply the appropriate integration rule`);
-      for (const step of methodSteps) {
-        steps.push(`   ${step}`);
-      }
-      steps.push('');
+    6x5
+    -4x3
+    +9x2
+    -7x
+    +2
+  */
 
-      steps.push(`Step 3: Add the constant of integration`);
-      steps.push(`   ∫${functionStr} dx = ${antiderivative} + C`);
-      steps.push('');
+  const tokens =
+    normalized.match(
+      /[+-]?[^+-]+/g
+    );
 
-      // Validation: Check derivative of antiderivative
-      steps.push(`Step 4: Verify by differentiation`);
-      steps.push(`   d/dx[${antiderivative} + C] = ${functionStr} (checked)`);
-      steps.push('   ✅ The antiderivative is correct');
+  if (!tokens) {
+    throw new Error(
+      "Unable to parse the expression."
+    );
+  }
 
-      // Generate display format
-      const indefiniteIntegral = `∫${functionStr} dx = ${antiderivative} + C`;
+  const terms = tokens.map(
+    parseTerm
+  );
 
-      setResult({
-        antiderivative,
-        indefiniteIntegral,
-        steps,
-        message: `Antiderivative found using ${method}`,
-        methodUsed: method,
-        validation: 'Derivative matches original function'
-      });
-      setError('');
+  if (terms.length === 0) {
+    throw new Error(
+      "No valid terms found."
+    );
+  }
 
-    } catch (e) {
-      setError('Invalid function. Please check your input.');
-      setResult(null);
-    }
-  };
+  return terms;
+};
 
-  const getFunctionExamples = () => {
-    return [
-      { label: 'x²', value: 'x^2' },
-      { label: 'x³', value: 'x^3' },
-      { label: 'sin(x)', value: 'sin(x)' },
-      { label: 'cos(x)', value: 'cos(x)' },
-      { label: 'e^x', value: 'e^x' },
-      { label: '1/x', value: '1/x' },
-      { label: '√x', value: 'sqrt(x)' },
-      { label: 'sec²(x)', value: 'sec(x)^2' },
-      { label: 'tan(x)', value: 'tan(x)' },
-      { label: '2x', value: '2x' },
-      { label: '3x² + 2x', value: '3x^2 + 2x' },
-      { label: 'sin(2x)', value: 'sin(2x)' },
-      { label: 'e^(2x)', value: 'e^(2x)' },
-    ];
-  };
+/* =========================================================
+   TERM TEXT
+========================================================= */
+
+const termText = (
+  coefficient: Fraction,
+  exponent: number,
+  first: boolean
+): string => {
+  const f = makeFraction(
+    coefficient.n,
+    coefficient.d
+  );
+
+  const negative = f.n < 0;
+
+  const absolute = makeFraction(
+    Math.abs(f.n),
+    f.d
+  );
+
+  let sign = "";
+
+  if (negative) {
+    sign = first ? "-" : " - ";
+  } else {
+    sign = first ? "" : " + ";
+  }
+
+  if (exponent === 0) {
+    return (
+      sign +
+      fractionText(absolute)
+    );
+  }
+
+  const coefficientIsOne =
+    absolute.n === absolute.d;
+
+  const coefficientPart =
+    coefficientIsOne
+      ? ""
+      : fractionText(absolute);
+
+  if (exponent === 1) {
+    return (
+      sign +
+      coefficientPart +
+      "x"
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-        <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-gray-700">
-          <p className="font-medium">Antiderivative Information:</p>
-          <ul className="text-xs list-disc list-inside mt-1">
-            <li>Finds the indefinite integral ∫f(x)dx = F(x) + C</li>
-            <li>Includes constant of integration (+C)</li>
-            <li>Supports: power rule, trig functions, exponential, log</li>
-            <li>Shows step-by-step integration process</li>
-            <li>Verifies result by differentiation</li>
-            <li>Cannot handle all functions symbolically</li>
-          </ul>
-        </div>
-      </div>
+    sign +
+    coefficientPart +
+    `x^${exponent}`
+  );
+};
 
-      <div className="grid grid-cols-1 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">f(x)</label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={functionStr}
-              onChange={(e) => setFunctionStr(e.target.value)}
-              placeholder="e.g., x^2"
-              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+/* =========================================================
+   BEAUTIFUL FRACTION
+========================================================= */
+
+const FractionView: React.FC<{
+  value: Fraction;
+}> = ({ value }) => {
+  const f = makeFraction(
+    value.n,
+    value.d
+  );
+
+  if (f.d === 1) {
+    return (
+      <span>{f.n}</span>
+    );
+  }
+
+  const negative = f.n < 0;
+
+  return (
+    <span className="inline-flex items-center">
+      {negative && (
+        <span className="mr-1">
+          −
+        </span>
+      )}
+
+      <span className="inline-flex flex-col items-center leading-none">
+        <span className="border-b border-current px-1 pb-1">
+          {Math.abs(f.n)}
+        </span>
+
+        <span className="px-1 pt-1">
+          {f.d}
+        </span>
+      </span>
+    </span>
+  );
+};
+
+/* =========================================================
+   MATH TERM VIEW
+========================================================= */
+
+const MathTerm: React.FC<{
+  coefficient: Fraction;
+  exponent: number;
+  first?: boolean;
+}> = ({
+  coefficient,
+  exponent,
+  first = false,
+}) => {
+  const f = makeFraction(
+    coefficient.n,
+    coefficient.d
+  );
+
+  const negative = f.n < 0;
+
+  const absolute = makeFraction(
+    Math.abs(f.n),
+    f.d
+  );
+
+  const coefficientIsOne =
+    absolute.n === absolute.d;
+
+  return (
+    <span className="inline-flex items-center whitespace-nowrap">
+
+      {!first && (
+        <span className="mx-2">
+          {negative ? "−" : "+"}
+        </span>
+      )}
+
+      {first && negative && (
+        <span className="mr-1">
+          −
+        </span>
+      )}
+
+      {!coefficientIsOne && (
+        <FractionView
+          value={absolute}
+        />
+      )}
+
+      {exponent !== 0 && (
+        <span>
+          x
+
+          {exponent !== 1 && (
+            <sup className="ml-0.5 text-[0.65em]">
+              {exponent}
+            </sup>
+          )}
+        </span>
+      )}
+    </span>
+  );
+};
+
+/* =========================================================
+   RESULT DISPLAY
+========================================================= */
+
+const ResultDisplay: React.FC<{
+  terms: ResultTerm[];
+}> = ({ terms }) => {
+  return (
+    <div className="overflow-x-auto py-2">
+      <div className="flex justify-center items-center min-w-max">
+
+        {terms.map(
+          (term, index) => (
+            <MathTerm
+              key={index}
+              coefficient={
+                term.coefficient
+              }
+              exponent={
+                term.exponent
+              }
+              first={index === 0}
             />
-            <select
-              onChange={(e) => setFunctionStr(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition bg-white"
-              value=""
-            >
-              <option value="">Examples</option>
-              {getFunctionExamples().map((ex) => (
-                <option key={ex.value} value={ex.value}>
-                  {ex.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+          )
+        )}
+
+        <span className="ml-3">
+          + C
+        </span>
+
       </div>
-
-      <button
-        onClick={calculateAntiderivative}
-        className="w-full bg-[#1F2329] text-[#B6FF2E] py-3 rounded-lg font-medium hover:bg-[#282E37] transition shadow-md flex items-center justify-center gap-2"
-      >
-        <Sigma className="w-5 h-5" />
-        Find Antiderivative
-      </button>
-
-      {error && (
-        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <span className="text-sm">{error}</span>
-        </div>
-      )}
-
-      {result && (
-        <div className="p-4 border rounded-lg bg-white shadow-sm">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <div className="text-lg font-semibold text-green-700">
-                    ✅ Antiderivative Found
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {result.message}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-500">Method Used:</div>
-                  <div className="font-mono text-sm">{result.methodUsed}</div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200 mb-4">
-                <div className="text-sm font-medium text-gray-700 mb-2">Indefinite Integral:</div>
-                <div className="text-xl font-mono text-[#1F2329]">
-                  {result.indefiniteIntegral}
-                </div>
-                {result.methodUsed !== 'None' && (
-                  <div className="mt-2 text-xs text-green-700">
-                    ✓ {result.validation}
-                  </div>
-                )}
-              </div>
-
-              <details>
-                <summary className="text-sm font-medium text-gray-600 cursor-pointer hover:text-gray-800">
-                  Show Detailed Steps
-                </summary>
-                <div className="mt-2 space-y-1 font-mono text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                  {result.steps.map((step, index) => (
-                    <div key={index} className="py-0.5">
-                      {step}
-                    </div>
-                  ))}
-                </div>
-              </details>
-
-              <div className="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="text-xs text-gray-600">
-                  <span className="font-medium">💡 Note:</span>
-                  {' '}The constant of integration (+C) is included because the derivative of a constant is zero.
-                  {' '}Always add +C when finding indefinite integrals.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
+/* =========================================================
+   MAIN COMPONENT – Layout exactly like ContinuityCalculator
+========================================================= */
+
+const AntiderivativeCalculator: React.FC =
+  () => {
+    const [
+      expression,
+      setExpression,
+    ] = useState("");
+
+    const [
+      resultTerms,
+      setResultTerms,
+    ] = useState<ResultTerm[]>(
+      []
+    );
+
+    const [
+      steps,
+      setSteps,
+    ] = useState<
+      SolutionStep[]
+    >([]);
+
+    const [
+      error,
+      setError,
+    ] = useState("");
+
+    const [
+      calculated,
+      setCalculated,
+    ] = useState(false);
+
+    /* =====================================================
+       COMPUTED FINAL TEXT
+    ===================================================== */
+
+    const finalText = useMemo(() => {
+      if (
+        resultTerms.length === 0
+      ) {
+        return "";
+      }
+
+      return (
+        resultTerms
+          .map((term, index) =>
+            termText(
+              term.coefficient,
+              term.exponent,
+              index === 0
+            )
+          )
+          .join("") +
+        " + C"
+      );
+    }, [resultTerms]);
+
+    /* =====================================================
+       VERIFY RESULT
+    ===================================================== */
+
+    const verifyResult = (
+      originalTerms: Term[],
+      integratedTerms: ResultTerm[]
+    ): boolean => {
+      if (
+        originalTerms.length !==
+        integratedTerms.length
+      ) {
+        return false;
+      }
+
+      return originalTerms.every(
+        (original, index) => {
+          const integrated =
+            integratedTerms[index];
+
+          /*
+            d/dx [Ax^m]
+            =
+            (A*m)x^(m-1)
+
+            The integrated exponent
+            must therefore be original
+            exponent + 1.
+          */
+
+          if (
+            integrated.exponent !==
+            original.exponent + 1
+          ) {
+            return false;
+          }
+
+          const differentiated =
+            multiplyFraction(
+              integrated.coefficient,
+              makeFraction(
+                integrated.exponent
+              )
+            );
+
+          return fractionEquals(
+            differentiated,
+            original.coefficient
+          );
+        }
+      );
+    };
+
+    /* =====================================================
+       CALCULATE
+    ===================================================== */
+
+    const calculate = () => {
+      try {
+        setError("");
+        setCalculated(false);
+        setResultTerms([]);
+        setSteps([]);
+
+        const originalTerms =
+          parseExpression(
+            expression
+          );
+
+        const integratedTerms: ResultTerm[] =
+          [];
+
+        const generatedSteps: SolutionStep[] =
+          [];
+
+        /*
+          ∫ ax^n dx
+          =
+          a/(n+1)x^(n+1)
+        */
+
+        originalTerms.forEach(
+          (term) => {
+            const newExponent =
+              term.exponent + 1;
+
+            const newCoefficient =
+              divideByInteger(
+                term.coefficient,
+                newExponent
+              );
+
+            integratedTerms.push({
+              coefficient:
+                newCoefficient,
+              exponent:
+                newExponent,
+            });
+
+            let explanation = "";
+
+            if (
+              term.exponent === 0
+            ) {
+              explanation =
+                `Since ${termText(
+                  term.coefficient,
+                  0,
+                  true
+                )} is a constant, use ∫c dx = cx.`;
+            } else {
+              explanation =
+                `Using the Power Rule, increase the exponent by 1: ${term.exponent} + 1 = ${newExponent}. Then divide the coefficient ${fractionText(
+                  term.coefficient
+                )} by ${newExponent}.`;
+            }
+
+            generatedSteps.push({
+              original:
+                termText(
+                  term.coefficient,
+                  term.exponent,
+                  true
+                ),
+              coefficient:
+                term.coefficient,
+              exponent:
+                term.exponent,
+              resultCoefficient:
+                newCoefficient,
+              resultExponent:
+                newExponent,
+              explanation,
+            });
+          }
+        );
+
+        /*
+          IMPORTANT:
+          Verify by differentiating
+          the generated answer.
+        */
+
+        const valid =
+          verifyResult(
+            originalTerms,
+            integratedTerms
+          );
+
+        if (!valid) {
+          throw new Error(
+            "The generated result failed mathematical verification. The answer was not displayed."
+          );
+        }
+
+        setResultTerms(
+          integratedTerms
+        );
+
+        setSteps(
+          generatedSteps
+        );
+
+        setCalculated(true);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to calculate the antiderivative."
+        );
+      }
+    };
+
+    /* =====================================================
+       CLEAR
+    ===================================================== */
+
+    const clear = () => {
+      setExpression("");
+      setResultTerms([]);
+      setSteps([]);
+      setError("");
+      setCalculated(false);
+    };
+
+    /* =====================================================
+       EXAMPLE
+    ===================================================== */
+
+    const example = () => {
+      setExpression(
+        "6x5−4x3+9x2−7x+2"
+      );
+
+      setResultTerms([]);
+      setSteps([]);
+      setError("");
+      setCalculated(false);
+    };
+
+    /* =====================================================
+       UI – Layout exactly like ContinuityCalculator
+    ===================================================== */
+
+    return (
+      <div className="space-y-4">
+        {/* Info box - like ContinuityCalculator */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-gray-700">
+            <p className="font-medium">Power Rule for Integration:</p>
+            <p className="font-serif text-base text-blue-700 mt-1">
+              ∫ axⁿ dx = (a/(n+1))xⁿ⁺¹ + C
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Each polynomial term is integrated independently using the power rule.
+            </p>
+          </div>
+        </div>
+
+        {/* Input grid - like ContinuityCalculator */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              f(x)
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-mono text-blue-600">∫</span>
+              <input
+                type="text"
+                value={expression}
+                onChange={(e) =>
+                  setExpression(e.target.value)
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    calculate();
+                  }
+                }}
+                placeholder="4x5 + 3x2 - 7x + 6"
+                className="flex-1 px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
+              />
+              <span className="text-lg text-gray-400 font-mono">dx</span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#374151] mb-1">
+              Operation
+            </label>
+            <div className="px-4 py-2 border border-[#E5E7EB] bg-gray-50 text-[#111827] rounded-xl font-mono text-sm">
+              ∫ f(x) dx
+            </div>
+          </div>
+        </div>
+
+        {/* Action buttons - like ContinuityCalculator */}
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={calculate}
+            className="flex-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-3 rounded-xl font-bold transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-2"
+          >
+            <Calculator className="w-5 h-5" />
+            Calculate Antiderivative
+          </button>
+          <button
+            onClick={clear}
+            className="px-6 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-medium text-black border border-gray-200 flex items-center gap-2"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Clear
+          </button>
+        </div>
+
+        {/* ERROR */}
+        {error && (
+          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
+
+        {/* RESULT */}
+        {calculated && (
+          <>
+            {/* Result card - like ContinuityCalculator */}
+            <div className="p-4 border rounded-lg bg-green-50 border-green-200">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="text-lg font-semibold mb-2">
+                    <span className="text-green-700">✅ Antiderivative Found</span>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-4 overflow-x-auto border border-gray-200">
+                    <p className="text-sm text-gray-400 mb-2">Indefinite Integral</p>
+                    <div className="text-xl md:text-2xl font-serif text-blue-700 flex items-center min-w-max flex-wrap">
+                      <span className="mr-3">∫({expression}) dx =</span>
+                      <ResultDisplay terms={resultTerms} />
+                    </div>
+                  </div>
+
+                  {/* Verification */}
+                  <div className="mt-3 flex items-start gap-2 p-3 bg-green-100 rounded-lg">
+                    <ShieldCheck className="w-5 h-5 text-green-700 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-green-800 text-sm">Result Verified</p>
+                      <p className="text-xs text-green-700">
+                        The calculator differentiates the generated antiderivative
+                        and checks that it reproduces the original expression.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Method card */}
+            <div className="p-4 border rounded-lg bg-gray-50 border-gray-200">
+              <h3 className="font-bold text-gray-800 mb-2">Method Used</h3>
+              <p className="text-sm text-gray-600">Power Rule for Integration</p>
+              <div className="mt-2 bg-white rounded-xl p-4 text-blue-700 font-serif text-xl border border-gray-200">
+                ∫ axⁿ dx = 
+                <span className="inline-flex flex-col items-center align-middle leading-none mx-2">
+                  <span className="border-b border-current px-2 pb-1">a</span>
+                  <span className="pt-1">n + 1</span>
+                </span>
+                xⁿ⁺¹ + C
+              </div>
+            </div>
+
+            {/* Steps */}
+            <div className="p-4 border rounded-lg bg-gray-50 border-gray-200">
+              <h3 className="font-bold text-gray-800 mb-2">Step-by-Step Explanation</h3>
+              <p className="text-sm text-gray-500 mb-4">Each term is integrated independently.</p>
+
+              <div className="space-y-3">
+                {steps.map((step, index) => (
+                  <div key={index} className="bg-white border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="font-semibold text-gray-800 text-sm">
+                        Integrate: <span className="text-blue-700 font-mono">{step.original}</span>
+                      </span>
+                    </div>
+
+                    <p className="text-gray-600 text-sm leading-relaxed">{step.explanation}</p>
+
+                    <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3">
+                      <p className="text-xs text-gray-500 mb-1">Result</p>
+                      <div className="text-blue-700 font-serif text-lg">
+                        ∫{step.original} dx =
+                        <span className="ml-2">
+                          <MathTerm
+                            coefficient={step.resultCoefficient}
+                            exponent={step.resultExponent}
+                            first
+                          />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Final Answer */}
+              <div className="mt-4 rounded-xl border border-blue-300 bg-blue-50 p-4">
+                <p className="text-sm text-gray-500 mb-2">Final Answer</p>
+                <div className="text-2xl md:text-3xl font-serif text-blue-700 overflow-x-auto">
+                  <ResultDisplay terms={resultTerms} />
+                </div>
+                <p className="text-xs text-gray-500 mt-3">C is the constant of integration.</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Supported Input - like ContinuityCalculator's info box style */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <h4 className="font-bold text-sm text-gray-700 mb-2">Supported Input</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-1 text-xs text-gray-600">
+            <div>✓ Polynomial expressions</div>
+            <div>✓ Positive exponents</div>
+            <div>✓ Negative coefficients</div>
+            <div>✓ Constants</div>
+            <div>✓ Decimal coefficients</div>
+            <div>✓ Fraction coefficients</div>
+            <div>✓ x² / x^2 / x2</div>
+            <div>✓ Superscript notation</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
 export default AntiderivativeCalculator;

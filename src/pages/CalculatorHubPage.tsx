@@ -1,398 +1,402 @@
-// pages/CalculatorHubPage.tsx
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useTheme } from "../context/ThemeContext";
-import mathBg from "../assets/math.jpeg";
-import {
-  ArrowLeft,
-  Calculator,
-  TrendingUp,
-  ChevronRight,
-  Sparkles,
-  Layers,
-  Infinity,
-  Sigma,
-  Grid3X3,
-  Activity,
-  Maximize2,
-  FunctionSquare,
+import { 
+  Calculator, 
+  BookOpen, 
+  TrendingUp, 
+  ShieldCheck, 
+  Zap, 
+  ArrowRight, 
+  Layers
 } from "lucide-react";
-
-const LINEAR_FEATURES = [
-  { icon: <Grid3X3 className="w-4 h-4" />, label: "Matrix Solvers" },
-  { icon: <Maximize2 className="w-4 h-4" />, label: "Eigen Systems" },
-  { icon: <Layers className="w-4 h-4" />, label: "Vector Spaces" },
-  { icon: <Activity className="w-4 h-4" />, label: "LU / QR / SVD" },
-];
-
-const CALCULUS_FEATURES = [
-  { icon: <Infinity className="w-4 h-4" />, label: "Limits & Continuity" },
-  { icon: <TrendingUp className="w-4 h-4" />, label: "Derivatives" },
-  { icon: <FunctionSquare className="w-4 h-4" />, label: "Differentiation Rules" },
-  { icon: <Sigma className="w-4 h-4" />, label: "Integrals & FTC" },
-];
+import mathHeroBg from "../assets/math.jpeg";
 
 export default function CalculatorHubPage() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
   const navigate = useNavigate();
-  const [hoveredCard, setHoveredCard] = useState<"linear" | "calculus" | null>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") navigate(-1);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate]);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.12, delayChildren: 0.15 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 28 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] } },
-  };
 
   return (
-    <div className="relative min-h-screen pb-16 transition-colors duration-300">
-      {/* Background */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <img
-          src={mathBg}
-          alt="Math Background"
-          className={`h-full w-full object-cover object-center filter contrast-125 saturate-150 transition-opacity duration-300 ${
-            isDark ? "opacity-20" : "opacity-10"
-          }`}
-        />
-        <div
-          className={`absolute inset-0 transition-colors duration-300 ${
-            isDark
-              ? "bg-gradient-to-b from-[#14171B]/90 via-[#1F2329]/85 to-[#14171B]/95"
-              : "bg-gradient-to-b from-white/90 via-slate-50/75 to-slate-100/90"
-          }`}
-        />
-        <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="absolute bottom-1/3 right-10 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
-        <div
-          className={`absolute inset-0 ${isDark ? "opacity-[0.05]" : "opacity-[0.03]"}`}
-          style={{
-            backgroundImage: `linear-gradient(to right, #B6FF2E 1px, transparent 1px), linear-gradient(to bottom, #B6FF2E 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-          }}
-        />
+    <div className="min-h-screen bg-white text-[#111827] pb-16">
+      {/* ========================================================================= */}
+      {/* 1. HERO SECTION (Chalkboard Background with Dark Scrim Overlay)          */}
+      {/* ========================================================================= */}
+      <section className="relative w-full overflow-hidden bg-[#0e131b] pt-20 pb-20 sm:pt-24 sm:pb-24 lg:pt-28 lg:pb-28">
+        {/* Blackboard Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={mathHeroBg}
+            alt="Mathematics blackboard background"
+            className="h-full w-full object-cover object-center opacity-45"
+          />
+          {/* Dark gradient scrim */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0e131b] via-transparent to-black/30" />
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12">
+          <div className="max-w-2xl">
+            {/* Pill Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/75 px-3.5 py-1.5 text-[0.68rem] sm:text-xs font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs mb-5"
+            >
+              <div className="flex h-3.5 w-3.5 items-center justify-center rounded-xs bg-white/20">
+                <Calculator className="h-2.5 w-2.5 text-white" />
+              </div>
+              <span>Calculator Hub</span>
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-4xl font-black tracking-tight sm:text-5xl lg:text-[3.75rem] leading-[1.08]"
+            >
+              <span className="text-white">All the Math Tools</span>
+              <br />
+              <span className="text-[#E05260]">You Need.</span>
+              </motion.h1> 
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mt-4 max-w-lg text-sm sm:text-base font-normal text-white/80 leading-relaxed"
+            >
+              Explore calculators, solvers, and visual tools across multiple mathematics disciplines.
+            </motion.p>
+
+            {/* Feature Checklist Row */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-6 flex flex-wrap items-center gap-5 sm:gap-7 text-xs sm:text-sm font-semibold text-white/90"
+            >
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[#E05260]" />
+                <span>Provide Results</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-[#E05260]" />
+                <span>Step-by-Step Solutions</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-[#E05260]" />
+                <span>Interactive Visuals</span>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 2. FLOATING 4-STAT / HIGHLIGHTS ROW (Overlapping Hero Banner)             */}
+      {/* ========================================================================= */}
+      <div className="relative z-20 mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 -mt-10 sm:-mt-12">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="rounded-[26px] border border-[#EAE2E4] bg-white p-5 sm:p-7 shadow-[0_12px_40px_rgba(0,0,0,0.07)]"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-0 lg:divide-x lg:divide-[#F0E6E8]">
+            {/* Stat 1: 23+ Calculators */}
+            <div className="flex items-center gap-4 lg:px-6 first:pl-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
+                <Calculator className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#111827] leading-none">
+                  23+
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-[#111827] mt-1 leading-tight">
+                  Calculators
+                </div>
+                <div className="text-[0.72rem] text-[#6B7280] font-normal leading-tight mt-0.5">
+                  Across all disciplines
+                </div>
+              </div>
+            </div>
+
+            {/* Stat 2: 100+ Step-by-Step Solvers */}
+            <div className="flex items-center gap-4 lg:px-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#111827] leading-none">
+                  100+
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-[#111827] mt-1 leading-tight">
+                  Step-by-Step Solvers
+                </div>
+                <div className="text-[0.72rem] text-[#6B7280] font-normal leading-tight mt-0.5">
+                  Detailed explanations
+                </div>
+              </div>
+            </div>
+
+            {/* Stat 3: Interactive Visual Tools */}
+            <div className="flex items-center gap-4 lg:px-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#111827] leading-none">
+                  Interactive
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-[#111827] mt-1 leading-tight">
+                  Visual Tools
+                </div>
+                <div className="text-[0.72rem] text-[#6B7280] font-normal leading-tight mt-0.5">
+                  Graphs and plots
+                </div>
+              </div>
+            </div>
+
+            {/* Stat 4: Reliable Accurate & Fast */}
+            <div className="flex items-center gap-4 lg:px-6 last:pr-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#111827] leading-none">
+                  Reliable
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-[#111827] mt-1 leading-tight">
+                  Accurate &amp; Fast
+                </div>
+                <div className="text-[0.72rem] text-[#6B7280] font-normal leading-tight mt-0.5">
+                  Trusted results
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6">
+      {/* ========================================================================= */}
+      {/* 3. SECTION HEADER: "Select a Mathematics Discipline"                     */}
+      {/* ========================================================================= */}
+      <section className="mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 pt-16 sm:pt-20 text-center">
+        <h2 className="text-2xl sm:text-3xl lg:text-[2.25rem] font-extrabold text-[#111827] tracking-tight">
+          Select a Mathematics Discipline
+        </h2>
+        <p className="mt-2 text-xs sm:text-sm text-[#6B7280] max-w-lg mx-auto">
+          Choose a subject to access specialized calculators, solvers, and tools.
+        </p>
 
-        {/* Back Button */}
-        <motion.div
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-        >
-          <button
-            onClick={() => navigate(-1)}
-            className={`group inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl backdrop-blur-xl transition-all duration-300 font-semibold text-xs sm:text-sm shadow-lg cursor-pointer ${
-              isDark
-                ? "bg-[#1F2329]/95 border border-[#333A46] text-slate-200 hover:border-[#B6FF2E] hover:text-[#B6FF2E] hover:bg-[#282E37] shadow-black/60"
-                : "bg-white/95 border border-slate-300 text-[#1F2329] hover:border-[#1F2329] hover:bg-white shadow-slate-200/70"
-            }`}
+        {/* Indicator line/dots */}
+        <div className="mt-4 flex items-center justify-center gap-1.5">
+          <span className="h-1 w-7 rounded-full bg-[#7B1824]" />
+          <span className="h-1 w-2 rounded-full bg-[#E5E7EB]" />
+          <span className="h-1 w-7 rounded-full bg-[#E5E7EB]" />
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. TWO DISCIPLINE CARDS (Side by Side matching reference image)           */}
+      {/* ========================================================================= */}
+      <section className="mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 mt-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* ───────────────────────────────────────────────────────────── */}
+          {/* Card 1: Linear Algebra                                        */}
+          {/* ───────────────────────────────────────────────────────────── */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
+            className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-9 shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 overflow-hidden"
           >
-            <div
-              className={`flex items-center justify-center w-7 h-7 rounded-xl transition-transform duration-200 group-hover:-translate-x-1 ${
-                isDark
-                  ? "bg-[#14171B] text-[#B6FF2E] border border-[#333A46]"
-                  : "bg-slate-100 text-[#1F2329] border border-slate-200"
-              }`}
-            >
-              <ArrowLeft className="w-4 h-4" strokeWidth={2.5} />
+            {/* Background Dot Matrix Decoration (Bottom Right) */}
+            <div className="pointer-events-none absolute bottom-3 right-3 opacity-30 text-[#7B1824]" aria-hidden>
+              <div className="grid grid-cols-6 gap-1.5">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <span key={i} className="h-1 w-1 rounded-full bg-currentColor" />
+                ))}
+              </div>
             </div>
-            <span className="font-bold tracking-tight">Back to Home</span>
-            <span
-              className={`hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-md font-mono ${
-                isDark
-                  ? "bg-[#14171B] text-slate-400 border border-[#333A46]"
-                  : "bg-slate-100 text-slate-500 border border-slate-200"
-              }`}
-            >
-              ESC
-            </span>
-          </button>
-        </motion.div>
 
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-10 mb-10 text-center"
-        >
-          <div
-            className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold backdrop-blur-sm mb-5 ${
-              isDark
-                ? "border-blue-400/30 bg-blue-900/30 text-blue-200"
-                : "border-blue-300 bg-blue-50 text-blue-900"
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Interactive Mathematics Suite</span>
-          </div>
-
-          <h1
-            className={`font-[Fraunces] text-3xl sm:text-5xl font-bold tracking-tight leading-tight ${
-              isDark
-                ? "text-transparent bg-clip-text bg-gradient-to-r from-[#B6FF2E] via-lime-300 to-white"
-                : "text-[#1F2329]"
-            }`}
-          >
-            Choose Your Calculator Suite
-          </h1>
-
-          <p
-            className={`mt-4 text-sm sm:text-base max-w-xl mx-auto leading-relaxed ${
-              isDark ? "text-slate-300" : "text-slate-600"
-            }`}
-          >
-            Select a category below to access specialized calculators with
-            step-by-step solutions and interactive tools.
-          </p>
-        </motion.div>
-
-        {/* Category Cards */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid gap-6 sm:grid-cols-2"
-        >
-          {/* Card 1: Linear Algebra */}
-          <motion.div variants={itemVariants}>
-            <button
-              onClick={() => navigate("/calculators")}
-              onMouseEnter={() => setHoveredCard("linear")}
-              onMouseLeave={() => setHoveredCard(null)}
-              className={`group relative w-full text-left rounded-3xl border p-7 sm:p-8 transition-all duration-300 cursor-pointer shadow-xl overflow-hidden hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.99] ${
-                isDark
-                  ? "border-blue-500/25 bg-[#141b4d]/70 hover:bg-[#1a2560]/80 hover:border-blue-400/50 shadow-blue-900/30"
-                  : "border-blue-200 bg-white/95 hover:bg-white hover:border-blue-400 shadow-blue-100/80"
-              }`}
-            >
-              {/* Glow blob */}
-              <div
-                className={`pointer-events-none absolute -top-10 -right-10 w-52 h-52 rounded-full blur-3xl transition-opacity duration-500 ${
-                  hoveredCard === "linear" ? "opacity-50" : "opacity-15"
-                } ${isDark ? "bg-blue-500" : "bg-blue-200"}`}
-              />
-
-              {/* Icon */}
-              <div
-                className={`relative inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 border shadow-lg transition-all duration-300 group-hover:scale-110 ${
-                  isDark
-                    ? "bg-blue-600/40 border-blue-400/40 text-blue-200"
-                    : "bg-blue-100 border-blue-300 text-blue-700"
-                }`}
-              >
-                <Calculator className="w-7 h-7" />
+            <div>
+              {/* Card Top Row: Icon & Tag */}
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                  <Layers className="h-6 w-6" />
+                </div>
+                <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                  23 Tools
+                </span>
               </div>
 
-              {/* Title & Badge */}
-              <div className="relative flex items-start justify-between gap-3 mb-2">
-                <div>
-                  <span
-                    className={`block text-2xl sm:text-3xl font-bold font-[Fraunces] tracking-tight ${
-                      isDark ? "text-white" : "text-[#1F2329]"
-                    }`}
-                  >
+              {/* Title, Subtitle, and Graphic Row */}
+              <div className="flex items-start justify-between gap-6 mb-4">
+                <div className="flex-1">
+                  <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
                     Linear Algebra
-                  </span>
-                  <span
-                    className={`text-xs font-semibold mt-0.5 block ${
-                      isDark ? "text-blue-300" : "text-blue-600"
-                    }`}
-                  >
-                    23 Calculators Available
-                  </span>
+                  </h3>
+                  <p className="mt-1 text-xs sm:text-sm font-bold text-[#7B1824]">
+                    Matrix, Vector &amp; System Solvers
+                  </p>
+                  <p className="mt-3 text-xs sm:text-sm text-[#5D6067] leading-relaxed max-w-sm">
+                    Compute determinants, inverses, eigenvalues, decompositions (LU, QR, SVD), and vector space projections step-by-step.
+                  </p>
                 </div>
-                <div
-                  className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                    isDark
-                      ? "bg-blue-900/60 border-blue-400/40 text-blue-200"
-                      : "bg-blue-50 border-blue-200 text-blue-700"
-                  }`}
-                >
-                  MATH
-                </div>
-              </div>
 
-              {/* Description */}
-              <p
-                className={`relative text-sm leading-relaxed mb-6 ${
-                  isDark ? "text-blue-100/70" : "text-slate-600"
-                }`}
-              >
-                Solve matrices, eigenvectors, vector spaces, and linear systems
-                with step-by-step numerical solutions.
-              </p>
-
-              {/* Feature pills */}
-              <div className="relative flex flex-wrap gap-2 mb-6">
-                {LINEAR_FEATURES.map((f) => (
-                  <div
-                    key={f.label}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-blue-900/40 border-blue-400/25 text-blue-200 group-hover:bg-blue-800/50"
-                        : "bg-blue-50 border-blue-200 text-blue-700 group-hover:bg-blue-100"
-                    }`}
+                {/* 3D Matrix Graphic Mockup */}
+                <div className="relative shrink-0 flex items-center justify-center pt-2">
+                  <div 
+                    className="relative flex h-20 w-20 sm:h-22 sm:w-22 items-center justify-center rounded-2xl bg-[#7B1824] shadow-lg shadow-[#7B1824]/25 transition-transform duration-300 group-hover:rotate-[-4deg] group-hover:scale-105"
+                    style={{ transform: "rotate(-8deg)" }}
                   >
-                    {f.icon}
-                    {f.label}
+                    <div className="flex items-center text-white font-mono font-bold leading-tight select-none">
+                      <span className="text-xl sm:text-2xl font-light mr-1">[</span>
+                      <div className="grid grid-cols-2 gap-x-2.5 gap-y-1 text-center text-xs sm:text-sm">
+                        <span>1</span>
+                        <span>2</span>
+                        <span>3</span>
+                        <span>4</span>
+                      </div>
+                      <span className="text-xl sm:text-2xl font-light ml-1">]</span>
+                    </div>
                   </div>
-                ))}
+                </div>
               </div>
+            </div>
 
-              {/* CTA Row */}
-              <div className="relative flex items-center justify-between">
-                <div className={`h-px flex-1 mr-4 ${isDark ? "bg-blue-500/20" : "bg-blue-100"}`} />
-                <span
-                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${
-                    isDark
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 group-hover:bg-blue-500"
-                      : "bg-[#1F2329] text-white shadow-md group-hover:bg-black"
-                  }`}
-                >
-                  Open Suite
-                  <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-                </span>
-              </div>
-            </button>
+            {/* Bottom Action Buttons */}
+            <div className="mt-8 flex flex-wrap items-center gap-3 pt-4 border-t border-[#F3EBED]">
+              <button
+                onClick={() => navigate("/calculators")}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <span>Explore Tools</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+
+              <button
+                onClick={() => navigate("/?tab=topics")}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D1D5DB] bg-white hover:bg-[#F9FAFB] hover:border-[#9CA3AF] px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition-all duration-200 cursor-pointer"
+              >
+                <span>View Topics</span>
+              </button>
+            </div>
           </motion.div>
 
-          {/* Card 2: Calculus I */}
-          <motion.div variants={itemVariants}>
-            <button
-              onClick={() => navigate("/calculus-calculators")}
-              onMouseEnter={() => setHoveredCard("calculus")}
-              onMouseLeave={() => setHoveredCard(null)}
-              className={`group relative w-full text-left rounded-3xl border p-7 sm:p-8 transition-all duration-300 cursor-pointer shadow-xl overflow-hidden hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.99] ${
-                isDark
-                  ? "border-emerald-500/25 bg-[#0d2318]/70 hover:bg-[#102b1e]/80 hover:border-emerald-400/50 shadow-emerald-900/30"
-                  : "border-emerald-200 bg-white/95 hover:bg-white hover:border-emerald-400 shadow-emerald-100/80"
-              }`}
-            >
-              {/* Glow blob */}
-              <div
-                className={`pointer-events-none absolute -top-10 -right-10 w-52 h-52 rounded-full blur-3xl transition-opacity duration-500 ${
-                  hoveredCard === "calculus" ? "opacity-50" : "opacity-15"
-                } ${isDark ? "bg-emerald-500" : "bg-emerald-200"}`}
-              />
+          {/* ───────────────────────────────────────────────────────────── */}
+          {/* Card 2: Calculus I                                            */}
+          {/* ───────────────────────────────────────────────────────────── */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
+            className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-9 shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 overflow-hidden"
+          >
+            {/* Background Dot Matrix Decoration (Bottom Right) */}
+            <div className="pointer-events-none absolute bottom-3 right-3 opacity-30 text-[#7B1824]" aria-hidden>
+              <div className="grid grid-cols-6 gap-1.5">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <span key={i} className="h-1 w-1 rounded-full bg-currentColor" />
+                ))}
+              </div>
+            </div>
 
-              {/* Icon */}
-              <div
-                className={`relative inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 border shadow-lg transition-all duration-300 group-hover:scale-110 ${
-                  isDark
-                    ? "bg-emerald-600/40 border-emerald-400/40 text-emerald-200"
-                    : "bg-emerald-100 border-emerald-300 text-emerald-700"
-                }`}
-              >
-                <TrendingUp className="w-7 h-7" />
+            <div>
+              {/* Card Top Row: Icon & Tag */}
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                  <TrendingUp className="h-6 w-6" />
+                </div>
+                <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                  Calculus Suite
+                </span>
               </div>
 
-              {/* Title & Badge */}
-              <div className="relative flex items-start justify-between gap-3 mb-2">
-                <div>
-                  <span
-                    className={`block text-2xl sm:text-3xl font-bold font-[Fraunces] tracking-tight ${
-                      isDark ? "text-white" : "text-[#1F2329]"
-                    }`}
-                  >
+              {/* Title, Subtitle, and Graphic Row */}
+              <div className="flex items-start justify-between gap-6 mb-4">
+                <div className="flex-1">
+                  <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
                     Calculus I
-                  </span>
-                  <span
-                    className={`text-xs font-semibold mt-0.5 block ${
-                      isDark ? "text-emerald-300" : "text-emerald-600"
-                    }`}
-                  >
-                    23 Calculators Available
-                  </span>
+                  </h3>
+                  <p className="mt-1 text-xs sm:text-sm font-bold text-[#7B1824]">
+                    Limits, Derivatives &amp; Integrals
+                  </p>
+                  <p className="mt-3 text-xs sm:text-sm text-[#5D6067] leading-relaxed max-w-sm">
+                    Evaluate limits, compute derivatives with all rules, graph functions, solve tangent lines, and compute definite integrals.
+                  </p>
                 </div>
-                <div
-                  className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                    isDark
-                      ? "bg-emerald-900/60 border-emerald-400/40 text-emerald-200"
-                      : "bg-emerald-50 border-emerald-200 text-emerald-700"
-                  }`}
-                >
-                  CALC
-                </div>
-              </div>
 
-              {/* Description */}
-              <p
-                className={`relative text-sm leading-relaxed mb-6 ${
-                  isDark ? "text-emerald-100/70" : "text-slate-600"
-                }`}
-              >
-                Compute limits, derivatives, integrals, and curve analysis with
-                full step-by-step breakdowns using calculus techniques.
-              </p>
+                {/* Function Graph & Integral Curve Graphic Mockup */}
+                <div className="relative shrink-0 flex items-center justify-center pt-2">
+                  <div className="relative h-20 w-28 sm:h-22 sm:w-32 rounded-xl border border-[#E5E7EB] bg-[#FAF8F8] p-2 flex items-center justify-center shadow-xs transition-transform duration-300 group-hover:scale-105">
+                    <svg className="w-full h-full" viewBox="0 0 110 70" fill="none">
+                      {/* Axes */}
+                      <path d="M10 60 L102 60" stroke="#374151" strokeWidth="1.5" />
+                      <path d="M100 58 L104 60 L100 62" fill="#374151" />
+                      <path d="M14 62 L14 8" stroke="#374151" strokeWidth="1.5" />
+                      <path d="M12 10 L14 6 L16 10" fill="#374151" />
 
-              {/* Feature pills */}
-              <div className="relative flex flex-wrap gap-2 mb-6">
-                {CALCULUS_FEATURES.map((f) => (
-                  <div
-                    key={f.label}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-emerald-900/40 border-emerald-400/25 text-emerald-200 group-hover:bg-emerald-800/50"
-                        : "bg-emerald-50 border-emerald-200 text-emerald-700 group-hover:bg-emerald-100"
-                    }`}
-                  >
-                    {f.icon}
-                    {f.label}
+                      {/* Shaded Area Under Curve */}
+                      <path
+                        d="M14 55 Q35 15, 60 25 T100 12 L100 60 L14 60 Z"
+                        fill="rgba(123, 24, 36, 0.12)"
+                      />
+
+                      {/* Vertical dotted boundary */}
+                      <line x1="75" y1="20" x2="75" y2="60" stroke="#7B1824" strokeWidth="1" strokeDasharray="2 2" />
+
+                      {/* Smooth Curve */}
+                      <path
+                        d="M14 55 Q35 15, 60 25 T100 12"
+                        stroke="#7B1824"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      />
+
+                      {/* Peak Dots */}
+                      <circle cx="45" cy="20" r="2.5" fill="#7B1824" />
+                      <circle cx="75" cy="20" r="2.5" fill="#7B1824" />
+                      <circle cx="100" cy="12" r="2.5" fill="#7B1824" />
+                    </svg>
                   </div>
-                ))}
+                </div>
               </div>
+            </div>
 
-              {/* CTA Row */}
-              <div className="relative flex items-center justify-between">
-                <div className={`h-px flex-1 mr-4 ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`} />
-                <span
-                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${
-                    isDark
-                      ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 group-hover:bg-emerald-500"
-                      : "bg-[#1F2329] text-white shadow-md group-hover:bg-black"
-                  }`}
-                >
-                  Open Suite
-                  <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-                </span>
-              </div>
-            </button>
+            {/* Bottom Action Buttons */}
+            <div className="mt-8 flex flex-wrap items-center gap-3 pt-4 border-t border-[#F3EBED]">
+              <button
+                onClick={() => navigate("/calculus-calculators")}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <span>Explore Tools</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+
+              <button
+                onClick={() => navigate("/?tab=topics")}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D1D5DB] bg-white hover:bg-[#F9FAFB] hover:border-[#9CA3AF] px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition-all duration-200 cursor-pointer"
+              >
+                <span>View Topics</span>
+              </button>
+            </div>
           </motion.div>
-        </motion.div>
 
-        {/* Footer note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className={`mt-10 text-center text-xs flex items-center justify-center gap-2 ${
-            isDark ? "text-slate-500" : "text-slate-400"
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-[#B6FF2E]" />
-          46+ specialized solvers powered by modern mathematical algorithms
-          <Sparkles className="w-3.5 h-3.5 text-[#B6FF2E]" />
-        </motion.p>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. FOOTER: "More Disciplines Coming Soon" with Divider Lines               */}
+      {/* ========================================================================= */}
+      <div className="mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 pt-16 sm:pt-20">
+        <div className="flex items-center justify-center gap-4 text-xs sm:text-sm font-bold text-[#6B7280]">
+          <span className="h-px w-20 sm:w-32 bg-[#E5E7EB]" />
+          <span>More Disciplines Coming Soon</span>
+          <span className="h-px w-20 sm:w-32 bg-[#E5E7EB]" />
+        </div>
       </div>
     </div>
   );

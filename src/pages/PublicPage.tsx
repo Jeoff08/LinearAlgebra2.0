@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import gsap from "gsap";
-import { useTheme } from "../context/ThemeContext";
 import LINEAR_TOPICS from "../data/topics/index";
 import ALL_CALCULUS_TOPICS, { CALCULUS_SUB_CATEGORIES } from "../data/calculus-topics";
 import type { CalculusSubCategoryId } from "../data/calculus-topics";
 import mathBg from "../assets/math.jpeg";
-import linearAlgebraLogo from "../assets/Linear Algebra.png";
 import { 
   Sparkles, 
   ArrowRight, 
@@ -16,27 +13,25 @@ import {
   Binary, 
   Compass, 
   BookOpen, 
-  Cpu, 
   Zap, 
-  ChevronRight,
+  ChevronRight, 
   ChevronDown, 
   TrendingUp, 
-  RefreshCw, 
   Search, 
-  X,
-  Globe,
-  Monitor,
-  Smartphone,
-  PieChart,
-  Settings,
-  Sliders,
-  Calculator,
-  FunctionSquare,
-  GraduationCap,
+  X, 
+  Calculator, 
+  FunctionSquare, 
+  GraduationCap, 
   Activity,
+  Landmark,
+  Maximize2,
+  Sliders,
+  Star,
+  Users,
+  Award,
+  ShieldCheck,
+  Bookmark
 } from "lucide-react";
-import { tools as linearTools } from "../calculators/CalculatorApp";
-import { tools as calculusTools } from "../CalculusOneCalculator/CalculatorsAll";
 
 export interface CategorizedTopic {
   id: string;
@@ -65,40 +60,20 @@ const ALL_TOPICS: CategorizedTopic[] = [
   ...ALL_CALCULUS_TOPICS,
 ];
 
-// Floating mathematical numbers & symbols for GSAP animation
-const MATH_PARTICLES = [
-  { id: 1, text: "λ", size: "text-3xl sm:text-4xl", top: "8%", left: "58%", colorDark: "text-[#B6FF2E]", colorLight: "text-[#1F2329]", blur: "blur-[0.5px]" },
-  { id: 2, text: "det(A)", size: "text-xl sm:text-2xl", top: "18%", left: "85%", colorDark: "text-lime-300", colorLight: "text-slate-800", blur: "none" },
-  { id: 3, text: "π ≈ 3.1415", size: "text-sm sm:text-base", top: "68%", left: "62%", colorDark: "text-[#B6FF2E]", colorLight: "text-slate-700", blur: "blur-[0.3px]" },
-  { id: 4, text: "Ax = b", size: "text-2xl sm:text-3xl", top: "78%", left: "88%", colorDark: "text-lime-400", colorLight: "text-[#1F2329]", blur: "none" },
-  { id: 5, text: "∑ xᵢ", size: "text-2xl sm:text-3xl", top: "42%", left: "55%", colorDark: "text-[#B6FF2E]", colorLight: "text-slate-800", blur: "none" },
-  { id: 6, text: "ℝⁿ", size: "text-xl sm:text-2xl", top: "14%", left: "75%", colorDark: "text-lime-300", colorLight: "text-slate-700", blur: "blur-[0.2px]" },
-  { id: 7, text: "e^{iπ} + 1 = 0", size: "text-base sm:text-lg", top: "58%", left: "92%", colorDark: "text-[#B6FF2E]", colorLight: "text-[#1F2329]", blur: "blur-[0.5px]" },
-  { id: 8, text: "[1  0  0]", size: "text-xs sm:text-sm font-mono", top: "32%", left: "93%", colorDark: "text-lime-400", colorLight: "text-slate-800", blur: "none" },
-  { id: 9, text: "rank(A)", size: "text-sm sm:text-base", top: "86%", left: "68%", colorDark: "text-[#B6FF2E]", colorLight: "text-slate-700", blur: "none" },
-  { id: 10, text: "∞", size: "text-4xl sm:text-5xl", top: "4%", left: "48%", colorDark: "text-[#B6FF2E]/80", colorLight: "text-slate-700/80", blur: "blur-[0.5px]" },
-  { id: 11, text: "v⃗ · w⃗", size: "text-lg sm:text-xl", top: "48%", left: "84%", colorDark: "text-lime-300", colorLight: "text-slate-800", blur: "none" },
-  { id: 12, text: "0 1 0 1", size: "text-xs sm:text-sm font-mono", top: "90%", left: "70%", colorDark: "text-[#B6FF2E]/80", colorLight: "text-slate-700/80", blur: "blur-[0.3px]" },
-  { id: 13, text: "dim(V)", size: "text-base sm:text-lg", top: "26%", left: "66%", colorDark: "text-lime-400", colorLight: "text-[#1F2329]", blur: "none" },
-  { id: 14, text: "σ₁ ≥ σ₂", size: "text-sm sm:text-base", top: "74%", left: "46%", colorDark: "text-[#B6FF2E]", colorLight: "text-slate-800", blur: "blur-[0.2px]" },
-];
-
 export default function PublicPage() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Active view: "main" (Home Workspace) | "categories" (Choose Topic Suite) | "topics-linear" (Linear Algebra Topics) | "topics-calculus" (Calculus Topics)
+  // Active view: "main" | "categories" | "topics-linear" | "topics-calculus"
   const [activeView, setActiveView] = useState<"main" | "categories" | "topics-linear" | "topics-calculus">("main");
   const [topicSearch, setTopicSearch] = useState("");
-  const [clickedTopicId, setClickedTopicId] = useState<string | null>(null);
+  const [selectedCalculusCategory, setSelectedCalculusCategory] = useState<CalculusSubCategoryId>("all");
+  const [moreCalculusDropdownOpen, setMoreCalculusDropdownOpen] = useState(false);
+  const moreCalculusDropdownRef = useRef<HTMLDivElement>(null);
 
   // Split topics by subject
   const linearTopics = useMemo(() => ALL_TOPICS.filter((t) => t.category === "linear-algebra"), []);
   const calculusTopics = useMemo(() => ALL_TOPICS.filter((t) => t.category === "calculus"), []);
-
-  // Calculus sub-category filter state
-  const [selectedCalculusCategory, setSelectedCalculusCategory] = useState<CalculusSubCategoryId>("all");
 
   // Filtered Linear Algebra topics
   const filteredLinearTopics = useMemo(() => {
@@ -110,7 +85,7 @@ export default function PublicPage() {
     );
   }, [linearTopics, topicSearch]);
 
-  // Filtered Calculus topics (supporting search & sub-category tabs)
+  // Filtered Calculus topics
   const filteredCalculusTopics = useMemo(() => {
     let list = calculusTopics;
     if (selectedCalculusCategory !== "all") {
@@ -125,15 +100,38 @@ export default function PublicPage() {
     );
   }, [calculusTopics, topicSearch, selectedCalculusCategory]);
 
-  // "Explore Calculators" dropdown state
-  const [exploreDropdownOpen, setExploreDropdownOpen] = useState(false);
-  const exploreDropdownRef = useRef<HTMLDivElement>(null);
+  // Sync tab search param with view
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab === "home") {
+      setActiveView("main");
+    } else if (tab === "topics") {
+      const returnView = sessionStorage.getItem("returningTopicView");
+      if (returnView === "topics-linear" || returnView === "topics-calculus") {
+        setActiveView(returnView);
+        sessionStorage.removeItem("returningTopicView");
+      } else {
+        setActiveView((prev) => (prev === "main" ? "categories" : prev));
+      }
+    }
+  }, [location.search, location.pathname]);
 
-  // Mini Interactive Matrix Sandbox State
-  const [matrixVal, setMatrixVal] = useState({ a: 3, b: 2, c: 1, d: 4 });
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const particlesRef = useRef<(HTMLDivElement | null)[]>([]);
+  // Listen to navigation events from Navbar
+  useEffect(() => {
+    const handleNavTabChange = (e: Event) => {
+      const customEvent = e as CustomEvent<"home" | "calculators" | "topics">;
+      if (customEvent.detail === "home") {
+        setActiveView("main");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (customEvent.detail === "topics") {
+        setActiveView("categories");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+    window.addEventListener("navtabchange", handleNavTabChange);
+    return () => window.removeEventListener("navtabchange", handleNavTabChange);
+  }, []);
 
   // Check if returning from topic page
   useEffect(() => {
@@ -147,1235 +145,911 @@ export default function PublicPage() {
     }
   }, []);
 
-  // Close "Explore Calculators" dropdown on outside click
+  // Broadcast current activeView to Navbar
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("pageviewchange", { detail: { view: activeView } }));
+  }, [activeView]);
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
-      if (exploreDropdownRef.current && !exploreDropdownRef.current.contains(e.target as Node)) {
-        setExploreDropdownOpen(false);
+      if (moreCalculusDropdownRef.current && !moreCalculusDropdownRef.current.contains(e.target as Node)) {
+        setMoreCalculusDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  // GSAP Animations for floating mathematical particles & interactive cursor parallax
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Floating motion for each particle
-      particlesRef.current.forEach((el, index) => {
-        if (!el) return;
+  // Topic Mathematical Icon / Glyph Renderer matching reference image style
+  const renderTopicGlyph = (topic: CategorizedTopic) => {
+    const id = (topic.id || "").toLowerCase();
+    const title = (topic.title || "").toLowerCase();
 
-        // Continuous drifting, floating and subtle rotation
-        gsap.to(el, {
-          y: () => (index % 2 === 0 ? "+=25" : "-=30"),
-          x: () => (index % 3 === 0 ? "+=18" : "-=18"),
-          rotation: () => (index % 2 === 0 ? 8 : -8),
-          duration: 3 + (index % 4) * 1.2,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-          delay: index * 0.2,
-        });
-
-        // Pulsing glow opacity
-        gsap.to(el, {
-          opacity: index % 2 === 0 ? 0.9 : 0.6,
-          scale: index % 2 === 0 ? 1.08 : 0.94,
-          duration: 2.5 + (index % 3),
-          repeat: -1,
-          yoyo: true,
-          ease: "power1.inOut",
-          delay: index * 0.15,
-        });
-      });
-
-      // Mouse interactive parallax reaction
-      const handleMouseMove = (e: MouseEvent) => {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        const mouseX = (e.clientX - rect.left) / rect.width - 0.5;
-        const mouseY = (e.clientY - rect.top) / rect.height - 0.5;
-
-        particlesRef.current.forEach((el, index) => {
-          if (!el) return;
-          const factor = (index % 5 + 1) * 18;
-          gsap.to(el, {
-            xPercent: mouseX * factor,
-            yPercent: mouseY * factor,
-            duration: 1.2,
-            ease: "power2.out",
-            overwrite: "auto",
-          });
-        });
-      };
-
-      const container = containerRef.current;
-      if (container) {
-        container.addEventListener("mousemove", handleMouseMove);
-      }
-
-      return () => {
-        if (container) {
-          container.removeEventListener("mousemove", handleMouseMove);
-        }
-      };
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
+    if (id.includes("foundations") || title.includes("foundations")) {
+      return (
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm">
+          <Landmark className="w-5 h-5" />
+        </div>
+      );
+    }
+    if (id.includes("real-number") || title.includes("real number") || id.includes("interval") || title.includes("interval")) {
+      return (
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-serif text-xl font-bold text-white shadow-sm">
+          ℝ
+        </div>
+      );
+    }
+    if (id.includes("distance") || id.includes("midpoint") || title.includes("distance") || title.includes("midpoint")) {
+      return (
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm">
+          <TrendingUp className="w-5 h-5" />
+        </div>
+      );
+    }
+    if (id.includes("line") || id.includes("slope") || title.includes("line") || title.includes("slope")) {
+      return (
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm">
+          <Activity className="w-5 h-5" />
+        </div>
+      );
+    }
+    if (id.includes("function") || title.includes("function")) {
+      return (
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-mono text-sm font-bold text-white shadow-sm">
+          f(x)
+        </div>
+      );
+    }
+    if (id.includes("domain") || id.includes("range") || title.includes("domain") || title.includes("range")) {
+      return (
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-mono text-xs font-bold text-white shadow-sm">
+          [x]
+        </div>
+      );
+    }
+    if (id.includes("limit") || title.includes("limit")) {
+      return (
+        <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[#7B1824] text-white font-mono leading-tight shadow-sm">
+          <span className="text-[10px] font-bold">lim</span>
+          <span className="text-[7.5px] opacity-90">x→a</span>
+        </div>
+      );
+    }
+    if (id.includes("derivative") || title.includes("derivative")) {
+      return (
+        <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[#7B1824] text-white font-mono leading-tight shadow-sm">
+          <span className="text-[9px] font-bold border-b border-white/60 pb-[0.5px]">d</span>
+          <span className="text-[9px] font-bold pt-[0.5px]">dx</span>
+        </div>
+      );
+    }
+    if (id.includes("integral") || id.includes("integration") || title.includes("integral")) {
+      return (
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-serif text-xl font-bold text-white shadow-sm">
+          ∫
+        </div>
+      );
+    }
+    if (id.includes("matrix") || id.includes("determinant") || id.includes("eigen") || id.includes("vector")) {
+      return (
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-mono text-xs font-bold text-white shadow-sm">
+          [A]
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-serif text-lg font-bold text-white shadow-sm">
+        λ
+      </div>
+    );
+  };
 
   const handleTopicClick = (topicId: string, category: "linear-algebra" | "calculus", e: React.MouseEvent) => {
     e.preventDefault();
-    setClickedTopicId(topicId);
     sessionStorage.setItem("returningTopicView", category === "calculus" ? "topics-calculus" : "topics-linear");
-    setTimeout(() => {
-      navigate(`/topics/${topicId}`);
-    }, 250);
+    navigate(`/topics/${topicId}`);
   };
-
-  // Particle click interaction (spins and scales with GSAP)
-  const handleParticleClick = (index: number) => {
-    const el = particlesRef.current[index];
-    if (el) {
-      gsap.to(el, {
-        scale: 1.5,
-        rotation: "+=360",
-        duration: 0.6,
-        ease: "back.out(2)",
-        yoyo: true,
-        repeat: 1,
-      });
-    }
-  };
-
-  const randomizeMatrix = () => {
-    setMatrixVal({
-      a: Math.floor(Math.random() * 9) - 4,
-      b: Math.floor(Math.random() * 9) - 4,
-      c: Math.floor(Math.random() * 9) - 4,
-      d: Math.floor(Math.random() * 9) - 4,
-    });
-  };
-
-  const det = matrixVal.a * matrixVal.d - matrixVal.b * matrixVal.c;
-  const trace = matrixVal.a + matrixVal.d;
 
   return (
-    <div ref={containerRef} className="relative min-h-[90vh] pb-16 transition-colors duration-300">
+    <AnimatePresence mode="wait" initial={false}>
+      {activeView === "main" ? (
+        /* ========================================================================= */
+        /* VIEW 1: MATHVERSE DARK HERO — MATCHING REFERENCE IMAGE                   */
+        /* ========================================================================= */
+        <motion.div
+          key="main-view"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mv-hero-shell"
+        >
+          <section className="mv-hero-section relative min-h-screen">
+            {/* ── Background Image ── */}
+            <div className="mv-hero-bg">
+              <img
+                src={mathBg}
+                alt="Mathematics blackboard background"
+                className="mv-hero-bg-img"
+              />
+              <div className="mv-hero-scrim" />
+              <div className="mv-hero-scrim-bottom" />
+            </div>
 
-      {/* Floating Animated Mathematical Numbers & Symbols (GSAP Driven) */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none">
-        {MATH_PARTICLES.map((particle, i) => (
-          <div
-            key={particle.id}
-            ref={(el) => {
-              particlesRef.current[i] = el;
-            }}
-            onClick={() => handleParticleClick(i)}
-            style={{
-              top: particle.top,
-              left: particle.left,
-            }}
-            className={`pointer-events-auto absolute cursor-pointer font-serif font-bold tracking-wider transition-colors duration-200 hover:scale-110 ${particle.size} ${
-              isDark 
-                ? "text-blue-300/70 hover:text-white" 
-                : "text-blue-900/60 hover:text-blue-950"
-            } ${particle.blur} drop-shadow-[0_0_12px_rgba(59,130,246,0.3)]`}
-            title="Click to interact!"
-          >
-            {particle.text}
-          </div>
-        ))}
-      </div>
+            {/* ── Main Hero Content Wrapper ── */}
+            <div className="mv-hero-content-wrapper">
+              <div className="mv-hero-content">
+                <div className="mv-hero-inner">
+                  {/* Main Headline */}
+                  <motion.h1
+                    className="mv-hero-heading"
+                    initial={{ opacity: 0, y: 25 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                  >
+                    <span className="mv-heading-white">Explore.</span>
+                    <br />
+                    <span className="mv-heading-red">Calculate.</span>
+                    <br />
+                    <span className="mv-heading-white">Understand.</span>
+                  </motion.h1>
 
-      {/* Swipeable View Container */}
-      <div className="relative z-10 pl-3 sm:pl-4 md:pl-8 pr-2 pt-1 pb-12">
-        <AnimatePresence mode="wait" initial={false}>
-          {activeView === "main" ? (
-            /* ========================================================= */
-            /* VIEW 1: MAIN WORKSPACE OVERVIEW VIEW (LEFT-ALIGNED)       */
-            /* ========================================================= */
-            <motion.div
-              key="main-view"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-12 w-full"
-            >
-              {/* HERO SECTION (SEAMLESS AND BORDERLESS OVER FULL-SCREEN math.jpeg) */}
-              <section className={`relative text-left transition-all duration-300 pt-0 pb-6 ${
-                isDark ? "text-white" : "text-[#1F2329]"
-              }`}>
+                  {/* Description */}
+                  <motion.p
+                    className="mv-hero-desc"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                  >
+                    Powerful math tools and in-depth topics<br />
+                    to help you learn, solve, and master<br />
+                    mathematics with confidence.
+                  </motion.p>
 
-                {/* Hero Content (Left Aligned) */}
-                <div className="relative z-10 max-w-2xl">
-                  <div className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-semibold backdrop-blur-sm mb-4 ${
-                    isDark 
-                      ? "border-blue-400/30 bg-blue-900/40 text-blue-200" 
-                      : "border-blue-300 bg-blue-100/80 text-blue-900"
-                  }`}>
-                    <Sparkles className={`w-3.5 h-3.5 ${isDark ? "text-blue-300" : "text-blue-700"}`} />
-                    <span>Interactive Mathematics Suite</span>
-                  </div>
-
-                  <h1 className={`font-[Fraunces] text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] ${
-                    isDark ? "text-white" : "text-[#1F2329]"
-                  }`}>
-                    Modern Linear Algebra Made Easy
-                  </h1>
-
-                  <p className={`mt-5 text-base sm:text-lg leading-relaxed ${
-                    isDark ? "text-blue-100/90" : "text-slate-700 font-medium"
-                  }`}>
-                    Build <span className={`rounded px-1.5 py-0.5 font-semibold border ${
-                      isDark 
-                        ? "bg-blue-900/80 text-white border-blue-400/30" 
-                        : "bg-blue-100 text-blue-950 border-blue-300"
-                    }`}>feature-rich</span> experiences for Matrices, Vectors, and Linear Systems, faster than ever with step-by-step visual components.
-                  </p>
-
-                  {/* Primary CTA Button */}
-                  <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  {/* CTA Buttons */}
+                  <motion.div
+                    className="mv-hero-ctas"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                  >
                     <button
                       onClick={() => navigate("/calculator-hub")}
-                      className="group inline-flex items-center gap-3 rounded-xl bg-[#ff5722] hover:bg-[#f4511e] px-7 py-3.5 text-base font-bold text-white shadow-xl shadow-[#ff5722]/30 transition-all duration-300 hover:scale-[1.03] active:scale-95 cursor-pointer"
+                      className="mv-btn-red"
                     >
+                      <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="16" height="20" x="4" y="2" rx="2"/>
+                        <line x1="8" x2="16" y1="6" y2="6"/>
+                        <line x1="16" x2="16" y1="14" y2="18"/>
+                        <path d="M16 10h.01"/>
+                        <path d="M12 10h.01"/>
+                        <path d="M8 10h.01"/>
+                        <path d="M12 14h.01"/>
+                        <path d="M8 14h.01"/>
+                        <path d="M12 18h.01"/>
+                        <path d="M8 18h.01"/>
+                      </svg>
                       <span>Explore Calculators</span>
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      <ArrowRight className="w-4 h-4 shrink-0" />
                     </button>
 
                     <button
-                      onClick={() => setActiveView("categories")}
-                      className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold backdrop-blur-md transition-all duration-200 hover:scale-[1.02] cursor-pointer ${
-                        isDark 
-                          ? "bg-blue-950/60 hover:bg-blue-900/70 text-blue-100 shadow-md" 
-                          : "bg-white/90 hover:bg-slate-100 text-slate-800 shadow-md"
-                      }`}
+                      onClick={() => {
+                        setActiveView("categories");
+                        navigate("/?tab=topics");
+                        window.dispatchEvent(new CustomEvent("navtabchange", { detail: "topics" }));
+                      }}
+                      className="mv-btn-outline cursor-pointer"
                     >
-                      <BookOpen className={`w-4 h-4 ${isDark ? "text-blue-300" : "text-blue-600"}`} />
-                      <span>Show All Topics</span>
+                      <BookOpen className="w-5 h-5 shrink-0 text-white/90" />
+                      <span>Browse Topics</span>
+                      <ArrowRight className="w-4 h-4 shrink-0 text-white/90" />
                     </button>
-                  </div>
+                  </motion.div>
 
-
-                  <p className={`mt-3 text-xs font-medium ${
-                    isDark ? "text-blue-200/70" : "text-slate-600"
-                  }`}>
-                    Includes 23+ specialized matrix, vector, determinant, and linear system solvers.
-                  </p>
-                </div>
-                <div className={`relative z-10 mt-14 pt-8 border-t ${
-                  isDark ? "border-blue-500/20" : "border-slate-200"
-                }`}>
-                  <div>
-                    <div>
-                    </div>
-
-                    <div>
-                    </div>
-                  </div>
-
-                  {/* ── ROW 1: LINEAR ALGEBRA CURVED CAROUSEL (TOP) ── */}
-                  <div className="mb-8">
-                    <div className="flex items-center justify-between mb-3 px-1">
-                      <div className="flex items-center gap-2">
-                        <div className={`p-1.5 rounded-lg border ${
-                          isDark ? "bg-blue-900/60 border-blue-400/30 text-blue-300" : "bg-blue-100 border-blue-200 text-blue-700"
-                        }`}>
-                          <Calculator className="w-4 h-4" />
-                        </div>
-                        <span className={`text-sm font-bold tracking-wide uppercase ${
-                          isDark ? "text-blue-100" : "text-[#1F2329]"
-                        }`}>
-                          Linear Algebra Calculators
-                        </span>
-                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                          isDark ? "bg-blue-900/40 border-blue-400/30 text-blue-300" : "bg-blue-50 border-blue-200 text-blue-700"
-                        }`}>
-                          {linearTools.length} Tools
-                        </span>
-                      </div>
-                      <span className={`text-[11px] font-medium hidden sm:inline ${
-                        isDark ? "text-blue-300/60" : "text-slate-500"
-                      }`}>
-                        ← Scrolling Left • Hover to pause
-                      </span>
-                    </div>
-
-                    {/* Curved Perspective Viewport */}
-                    <div className="curved-carousel-viewport py-3">
-                      <div className="curved-track-left">
-                        {[...linearTools, ...linearTools].map((tool, idx) => (
-                          <div
-                            key={`linear-curve-${tool.id}-${idx}`}
-                            onClick={() => navigate("/calculators", { state: { toolId: tool.id } })}
-                            className={`group relative w-[275px] sm:w-[305px] shrink-0 flex flex-col justify-between p-4 sm:p-5 rounded-2xl border transition-all duration-300 cursor-pointer shadow-lg hover:-translate-y-1.5 hover:scale-[1.02] ${
-                              isDark
-                                ? "bg-gradient-to-br from-[#141b4d]/95 via-[#18235e]/85 to-[#0d1236]/95 border-blue-500/30 hover:border-[#B6FF2E] hover:shadow-[0_0_20px_rgba(182,255,46,0.25)] text-white"
-                                : "bg-gradient-to-br from-white/95 via-blue-50/70 to-white/90 border-blue-200 hover:border-blue-500 hover:shadow-xl text-[#1F2329]"
-                            }`}
-                          >
-                            <div>
-                              <div className="flex items-start justify-between gap-2 mb-2.5">
-                                <div className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition-transform duration-200 group-hover:scale-110 ${
-                                  isDark 
-                                    ? "bg-[#2a45b8] border-blue-400/30 text-white" 
-                                    : "bg-blue-600 border-blue-400 text-white"
-                                }`}>
-                                  <Binary className="w-4 h-4" />
-                                </div>
-
-                                <div className="flex items-center gap-1.5">
-                                  {tool.badge && (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-400/30 bg-blue-400/10 text-blue-300">
-                                      {tool.badge}
-                                    </span>
-                                  )}
-                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                                    isDark ? "bg-[#141b4d] border-blue-400/20 text-blue-300" : "bg-slate-100 border-slate-200 text-slate-600"
-                                  }`}>
-                                    {tool.categoryLabel}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <h3 className={`font-bold text-sm sm:text-base leading-snug line-clamp-1 group-hover:text-[#B6FF2E] transition-colors ${
-                                isDark ? "text-white" : "text-[#1F2329]"
-                              }`}>
-                                {tool.name}
-                              </h3>
-
-                              <p className={`mt-1.5 text-xs line-clamp-2 leading-relaxed ${
-                                isDark ? "text-blue-100/70" : "text-slate-600"
-                              }`}>
-                                {tool.description}
-                              </p>
-                            </div>
-
-                            <div className={`mt-4 pt-3 border-t flex items-center justify-between text-xs font-bold ${
-                              isDark ? "border-blue-500/20 text-blue-300 group-hover:text-[#B6FF2E]" : "border-blue-100 text-blue-700 group-hover:text-blue-900"
-                            }`}>
-                              <span>Open Calculator</span>
-                              <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── ROW 2: CALCULUS I CURVED CAROUSEL (BOTTOM) ── */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3 px-1">
-                      <div className="flex items-center gap-2">
-                        <div className={`p-1.5 rounded-lg border ${
-                          isDark ? "bg-emerald-900/60 border-emerald-400/30 text-emerald-300" : "bg-emerald-100 border-emerald-200 text-emerald-700"
-                        }`}>
-                          <TrendingUp className="w-4 h-4" />
-                        </div>
-                        <span className={`text-sm font-bold tracking-wide uppercase ${
-                          isDark ? "text-emerald-100" : "text-[#1F2329]"
-                        }`}>
-                          Calculus I Calculators
-                        </span>
-                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                          isDark ? "bg-emerald-900/40 border-emerald-400/30 text-emerald-300" : "bg-emerald-50 border-emerald-200 text-emerald-700"
-                        }`}>
-                          {calculusTools.length} Tools
-                        </span>
-                      </div>
-                      <span className={`text-[11px] font-medium hidden sm:inline ${
-                        isDark ? "text-emerald-300/60" : "text-slate-500"
-                      }`}>
-                        → Scrolling Right • Hover to pause
-                      </span>
-                    </div>
-
-                    {/* Curved Perspective Viewport */}
-                    <div className="curved-carousel-viewport py-3">
-                      <div className="curved-track-right">
-                        {[...calculusTools, ...calculusTools].map((tool, idx) => (
-                          <div
-                            key={`calculus-curve-${tool.id}-${idx}`}
-                            onClick={() => navigate("/calculus-calculators", { state: { toolId: tool.id } })}
-                            className={`group relative w-[275px] sm:w-[305px] shrink-0 flex flex-col justify-between p-4 sm:p-5 rounded-2xl border transition-all duration-300 cursor-pointer shadow-lg hover:-translate-y-1.5 hover:scale-[1.02] ${
-                              isDark
-                                ? "bg-gradient-to-br from-[#0d2318]/95 via-[#102d1f]/85 to-[#07170f]/95 border-emerald-500/30 hover:border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] text-white"
-                                : "bg-gradient-to-br from-white/95 via-emerald-50/70 to-white/90 border-emerald-200 hover:border-emerald-500 hover:shadow-xl text-[#1F2329]"
-                            }`}
-                          >
-                            <div>
-                              <div className="flex items-start justify-between gap-2 mb-2.5">
-                                <div className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition-transform duration-200 group-hover:scale-110 ${
-                                  isDark 
-                                    ? "bg-emerald-700 border-emerald-400/30 text-white" 
-                                    : "bg-emerald-600 border-emerald-400 text-white"
-                                }`}>
-                                  {tool.icon || <FunctionSquare className="w-4 h-4" />}
-                                </div>
-
-                                <div className="flex items-center gap-1.5">
-                                  {tool.badge && (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
-                                      {tool.badge}
-                                    </span>
-                                  )}
-                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                                    isDark ? "bg-[#0d2318] border-emerald-400/20 text-emerald-300" : "bg-slate-100 border-slate-200 text-slate-600"
-                                  }`}>
-                                    {tool.categoryLabel}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <h3 className={`font-bold text-sm sm:text-base leading-snug line-clamp-1 group-hover:text-emerald-300 transition-colors ${
-                                isDark ? "text-white" : "text-[#1F2329]"
-                              }`}>
-                                {tool.name}
-                              </h3>
-
-                              <p className={`mt-1.5 text-xs line-clamp-2 leading-relaxed ${
-                                isDark ? "text-emerald-100/70" : "text-slate-600"
-                              }`}>
-                                {tool.description}
-                              </p>
-                            </div>
-
-                            <div className={`mt-4 pt-3 border-t flex items-center justify-between text-xs font-bold ${
-                              isDark ? "border-emerald-500/20 text-emerald-300 group-hover:text-emerald-200" : "border-emerald-100 text-emerald-700 group-hover:text-emerald-900"
-                            }`}>
-                              <span>Open Calculator</span>
-                              <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-              
-            </motion.div>
-          ) : activeView === "categories" ? (
-            /* ========================================================= */
-            /* VIEW 2: CATEGORY SUITE SELECTION HUB                      */
-            /* ========================================================= */
-            <motion.div
-              key="categories-view"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-8 max-w-5xl mx-auto pt-2"
-            >
-              {/* Back Button & Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-5">
-                <div className="flex items-center gap-3.5">
-                  <button
-                    onClick={() => setActiveView("main")}
-                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold border transition-all duration-200 hover:scale-105 active:scale-95 ${
-                      isDark
-                        ? "border-[#333A46] bg-[#1F2329] text-[#B6FF2E] hover:bg-[#282E37] hover:border-[#B6FF2E]/60 shadow-md shadow-black/50"
-                        : "border-slate-300 bg-white text-[#1F2329] hover:bg-slate-100 shadow-sm shadow-slate-200"
-                    }`}
+                  {/* Trust Badge */}
+                  <motion.div
+                    className="mv-trust-badge"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Workspace</span>
-                  </button>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[#B6FF2E] animate-ping" />
-                      <h2 className={`m-0 font-[Fraunces] text-2xl sm:text-3xl font-bold ${
-                        isDark ? "text-white" : "text-[#1F2329]"
-                      }`}>
-                        Choose Topic
-                      </h2>
-                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
-                        isDark ? "bg-[#1F2329] text-[#B6FF2E] border-[#333A46]" : "bg-[#B6FF2E]/20 text-[#1F2329] border-[#B6FF2E]/40"
-                      }`}>
-                        2 Disciplines Available
-                      </span>
+                    <div className="mv-trust-star-box">
+                      <Star className="w-3.5 h-3.5 text-[#C0212B] fill-[#C0212B]" />
                     </div>
-                    <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? "text-slate-300" : "text-slate-700 font-medium"}`}>
-                      Select a mathematics discipline below to explore comprehensive theoretical modules and step-by-step verified examples.
-                    </p>
-                  </div>
+                    <span>Trusted by students and learners worldwide</span>
+                  </motion.div>
                 </div>
               </div>
 
-              {/* Two Grand Category Showcase Cards (Click opens dedicated subject page) */}
-              <div className="grid gap-6 sm:grid-cols-2 pt-2">
-                {/* Card 1: Linear Algebra */}
-                <div
-                  onClick={() => {
-                    setTopicSearch("");
-                    setActiveView("topics-linear");
-                  }}
-                  className={`group relative w-full text-left rounded-3xl border p-7 sm:p-8 transition-all duration-300 cursor-pointer shadow-xl overflow-hidden hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.99] ${
-                    isDark
-                      ? "border-blue-500/25 bg-[#141b4d]/70 hover:bg-[#1a2560]/85 hover:border-blue-400/50 shadow-blue-950/40"
-                      : "border-blue-200 bg-white/95 hover:bg-white hover:border-blue-400 shadow-blue-100/80"
-                  }`}
+              {/* ── Floating Stats Card Container ── */}
+              <motion.div>
+                <div>             
+                </div>
+              </motion.div>
+            </div>
+          </section>
+        </motion.div>
+      ) : activeView === "categories" ? (
+        /* ========================================================================= */
+        /* VIEW 2: CHOOSE YOUR TOPIC (MATCHING IMAGE 2 EXACTLY)                      */
+        /* ========================================================================= */
+        <motion.div
+          key="categories-view"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.35 }}
+          className="relative min-h-screen bg-[#FDFBFB] pb-20"
+        >
+          {/* ========================================================================= */}
+          {/* 1. TOP HERO SECTION (Chalkboard Background with Student)                 */}
+          {/* ========================================================================= */}
+          <section className="relative w-full overflow-hidden bg-[#0e131b] pt-20 pb-24 sm:pt-24 sm:pb-32 lg:pt-28 lg:pb-36">
+            {/* Blackboard Background Image */}
+            <div className="absolute inset-0 z-0">
+              <img
+                src={mathBg}
+                alt="Mathematics blackboard background"
+                className="h-full w-full object-cover object-center opacity-45"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/35" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0e131b] via-transparent to-black/30" />
+            </div>
+
+            {/* Hero Content */}
+            <div className="relative z-10 mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12">
+              <div className="max-w-2xl">
+                {/* Headline */}
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-[3.75rem] leading-[1.08]"
                 >
-                  {/* Glow blob */}
-                  <div
-                    className={`pointer-events-none absolute -top-10 -right-10 w-52 h-52 rounded-full blur-3xl transition-opacity duration-500 opacity-20 group-hover:opacity-50 ${
-                      isDark ? "bg-blue-500" : "bg-blue-300"
-                    }`}
-                  />
+                  <span className="text-[#E05260]">ALL TOPICS.</span>
+                </motion.h1>
 
-                  {/* Icon */}
-                  <div
-                    className={`relative inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 border shadow-lg transition-all duration-300 group-hover:scale-110 ${
-                      isDark
-                        ? "bg-blue-600/40 border-blue-400/40 text-blue-200"
-                        : "bg-blue-100 border-blue-300 text-blue-700"
-                    }`}
+                {/* Subtitle */}
+                <motion.p
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mt-5 max-w-lg text-sm sm:text-base font-normal text-white/80 leading-relaxed"
+                >
+                  Interactive learning, powerful calculators, and
+                  <br className="hidden sm:inline" />
+                  step-by-step solutions — all in one place.
+                </motion.p>
+
+                {/* CTA Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="mt-7 flex flex-wrap items-center gap-3.5"
+                >
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById("disciplines-section");
+                      el?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#7B1824]/30 transition-all duration-200 cursor-pointer active:scale-95"
                   >
-                    <Calculator className="w-7 h-7" />
-                  </div>
+                    <BookOpen className="h-4 w-4" />
+                    <span>Explore Topics</span>
+                  </button>
 
-                  {/* Title & Badge */}
-                  <div className="relative flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <span
-                        className={`block text-2xl sm:text-3xl font-bold font-[Fraunces] tracking-tight ${
-                          isDark ? "text-white" : "text-[#1F2329]"
-                        }`}
-                      >
-                        Linear Algebra
-                      </span>
-                      <span
-                        className={`text-xs font-semibold mt-0.5 block ${
-                          isDark ? "text-blue-300" : "text-blue-600"
-                        }`}
-                      >
-                        {linearTopics.length} Topics Available
-                      </span>
+                  <button
+                    onClick={() => navigate("/calculator-hub")}
+                    className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-[#F9FAFB] px-5 py-3 text-xs sm:text-sm font-bold text-[#111827] shadow-md transition-all duration-200 cursor-pointer active:scale-95"
+                  >
+                    <Calculator className="h-4 w-4 text-[#7B1824]" />
+                    <span>Try Calculators</span>
+                  </button>
+                </motion.div>
+
+                {/* Down Arrow Chevron */}
+                <div className="mt-8">
+                  <ChevronDown className="h-5 w-5 text-white/70 animate-bounce" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ========================================================================= */}
+          {/* 2. TWO MAIN DISCIPLINE CARDS (Overlapping Hero Bottom)                   */}
+          {/* ========================================================================= */}
+          <section id="disciplines-section" className="relative z-20 mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 -mt-16 sm:-mt-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+              {/* Card 1: Linear Algebra */}
+              <motion.div
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => {
+                  setTopicSearch("");
+                  setActiveView("topics-linear");
+                }}
+                className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 cursor-pointer"
+              >
+                <div>
+                  {/* Top Row: Icon & Tag */}
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                      <Calculator className="h-6 w-6" />
                     </div>
-                    <div
-                      className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                        isDark
-                          ? "bg-blue-900/60 border-blue-400/40 text-blue-200"
-                          : "bg-blue-50 border-blue-200 text-blue-700"
-                      }`}
-                    >
+                    <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
                       MATH
+                    </span>
+                  </div>
+
+                  {/* Header & Right Graphic Badge */}
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div>
+                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#7B1824] transition-colors">
+                        Linear Algebra
+                      </h3>
+                      <p className="mt-1 text-xs font-bold text-[#7B1824]">
+                        26 Topics Available
+                      </p>
+                    </div>
+
+                    {/* 01 / 10 Crimson Graphic Badge */}
+                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 font-mono font-bold leading-tight shrink-0">
+                      <span className="text-xs">01</span>
+                      <span className="h-[1px] w-6 bg-white/40 my-0.5" />
+                      <span className="text-xs">10</span>
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <p
-                    className={`relative text-sm leading-relaxed mb-6 ${
-                      isDark ? "text-blue-100/70" : "text-slate-600"
-                    }`}
-                  >
+                  <p className="text-xs sm:text-sm text-[#5D6067] leading-relaxed mb-6 font-normal">
                     Solve matrices, eigenvectors, vector spaces, and linear systems with step-by-step numerical solutions.
                   </p>
 
-                  {/* Feature pills */}
-                  <div className="relative flex flex-wrap gap-2 mb-6">
-                    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-blue-900/40 border-blue-400/25 text-blue-200 group-hover:bg-blue-800/50"
-                        : "bg-blue-50 border-blue-200 text-blue-700 group-hover:bg-blue-100"
-                    }`}>
-                      <Binary className="w-3.5 h-3.5" />
-                      <span>Matrix Solvers</span>
-                    </div>
-                    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-blue-900/40 border-blue-400/25 text-blue-200 group-hover:bg-blue-800/50"
-                        : "bg-blue-50 border-blue-200 text-blue-700 group-hover:bg-blue-100"
-                    }`}>
-                      <Cpu className="w-3.5 h-3.5" />
-                      <span>Eigen Systems</span>
-                    </div>
-                    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-blue-900/40 border-blue-400/25 text-blue-200 group-hover:bg-blue-800/50"
-                        : "bg-blue-50 border-blue-200 text-blue-700 group-hover:bg-blue-100"
-                    }`}>
-                      <Layers className="w-3.5 h-3.5" />
-                      <span>Vector Spaces</span>
-                    </div>
-                    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-blue-900/40 border-blue-400/25 text-blue-200 group-hover:bg-blue-800/50"
-                        : "bg-blue-50 border-blue-200 text-blue-700 group-hover:bg-blue-100"
-                    }`}>
-                      <Zap className="w-3.5 h-3.5" />
-                      <span>LU / QR / SVD</span>
-                    </div>
-                  </div>
-
-                  {/* CTA Row */}
-                  <div className="relative flex items-center justify-between">
-                    <div className={`h-px flex-1 mr-4 ${isDark ? "bg-blue-500/20" : "bg-blue-100"}`} />
-                    <span
-                      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${
-                        isDark
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 group-hover:bg-blue-500"
-                          : "bg-[#1F2329] text-white shadow-md group-hover:bg-black"
-                      }`}
-                    >
-                      <span>Open Topic</span>
-                      <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+                  {/* Feature Pills */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-[#F5EDEF]">
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Binary className="h-3.5 w-3.5 text-[#7B1824]" />
+                      Matrix Solvers
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <span className="font-serif font-bold text-[#7B1824]">∑</span>
+                      Eigen Systems
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Layers className="h-3.5 w-3.5 text-[#7B1824]" />
+                      Vector Spaces
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Zap className="h-3.5 w-3.5 text-[#7B1824]" />
+                      LU / QR / SVD
                     </span>
                   </div>
                 </div>
+              </motion.div>
 
-                {/* Card 2: Calculus 1 */}
-                <div
+              {/* Card 2: Calculus I */}
+              <motion.div
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => {
+                  setTopicSearch("");
+                  setSelectedCalculusCategory("all");
+                  setActiveView("topics-calculus");
+                }}
+                className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 cursor-pointer"
+              >
+                <div>
+                  {/* Top Row: Icon & Tag */}
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                      <TrendingUp className="h-6 w-6" />
+                    </div>
+                    <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                      CALC I
+                    </span>
+                  </div>
+
+                  {/* Header & Right Graphic Badge */}
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div>
+                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#7B1824] transition-colors">
+                        Calculus I
+                      </h3>
+                      <p className="mt-1 text-xs font-bold text-[#7B1824]">
+                        90 Topics Available
+                      </p>
+                    </div>
+
+                    {/* Integral Graphic Mockup */}
+                    <div className="relative flex h-14 w-18 items-center justify-center rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] p-1.5 shadow-xs shrink-0">
+                      <svg className="w-full h-full" viewBox="0 0 70 40" fill="none">
+                        <path d="M5 35 Q20 5, 45 18 T65 8" stroke="#7B1824" strokeWidth="1.8" />
+                        <path d="M5 35 Q20 5, 45 18 T65 8 L65 35 L5 35 Z" fill="rgba(123, 24, 36, 0.15)" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-[#5D6067] leading-relaxed mb-6 font-normal">
+                    Master foundations of calculus, limits &amp; continuity, differentiation rules, tangent lines, and calculus essentials.
+                  </p>
+
+                  {/* Feature Pills */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-[#F5EDEF]">
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Zap className="h-3.5 w-3.5 text-[#7B1824]" />
+                      Derivatives
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Activity className="h-3.5 w-3.5 text-[#7B1824]" />
+                      Limit &amp; Continuity
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Compass className="h-3.5 w-3.5 text-[#7B1824]" />
+                      Foundations
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <FunctionSquare className="h-3.5 w-3.5 text-[#7B1824]" />
+                      Functions &amp; Graphs
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </section>
+
+          {/* ========================================================================= */}
+          {/* 3. 6-FEATURE FOOTER CARD (Matching Image 3 Bottom Bar)                    */}
+          {/* ========================================================================= */}
+          <section className="relative z-10 mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 mt-12 sm:mt-16">
+            <div className="rounded-[26px] border border-[#EAE2E4] bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 sm:gap-8 text-center">
+                {/* Feature 1: Smart Search */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
+                    <Search className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Smart Search</h4>
+                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
+                    Search any topic, formula or problem instantly.
+                  </p>
+                </div>
+
+                {/* Feature 2: Powerful Calculators */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
+                    <Calculator className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Powerful Calculators</h4>
+                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
+                    Advanced tools for solving complex math problems.
+                  </p>
+                </div>
+
+                {/* Feature 3: Step-by-Step Solutions */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Step-by-Step Solutions</h4>
+                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
+                    Detailed solutions with clear explanations.
+                  </p>
+                </div>
+
+                {/* Feature 4: Verified Examples */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Verified Examples</h4>
+                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
+                    Explore real examples with verified answers.
+                  </p>
+                </div>
+
+                {/* Feature 5: Save & Organize */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
+                    <Bookmark className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Save &amp; Organize</h4>
+                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
+                    Bookmark topics and track your progress.
+                  </p>
+                </div>
+
+                {/* Feature 6: Learn Analytics */}
+                <div className="flex flex-col items-center">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Learn Analytics</h4>
+                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
+                    Visualize your learning and improvement.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </motion.div>
+      ) : activeView === "topics-linear" ? (
+        /* ========================================================================= */
+        /* VIEW 3: LINEAR ALGEBRA TOPICS LIST (SIDEBAR + 3-COL GRID)                */
+        /* ========================================================================= */
+        <motion.div
+          key="topics-linear-view"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-6"
+        >
+          {/* Back to Categories */}
+          <div className="flex items-center justify-start">
+            <button
+              onClick={() => setActiveView("categories")}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-xs font-bold text-[#374151] hover:bg-[#F9FAFB] transition-all shadow-sm cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Categories</span>
+            </button>
+          </div>
+
+          {/* Sidebar + Main Grid Container */}
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Left Sidebar */}
+            <aside className="w-full lg:w-64 shrink-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+              <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#9CA3AF] px-2 mb-3">
+                Browse Topics
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => setTopicSearch("")}
+                  className="topic-sidebar-item active"
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <Layers className="w-4 h-4 text-[#7B1824]" />
+                    <span>All Topics</span>
+                  </div>
+                  <span className="topic-sidebar-count">{linearTopics.length}</span>
+                </button>
+              </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <div className="flex-1 w-full space-y-6">
+              {/* Top Bar with Title & Switcher */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm">
+                      <Binary className="w-4 h-4" />
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827]">
+                      Linear Algebra Topics
+                    </h2>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#d6b1b7] bg-[#fbf3f5] text-[#7B1824]">
+                      {linearTopics.length} Topics
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs sm:text-sm text-[#6B7280]">
+                    Explore linear systems, matrix transformations, and step-by-step verified explanations.
+                  </p>
+                </div>
+
+                <button
                   onClick={() => {
                     setTopicSearch("");
                     setSelectedCalculusCategory("all");
                     setActiveView("topics-calculus");
                   }}
-                  className={`group relative w-full text-left rounded-3xl border p-7 sm:p-8 transition-all duration-300 cursor-pointer shadow-xl overflow-hidden hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.99] ${
-                    isDark
-                      ? "border-emerald-500/25 bg-[#0d2318]/70 hover:bg-[#102b1e]/85 hover:border-emerald-400/50 shadow-emerald-950/40"
-                      : "border-emerald-200 bg-white/95 hover:bg-white hover:border-emerald-400 shadow-emerald-100/80"
-                  }`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#E5E7EB] bg-white text-xs font-bold text-[#7B1824] hover:bg-[#FDF2F4] transition-colors shadow-sm cursor-pointer"
                 >
-                  {/* Glow blob */}
-                  <div
-                    className={`pointer-events-none absolute -top-10 -right-10 w-52 h-52 rounded-full blur-3xl transition-opacity duration-500 opacity-20 group-hover:opacity-50 ${
-                      isDark ? "bg-emerald-500" : "bg-emerald-300"
-                    }`}
-                  />
-
-                  {/* Icon */}
-                  <div
-                    className={`relative inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 border shadow-lg transition-all duration-300 group-hover:scale-110 ${
-                      isDark
-                        ? "bg-emerald-600/40 border-emerald-400/40 text-emerald-200"
-                        : "bg-emerald-100 border-emerald-300 text-emerald-700"
-                    }`}
-                  >
-                    <TrendingUp className="w-7 h-7" />
-                  </div>
-
-                  {/* Title & Badge */}
-                  <div className="relative flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <span
-                        className={`block text-2xl sm:text-3xl font-bold font-[Fraunces] tracking-tight ${
-                          isDark ? "text-white" : "text-[#1F2329]"
-                        }`}
-                      >
-                        Calculus 1
-                      </span>
-                      <span
-                        className={`text-xs font-semibold mt-0.5 block ${
-                          isDark ? "text-emerald-300" : "text-emerald-600"
-                        }`}
-                      >
-                        {calculusTopics.length} Topics Available
-                      </span>
-                    </div>
-                    <div
-                      className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                        isDark
-                          ? "bg-emerald-900/60 border-emerald-400/40 text-emerald-200"
-                          : "bg-emerald-50 border-emerald-200 text-emerald-700"
-                      }`}
-                    >
-                      CALC 1
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <p
-                    className={`relative text-sm leading-relaxed mb-6 ${
-                      isDark ? "text-emerald-100/70" : "text-slate-600"
-                    }`}
-                  >
-                    Master foundations of calculus, limits &amp; continuity, differentiation rules, tangent lines, and calculus essentials.
-                  </p>
-
-                  {/* Feature pills */}
-                  <div className="relative flex flex-wrap gap-2 mb-6">
-                    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-emerald-900/40 border-emerald-400/25 text-emerald-200 group-hover:bg-emerald-800/50"
-                        : "bg-emerald-50 border-emerald-200 text-emerald-700 group-hover:bg-emerald-100"
-                    }`}>
-                      <Zap className="w-3.5 h-3.5" />
-                      <span>Derivatives</span>
-                    </div>
-                    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-emerald-900/40 border-emerald-400/25 text-emerald-200 group-hover:bg-emerald-800/50"
-                        : "bg-emerald-50 border-emerald-200 text-emerald-700 group-hover:bg-emerald-100"
-                    }`}>
-                      <Activity className="w-3.5 h-3.5" />
-                      <span>Limit &amp; Continuity</span>
-                    </div>
-                    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-emerald-900/40 border-emerald-400/25 text-emerald-200 group-hover:bg-emerald-800/50"
-                        : "bg-emerald-50 border-emerald-200 text-emerald-700 group-hover:bg-emerald-100"
-                    }`}>
-                      <Compass className="w-3.5 h-3.5" />
-                      <span>Foundations</span>
-                    </div>
-                    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors duration-200 ${
-                      isDark
-                        ? "bg-emerald-900/40 border-emerald-400/25 text-emerald-200 group-hover:bg-emerald-800/50"
-                        : "bg-emerald-50 border-emerald-200 text-emerald-700 group-hover:bg-emerald-100"
-                    }`}>
-                      <FunctionSquare className="w-3.5 h-3.5" />
-                      <span>Functions &amp; Graphs</span>
-                    </div>
-                  </div>
-
-                  {/* CTA Row */}
-                  <div className="relative flex items-center justify-between">
-                    <div className={`h-px flex-1 mr-4 ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`} />
-                    <span
-                      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${
-                        isDark
-                          ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 group-hover:bg-emerald-500"
-                          : "bg-[#1F2329] text-white shadow-md group-hover:bg-black"
-                      }`}
-                    >
-                      <span>Open Topic</span>
-                      <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ) : activeView === "topics-linear" ? (
-            /* ========================================================= */
-            /* VIEW 3: DEDICATED LINEAR ALGEBRA TOPICS PAGE              */
-            /* ========================================================= */
-            <motion.div
-              key="topics-linear-view"
-              initial={{ opacity: 0, x: 80 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 80 }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-6 max-w-[95%] sm:max-w-[92%] mx-auto"
-            >
-              {/* Back Button & Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-5">
-                <div className="flex items-center gap-3.5">
-                  <button
-                    onClick={() => setActiveView("categories")}
-                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold border transition-all duration-200 hover:scale-105 active:scale-95 ${
-                      isDark
-                        ? "border-[#333A46] bg-[#1F2329] text-[#B6FF2E] hover:bg-[#282E37] hover:border-[#B6FF2E]/60 shadow-md shadow-black/50"
-                        : "border-slate-300 bg-white text-[#1F2329] hover:bg-slate-100 shadow-sm shadow-slate-200"
-                    }`}
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Categories</span>
-                  </button>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 rounded-lg bg-blue-600 text-white shadow-sm">
-                        <Calculator className="w-4 h-4" />
-                      </div>
-                      <h2 className={`m-0 font-[Fraunces] text-2xl sm:text-3xl font-bold ${
-                        isDark ? "text-white" : "text-[#1F2329]"
-                      }`}>
-                        Linear Algebra Topics
-                      </h2>
-                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
-                        isDark ? "bg-blue-900/60 border-blue-400/30 text-blue-200" : "bg-blue-50 border-blue-200 text-blue-700"
-                      }`}>
-                        {filteredLinearTopics.length} Topics
-                      </span>
-                    </div>
-                    <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? "text-slate-300" : "text-slate-700 font-medium"}`}>
-                      Matrix theories, vector spaces, transformations, determinants, and step-by-step verified examples.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right controls: Switch subject & Search */}
-                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                  <button
-                    onClick={() => {
-                      setTopicSearch("");
-                      setActiveView("topics-calculus");
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all hover:scale-105 ${
-                      isDark
-                        ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50"
-                        : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                    }`}
-                  >
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    <span>Go to Calculus Topics →</span>
-                  </button>
-
-                  {/* Search Topics Bar */}
-                  <div className="relative w-full sm:w-64">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-blue-300" : "text-blue-700"}`} />
-                    <input
-                      type="text"
-                      placeholder="Search linear topics (e.g. Eigen, Matrix)..."
-                      value={topicSearch}
-                      onChange={(e) => setTopicSearch(e.target.value)}
-                      className={`w-full rounded-xl border pl-9 pr-8 py-2 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30 transition-all ${
-                        isDark 
-                          ? "border-[#333A46] bg-[#14171B] text-white focus:border-blue-400" 
-                          : "border-slate-300 bg-white text-[#1F2329] focus:border-blue-600"
-                      }`}
-                    />
-                    {topicSearch && (
-                      <button
-                        onClick={() => setTopicSearch("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  <span>Go to Calculus Topics</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
 
-              {/* Linear Algebra Topics Grid */}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Search Bar */}
+              <div className="relative w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+                <input
+                  type="text"
+                  placeholder="Search linear topics (e.g. matrices, span, eigen...)"
+                  value={topicSearch}
+                  onChange={(e) => setTopicSearch(e.target.value)}
+                  className="w-full rounded-xl border border-[#E5E7EB] bg-white pl-10 pr-10 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7B1824] shadow-sm"
+                />
+                {topicSearch && (
+                  <button
+                    onClick={() => setTopicSearch("")}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#111827]"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* 3-Column Topic Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {filteredLinearTopics.length > 0 ? (
-                  filteredLinearTopics.map((topic, index) => {
-                    const isClicked = clickedTopicId === topic.id;
-
-                    return (
-                      <motion.article
-                        key={topic.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{
-                          opacity: isClicked ? 0.4 : 1,
-                          y: 0,
-                          scale: isClicked ? 0.97 : 1,
-                        }}
-                        transition={{
-                          duration: 0.35,
-                          delay: index * 0.03,
-                          ease: "easeOut",
-                        }}
-                        whileHover={{
-                          y: -4,
-                          borderColor: "rgba(182, 255, 46, 0.5)",
-                          boxShadow: isDark
-                            ? "0 12px 30px -5px rgba(182, 255, 46, 0.2)"
-                            : "0 12px 24px -5px rgba(31, 35, 41, 0.1)",
-                        }}
-                        className={`group relative flex flex-col justify-between rounded-2xl border p-5 backdrop-blur-xl transition-all duration-300 ${
-                          isDark
-                            ? "border-[#333A46] bg-[#1F2329]/80 hover:bg-[#1F2329]"
-                            : "border-slate-200 bg-white/95 hover:bg-white shadow-md shadow-slate-200/40"
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-2.5">
-                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                              isDark
-                                ? "border-blue-500/30 bg-blue-950/60 text-blue-300"
-                                : "border-blue-300 bg-blue-100/90 text-blue-800"
-                            }`}>
-                              <Binary className="w-3 h-3 text-blue-400" />
-                              <span>Linear Algebra</span>
-                            </span>
-
-                            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold font-mono ${
-                              isDark ? "border-[#333A46] bg-[#14171B] text-slate-300" : "border-slate-200 bg-slate-100 text-slate-700"
-                            }`}>
-                              {topic.examples.length} ex
-                            </span>
-                          </div>
-
-                          <h3 className={`font-[Fraunces] text-lg font-bold transition-colors duration-200 ${
-                            isDark ? "text-white group-hover:text-[#B6FF2E]" : "text-[#1F2329] group-hover:text-black"
-                          }`}>
-                            {topic.title}
-                          </h3>
-
-                          <p className={`mt-2 text-xs sm:text-sm line-clamp-3 leading-relaxed ${
-                            isDark ? "text-slate-300" : "text-slate-600"
-                          }`}>
-                            {topic.summary}
-                          </p>
-                        </div>
-
-                        <div className={`mt-5 flex items-center justify-between border-t pt-3 ${
-                          isDark ? "border-[#333A46]" : "border-slate-200"
-                        }`}>
-                          <span className={`text-[0.7rem] font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                            {topic.examples.length} verified examples
+                  filteredLinearTopics.map((topic) => (
+                    <div
+                      key={topic.id}
+                      onClick={(e) => handleTopicClick(topic.id, "linear-algebra", e)}
+                      className="group flex flex-col justify-between rounded-2xl border border-[#E5E7EB] bg-white p-5 hover:border-[#d6b1b7] hover:shadow-lg transition-all duration-200 cursor-pointer"
+                    >
+                      <div>
+                        {/* Icon & Examples badge */}
+                        <div className="flex items-center justify-between mb-4">
+                          {renderTopicGlyph(topic)}
+                          <span className="text-[11px] font-medium text-[#6B7280]">
+                            {topic.examples.length} examples
                           </span>
-
-                          <Link
-                            to={`/topics/${topic.id}`}
-                            onClick={(e) => handleTopicClick(topic.id, "linear-algebra", e)}
-                            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-extrabold transition-all duration-200 no-underline shadow-sm hover:scale-105 ${
-                              isDark
-                                ? "bg-[#B6FF2E] hover:bg-[#C6FF4D] text-[#14171B]"
-                                : "bg-[#1F2329] hover:bg-black text-[#B6FF2E]"
-                            }`}
-                          >
-                            <span>Read Topic</span>
-                            <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                          </Link>
                         </div>
-                      </motion.article>
-                    );
-                  })
+
+                        <h3 className="text-base font-bold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug">
+                          {topic.title}
+                        </h3>
+
+                        <p className="mt-1.5 text-xs text-[#6B7280] line-clamp-3 leading-relaxed font-normal">
+                          {topic.summary}
+                        </p>
+                      </div>
+
+                      <div className="mt-5 pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform">
+                          View Topic <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </div>
+                  ))
                 ) : (
-                  <div className="col-span-full py-12 text-center">
-                    <p className={`text-base font-semibold ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                      No Linear Algebra topics found matching &ldquo;{topicSearch}&rdquo;
-                    </p>
-                    <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                      Try clearing the search or searching for &quot;matrices&quot; or &quot;eigen&quot;.
-                    </p>
+                  <div className="col-span-full py-16 text-center text-[#6B7280]">
+                    No linear algebra topics found matching &quot;{topicSearch}&quot;.
                   </div>
                 )}
               </div>
-            </motion.div>
-          ) : (
-            /* ========================================================= */
-            /* VIEW 4: DEDICATED CALCULUS 1 TOPICS PAGE                  */
-            /* ========================================================= */
-            <motion.div
-              key="topics-calculus-view"
-              initial={{ opacity: 0, x: 80 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 80 }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-6 max-w-[95%] sm:max-w-[92%] mx-auto"
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        /* ========================================================================= */
+        /* VIEW 4: CALCULUS 1 TOPICS (MATCHING IMAGE 3 EXACTLY)                      */
+        /* ========================================================================= */
+        <motion.div
+          key="topics-calculus-view"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-6"
+        >
+          {/* Back to Categories Button */}
+          <div className="flex items-center justify-start">
+            <button
+              onClick={() => setActiveView("categories")}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-xs font-bold text-[#374151] hover:bg-[#F9FAFB] transition-all shadow-sm cursor-pointer"
             >
-              {/* Back Button & Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-5">
-                <div className="flex items-center gap-3.5">
-                  <button
-                    onClick={() => setActiveView("categories")}
-                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold border transition-all duration-200 hover:scale-105 active:scale-95 ${
-                      isDark
-                        ? "border-emerald-500/40 bg-[#0d2318] text-emerald-300 hover:bg-[#102b1e] hover:border-emerald-400 shadow-md shadow-black/50"
-                        : "border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50 shadow-sm"
-                    }`}
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Categories</span>
-                  </button>
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Categories</span>
+            </button>
+          </div>
 
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/30">
-                        <TrendingUp className="w-4 h-4" />
-                      </div>
-                      <h2 className={`m-0 font-[Fraunces] text-2xl sm:text-3xl font-bold ${
-                        isDark ? "text-white" : "text-[#1F2329]"
-                      }`}>
-                        Calculus 1 Topics
-                      </h2>
-                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
-                        isDark ? "bg-emerald-900/60 border-emerald-400/30 text-emerald-200" : "bg-emerald-50 border-emerald-200 text-emerald-700"
-                      }`}>
-                        {filteredCalculusTopics.length} {filteredCalculusTopics.length === 1 ? "Topic" : "Topics"}
-                      </span>
-                    </div>
-                    <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? "text-slate-300" : "text-slate-700 font-medium"}`}>
-                      Explore Foundations of Calculus, Limit &amp; Continuity, and Derivatives with step-by-step verified explanations.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right controls: Switch subject & Search */}
-                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                  <button
-                    onClick={() => {
-                      setTopicSearch("");
-                      setActiveView("topics-linear");
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all hover:scale-105 ${
-                      isDark
-                        ? "border-blue-500/30 bg-blue-950/40 text-blue-300 hover:bg-blue-900/50"
-                        : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                    }`}
-                  >
-                    <Binary className="w-3.5 h-3.5" />
-                    <span>Go to Linear Algebra Topics →</span>
-                  </button>
-
-                  {/* Search Topics Bar */}
-                  <div className="relative w-full sm:w-64">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-emerald-300" : "text-emerald-700"}`} />
-                    <input
-                      type="text"
-                      placeholder="Search calculus (e.g. Limits, Power Rule, Domain)..."
-                      value={topicSearch}
-                      onChange={(e) => setTopicSearch(e.target.value)}
-                      className={`w-full rounded-xl border pl-9 pr-8 py-2 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 transition-all ${
-                        isDark 
-                          ? "border-[#333A46] bg-[#14171B] text-white focus:border-emerald-400" 
-                          : "border-slate-300 bg-white text-[#1F2329] focus:border-emerald-600"
-                      }`}
-                    />
-                    {topicSearch && (
-                      <button
-                        onClick={() => setTopicSearch("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+          {/* Sidebar + Main Grid Container */}
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Left Sidebar */}
+            <aside className="w-full lg:w-64 shrink-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+              <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#9CA3AF] px-2 mb-3">
+                Browse Topics
               </div>
 
-              {/* Calculus Category Tabs / Pills */}
-              <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+              <div className="flex flex-col gap-1">
                 {CALCULUS_SUB_CATEGORIES.map((cat) => {
                   const isActive = selectedCalculusCategory === cat.id;
-                  const count = cat.id === "all"
-                    ? calculusTopics.length
+                  const count = cat.id === "all" 
+                    ? calculusTopics.length 
                     : calculusTopics.filter(t => t.subCategory === cat.id).length;
 
                   return (
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCalculusCategory(cat.id as CalculusSubCategoryId)}
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer ${
-                        isActive
-                          ? isDark
-                            ? "bg-emerald-500 text-[#0c1f17] border-emerald-400 shadow-md shadow-emerald-500/25 scale-[1.03]"
-                            : "bg-[#1F2329] text-white border-black shadow-md scale-[1.03]"
-                          : isDark
-                            ? "border-emerald-500/25 bg-[#0d2318]/60 text-emerald-200 hover:bg-[#102b1e] hover:border-emerald-400/40"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50"
-                      }`}
+                      className={`topic-sidebar-item ${isActive ? "active" : ""}`}
                     >
-                      {cat.id === "derivatives" && <Zap className="w-3.5 h-3.5" />}
-                      {cat.id === "limits" && <Activity className="w-3.5 h-3.5" />}
-                      {cat.id === "foundations" && <Compass className="w-3.5 h-3.5" />}
-                      {cat.id === "derivatives-common" && <FunctionSquare className="w-3.5 h-3.5" />}
-                      {cat.id === "implicit" && <Sliders className="w-3.5 h-3.5" />}
-                      {cat.id === "applications" && <TrendingUp className="w-3.5 h-3.5" />}
-                      {cat.id === "optimization" && <PieChart className="w-3.5 h-3.5" />}
-                      {cat.id === "lhopital" && <Binary className="w-3.5 h-3.5" />}
-                      {cat.id === "intro-integration" && <BookOpen className="w-3.5 h-3.5" />}
-                      {cat.id === "mvt-extrema" && <Activity className="w-3.5 h-3.5" />}
-                      {cat.id === "definite-integrals" && <Calculator className="w-3.5 h-3.5" />}
-                      {cat.id === "fundamental-theorem" && <Sparkles className="w-3.5 h-3.5" />}
-                      {cat.id === "all" && <Layers className="w-3.5 h-3.5" />}
-                      <span>{cat.label}</span>
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                        isActive
-                          ? isDark
-                            ? "bg-[#0c1f17]/20 text-[#0c1f17]"
-                            : "bg-white/20 text-white"
-                          : isDark
-                            ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/30"
-                            : "bg-slate-100 text-slate-600 border border-slate-200"
-                      }`}>
-                        {count}
-                      </span>
+                      <div className="flex items-center gap-2.5 truncate">
+                        {cat.id === "all" && <Layers className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "foundations" && <Landmark className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "limits" && <Activity className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "derivatives" && <Zap className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "derivatives-common" && <FunctionSquare className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "implicit" && <Sliders className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "applications" && <TrendingUp className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "optimization" && <Maximize2 className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "lhopital" && <Binary className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "intro-integration" && <BookOpen className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "mvt-extrema" && <Activity className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "definite-integrals" && <Calculator className="w-4 h-4 text-[#7B1824]" />}
+                        {cat.id === "fundamental-theorem" && <Sparkles className="w-4 h-4 text-[#7B1824]" />}
+                        <span className="truncate">{cat.label}</span>
+                      </div>
+                      <span className="topic-sidebar-count">{count}</span>
                     </button>
                   );
                 })}
               </div>
+            </aside>
 
-              {/* Calculus Topics Grid */}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredCalculusTopics.length > 0 ? (
-                  filteredCalculusTopics.map((topic, index) => {
-                    const isClicked = clickedTopicId === topic.id;
-                    const isDeriv = topic.subCategory === "derivatives";
-                    const isLimits = topic.subCategory === "limits";
-                    const isFound = topic.subCategory === "foundations";
-                    const isDerivCommon = topic.subCategory === "derivatives-common";
-                    const isImplicit = topic.subCategory === "implicit";
-                    const isApps = topic.subCategory === "applications";
-                    const isOpt = topic.subCategory === "optimization";
-                    const isLhopital = topic.subCategory === "lhopital";
-                    const isIntroInt = topic.subCategory === "intro-integration";
-                    const isMvt = topic.subCategory === "mvt-extrema";
-                    const isDefInt = topic.subCategory === "definite-integrals";
-                    const isFtc = topic.subCategory === "fundamental-theorem";
+            {/* Main Content Area */}
+            <div className="flex-1 w-full space-y-5">
+              {/* Top Bar with Title & Switcher */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm">
+                      <Layers className="w-5 h-5" />
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827]">
+                      Calculus 1 Topics
+                    </h2>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#d6b1b7] bg-[#fbf3f5] text-[#7B1824]">
+                      {calculusTopics.length} Topics
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs sm:text-sm text-[#6B7280]">
+                    Explore foundations of Calculus, Limit &amp; Continuity, and Derivatives with step-by-step verified explanations.
+                  </p>
+                </div>
 
-                    return (
-                      <motion.article
-                        key={topic.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{
-                          opacity: isClicked ? 0.4 : 1,
-                          y: 0,
-                          scale: isClicked ? 0.97 : 1,
-                        }}
-                        transition={{
-                          duration: 0.35,
-                          delay: index * 0.02,
-                          ease: "easeOut",
-                        }}
-                        whileHover={{
-                          y: -4,
-                          borderColor: isDeriv 
-                            ? "rgba(182, 255, 46, 0.6)" 
-                            : isLimits 
-                              ? "rgba(20, 184, 166, 0.6)" 
-                              : isDerivCommon
-                                ? "rgba(56, 189, 248, 0.6)"
-                                : isImplicit
-                                  ? "rgba(192, 132, 252, 0.6)"
-                                  : isApps
-                                    ? "rgba(251, 191, 36, 0.6)"
-                                    : isOpt
-                                      ? "rgba(249, 115, 22, 0.6)"
-                                      : isLhopital
-                                        ? "rgba(236, 72, 153, 0.6)"
-                                        : isIntroInt
-                                          ? "rgba(34, 197, 94, 0.6)"
-                                          : isMvt
-                                            ? "rgba(168, 85, 247, 0.6)"
-                                            : isDefInt
-                                              ? "rgba(14, 165, 233, 0.6)"
-                                              : isFtc
-                                                ? "rgba(245, 158, 11, 0.6)"
-                                                : "rgba(16, 185, 129, 0.6)",
-                          boxShadow: isDark
-                            ? "0 12px 30px -5px rgba(16, 185, 129, 0.25)"
-                            : "0 12px 24px -5px rgba(16, 185, 129, 0.15)",
-                        }}
-                        className={`group relative flex flex-col justify-between rounded-2xl border p-5 backdrop-blur-xl transition-all duration-300 ${
-                          isDark
-                            ? "border-emerald-500/20 bg-gradient-to-br from-[#0c1f17]/90 via-[#112a20]/80 to-[#0a1812]/90 hover:border-emerald-400/50"
-                            : "border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 via-white to-white hover:border-emerald-400 shadow-md shadow-emerald-100/40"
-                        }`}
+                <button
+                  onClick={() => {
+                    setTopicSearch("");
+                    setActiveView("topics-linear");
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#E5E7EB] bg-white text-xs font-bold text-[#7B1824] hover:bg-[#FDF2F4] transition-colors shadow-sm cursor-pointer"
+                >
+                  <span>Go to Linear Algebra Topics</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+                <input
+                  type="text"
+                  placeholder="Search topics (e.g. Limits, Functions...)"
+                  value={topicSearch}
+                  onChange={(e) => setTopicSearch(e.target.value)}
+                  className="w-full rounded-xl border border-[#E5E7EB] bg-white pl-10 pr-10 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7B1824] shadow-sm"
+                />
+                {topicSearch && (
+                  <button
+                    onClick={() => setTopicSearch("")}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#111827]"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Horizontal Filter Tabs */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setSelectedCalculusCategory("all")}
+                  className={`filter-pill ${selectedCalculusCategory === "all" ? "active" : ""}`}
+                >
+                  <span>All Topics</span>
+                  <span className="pill-count">{calculusTopics.length}</span>
+                </button>
+
+                {CALCULUS_SUB_CATEGORIES.slice(1, 5).map((cat) => {
+                  const isActive = selectedCalculusCategory === cat.id;
+                  const count = calculusTopics.filter(t => t.subCategory === cat.id).length;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCalculusCategory(cat.id as CalculusSubCategoryId)}
+                      className={`filter-pill ${isActive ? "active" : ""}`}
+                    >
+                      {cat.id === "foundations" && <Landmark className="w-3.5 h-3.5 text-[#7B1824]" />}
+                      {cat.id === "limits" && <Activity className="w-3.5 h-3.5 text-[#7B1824]" />}
+                      {cat.id === "derivatives" && <Zap className="w-3.5 h-3.5 text-[#7B1824]" />}
+                      {cat.id === "derivatives-common" && <FunctionSquare className="w-3.5 h-3.5 text-[#7B1824]" />}
+                      <span>{cat.label}</span>
+                      <span className="pill-count">{count}</span>
+                    </button>
+                  );
+                })}
+
+                {/* More Dropdown */}
+                <div className="relative" ref={moreCalculusDropdownRef}>
+                  <button
+                    onClick={() => setMoreCalculusDropdownOpen(!moreCalculusDropdownOpen)}
+                    className="filter-pill cursor-pointer"
+                  >
+                    <span>More</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreCalculusDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {moreCalculusDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="absolute left-0 top-full mt-1.5 w-64 rounded-xl border border-[#E5E7EB] bg-white p-2 shadow-xl z-50"
                       >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-2.5">
-                            {/* Specific Subcategory Badge */}
-                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                              isDeriv
-                                ? isDark
-                                  ? "border-lime-500/40 bg-lime-950/60 text-lime-300"
-                                  : "border-lime-300 bg-lime-100 text-lime-900"
-                                : isLimits
-                                  ? isDark
-                                    ? "border-teal-500/40 bg-teal-950/60 text-teal-300"
-                                    : "border-teal-300 bg-teal-100 text-teal-900"
-                                  : isDerivCommon
-                                    ? isDark
-                                      ? "border-sky-500/40 bg-sky-950/60 text-sky-300"
-                                      : "border-sky-300 bg-sky-100 text-sky-900"
-                                    : isImplicit
-                                      ? isDark
-                                        ? "border-purple-500/40 bg-purple-950/60 text-purple-300"
-                                        : "border-purple-300 bg-purple-100 text-purple-900"
-                                      : isApps
-                                        ? isDark
-                                          ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
-                                          : "border-amber-300 bg-amber-100 text-amber-900"
-                                        : isOpt
-                                          ? isDark
-                                            ? "border-orange-500/40 bg-orange-950/60 text-orange-300"
-                                            : "border-orange-300 bg-orange-100 text-orange-900"
-                                          : isLhopital
-                                            ? isDark
-                                              ? "border-pink-500/40 bg-pink-950/60 text-pink-300"
-                                              : "border-pink-300 bg-pink-100 text-pink-900"
-                                            : isIntroInt
-                                              ? isDark
-                                                ? "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
-                                                : "border-emerald-300 bg-emerald-100 text-emerald-900"
-                                              : isMvt
-                                                ? isDark
-                                                  ? "border-violet-500/40 bg-violet-950/60 text-violet-300"
-                                                  : "border-violet-300 bg-violet-100 text-violet-900"
-                                                : isDefInt
-                                                  ? isDark
-                                                    ? "border-cyan-500/40 bg-cyan-950/60 text-cyan-300"
-                                                    : "border-cyan-300 bg-cyan-100 text-cyan-900"
-                                                  : isFtc
-                                                    ? isDark
-                                                      ? "border-yellow-500/40 bg-yellow-950/60 text-yellow-300"
-                                                      : "border-yellow-300 bg-yellow-100 text-yellow-900"
-                                                    : isDark
-                                                      ? "border-emerald-500/30 bg-emerald-950/60 text-emerald-300"
-                                                      : "border-emerald-300 bg-emerald-100/90 text-emerald-800"
-                            }`}>
-                              {isDeriv && <Zap className="w-3 h-3 text-lime-400" />}
-                              {isLimits && <Activity className="w-3 h-3 text-teal-400" />}
-                              {isFound && <Compass className="w-3 h-3 text-emerald-400" />}
-                              {isDerivCommon && <FunctionSquare className="w-3 h-3 text-sky-400" />}
-                              {isImplicit && <Sliders className="w-3 h-3 text-purple-400" />}
-                              {isApps && <TrendingUp className="w-3 h-3 text-amber-400" />}
-                              {isOpt && <PieChart className="w-3 h-3 text-orange-400" />}
-                              {isLhopital && <Binary className="w-3 h-3 text-pink-400" />}
-                              {isIntroInt && <BookOpen className="w-3 h-3 text-emerald-400" />}
-                              {isMvt && <Activity className="w-3 h-3 text-violet-400" />}
-                              {isDefInt && <Calculator className="w-3 h-3 text-cyan-400" />}
-                              {isFtc && <Sparkles className="w-3 h-3 text-yellow-400" />}
-                              <span>{topic.subCategoryLabel || "Calculus 1"}</span>
-                            </span>
+                        {CALCULUS_SUB_CATEGORIES.slice(5).map((cat) => {
+                          const count = calculusTopics.filter(t => t.subCategory === cat.id).length;
+                          return (
+                            <button
+                              key={cat.id}
+                              onClick={() => {
+                                setSelectedCalculusCategory(cat.id as CalculusSubCategoryId);
+                                setMoreCalculusDropdownOpen(false);
+                              }}
+                              className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#374151] hover:bg-[#FDF2F4] hover:text-[#7B1824] rounded-lg transition-colors text-left cursor-pointer"
+                            >
+                              <span>{cat.label}</span>
+                              <span className="text-[10px] font-bold text-[#9CA3AF]">{count}</span>
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
 
-                            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold font-mono ${
-                              isDark ? "border-[#333A46] bg-[#14171B] text-slate-300" : "border-slate-200 bg-slate-100 text-slate-700"
-                            }`}>
-                              {topic.examples.length} ex
-                            </span>
-                          </div>
-
-                          <h3 className={`font-[Fraunces] text-lg font-bold transition-colors duration-200 ${
-                            isDark ? "text-white group-hover:text-emerald-300" : "text-slate-900 group-hover:text-emerald-700"
-                          }`}>
-                            {topic.title}
-                          </h3>
-
-                          <p className={`mt-2 text-xs sm:text-sm line-clamp-3 leading-relaxed ${
-                            isDark ? "text-slate-300" : "text-slate-600"
-                          }`}>
-                            {topic.summary}
-                          </p>
-                        </div>
-
-                        <div className={`mt-5 flex items-center justify-between border-t pt-3 ${
-                          isDark ? "border-emerald-500/20" : "border-emerald-100"
-                        }`}>
-                          <span className={`text-[0.7rem] font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                            {topic.examples.length} verified examples
+              {/* 3-Column Topic Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filteredCalculusTopics.length > 0 ? (
+                  filteredCalculusTopics.map((topic) => (
+                    <div
+                      key={topic.id}
+                      onClick={(e) => handleTopicClick(topic.id, "calculus", e)}
+                      className="group flex flex-col justify-between rounded-2xl border border-[#E5E7EB] bg-white p-5 hover:border-[#d6b1b7] hover:shadow-lg transition-all duration-200 cursor-pointer"
+                    >
+                      <div>
+                        {/* Icon & Examples badge */}
+                        <div className="flex items-center justify-between mb-4">
+                          {renderTopicGlyph(topic)}
+                          <span className="text-[11px] font-medium text-[#6B7280]">
+                            {topic.examples.length} examples
                           </span>
-
-                          <Link
-                            to={`/topics/${topic.id}`}
-                            onClick={(e) => handleTopicClick(topic.id, "calculus", e)}
-                            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-extrabold transition-all duration-200 no-underline shadow-sm hover:scale-105 ${
-                              isDark
-                                ? "bg-emerald-500 hover:bg-emerald-400 text-[#0c1f17]"
-                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                            }`}
-                          >
-                            <span>Read Topic</span>
-                            <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                          </Link>
                         </div>
-                      </motion.article>
-                    );
-                  })
+
+                        <h3 className="text-base font-bold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug">
+                          {topic.title}
+                        </h3>
+
+                        <p className="mt-1.5 text-xs text-[#6B7280] line-clamp-3 leading-relaxed font-normal">
+                          {topic.summary}
+                        </p>
+                      </div>
+
+                      <div className="mt-5 pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform">
+                          View Topic <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </div>
+                  ))
                 ) : (
-                  <div className="col-span-full py-12 text-center">
-                    <p className={`text-base font-semibold ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                      No Calculus topics found matching &ldquo;{topicSearch}&rdquo;
-                    </p>
-                    <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                      Try clearing the search or switching category filters above.
-                    </p>
+                  <div className="col-span-full py-16 text-center text-[#6B7280]">
+                    No calculus topics found matching &quot;{topicSearch}&quot;.
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

@@ -60,24 +60,24 @@ const LimitCalculator: React.FC = () => {
             value={functionStr}
             onChange={(e) => setFunctionStr(e.target.value)}
             placeholder="e.g., (x^2-1)/(x-1)"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">x →</label>
+          <label className="block text-sm font-medium text-[#374151] mb-1">x →</label>
           <input
             type="text"
             value={point}
             onChange={(e) => setPoint(e.target.value)}
             placeholder="e.g., 1"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1F2329] focus:border-transparent transition font-mono"
+            className="w-full px-4 py-2 border border-[#E5E7EB] bg-white text-[#111827] rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-[#2563EB] transition font-mono"
           />
         </div>
       </div>
 
       <button
         onClick={calculate}
-        className="w-full bg-[#1F2329] text-[#B6FF2E] py-3 rounded-lg font-medium hover:bg-[#282E37] transition shadow-md"
+        className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-3 rounded-xl font-bold transition shadow-md shadow-blue-500/20"
       >
         Calculate Limit
       </button>
