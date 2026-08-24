@@ -96,8 +96,11 @@ export default function Navbar() {
 
   // Determine if we're on the dark background view (dark navbar needed)
   const isHeroPage = 
-    (location.pathname === "/" && (activeTab === "home" || currentView === "main" || currentView === "categories")) || 
+    (location.pathname === "/" && (activeTab === "home" || currentView === "main" || currentView === "categories" || currentView === "topics-linear" || currentView === "topics-calculus")) || 
     location.pathname === "/calculator-hub" || 
+    location.pathname === "/calculators" || 
+    location.pathname === "/calculus-calculators" || 
+    location.pathname === "/calculator" || 
     location.pathname === "/login" || 
     location.pathname === "/register";
 
@@ -190,9 +193,7 @@ export default function Navbar() {
             {activeTab === "topics" && (
               <motion.span
                 layoutId="activeNavUnderline"
-                className={`absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full ${
-                  isHeroPage ? "bg-white" : "bg-[#8B1A24]"
-                }`}
+                className="absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full bg-[#E05260]"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
             )}

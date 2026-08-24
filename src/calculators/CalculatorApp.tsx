@@ -1,23 +1,23 @@
 // components/CalculatorApp.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import mathBg from '../assets/math.jpeg';
 import { 
   Calculator, 
   ChevronDown, 
-  ChevronUp, 
-  ChevronLeft,
+  ChevronLeft, 
   ChevronRight, 
   X, 
   Search, 
-  Sparkles, 
-  CheckCircle2,
   ArrowLeft,
-  Grid,
-  Layers,
-  Cpu,
-  Compass,
-  Binary
+  ArrowRight,
+  Sliders,
+  Zap,
+  Users,
+  BookOpen,
+  Bookmark,
+  Layers
 } from 'lucide-react';
 
 // Import all calculator components
@@ -57,35 +57,35 @@ export interface Tool {
 
 export const tools: Tool[] = [
   // Linear Systems
-  { id: 'equations', name: 'System of Linear Equations', category: 'equations', categoryLabel: 'Linear Systems', component: <SystemOfEquations />, description: 'Solve n equations with n variables using step-by-step Gaussian elimination and augmented matrices.', badge: 'Popular' },
-  { id: 'leastsquares', name: 'Least Squares Solver', category: 'equations', categoryLabel: 'Linear Systems', component: <LeastSquares />, description: 'Find best-fit solutions for overdetermined linear systems Ax = b using normal equations and regression.' },
-  { id: 'transformation', name: 'Linear Transformation', category: 'equations', categoryLabel: 'Linear Systems', component: <LinearTransformation />, description: 'Compute standard matrix representations T(v) = Av, geometric mappings, kernel, and range.' },
-  { id: 'quadratic', name: 'Quadratic Form', category: 'equations', categoryLabel: 'Linear Systems', component: <QuadraticForm />, description: 'Analyze matrix xᵀAx definiteness (positive definite, indefinite) and principal axis theorem.' },
+  { id: 'equations', name: 'System of Linear Equations', category: 'equations', categoryLabel: 'Linear Systems', component: <SystemOfEquations />, description: 'Solve n equations with n variables using step-by-step Gaussian elimination.', badge: 'equations' },
+  { id: 'leastsquares', name: 'Least Squares Solver', category: 'equations', categoryLabel: 'Linear Systems', component: <LeastSquares />, description: 'Find best-fit solutions for overdetermined systems using normal equations.', badge: 'equations' },
+  { id: 'transformation', name: 'Linear Transformation', category: 'equations', categoryLabel: 'Linear Systems', component: <LinearTransformation />, description: 'Compute standard matrix representations T(v) = Av and mappings.', badge: 'equations' },
+  { id: 'quadratic', name: 'Quadratic Form', category: 'equations', categoryLabel: 'Linear Systems', component: <QuadraticForm />, description: 'Analyze matrix xᵀAx definiteness and principal axis theorem.', badge: 'equations' },
 
   // Matrices & Inverses
-  { id: 'matrix', name: 'Matrix Calculator', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <MatrixCalculator />, description: 'Compute matrix powers, scalar multiplication, trace, transpose, and general operations.', badge: 'Core' },
-  { id: 'matrixops', name: 'Matrix Operations', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <MatrixOperations />, description: 'Perform addition A+B, subtraction A-B, scalar ops, and matrix multiplication A·B with steps.' },
-  { id: 'inverse', name: 'Matrix Inverse (A⁻¹)', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <MatrixInverse />, description: 'Invert 2x2, 3x3, 4x4, and nxn matrices step-by-step using Gaussian elimination and adjugate matrices.' },
-  { id: 'determinant', name: 'Determinant Calculator', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <DeterminantCalculator />, description: 'Compute matrix determinants using Laplace cofactor expansion and row echelon reductions.', badge: 'Essential' },
-  { id: 'rank', name: 'Matrix Rank & Nullity', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <RankCalculator />, description: 'Determine the rank, nullity, pivot columns, and verify the rank-nullity theorem.' },
-  { id: 'transpose', name: 'Transpose Calculator', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <TransposeCalculator />, description: 'Calculate matrix transpose Aᵀ, conjugate transpose, and verify matrix symmetry.' },
+  { id: 'matrix', name: 'Matrix Calculator', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <MatrixCalculator />, description: 'Compute matrix powers, scalar multiplication, trace, and transpose.', badge: 'matrices' },
+  { id: 'matrixops', name: 'Matrix Operations', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <MatrixOperations />, description: 'Perform addition, subtraction, scalar ops, and multiplication with steps.', badge: 'matrices' },
+  { id: 'inverse', name: 'Matrix Inverse (A⁻¹)', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <MatrixInverse />, description: 'Invert 2x2, 3x3, 4x4, and nxn matrices step-by-step.', badge: 'matrices' },
+  { id: 'determinant', name: 'Determinant Calculator', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <DeterminantCalculator />, description: 'Compute matrix determinants using Laplace cofactor expansion.', badge: 'essential' },
+  { id: 'rank', name: 'Matrix Rank & Nullity', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <RankCalculator />, description: 'Determine the rank, nullity, pivot columns, and verify the rank-nullity theorem.', badge: 'matrices' },
+  { id: 'transpose', name: 'Transpose Calculator', category: 'matrices', categoryLabel: 'Matrices & Inverses', component: <TransposeCalculator />, description: 'Calculate matrix transpose Aᵀ, conjugate transpose, and verify matrix symmetry.', badge: 'matrices' },
 
   // Vectors & Spaces
-  { id: 'vector', name: 'Vector Calculator', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <VectorCalculator />, description: 'Calculate vector lengths, magnitudes, unit vector normalizations, and angles in ℝⁿ.' },
-  { id: 'dot', name: 'Dot Product (u · v)', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <DotProduct />, description: 'Compute inner product u·v, angles between vectors, orthogonality tests, and Cauchy-Schwarz.' },
-  { id: 'cross', name: 'Cross Product (u × v)', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <CrossProduct />, description: 'Calculate 3D vector normal cross product u×v, torque vectors, and parallelogram areas.' },
-  { id: 'projection', name: 'Vector Projection (proj)', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <VectorProjection />, description: 'Calculate orthogonal projections of vectors onto lines and subspaces, plus orthogonal complements.' },
-  { id: 'independence', name: 'Linear Independence', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <LinearIndependence />, description: 'Test sets of vectors to determine if they are linearly independent or linearly dependent.' },
-  { id: 'combination', name: 'Linear Combination', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <LinearCombination />, description: 'Express a target vector b as a linear combination c₁v₁ + c₂v₂ + ... + cₖvₖ.' },
-  { id: 'basis', name: 'Basis & Dimension', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <BasisCalculator />, description: 'Extract a linearly independent basis for a spanning set and determine the subspace dimension dim(V).' },
-  { id: 'span', name: 'Span Calculator', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <SpanCalculator />, description: 'Determine whether a given vector belongs to span(v₁,...,vₖ) using augmented matrix rank tests.' },
+  { id: 'vector', name: 'Vector Calculator', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <VectorCalculator />, description: 'Calculate vector lengths, magnitudes, unit vector normalizations, and angles in ℝⁿ.', badge: 'vectors' },
+  { id: 'dot', name: 'Dot Product (u · v)', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <DotProduct />, description: 'Compute inner product u·v, angles between vectors, and orthogonality tests.', badge: 'vectors' },
+  { id: 'cross', name: 'Cross Product (u × v)', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <CrossProduct />, description: 'Calculate 3D vector normal cross product u×v and parallelogram areas.', badge: 'vectors' },
+  { id: 'projection', name: 'Vector Projection (proj)', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <VectorProjection />, description: 'Calculate orthogonal projections of vectors onto lines and subspaces.', badge: 'vectors' },
+  { id: 'independence', name: 'Linear Independence', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <LinearIndependence />, description: 'Test sets of vectors to determine if they are linearly independent or dependent.', badge: 'vectors' },
+  { id: 'combination', name: 'Linear Combination', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <LinearCombination />, description: 'Express a target vector b as a linear combination of given vectors.', badge: 'vectors' },
+  { id: 'basis', name: 'Basis & Dimension', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <BasisCalculator />, description: 'Extract a linearly independent basis for a spanning set and find dimension.', badge: 'vectors' },
+  { id: 'span', name: 'Span Calculator', category: 'vectors', categoryLabel: 'Vectors & Spaces', component: <SpanCalculator />, description: 'Determine whether a given vector belongs to span(v₁,...,vₖ) using rank tests.', badge: 'vectors' },
 
   // Eigen & Decompositions
-  { id: 'eigen', name: 'Eigenvalues & Eigenvectors', category: 'decompositions', categoryLabel: 'Decompositions', component: <EigenCalculator />, description: 'Calculate characteristic polynomials det(A - λI) = 0, eigenvalues, and eigenspaces.' },
-  { id: 'diagonalization', name: 'Matrix Diagonalization (PDP⁻¹)', category: 'decompositions', categoryLabel: 'Decompositions', component: <Diagonalization />, description: 'Diagonalize square matrices A = PDP⁻¹ and compute fast matrix powers Aᵏ.' },
-  { id: 'lu', name: 'LU Decomposition (PA = LU)', category: 'decompositions', categoryLabel: 'Decompositions', component: <LUDecomposition />, description: 'Factorize matrices into Lower and Upper triangular matrices with partial row pivoting.' },
-  { id: 'qr', name: 'QR Decomposition (A = QR)', category: 'decompositions', categoryLabel: 'Decompositions', component: <QRDecomposition />, description: 'Decompose matrices into orthogonal matrix Q and upper triangular matrix R via Gram-Schmidt.' },
-  { id: 'svd', name: 'SVD Calculator (UΣVᵀ)', category: 'decompositions', categoryLabel: 'Decompositions', component: <SVDCalculator />, description: 'Perform Singular Value Decomposition A = UΣVᵀ for square or rectangular m×n matrices.', badge: 'Pro' },
+  { id: 'eigen', name: 'Eigenvalues & Eigenvectors', category: 'decompositions', categoryLabel: 'Decompositions', component: <EigenCalculator />, description: 'Find eigenvalues and eigenvectors with step-by-step solutions.', badge: 'vectors' },
+  { id: 'diagonalization', name: 'Matrix Diagonalization (PDP⁻¹)', category: 'decompositions', categoryLabel: 'Decompositions', component: <Diagonalization />, description: 'Diagonalize square matrices A = PDP⁻¹ and compute matrix powers.', badge: 'decompositions' },
+  { id: 'lu', name: 'LU Decomposition (PA = LU)', category: 'decompositions', categoryLabel: 'Decompositions', component: <LUDecomposition />, description: 'Factorize matrices into Lower and Upper triangular matrices with pivoting.', badge: 'decompositions' },
+  { id: 'qr', name: 'QR Decomposition (A = QR)', category: 'decompositions', categoryLabel: 'Decompositions', component: <QRDecomposition />, description: 'Decompose matrices into orthogonal Q and upper triangular R via Gram-Schmidt.', badge: 'decompositions' },
+  { id: 'svd', name: 'SVD Calculator (UΣVᵀ)', category: 'decompositions', categoryLabel: 'Decompositions', component: <SVDCalculator />, description: 'Perform Singular Value Decomposition A = UΣVᵀ for m×n matrices.', badge: 'decompositions' },
 ];
 
 const CATEGORIES = [
@@ -101,15 +101,28 @@ interface CalculatorAppProps {
 }
 
 export default function CalculatorApp({ initialToolId = null }: CalculatorAppProps) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // When null, show the Grid of calculators catalog organized like the All Topics view.
-  const [selectedToolId, setSelectedToolId] = useState<string | null>(initialToolId);
+  const [selectedToolId, setSelectedToolId] = useState<string | null>(() => {
+    if (initialToolId) return initialToolId;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tool") || params.get("id") || null;
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const toolParam = params.get("tool") || params.get("id");
+    if (toolParam) {
+      const exists = tools.some((t) => t.id === toolParam);
+      if (exists) {
+        setSelectedToolId(toolParam);
+      }
+    }
+  }, [location.search]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [clickedToolId, setClickedToolId] = useState<string | null>(null);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -123,7 +136,8 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
     const matchesSearch = 
       tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tool.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tool.categoryLabel.toLowerCase().includes(searchTerm.toLowerCase());
+      tool.categoryLabel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tool.badge && tool.badge.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 
@@ -165,7 +179,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle ESC key: if dropdown open, close it; if inside calculator, go back to grid
+  // Handle ESC key
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -181,14 +195,10 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
   }, [isDropdownOpen, selectedToolId]);
 
   const handleSelectTool = (toolId: string) => {
-    setClickedToolId(toolId);
-    setTimeout(() => {
-      setSelectedToolId(toolId);
-      setClickedToolId(null);
-      setIsDropdownOpen(false);
-      setSearchTerm('');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 150);
+    setSelectedToolId(toolId);
+    setIsDropdownOpen(false);
+    setSearchTerm('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToGrid = () => {
@@ -197,667 +207,338 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
     setSearchTerm('');
   };
 
-  return (
-    <div className={`space-y-6 ${isDark ? 'theme-dark' : 'theme-light'}`}>
-      <AnimatePresence mode="wait">
-        {selectedToolId === null || !currentTool ? (
-          /* ========================================================= */
-          /* VIEW 1: ORGANIZED CALCULATORS CATALOG (ALL TOPICS STYLE)  */
-          /* ========================================================= */
-          <motion.div
-            key="calculators-grid-view"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-6"
-          >
-            {/* Top Filter & Search Controls Bar */}
-            <div className={`flex flex-wrap items-center justify-between gap-4 border-b pb-5 ${
-              isDark ? "border-[#333A46]" : "border-slate-300"
-            }`}>
-              {/* Category Filter Tabs */}
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                {CATEGORIES.map((cat) => {
-                  const isActive = selectedCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                        isActive
-                          ? isDark
-                            ? 'bg-[#B6FF2E] text-[#1F2329] shadow-md shadow-[#B6FF2E]/25'
-                            : 'bg-[#1F2329] text-white shadow-md'
-                          : isDark
-                            ? 'bg-[#1F2329] text-slate-300 hover:text-[#B6FF2E] hover:bg-[#282E37] border border-[#333A46]'
-                            : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300'
-                      }`}
-                    >
-                      <span>{cat.label}</span>
-                      <span className={`rounded-full px-2 py-0.2 text-[10px] font-mono font-bold ${
-                        isActive
-                          ? isDark ? 'bg-black/20 text-[#1F2329]' : 'bg-white/25 text-white'
-                          : isDark ? 'bg-[#14171B] text-[#B6FF2E]' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {cat.count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+  const scrollToCatalog = () => {
+    const el = document.getElementById('calculators-catalog');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-              {/* Search Box */}
-              <div className="relative w-full sm:w-80">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-[#B6FF2E]" : "text-[#1F2329]"}`} />
-                <input
-                  type="text"
-                  placeholder="Search calculators (e.g., Eigen, Inverse, Span)..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-full rounded-xl border pl-9 pr-8 py-2 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                    isDark 
-                      ? "border-[#333A46] bg-[#14171B] text-white focus:border-[#B6FF2E] focus:ring-[#B6FF2E]/20" 
-                      : "border-slate-300 bg-white text-[#1F2329] focus:border-[#1F2329] focus:ring-black/10"
-                  }`}
-                />
-                {searchTerm && (
+  return (
+    <div className="relative min-h-screen bg-[#FDFDFD] text-[#111827]">
+      {/* ========================================================================= */}
+      {/* HERO SECTION: SOLVE SMARTER WITH LINEAR ALGEBRA                            */}
+      {/* ========================================================================= */}
+      <section className="relative overflow-hidden min-h-[480px] lg:min-h-[520px] flex items-center bg-[#0C1017] pt-16 sm:pt-20">
+        {/* Full Background Image: math.jpeg */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={mathBg}
+            alt="Chalkboard background"
+            className="w-full h-full object-cover object-center lg:object-[center_right] opacity-75"
+          />
+          {/* Scrim overlay: heavy on left, revealing child/chalkboard on right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 via-50% to-black/35 lg:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <div className="max-w-2xl space-y-5">
+            {/* Top Pill Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs"
+            >
+              <span>23 Powerful Calculators</span>
+            </motion.div>
+
+            {/* Main Headline */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-4xl sm:text-5xl lg:text-[3.65rem] font-black tracking-tight text-white leading-[1.08]"
+              >
+                <span className="text-white">Solve Smarter with</span>
+                <br />
+                <span className="text-[#A31D24]">Linear Algebra</span>
+              </motion.h1>
+
+            {/* Paragraph Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-sm sm:text-base text-white/80 leading-relaxed font-normal max-w-xl"
+            >
+              From matrices to eigenvectors, explore intelligent calculators designed to solve complex problems step-by-step.
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-wrap items-center gap-3.5 pt-2"
+            >
+              <button
+                onClick={scrollToCatalog}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#7B1824]/30 transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <span>Explore Calculators</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => navigate('/?tab=topics')}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 hover:bg-white/15 backdrop-blur-md px-5 py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <BookOpen className="w-4 h-4 text-white/80" />
+                <span>View Topics</span>
+              </button>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* DARK FILTER & SEARCH BAR                                                  */}
+      {/* ========================================================================= */}
+      <div id="calculators-catalog" className="sticky top-16 sm:top-[4.5rem] z-20 bg-[#0B0F15] border-y border-white/10 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
+            
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+              {CATEGORIES.map((cat) => {
+                const isActive = selectedCategory === cat.id && !selectedToolId;
+                return (
                   <button
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      if (selectedToolId) setSelectedToolId(null);
+                    }}
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'bg-[#8B1A24] text-white shadow-md shadow-[#8B1A24]/30'
+                        : 'bg-[#18202C] text-gray-300 hover:text-white hover:bg-[#222C3D] border border-white/10'
+                    }`}
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <span>{cat.label}</span>
+                    <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-black/40 text-gray-300'
+                    }`}>
+                      {cat.count}
+                    </span>
                   </button>
-                )}
-              </div>
+                );
+              })}
             </div>
 
-            {/* Calculators Cards Grid (Organized Identical to All Topics Layout) */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Search Input Box */}
+            <div className="relative w-full lg:w-80 shrink-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search calculators (e.g., Eigen, Inverse)"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (selectedToolId) setSelectedToolId(null);
+                }}
+                className="w-full rounded-full border border-white/15 bg-[#18202C] text-white placeholder-gray-400 pl-10 pr-9 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#8B1A24] focus:ring-2 focus:ring-[#8B1A24]/30 transition-all"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MAIN CONTENT AREA: GRID OR ACTIVE WORKSPACE                               */}
+      {/* ========================================================================= */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <AnimatePresence mode="wait">
+          {selectedToolId === null || !currentTool ? (
+            /* ========================================================= */
+            /* VIEW 1: 3-COLUMN CALCULATOR CARD GRID                     */
+            /* ========================================================= */
+            <motion.div
+              key="catalog-grid"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
               {gridFilteredTools.length > 0 ? (
-                gridFilteredTools.map((tool, index) => {
-                  const isClicked = clickedToolId === tool.id;
-                  return (
-                    <motion.article
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                  {gridFilteredTools.map((tool, index) => (
+                    <motion.div
                       key={tool.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{
-                        opacity: isClicked ? 0.4 : 1,
-                        y: 0,
-                        scale: isClicked ? 0.97 : 1,
-                      }}
-                      transition={{
-                        duration: 0.3,
-                        delay: Math.min(index * 0.03, 0.3),
-                        ease: "easeOut",
-                      }}
-                      whileHover={{
-                        y: -4,
-                        borderColor: "rgba(182, 255, 46, 0.5)",
-                        boxShadow: isDark
-                          ? "0 12px 30px -5px rgba(182, 255, 46, 0.2)"
-                          : "0 12px 24px -5px rgba(31, 35, 41, 0.1)",
-                      }}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: Math.min(index * 0.02, 0.2) }}
+                      whileHover={{ y: -3 }}
                       onClick={() => handleSelectTool(tool.id)}
-                      className={`group relative flex flex-col justify-between rounded-2xl border p-5 backdrop-blur-xl transition-all duration-300 cursor-pointer ${
-                        isDark
-                          ? "border-[#333A46] bg-[#1F2329]/80 hover:bg-[#1F2329]"
-                          : "border-slate-200 bg-white/95 hover:bg-white shadow-md shadow-slate-200/40"
-                      }`}
+                      className="group relative flex flex-col justify-between rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-xs hover:shadow-xl hover:border-[#8B1A24]/40 transition-all duration-300 cursor-pointer"
                     >
                       <div>
-                        {/* Header: Title + Category/Badge Pill */}
+                        {/* Top Row: Title + Category Pill */}
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className={`font-[Fraunces] text-lg font-bold transition-colors duration-200 ${
-                            isDark ? "text-white group-hover:text-[#B6FF2E]" : "text-[#1F2329] group-hover:text-black"
-                          }`}>
+                          <h3 className="text-base sm:text-[1.08rem] font-black text-[#111827] group-hover:text-[#8B1A24] transition-colors leading-snug">
                             {tool.name}
                           </h3>
-                          
-                          <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold flex-shrink-0 ${
-                            isDark ? "border-[#333A46] bg-[#14171B] text-[#B6FF2E]" : "border-slate-200 bg-slate-100 text-[#1F2329]"
-                          }`}>
-                            <Binary className="w-3 h-3 text-[#B6FF2E]" />
-                            {tool.badge || tool.category}
+                          <span className="inline-flex items-center gap-1 rounded-md border border-[#8B1A24]/20 bg-[#8B1A24]/5 px-2.5 py-0.5 text-xs font-bold text-[#8B1A24] shrink-0 lowercase">
+                            <Bookmark className="w-3 h-3 text-[#8B1A24]" />
+                            <span>{tool.badge || tool.category}</span>
                           </span>
                         </div>
 
-                        {/* Summary / Description */}
-                        <p className={`mt-2 text-xs sm:text-sm line-clamp-3 leading-relaxed ${
-                          isDark ? "text-slate-300" : "text-slate-600"
-                        }`}>
+                        {/* Middle: Description */}
+                        <p className="mt-2.5 text-xs sm:text-sm text-[#4B5563] leading-relaxed line-clamp-2 min-h-[42px] font-normal">
                           {tool.description}
                         </p>
                       </div>
 
-                      {/* Footer: Category label + Action Button */}
-                      <div className={`mt-5 flex items-center justify-between border-t pt-3 ${
-                        isDark ? "border-[#333A46]" : "border-slate-200"
-                      }`}>
-                        <span className={`text-[0.7rem] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                      {/* Bottom Row: Category Subtitle + Open Calculator Button */}
+                      <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+                        <span className="text-xs font-medium text-[#9CA3AF]">
                           {tool.categoryLabel}
                         </span>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectTool(tool.id);
-                          }}
-                          className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-extrabold transition-all duration-200 shadow-sm hover:scale-105 cursor-pointer ${
-                            isDark 
-                              ? "bg-[#B6FF2E] hover:bg-[#C6FF4D] text-[#14171B]" 
-                              : "bg-[#1F2329] hover:bg-black text-[#B6FF2E]"
-                          }`}
-                        >
+                        <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#8B1A24] group-hover:text-[#60101B] transition-colors">
                           <span>Open Calculator</span>
-                          <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                        </button>
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                        </span>
                       </div>
-                    </motion.article>
-                  );
-                })
+                    </motion.div>
+                  ))}
+                </div>
               ) : (
-                <div className="col-span-full py-16 text-center">
-                  <Calculator className="w-10 h-10 mx-auto text-slate-400 mb-3" />
-                  <p className={`text-base font-semibold ${isDark ? "text-slate-300" : "text-[#1F2329]"}`}>
-                    No calculators found matching &ldquo;{searchTerm}&rdquo;
+                <div className="py-20 text-center rounded-3xl border border-dashed border-gray-200 bg-white p-8">
+                  <Calculator className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                  <h3 className="text-base font-bold text-[#111827]">No calculators found</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                    No results match &ldquo;{searchTerm}&rdquo;. Try clearing your search query.
                   </p>
-                  <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                    Try selecting &quot;All Tools&quot; or clearing the search query.
-                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('all');
+                    }}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#7B1824] px-4 py-2 text-xs font-bold text-white hover:bg-[#60101B] transition-colors cursor-pointer"
+                  >
+                    Reset Filters
+                  </button>
                 </div>
               )}
-            </div>
-          </motion.div>
-        ) : (
-          /* ========================================================= */
-          /* VIEW 2: ACTIVE CALCULATOR WORKSPACE (WITH DROPDOWN & BACK)*/
-          /* ========================================================= */
-          <motion.div
-            key="calculator-active-view"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-6"
-          >
-            {/* Top Bar: Back to All Calculators + Dropdown Selector + Prev/Next */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5">
-              
-              {/* Back to All Calculators Button (Matching TopicPage layout) */}
-              <button
-                onClick={handleBackToGrid}
-                className={`group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer shadow-md ${
-                  isDark
-                    ? 'border-[#333A46] bg-[#1F2329] text-[#B6FF2E] hover:bg-[#282E37] hover:border-[#B6FF2E]/60 shadow-black/50'
-                    : 'border-slate-300 bg-white text-[#1F2329] hover:bg-slate-100 hover:border-[#1F2329]'
-                }`}
-              >
-                <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
-                <span>All Calculators</span>
-                <span className={`hidden sm:inline-block text-[10px] px-1.5 py-0.2 rounded font-mono ${
-                  isDark ? 'bg-[#14171B] text-slate-400' : 'bg-slate-100 text-slate-600'
-                }`}>
-                  ESC
-                </span>
-              </button>
-
-              {/* Center Dropdown Tool Switcher Bar */}
-              <div className="relative z-40 flex-1 max-w-2xl">
+            </motion.div>
+          ) : (
+            /* ========================================================= */
+            /* VIEW 2: ACTIVE CALCULATOR WORKSPACE                       */
+            /* ========================================================= */
+            <motion.div
+              key="active-calculator"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* Workspace Top Bar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5 bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+                {/* Back Button */}
                 <button
-                  ref={buttonRef}
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={`group relative w-full flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 backdrop-blur-xl transition-all duration-300 cursor-pointer ${
-                    isDark
-                      ? isDropdownOpen
-                        ? 'border-[#B6FF2E] bg-[#1F2329] shadow-xl shadow-[#B6FF2E]/20 ring-2 ring-[#B6FF2E]/20'
-                        : 'border-[#333A46] bg-[#1F2329]/90 hover:border-[#B6FF2E]/60 hover:bg-[#282E37] shadow-md shadow-black/50'
-                      : isDropdownOpen
-                        ? 'border-[#1F2329] bg-white shadow-xl shadow-black/15 ring-2 ring-black/10'
-                        : 'border-slate-300 bg-white/95 hover:border-[#1F2329] hover:bg-white shadow-sm'
-                  }`}
+                  onClick={handleBackToGrid}
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-xs sm:text-sm font-bold text-[#374151] transition-all cursor-pointer"
                 >
-                  <div className="flex items-center gap-3 text-left min-w-0">
-                    <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border ${
-                      isDark ? 'bg-[#14171B] text-[#B6FF2E] border-[#333A46]' : 'bg-slate-100 text-[#1F2329] border-slate-200'
-                    }`}>
-                      <Calculator className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-bold text-xs sm:text-sm truncate ${
-                          isDark ? 'text-white' : 'text-[#1F2329]'
-                        }`}>
-                          {currentTool.name}
-                        </span>
-                        {currentTool.badge && (
-                          <span className={`hidden sm:inline-flex items-center rounded-full border px-2 py-0.2 text-[0.6rem] font-bold ${
-                            isDark ? 'bg-[#14171B] border-[#B6FF2E]/40 text-[#B6FF2E]' : 'bg-[#B6FF2E]/25 border-[#B6FF2E] text-[#1F2329]'
-                          }`}>
-                            {currentTool.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-[11px] truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {currentTool.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={`rounded-md border px-2 py-0.5 text-[11px] font-mono font-bold ${
-                      isDark ? 'bg-[#14171B] border-[#333A46] text-[#B6FF2E]' : 'bg-slate-100 border-slate-200 text-[#1F2329]'
-                    }`}>
-                      {currentIndex + 1}/{tools.length}
-                    </span>
-                    <div className={`flex h-6 w-6 items-center justify-center rounded-md ${
-                      isDark ? 'text-[#B6FF2E]' : 'text-[#1F2329]'
-                    }`}>
-                      {isDropdownOpen ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </div>
-                  </div>
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>All Calculators</span>
                 </button>
 
-                {/* Dropdown Menu Drawer */}
-                {isDropdownOpen && (
-                  <div
-                    ref={dropdownRef}
-                    className={`absolute left-0 right-0 top-full mt-2 z-50 rounded-2xl border p-3.5 backdrop-blur-2xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200 ${
-                      isDark
-                        ? 'border-[#333A46] bg-[#1F2329]/98 shadow-black/90'
-                        : 'border-slate-300 bg-white/98 shadow-slate-300/80'
-                    }`}
+                {/* Dropdown Switcher */}
+                <div className="relative z-30 flex-1 max-w-md" ref={dropdownRef}>
+                  <button
+                    ref={buttonRef}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white hover:border-[#8B1A24]/50 px-4 py-2 text-left transition-all cursor-pointer shadow-xs"
                   >
-                    {/* Search Box */}
-                    <div className="relative mb-3">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B6FF2E]" />
-                      <input
-                        type="text"
-                        placeholder="Switch to another calculator..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        autoFocus
-                        className={`w-full rounded-xl border pl-9 pr-8 py-2 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                          isDark
-                            ? 'border-[#333A46] bg-[#14171B] text-white focus:border-[#B6FF2E] focus:ring-[#B6FF2E]/20'
-                            : 'border-slate-300 bg-slate-50 text-[#1F2329] focus:border-[#1F2329] focus:ring-black/10'
-                        }`}
-                      />
-                      {searchTerm && (
-                        <button
-                          onClick={() => setSearchTerm('')}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* List of tools */}
-                    <div className="grid max-h-[340px] gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
-                      {dropdownFilteredTools.map((tool) => {
-                        const isSelected = selectedToolId === tool.id;
-                        return (
-                          <button
-                            key={tool.id}
-                            onClick={() => handleSelectTool(tool.id)}
-                            className={`group flex items-start justify-between gap-2.5 rounded-xl border p-2.5 text-left transition-all duration-200 cursor-pointer ${
-                              isDark
-                                ? isSelected
-                                  ? 'border-[#B6FF2E]/60 bg-[#14171B] text-white shadow-md shadow-black/40'
-                                  : 'border-[#333A46]/60 bg-[#1F2329]/50 text-slate-300 hover:border-[#B6FF2E]/40 hover:bg-[#282E37] hover:text-white'
-                                : isSelected
-                                  ? 'border-[#1F2329] bg-[#B6FF2E]/20 text-[#1F2329] shadow-sm'
-                                  : 'border-slate-200 bg-slate-50/80 text-slate-700 hover:border-[#1F2329] hover:bg-white hover:text-black'
-                            }`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className={`text-xs font-bold transition-colors ${
-                                  isSelected
-                                    ? isDark ? 'text-[#B6FF2E]' : 'text-[#1F2329]'
-                                    : isDark ? 'group-hover:text-[#B6FF2E]' : 'group-hover:text-black'
-                                }`}>
-                                  {tool.name}
-                                </span>
-                                {tool.badge && (
-                                  <span className={`text-[0.6rem] px-1.5 py-0.2 rounded border font-bold ${
-                                    isDark ? 'bg-[#14171B] text-[#B6FF2E] border-[#333A46]' : 'bg-slate-200 text-[#1F2329] border-slate-300'
-                                  }`}>
-                                    {tool.badge}
-                                  </span>
-                                )}
-                              </div>
-                              <p className={`text-[11px] truncate mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                                {tool.description}
-                              </p>
-                            </div>
-
-                            {isSelected && (
-                              <CheckCircle2 className="w-4 h-4 text-[#B6FF2E] flex-shrink-0 mt-0.5" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Prev / Next Quick Switchers */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevTool}
-                  className={`inline-flex items-center gap-1 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
-                    isDark
-                      ? 'border-[#333A46] bg-[#1F2329] text-slate-300 hover:border-[#B6FF2E] hover:text-[#B6FF2E] hover:bg-[#282E37]'
-                      : 'border-slate-300 bg-white text-[#1F2329] hover:border-black hover:text-black hover:bg-slate-50'
-                  }`}
-                  title="Previous Calculator"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Prev</span>
-                </button>
-                <button
-                  onClick={handleNextTool}
-                  className={`inline-flex items-center gap-1 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
-                    isDark
-                      ? 'border-[#333A46] bg-[#1F2329] text-slate-300 hover:border-[#B6FF2E] hover:text-[#B6FF2E] hover:bg-[#282E37]'
-                      : 'border-slate-300 bg-white text-[#1F2329] hover:border-black hover:text-black hover:bg-slate-50'
-                  }`}
-                  title="Next Calculator"
-                >
-                  <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Active Calculator Solver Body Container */}
-            <div className={`relative overflow-hidden rounded-3xl border backdrop-blur-2xl transition-all duration-300 ${
-              isDark
-                ? 'border-[#333A46] bg-[#1F2329]/90 shadow-2xl shadow-black/80 hover:border-[#B6FF2E]/30 text-slate-100'
-                : 'border-slate-200 bg-white/95 shadow-xl shadow-slate-200/60 hover:border-slate-300 text-[#1F2329]'
-            }`}>
-              
-              {/* Header Ribbon of Active Tool */}
-              <div className={`flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4 ${
-                isDark
-                  ? 'border-[#333A46] bg-[#14171B]'
-                  : 'border-slate-200 bg-slate-50'
-              }`}>
-                <div className="flex items-center gap-3">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
-                    isDark ? 'bg-[#1F2329] text-[#B6FF2E] border-[#333A46]' : 'bg-white text-[#1F2329] border-slate-200'
-                  }`}>
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className={`font-[Fraunces] text-lg sm:text-xl font-bold ${
-                        isDark ? 'text-white' : 'text-[#1F2329]'
-                      }`}>
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="w-6 h-6 rounded-lg bg-[#8B1A24]/10 text-[#8B1A24] flex items-center justify-center shrink-0">
+                        <Calculator className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-[#111827] truncate">
                         {currentTool.name}
-                      </h2>
-                      <span className={`rounded-full px-2 py-0.2 text-[0.65rem] font-bold border ${
-                        isDark ? 'bg-[#1F2329] text-[#B6FF2E] border-[#333A46]' : 'bg-[#B6FF2E]/25 text-[#1F2329] border-[#B6FF2E]/50'
-                      }`}>
-                        Ready
                       </span>
                     </div>
-                    <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                      {currentTool.description}
-                    </p>
-                  </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-gray-200 bg-white shadow-2xl p-2 z-50 max-h-80 overflow-y-auto">
+                      <div className="space-y-1">
+                        {tools.map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              setSelectedToolId(t.id);
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl text-left transition-colors cursor-pointer ${
+                              t.id === selectedToolId
+                                ? 'bg-[#8B1A24] text-white'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            <span>{t.name}</span>
+                            <span className="text-[10px] opacity-75 font-mono">{t.categoryLabel}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Prev / Next Nav */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePrevTool}
+                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#8B1A24] transition-colors cursor-pointer"
+                    title="Previous Calculator"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleNextTool}
+                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#8B1A24] transition-colors cursor-pointer"
+                    title="Next Calculator"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              {/* Dynamic Interactive Calculator Body with Scoped Theme Overrides */}
-              <div className={`calculator-wrapper-theme p-5 sm:p-8 ${isDark ? 'dark-mode' : 'light-mode'}`}>
+              {/* Calculator Workspace Container */}
+              <div className="bg-white rounded-3xl border border-gray-200/90 shadow-sm p-4 sm:p-8">
                 {currentTool.component}
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-      {/* Scoped CSS Rules for Both Light and Dark Modes */}
-      <style>{`
-        /* DARK MODE STYLES */
-        .calculator-wrapper-theme.dark-mode {
-          color: #f8fafc;
-        }
-
-        .calculator-wrapper-theme.dark-mode input[type="text"],
-        .calculator-wrapper-theme.dark-mode input[type="number"],
-        .calculator-wrapper-theme.dark-mode textarea,
-        .calculator-wrapper-theme.dark-mode select {
-          background-color: #14171B !important;
-          color: #B6FF2E !important;
-          border: 1px solid #333A46 !important;
-          border-radius: 0.75rem !important;
-          padding: 0.65rem 1rem !important;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-          font-weight: 600 !important;
-          transition: all 0.2s ease !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode input:focus,
-        .calculator-wrapper-theme.dark-mode textarea:focus,
-        .calculator-wrapper-theme.dark-mode select:focus {
-          border-color: #B6FF2E !important;
-          box-shadow: 0 0 0 3px rgba(182, 255, 46, 0.2) !important;
-          background-color: #1F2329 !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode button.bg-indigo-600,
-        .calculator-wrapper-theme.dark-mode button.bg-blue-600,
-        .calculator-wrapper-theme.dark-mode button.bg-green-600,
-        .calculator-wrapper-theme.dark-mode button.bg-emerald-600,
-        .calculator-wrapper-theme.dark-mode button.bg-emerald-500 {
-          background: #B6FF2E !important;
-          color: #1F2329 !important;
-          font-weight: 700 !important;
-          border: none !important;
-          box-shadow: 0 4px 15px rgba(182, 255, 46, 0.25) !important;
-          border-radius: 0.75rem !important;
-          transition: all 0.2s ease-in-out !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode button.bg-indigo-600:hover,
-        .calculator-wrapper-theme.dark-mode button.bg-blue-600:hover,
-        .calculator-wrapper-theme.dark-mode button.bg-green-600:hover,
-        .calculator-wrapper-theme.dark-mode button.bg-emerald-600:hover,
-        .calculator-wrapper-theme.dark-mode button.bg-emerald-500:hover {
-          background: #C6FF4D !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 6px 20px rgba(182, 255, 46, 0.4) !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode button.border-slate-300,
-        .calculator-wrapper-theme.dark-mode button.border-gray-300,
-        .calculator-wrapper-theme.dark-mode button.border-slate-200,
-        .calculator-wrapper-theme.dark-mode button.border {
-          background-color: #14171B !important;
-          color: #cbd5e1 !important;
-          border-color: #333A46 !important;
-          border-radius: 0.75rem !important;
-          transition: all 0.2s ease !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode button.border-slate-300:hover,
-        .calculator-wrapper-theme.dark-mode button.border-gray-300:hover,
-        .calculator-wrapper-theme.dark-mode button.border:hover {
-          background-color: #282E37 !important;
-          color: #B6FF2E !important;
-          border-color: #B6FF2E !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode .text-slate-700,
-        .calculator-wrapper-theme.dark-mode .text-slate-800,
-        .calculator-wrapper-theme.dark-mode .text-gray-800,
-        .calculator-wrapper-theme.dark-mode .text-gray-900 {
-          color: #f1f5f9 !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode .text-slate-500,
-        .calculator-wrapper-theme.dark-mode .text-gray-500,
-        .calculator-wrapper-theme.dark-mode .text-slate-600,
-        .calculator-wrapper-theme.dark-mode .text-gray-600 {
-          color: #94a3b8 !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode .text-blue-900,
-        .calculator-wrapper-theme.dark-mode .text-blue-800,
-        .calculator-wrapper-theme.dark-mode .text-indigo-900,
-        .calculator-wrapper-theme.dark-mode .text-indigo-800,
-        .calculator-wrapper-theme.dark-mode .text-blue-600 {
-          color: #B6FF2E !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode .bg-slate-50,
-        .calculator-wrapper-theme.dark-mode .bg-blue-50,
-        .calculator-wrapper-theme.dark-mode .bg-indigo-50 {
-          background-color: #14171B !important;
-          border: 1px solid #333A46 !important;
-          border-radius: 0.85rem !important;
-          color: #e2e8f0 !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode .bg-green-50,
-        .calculator-wrapper-theme.dark-mode .bg-emerald-50 {
-          background-color: #1F2329 !important;
-          border: 1px solid rgba(182, 255, 46, 0.3) !important;
-          border-radius: 0.85rem !important;
-          color: #B6FF2E !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode .bg-white {
-          background-color: #1F2329 !important;
-          border-color: #333A46 !important;
-          color: #f8fafc !important;
-        }
-
-        .calculator-wrapper-theme.dark-mode pre {
-          background-color: #14171B !important;
-          border: 1px solid #333A46 !important;
-          color: #B6FF2E !important;
-          border-radius: 0.75rem !important;
-          padding: 1rem !important;
-        }
-
-        /* LIGHT MODE STYLES */
-        .calculator-wrapper-theme.light-mode {
-          color: #1F2329;
-        }
-
-        .calculator-wrapper-theme.light-mode input[type="text"],
-        .calculator-wrapper-theme.light-mode input[type="number"],
-        .calculator-wrapper-theme.light-mode textarea,
-        .calculator-wrapper-theme.light-mode select {
-          background-color: #ffffff !important;
-          color: #1F2329 !important;
-          border: 1px solid #cbd5e1 !important;
-          border-radius: 0.75rem !important;
-          padding: 0.65rem 1rem !important;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-          font-weight: 600 !important;
-          transition: all 0.2s ease !important;
-        }
-
-        .calculator-wrapper-theme.light-mode input:focus,
-        .calculator-wrapper-theme.light-mode textarea:focus,
-        .calculator-wrapper-theme.light-mode select:focus {
-          border-color: #1F2329 !important;
-          box-shadow: 0 0 0 3px rgba(31, 35, 41, 0.15) !important;
-          background-color: #ffffff !important;
-        }
-
-        .calculator-wrapper-theme.light-mode button.bg-indigo-600,
-        .calculator-wrapper-theme.light-mode button.bg-blue-600,
-        .calculator-wrapper-theme.light-mode button.bg-green-600,
-        .calculator-wrapper-theme.light-mode button.bg-emerald-600,
-        .calculator-wrapper-theme.light-mode button.bg-emerald-500 {
-          background: #1F2329 !important;
-          color: #B6FF2E !important;
-          font-weight: 700 !important;
-          border: none !important;
-          box-shadow: 0 4px 12px rgba(31, 35, 41, 0.25) !important;
-          border-radius: 0.75rem !important;
-          transition: all 0.2s ease-in-out !important;
-        }
-
-        .calculator-wrapper-theme.light-mode button.bg-indigo-600:hover,
-        .calculator-wrapper-theme.light-mode button.bg-blue-600:hover,
-        .calculator-wrapper-theme.light-mode button.bg-green-600:hover,
-        .calculator-wrapper-theme.light-mode button.bg-emerald-600:hover,
-        .calculator-wrapper-theme.light-mode button.bg-emerald-500:hover {
-          background: #282E37 !important;
-          transform: translateY(-1px) !important;
-        }
-
-        .calculator-wrapper-theme.light-mode button.border-gray-300,
-        .calculator-wrapper-theme.light-mode button.border-slate-300,
-        .calculator-wrapper-theme.light-mode button.border-slate-200,
-        .calculator-wrapper-theme.light-mode button.border {
-          background-color: #f8fafc !important;
-          color: #334155 !important;
-          border-color: #cbd5e1 !important;
-          border-radius: 0.75rem !important;
-          transition: all 0.2s ease !important;
-        }
-
-        .calculator-wrapper-theme.light-mode button.border-slate-300:hover,
-        .calculator-wrapper-theme.light-mode button.border-gray-300:hover,
-        .calculator-wrapper-theme.light-mode button.border:hover {
-          background-color: #f1f5f9 !important;
-          color: #0f172a !important;
-          border-color: #94a3b8 !important;
-        }
-
-        .calculator-wrapper-theme.light-mode .text-slate-700,
-        .calculator-wrapper-theme.light-mode .text-slate-800,
-        .calculator-wrapper-theme.light-mode .text-gray-800 {
-          color: #1e293b !important;
-          font-weight: 600 !important;
-        }
-
-        .calculator-wrapper-theme.light-mode .text-gray-500,
-        .calculator-wrapper-theme.light-mode .text-slate-600,
-        .calculator-wrapper-theme.light-mode .text-gray-600 {
-          color: #64748b !important;
-        }
-
-        .calculator-wrapper-theme.light-mode .bg-slate-50,
-        .calculator-wrapper-theme.light-mode .bg-blue-50,
-        .calculator-wrapper-theme.light-mode .bg-indigo-50 {
-          background-color: #f8fafc !important;
-          border: 1px solid #e2e8f0 !important;
-          border-radius: 0.85rem !important;
-          color: #1e293b !important;
-        }
-
-        .calculator-wrapper-theme.light-mode .bg-green-50,
-        .calculator-wrapper-theme.light-mode .bg-emerald-50 {
-          background-color: #f7fee7 !important;
-          border: 1px solid #d9f99d !important;
-          border-radius: 0.85rem !important;
-          color: #365314 !important;
-        }
-
-        .calculator-wrapper-theme.light-mode pre {
-          background-color: #f8fafc !important;
-          border: 1px solid #e2e8f0 !important;
-          color: #1F2329 !important;
-          border-radius: 0.75rem !important;
-          padding: 1rem !important;
-        }
-      `}</style>
+      {/* Footer */}
+      <footer className="mt-16 border-t border-gray-200 bg-white py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-xs text-gray-500 flex items-center justify-center gap-2">
+            <Layers className="w-4 h-4 text-[#8B1A24]" />
+            <span>All 23 tools powered by modern linear algebra algorithms</span>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

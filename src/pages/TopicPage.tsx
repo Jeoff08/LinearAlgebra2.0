@@ -13,12 +13,8 @@ import {
   TrendingUp,
   Binary,
   Layers,
-  Landmark,
   Activity,
   Zap,
-  FunctionSquare,
-  Sliders,
-  Maximize2,
   Clock,
   List,
   Check,
@@ -26,7 +22,6 @@ import {
 } from "lucide-react";
 import LINEAR_TOPICS from "../data/topics/index";
 import ALL_CALCULUS_TOPICS, { CALCULUS_SUB_CATEGORIES } from "../data/calculus-topics";
-import type { CalculusSubCategoryId } from "../data/calculus-topics";
 
 // Import all calculators (Linear Algebra)
 import SystemOfEquations from "../calculators/SystemOfEquations";
@@ -61,18 +56,51 @@ import CurveSketchingCalculator from "../CalculusOneCalculator/CurveSketchingCal
 import ContinuityCalculator from "../CalculusOneCalculator/ContinuityCalculator";
 import DefiniteIntegralCalculator from "../CalculusOneCalculator/DefiniteIntegralCalculator";
 
+export interface UniversalTopic {
+  id: string;
+  title: string;
+  summary: string;
+  details: string;
+  examples: string[];
+  category: "linear-algebra" | "calculus";
+  categoryLabel: string;
+  subCategory?: string;
+  subCategoryLabel?: string;
+  chapterNumber?: number;
+}
+
 // Combined universal topics
-const TOPICS = [
+const TOPICS: UniversalTopic[] = [
   ...(Array.isArray(LINEAR_TOPICS) ? LINEAR_TOPICS : [])
     .filter((t) => Boolean(t && t.id && t.title))
-    .map(t => ({ 
-      ...t, 
+    .map((t) => ({ 
+      id: t.id,
+      title: t.title,
+      summary: t.summary || "",
+      details: t.details || "",
+      examples: Array.isArray(t.examples) ? t.examples : [],
       category: "linear-algebra" as const,
       categoryLabel: "Linear Algebra",
       subCategory: "linear-algebra",
       subCategoryLabel: "Linear Algebra"
     })),
-  ...ALL_CALCULUS_TOPICS,
+  ...(Array.isArray(ALL_CALCULUS_TOPICS)
+    ? ALL_CALCULUS_TOPICS
+    : (ALL_CALCULUS_TOPICS as any)?.default || []
+  )
+    .filter((t: any) => Boolean(t && t.id && t.title))
+    .map((t: any) => ({
+      id: t.id,
+      title: t.title,
+      summary: t.summary || "",
+      details: t.details || "",
+      examples: Array.isArray(t.examples) ? t.examples : [],
+      category: "calculus" as const,
+      categoryLabel: t.categoryLabel || "Calculus I",
+      subCategory: t.subCategory || "calculus",
+      subCategoryLabel: t.subCategoryLabel || "Calculus I",
+      chapterNumber: t.chapterNumber || 1
+    })),
 ];
 
 // Calculator Registry
@@ -111,11 +139,54 @@ const CALCULATORS: Record<string, { name: string; description: string; component
 // Helper to determine calculator
 function getRecommendedCalculatorId(topicId: string): string {
   const combined = topicId.toLowerCase();
-  if (combined.includes("limit") || combined.includes("continuity")) return "limit";
-  if (combined.includes("derivative") || combined.includes("rate-of-change")) return "derivative";
-  if (combined.includes("tangent") || combined.includes("line")) return "tangent";
-  if (combined.includes("integral") || combined.includes("integration") || combined.includes("ftc")) return "integral";
-  if (combined.includes("function") || combined.includes("domain") || combined.includes("range") || combined.includes("interval")) return "curvesketch";
+  if (combined.includes("continuity")) return "continuity";
+  if (combined.includes("limit")) return "limit";
+  if (combined.includes("tangent") || combined.includes("equation-of-a-line") || combined.includes("line")) return "tangent";
+  if (
+    combined.includes("integral") ||
+    combined.includes("antiderivative") ||
+    combined.includes("antidifferentiation") ||
+    combined.includes("riemann") ||
+    combined.includes("area") ||
+    combined.includes("volume") ||
+    combined.includes("differential") ||
+    combined.includes("center-of-mass") ||
+    combined.includes("arc") ||
+    combined.includes("work") ||
+    combined.includes("pressure") ||
+    combined.includes("disk") ||
+    combined.includes("washer") ||
+    combined.includes("shell") ||
+    combined.includes("cross-section") ||
+    combined.includes("ftc")
+  ) return "integral";
+  if (
+    combined.includes("derivative") ||
+    combined.includes("differentiab") ||
+    combined.includes("rate-of-change") ||
+    combined.includes("velocity") ||
+    combined.includes("rectilinear") ||
+    combined.includes("implicit") ||
+    combined.includes("power-function")
+  ) return "derivative";
+  if (
+    combined.includes("curve") ||
+    combined.includes("sketch") ||
+    combined.includes("asymptote") ||
+    combined.includes("extrema") ||
+    combined.includes("concavity") ||
+    combined.includes("inflection") ||
+    combined.includes("maximum") ||
+    combined.includes("minimum") ||
+    combined.includes("optimization") ||
+    combined.includes("rolles") ||
+    combined.includes("mean-value") ||
+    combined.includes("function") ||
+    combined.includes("domain") ||
+    combined.includes("range") ||
+    combined.includes("circle") ||
+    combined.includes("graph")
+  ) return "curvesketch";
   if (combined.includes("eigen")) return "eigen";
   if (combined.includes("determinant")) return "determinant";
   if (combined.includes("inverse")) return "inverse";
@@ -143,40 +214,55 @@ export default function TopicPage() {
   const prevTopic = currentTopicIndex > 0 ? TOPICS[currentTopicIndex - 1] : null;
   const nextTopic = currentTopicIndex < TOPICS.length - 1 ? TOPICS[currentTopicIndex + 1] : null;
 
-  // Extract sections with numbers
+  // Extract sections with numbers and content
   const sections = useMemo(() => {
     if (!topic?.details) return [];
-    return Array.from(
-      topic.details.matchAll(/^\s*(\d+)\.\s*(.+)$/gm) || []
-    ).map((match) => ({
-      number: parseInt(match[1]),
-      title: match[2].trim(),
-      content: ""
-    }));
+    try {
+      const lines = topic.details.split("\n");
+      const result: { number: number; title: string; content: string }[] = [];
+      let currentSection: { number: number; title: string; contentLines: string[] } | null = null;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const match = line.match(/^\s*(\d+)\.\s*(.+)$/);
+        if (match) {
+          if (currentSection) {
+            result.push({
+              number: currentSection.number,
+              title: currentSection.title,
+              content: currentSection.contentLines.join("\n").trim(),
+            });
+          }
+          currentSection = {
+            number: parseInt(match[1], 10),
+            title: match[2].replace(/[━─=_-]+/g, "").trim(),
+            contentLines: [],
+          };
+        } else if (currentSection) {
+          if (!line.trim().startsWith("━") && !line.trim().startsWith("─")) {
+            currentSection.contentLines.push(line);
+          }
+        }
+      }
+
+      if (currentSection) {
+        result.push({
+          number: currentSection.number,
+          title: currentSection.title,
+          content: currentSection.contentLines.join("\n").trim(),
+        });
+      }
+
+      return result.filter((s) => s.number > 0 && s.title.length > 0);
+    } catch (err) {
+      return [];
+    }
   }, [topic]);
 
-  // Section content parser
+  // Section content getter
   const getSectionContent = (sectionNumber: number) => {
-    if (!topic) return "";
-    const details = topic.details;
-    const sectionRegex = new RegExp(`^\\s*${sectionNumber}\\.\\s*.+$`, 'gm');
-    const nextSectionRegex = new RegExp(`^\\s*${sectionNumber + 1}\\.\\s*.+$`, 'gm');
-    
-    let startIndex = details.search(sectionRegex);
-    let endIndex = details.search(nextSectionRegex);
-    
-    if (startIndex === -1) return '';
-    
-    const headerMatch = details.substring(startIndex).match(/^.*$/m);
-    if (headerMatch) {
-      startIndex += headerMatch[0].length;
-    }
-    
-    if (endIndex !== -1) {
-      return details.substring(startIndex, endIndex).trim();
-    } else {
-      return details.substring(startIndex).trim();
-    }
+    const sec = sections.find((s) => s.number === sectionNumber);
+    return sec?.content || topic?.details || "";
   };
 
   const handleCopyExample = (text: string, idx: number) => {
@@ -214,22 +300,25 @@ export default function TopicPage() {
         
         {/* Back Button */}
         <div className="flex items-center justify-start">
-          <Link
-            to="/?tab=topics"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-xs font-bold text-[#374151] hover:bg-[#F9FAFB] transition-all shadow-sm"
+          <button
+            onClick={() => {
+              sessionStorage.setItem("returningTopicView", topic.category === "calculus" ? "topics-calculus" : "topics-linear");
+              navigate("/?tab=topics");
+            }}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-xs font-bold text-[#374151] hover:bg-[#F9FAFB] transition-all shadow-sm cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>All Topics</span>
-          </Link>
+            <span>{topic.category === "calculus" ? "All Calculus Topics" : "All Linear Algebra Topics"}</span>
+          </button>
         </div>
 
         {/* Sidebar + Main Topic Details Layout (Matching Image 4) */}
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
-          {/* Left Sidebar (Categories) */}
+          {/* Left Sidebar (Topics List) */}
           <aside className="w-full lg:w-64 shrink-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
             <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#9CA3AF] px-2 mb-3">
-              Browse Topics
+              {topic.category === "calculus" ? "Calculus 1 Topics" : "Linear Algebra Topics"}
             </div>
 
             <div className="flex flex-col gap-1 max-h-[580px] overflow-y-auto pr-1">
@@ -253,36 +342,26 @@ export default function TopicPage() {
                     );
                   })
               ) : (
-                // Calculus Categories List
-                CALCULUS_SUB_CATEGORIES.slice(1).map((cat) => {
-                  const isActive = topic.subCategory === cat.id;
-                  const count = ALL_CALCULUS_TOPICS.filter(t => t.subCategory === cat.id).length;
-
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        sessionStorage.setItem("returningTopicView", "topics-calculus");
-                        navigate("/?tab=topics");
-                      }}
-                      className={`topic-sidebar-item ${isActive ? "active" : ""}`}
-                    >
-                      <div className="flex items-center gap-2.5 truncate">
-                        {cat.id === "foundations" && <Landmark className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        {cat.id === "limits" && <Activity className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        {cat.id === "derivatives" && <Zap className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        {cat.id === "derivatives-common" && <FunctionSquare className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        {cat.id === "implicit" && <Sliders className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        {cat.id === "applications" && <TrendingUp className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        {cat.id === "optimization" && <Maximize2 className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        {cat.id === "lhopital" && <Binary className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        {cat.id === "intro-integration" && <BookOpen className={`w-4 h-4 ${isActive ? "text-[#7B1824]" : "text-[#6B7280]"}`} />}
-                        <span className="truncate">{cat.label}</span>
-                      </div>
-                      <span className="topic-sidebar-count">{count}</span>
-                    </button>
-                  );
-                })
+                // Calculus Topics List
+                (Array.isArray(ALL_CALCULUS_TOPICS) ? ALL_CALCULUS_TOPICS : [])
+                  .filter((t) => Boolean(t && t.id && t.title))
+                  .map((t) => {
+                    const isActive = topic.id === t.id;
+                    return (
+                      <Link
+                        key={t.id}
+                        to={`/topics/${t.id}`}
+                        className={`topic-sidebar-item ${isActive ? "active" : ""}`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${isActive ? "bg-[#7B1824] text-white" : "bg-[#F3F4F6] text-[#6B7280]"}`}>
+                            C{t.chapterNumber || 1}
+                          </span>
+                          <span className="truncate">{t.title}</span>
+                        </div>
+                      </Link>
+                    );
+                  })
               )}
             </div>
           </aside>
@@ -294,7 +373,7 @@ export default function TopicPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#E5E7EB] pb-4">
               {/* Breadcrumb Pill */}
               <div className="inline-flex items-center gap-2 rounded-xl border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1.5 text-xs font-semibold text-[#7B1824]">
-                <Landmark className="w-3.5 h-3.5" />
+                <Layers className="w-3.5 h-3.5" />
                 <span>{topic.subCategoryLabel || topic.categoryLabel}</span>
                 <span className="text-[#9CA3AF]">&gt;</span>
                 <span className="text-[#6B7280]">Overview</span>
@@ -333,7 +412,7 @@ export default function TopicPage() {
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1 text-xs font-medium text-[#374151]">
                     <BookOpen className="w-3.5 h-3.5 text-[#7B1824]" />
-                    {sections.length > 0 ? sections.length : topic.examples.length} Sections &amp; Lessons
+                    {sections.length > 0 ? sections.length : (topic.examples?.length || 4)} Sections &amp; Lessons
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1 text-xs font-medium text-[#374151]">
                     <Clock className="w-3.5 h-3.5 text-[#7B1824]" />
@@ -444,46 +523,49 @@ export default function TopicPage() {
             </section>
 
             {/* Examples Section */}
-            {topic.examples && topic.examples.length > 0 && (
+            {Array.isArray(topic.examples) && topic.examples.length > 0 && (
               <section className="space-y-4">
                 <h2 className="text-xl font-bold text-[#111827] border-b border-[#E5E7EB] pb-3">
                   Step-by-Step Verified Examples
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {topic.examples.map((example, idx) => (
-                    <div
-                      key={`example-${idx}`}
-                      className="rounded-2xl border border-[#E5E7EB] bg-white p-5 space-y-3 shadow-sm hover:border-[#d6b1b7] transition-all"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#d6b1b7] bg-[#fbf3f5] text-[#7B1824]">
-                          Example {idx + 1}
-                        </span>
+                  {(topic.examples || []).map((example: string, idx: number) => {
+                    const exampleText = typeof example === "string" ? example : JSON.stringify(example, null, 2);
+                    return (
+                      <div
+                        key={`example-${idx}`}
+                        className="rounded-2xl border border-[#E5E7EB] bg-white p-5 space-y-3 shadow-sm hover:border-[#d6b1b7] transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#d6b1b7] bg-[#fbf3f5] text-[#7B1824]">
+                            Example {idx + 1}
+                          </span>
 
-                        <button
-                          onClick={() => handleCopyExample(example, idx)}
-                          className="text-xs text-[#6B7280] hover:text-[#7B1824] inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          {copiedIndex === idx ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-green-600" />
-                              <span className="text-green-600">Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>Copy</span>
-                            </>
-                          )}
-                        </button>
+                          <button
+                            onClick={() => handleCopyExample(exampleText, idx)}
+                            className="text-xs text-[#6B7280] hover:text-[#7B1824] inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            {copiedIndex === idx ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-green-600" />
+                                <span className="text-green-600">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        <div className="text-xs sm:text-sm text-[#374151] font-mono leading-relaxed bg-[#F9FAFB] p-3 rounded-xl border border-[#E5E7EB] whitespace-pre-wrap break-words">
+                          {exampleText}
+                        </div>
                       </div>
-
-                      <p className="text-xs sm:text-sm text-[#374151] font-mono leading-relaxed bg-[#F9FAFB] p-3 rounded-xl border border-[#E5E7EB]">
-                        {example}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}

@@ -11,8 +11,8 @@ export default function LoginPage() {
   const location = useLocation();
   const message = (location.state as { message?: string } | null)?.message;
 
-  const [email, setEmail] = useState("name@example.com");
-  const [password, setPassword] = useState("******");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);

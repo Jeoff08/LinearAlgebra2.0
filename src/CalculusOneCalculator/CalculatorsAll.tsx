@@ -1,54 +1,49 @@
-// components/CalculatorApp.tsx
+// CalculusOneCalculator/CalculatorsAll.tsx
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import mathBg from '../assets/math.jpeg';
 import { 
   Calculator, 
   ChevronDown, 
-  ChevronUp, 
   ChevronLeft,
   ChevronRight, 
   X, 
   Search, 
-  Sparkles, 
-  CheckCircle2,
   ArrowLeft,
-  Infinity,
-  TrendingUp,
-  Sigma,
-  Maximize2,
-  Activity,
-  BarChart3,
-  Waves,
-  Crown,
-  FunctionSquare,
-  LineChart,
-  Minimize2
+  ArrowRight,
+  Sliders,
+  Zap,
+  Users,
+  BookOpen,
+  Bookmark,
+  TrendingUp
 } from 'lucide-react';
 
 // Import all calculator components
-import LimitCalculator from '../CalculusOneCalculator/LimitCalculator';
-import OneSidedLimitCalculator from '../CalculusOneCalculator/OneSidedLimitCalculator';
-import ContinuityCalculator from '../CalculusOneCalculator/ContinuityCalculator';
-import DerivativeCalculator from '../CalculusOneCalculator/DerivativeCalculator';
-import HigherDerivativeCalculator from '../CalculusOneCalculator/HigherDerivativeCalculator';
-import ProductRuleCalculator from '../CalculusOneCalculator/ProductRuleCalculator';
-import QuotientRuleCalculator from '../CalculusOneCalculator/QuotientRuleCalculator';
-import ChainRuleCalculator from '../CalculusOneCalculator/ChainRuleCalculator';
-import ImplicitDifferentiationCalculator from '../CalculusOneCalculator/ImplicitDifferentiationCalculator';
-import LogarithmicDifferentiationCalculator from '../CalculusOneCalculator/LogarithmicDifferentiationCalculator';
-import CriticalPointCalculator from '../CalculusOneCalculator/CriticalPointCalculator';
-import IncreasingDecreasingCalculator from '../CalculusOneCalculator/IncreasingDecreasingCalculator';
-import LocalExtremaCalculator from '../CalculusOneCalculator/LocalExtremaCalculator';
-import ConcavityCalculator from '../CalculusOneCalculator/ConcavityCalculator';
-import InflectionPointCalculator from '../CalculusOneCalculator/InflectionPointCalculator';
-import OptimizationCalculator from '../CalculusOneCalculator/OptimizationCalculator';
-import RelatedRatesCalculator from '../CalculusOneCalculator/RelatedRatesCalculator';
-import TangentLineCalculator from '../CalculusOneCalculator/TangentLineCalculator';
-import CurveSketchingCalculator from '../CalculusOneCalculator/CurveSketchingCalculator';
-import AntiderivativeCalculator from '../CalculusOneCalculator/AntiderivativeCalculator';
-import DefiniteIntegralCalculator from '../CalculusOneCalculator/DefiniteIntegralCalculator';
-import FTCCalculator from '../CalculusOneCalculator/FTCCalculator';
-import USubstitutionCalculator from '../CalculusOneCalculator/USubstitutionCalculator';
+import LimitCalculator from './LimitCalculator';
+import OneSidedLimitCalculator from './OneSidedLimitCalculator';
+import ContinuityCalculator from './ContinuityCalculator';
+import DerivativeCalculator from './DerivativeCalculator';
+import HigherDerivativeCalculator from './HigherDerivativeCalculator';
+import ProductRuleCalculator from './ProductRuleCalculator';
+import QuotientRuleCalculator from './QuotientRuleCalculator';
+import ChainRuleCalculator from './ChainRuleCalculator';
+import ImplicitDifferentiationCalculator from './ImplicitDifferentiationCalculator';
+import LogarithmicDifferentiationCalculator from './LogarithmicDifferentiationCalculator';
+import CriticalPointCalculator from './CriticalPointCalculator';
+import IncreasingDecreasingCalculator from './IncreasingDecreasingCalculator';
+import LocalExtremaCalculator from './LocalExtremaCalculator';
+import ConcavityCalculator from './ConcavityCalculator';
+import InflectionPointCalculator from './InflectionPointCalculator';
+import OptimizationCalculator from './OptimizationCalculator';
+import RelatedRatesCalculator from './RelatedRatesCalculator';
+import TangentLineCalculator from './TangentLineCalculator';
+import CurveSketchingCalculator from './CurveSketchingCalculator';
+import AntiderivativeCalculator from './AntiderivativeCalculator';
+import DefiniteIntegralCalculator from './DefiniteIntegralCalculator';
+import FTCCalculator from './FTCCalculator';
+import USubstitutionCalculator from './USubstitutionCalculator';
 
 export interface Tool {
   id: string;
@@ -58,37 +53,36 @@ export interface Tool {
   description: string;
   badge?: string;
   categoryLabel: string;
-  icon: React.ReactNode;
 }
 
 export const tools: Tool[] = [
-  // Limits
+  // Limits & Continuity
   { 
     id: 'limit', 
     name: 'Limit Calculator', 
     category: 'limits', 
-    categoryLabel: 'Limits', 
+    categoryLabel: 'Limits & Continuity', 
     component: <LimitCalculator />, 
-    description: 'Calculates limits of functions as x approaches a value', 
-    icon: <Infinity className="w-4 h-4" /> 
+    description: 'Calculates limits of functions as x approaches a value with step-by-step rules.', 
+    badge: 'limits' 
   },
   { 
     id: 'one-sided-limit', 
     name: 'One-Sided Limit Calculator', 
     category: 'limits', 
-    categoryLabel: 'Limits', 
+    categoryLabel: 'Limits & Continuity', 
     component: <OneSidedLimitCalculator />, 
-    description: 'Calculates left/right-hand limits', 
-    icon: <ArrowLeft className="w-4 h-4" /> 
+    description: 'Calculates left-hand and right-hand limits to test for limit existence.', 
+    badge: 'limits' 
   },
   { 
     id: 'continuity', 
     name: 'Continuity Calculator', 
     category: 'limits', 
-    categoryLabel: 'Limits', 
+    categoryLabel: 'Limits & Continuity', 
     component: <ContinuityCalculator />, 
-    description: 'Checks whether a function is continuous at a point', 
-    icon: <Activity className="w-4 h-4" /> 
+    description: 'Checks whether a function is continuous at a specified point or interval.', 
+    badge: 'limits' 
   },
 
   // Derivatives
@@ -98,9 +92,8 @@ export const tools: Tool[] = [
     category: 'derivatives', 
     categoryLabel: 'Derivatives', 
     component: <DerivativeCalculator />, 
-    description: 'Finds first derivatives numerically', 
-    badge: 'Core',
-    icon: <TrendingUp className="w-4 h-4" /> 
+    description: 'Computes first-order symbolic and numerical derivatives with complete steps.', 
+    badge: 'derivatives' 
   },
   { 
     id: 'higher-derivative', 
@@ -108,8 +101,8 @@ export const tools: Tool[] = [
     category: 'derivatives', 
     categoryLabel: 'Derivatives', 
     component: <HigherDerivativeCalculator />, 
-    description: 'Finds 2nd, 3rd, nth derivatives numerically', 
-    icon: <TrendingUp className="w-4 h-4" /> 
+    description: 'Computes 2nd, 3rd, and nth higher-order derivatives of given functions.', 
+    badge: 'derivatives' 
   },
   { 
     id: 'product-rule', 
@@ -117,8 +110,8 @@ export const tools: Tool[] = [
     category: 'derivatives', 
     categoryLabel: 'Derivatives', 
     component: <ProductRuleCalculator />, 
-    description: 'Solves derivatives using Product Rule: d/dx[f(x)g(x)]', 
-    icon: <FunctionSquare className="w-4 h-4" /> 
+    description: 'Solves derivatives of products using Product Rule: d/dx[f(x)·g(x)].', 
+    badge: 'derivatives' 
   },
   { 
     id: 'quotient-rule', 
@@ -126,8 +119,8 @@ export const tools: Tool[] = [
     category: 'derivatives', 
     categoryLabel: 'Derivatives', 
     component: <QuotientRuleCalculator />, 
-    description: 'Solves derivatives using Quotient Rule: d/dx[f(x)/g(x)]', 
-    icon: <FunctionSquare className="w-4 h-4" /> 
+    description: 'Solves derivatives of rational expressions using Quotient Rule: d/dx[f/g].', 
+    badge: 'derivatives' 
   },
   { 
     id: 'chain-rule', 
@@ -135,8 +128,8 @@ export const tools: Tool[] = [
     category: 'derivatives', 
     categoryLabel: 'Derivatives', 
     component: <ChainRuleCalculator />, 
-    description: 'Solves composite-function derivatives: d/dx[f(g(x))]', 
-    icon: <FunctionSquare className="w-4 h-4" /> 
+    description: 'Differentiates composite functions f(g(x)) step-by-step using Chain Rule.', 
+    badge: 'derivatives' 
   },
   { 
     id: 'implicit-differentiation', 
@@ -144,8 +137,8 @@ export const tools: Tool[] = [
     category: 'derivatives', 
     categoryLabel: 'Derivatives', 
     component: <ImplicitDifferentiationCalculator />, 
-    description: 'Differentiates implicit equations F(x,y) = 0', 
-    icon: <FunctionSquare className="w-4 h-4" /> 
+    description: 'Differentiates implicit curves and multi-variable equations F(x, y) = 0.', 
+    badge: 'derivatives' 
   },
   { 
     id: 'logarithmic-differentiation', 
@@ -153,92 +146,91 @@ export const tools: Tool[] = [
     category: 'derivatives', 
     categoryLabel: 'Derivatives', 
     component: <LogarithmicDifferentiationCalculator />, 
-    description: 'Handles complicated products/powers using log differentiation', 
-    icon: <FunctionSquare className="w-4 h-4" /> 
+    description: 'Handles complicated powers f(x)^g(x) and products using ln transformation.', 
+    badge: 'derivatives' 
   },
 
-  // Applications
+  // Applications of Derivatives
   { 
     id: 'critical-point', 
     name: 'Critical Point Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <CriticalPointCalculator />, 
-    description: 'Finds critical numbers where f\'(x) = 0 or undefined', 
-    icon: <Maximize2 className="w-4 h-4" /> 
+    description: 'Finds critical numbers where f\'(x) = 0 or where f\'(x) is undefined.', 
+    badge: 'applications' 
   },
   { 
     id: 'increasing-decreasing', 
     name: 'Increasing & Decreasing Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <IncreasingDecreasingCalculator />, 
-    description: 'Determines intervals of increase/decrease', 
-    icon: <TrendingUp className="w-4 h-4" /> 
+    description: 'Determines intervals where f(x) is strictly increasing or decreasing.', 
+    badge: 'applications' 
   },
   { 
     id: 'local-extrema', 
     name: 'Local Extrema Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <LocalExtremaCalculator />, 
-    description: 'Finds local maxima and minima', 
-    icon: <Crown className="w-4 h-4" /> 
+    description: 'Classifies local maxima and minima using first and second derivative tests.', 
+    badge: 'applications' 
   },
   { 
     id: 'concavity', 
     name: 'Concavity Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <ConcavityCalculator />, 
-    description: 'Determines concavity using f\'\'(x) sign', 
-    icon: <BarChart3 className="w-4 h-4" /> 
+    description: 'Determines concave up and concave down intervals using f\'\'(x) signs.', 
+    badge: 'applications' 
   },
   { 
     id: 'inflection-point', 
     name: 'Inflection Point Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <InflectionPointCalculator />, 
-    description: 'Finds inflection points where f\'\'(x) = 0', 
-    icon: <Waves className="w-4 h-4" /> 
+    description: 'Finds points where curvature changes concavity and f\'\'(x) = 0.', 
+    badge: 'applications' 
   },
   { 
     id: 'optimization', 
     name: 'Optimization Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <OptimizationCalculator />, 
-    description: 'Solves optimization problems (max/min on intervals)', 
-    badge: 'Popular',
-    icon: <Maximize2 className="w-4 h-4" /> 
+    description: 'Solves applied optimization problems for global maximum and minimum values.', 
+    badge: 'applications' 
   },
   { 
     id: 'related-rates', 
     name: 'Related Rates Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <RelatedRatesCalculator />, 
-    description: 'Solves related-rate problems using implicit differentiation', 
-    icon: <Activity className="w-4 h-4" /> 
+    description: 'Solves rates of change problems with respect to time using implicit calculus.', 
+    badge: 'applications' 
   },
   { 
     id: 'tangent-line', 
     name: 'Tangent Line Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <TangentLineCalculator />, 
-    description: 'Finds tangent and normal lines at a point', 
-    icon: <LineChart className="w-4 h-4" /> 
+    description: 'Finds equations of tangent lines and normal lines at given coordinate points.', 
+    badge: 'applications' 
   },
   { 
     id: 'curve-sketching', 
     name: 'Curve Sketching Calculator', 
     category: 'applications', 
-    categoryLabel: 'Applications', 
+    categoryLabel: 'Applications of Derivatives', 
     component: <CurveSketchingCalculator />, 
-    description: 'Analyzes and graphs functions with critical points', 
-    icon: <LineChart className="w-4 h-4" /> 
+    description: 'Analyzes asymptotes, intercepts, extrema, and concavity to plot curves.', 
+    badge: 'applications' 
   },
 
   // Integrals
@@ -248,8 +240,8 @@ export const tools: Tool[] = [
     category: 'integrals', 
     categoryLabel: 'Integrals', 
     component: <AntiderivativeCalculator />, 
-    description: 'Finds indefinite integrals numerically', 
-    icon: <Sigma className="w-4 h-4" /> 
+    description: 'Computes indefinite integrals and antiderivatives with the constant of integration + C.', 
+    badge: 'integrals' 
   },
   { 
     id: 'definite-integral', 
@@ -257,9 +249,8 @@ export const tools: Tool[] = [
     category: 'integrals', 
     categoryLabel: 'Integrals', 
     component: <DefiniteIntegralCalculator />, 
-    description: 'Evaluates definite integrals using Simpson\'s rule', 
-    badge: 'Core',
-    icon: <Sigma className="w-4 h-4" /> 
+    description: 'Evaluates definite integrals across intervals [a, b] to compute signed area.', 
+    badge: 'integrals' 
   },
   { 
     id: 'ftc', 
@@ -267,25 +258,25 @@ export const tools: Tool[] = [
     category: 'integrals', 
     categoryLabel: 'Integrals', 
     component: <FTCCalculator />, 
-    description: 'Uses the Fundamental Theorem of Calculus', 
-    icon: <Sigma className="w-4 h-4" /> 
+    description: 'Applies Fundamental Theorem of Calculus Parts 1 & 2 for derivatives of integrals.', 
+    badge: 'integrals' 
   },
   { 
     id: 'u-substitution', 
-    name: 'u-Substitution Calculator', 
+    name: 'U-Substitution Calculator', 
     category: 'integrals', 
     categoryLabel: 'Integrals', 
     component: <USubstitutionCalculator />, 
-    description: 'Solves integrals using u-substitution technique', 
-    icon: <FunctionSquare className="w-4 h-4" /> 
+    description: 'Solves integration problems using the u-substitution method step-by-step.', 
+    badge: 'integrals' 
   },
 ];
 
 const CATEGORIES = [
   { id: 'all', label: 'All Tools', count: 23 },
-  { id: 'limits', label: 'Limits', count: 3 },
-  { id: 'derivatives', label: 'Derivatives', count: 8 },
-  { id: 'applications', label: 'Applications', count: 8 },
+  { id: 'limits', label: 'Limits & Continuity', count: 3 },
+  { id: 'derivatives', label: 'Derivatives', count: 7 },
+  { id: 'applications', label: 'Applications of Derivatives', count: 9 },
   { id: 'integrals', label: 'Integrals', count: 4 },
 ] as const;
 
@@ -294,11 +285,11 @@ interface CalculatorAppProps {
 }
 
 export default function CalculatorApp({ initialToolId = null }: CalculatorAppProps) {
+  const navigate = useNavigate();
   const [selectedToolId, setSelectedToolId] = useState<string | null>(initialToolId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [clickedToolId, setClickedToolId] = useState<string | null>(null);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -306,22 +297,18 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
   const currentIndex = selectedToolId ? tools.findIndex(t => t.id === selectedToolId) : -1;
   const currentTool = currentIndex >= 0 ? tools[currentIndex] : null;
 
+  // Filter tools for grid view
   const gridFilteredTools = tools.filter(tool => {
     const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;
     const matchesSearch = 
       tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tool.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tool.categoryLabel.toLowerCase().includes(searchTerm.toLowerCase());
+      tool.categoryLabel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tool.badge && tool.badge.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 
-  const dropdownFilteredTools = tools.filter(tool => {
-    return (
-      tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tool.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
-
+  // Navigation handlers for active calculator
   const handlePrevTool = () => {
     if (currentIndex < 0) return;
     const newIdx = (currentIndex - 1 + tools.length) % tools.length;
@@ -334,6 +321,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
     setSelectedToolId(tools[newIdx].id);
   };
 
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -350,6 +338,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Handle ESC key
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -365,14 +354,10 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
   }, [isDropdownOpen, selectedToolId]);
 
   const handleSelectTool = (toolId: string) => {
-    setClickedToolId(toolId);
-    setTimeout(() => {
-      setSelectedToolId(toolId);
-      setClickedToolId(null);
-      setIsDropdownOpen(false);
-      setSearchTerm('');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 150);
+    setSelectedToolId(toolId);
+    setIsDropdownOpen(false);
+    setSearchTerm('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToGrid = () => {
@@ -381,429 +366,338 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
     setSearchTerm('');
   };
 
-  return (
-    <div className="space-y-6">
-      <AnimatePresence mode="wait">
-        {selectedToolId === null || !currentTool ? (
-          <motion.div
-            // FIXED: Removed the stray period after "key"
-            key="CalculusOneCalculator-grid-view"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-6"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-5 border-[#E5E7EB]">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                {CATEGORIES.map((cat) => {
-                  const isActive = selectedCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-[#2563EB] text-white shadow-md shadow-blue-500/20'
-                          : 'bg-white text-[#374151] hover:bg-[#F9FAFB] hover:border-slate-300 border border-[#E5E7EB]'
-                      }`}
-                    >
-                      <span>{cat.label}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-[#6B7280]'
-                      }`}>
-                        {cat.count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+  const scrollToCatalog = () => {
+    const el = document.getElementById('calculus-calculators-catalog');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-              <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-                <input
-                  type="text"
-                  placeholder="Search calculus tools..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5E7EB] bg-white pl-9 pr-8 py-2 text-xs sm:text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-500/15 transition-all"
-                />
-                {searchTerm && (
+  return (
+    <div className="relative min-h-screen bg-[#FDFDFD] text-[#111827]">
+      {/* ========================================================================= */}
+      {/* HERO SECTION: SOLVE SMARTER WITH CALCULUS I                                */}
+      {/* ========================================================================= */}
+      <section className="relative overflow-hidden min-h-[480px] lg:min-h-[520px] flex items-center bg-[#0C1017] pt-16 sm:pt-20">
+        {/* Full Background Image: math.jpeg */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={mathBg}
+            alt="Chalkboard background"
+            className="w-full h-full object-cover object-center lg:object-[center_right] opacity-75"
+          />
+          {/* Scrim overlay: heavy on left, revealing child/chalkboard on right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 via-50% to-black/35 lg:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <div className="max-w-2xl space-y-5">
+            {/* Top Pill Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs"
+            >
+              <span>23 Powerful Calculators</span>
+            </motion.div>
+
+            {/* Main Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-4xl sm:text-5xl lg:text-[3.65rem] font-black tracking-tight text-white leading-[1.08]"
+            >
+              <span className="text-white">Solve Smarter with</span>
+              <br />
+              <span className="text-[#A31D24]">Calculus I</span>
+            </motion.h1>
+
+            {/* Paragraph Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-sm sm:text-base text-white/80 leading-relaxed font-normal max-w-xl"
+            >
+              From limits to integrals, explore intelligent single-variable calculators designed to solve complex problems step-by-step.
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-wrap items-center gap-3.5 pt-2"
+            >
+              <button
+                onClick={scrollToCatalog}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#7B1824]/30 transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <span>Explore Calculators</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => navigate('/?tab=topics')}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 hover:bg-white/15 backdrop-blur-md px-5 py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <BookOpen className="w-4 h-4 text-white/80" />
+                <span>View Topics</span>
+              </button>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* DARK FILTER & SEARCH BAR                                                  */}
+      {/* ========================================================================= */}
+      <div id="calculus-calculators-catalog" className="sticky top-16 sm:top-[4.5rem] z-20 bg-[#0B0F15] border-y border-white/10 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
+            
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+              {CATEGORIES.map((cat) => {
+                const isActive = selectedCategory === cat.id && !selectedToolId;
+                return (
                   <button
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#111827]"
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      if (selectedToolId) setSelectedToolId(null);
+                    }}
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'bg-[#8B1A24] text-white shadow-md shadow-[#8B1A24]/30'
+                        : 'bg-[#18202C] text-gray-300 hover:text-white hover:bg-[#222C3D] border border-white/10'
+                    }`}
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <span>{cat.label}</span>
+                    <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-black/40 text-gray-300'
+                    }`}>
+                      {cat.count}
+                    </span>
                   </button>
-                )}
-              </div>
+                );
+              })}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Search Input Box */}
+            <div className="relative w-full lg:w-80 shrink-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search calculators (e.g., Derivative, Integral)"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (selectedToolId) setSelectedToolId(null);
+                }}
+                className="w-full rounded-full border border-white/15 bg-[#18202C] text-white placeholder-gray-400 pl-10 pr-9 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#8B1A24] focus:ring-2 focus:ring-[#8B1A24]/30 transition-all"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MAIN CONTENT AREA: GRID OR ACTIVE WORKSPACE                               */}
+      {/* ========================================================================= */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <AnimatePresence mode="wait">
+          {selectedToolId === null || !currentTool ? (
+            /* ========================================================= */
+            /* VIEW 1: 3-COLUMN CALCULATOR CARD GRID                     */
+            /* ========================================================= */
+            <motion.div
+              key="catalog-grid"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
               {gridFilteredTools.length > 0 ? (
-                gridFilteredTools.map((tool, index) => {
-                  const isClicked = clickedToolId === tool.id;
-                  return (
-                    <motion.article
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                  {gridFilteredTools.map((tool, index) => (
+                    <motion.div
                       key={tool.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{
-                        opacity: isClicked ? 0.4 : 1,
-                        y: 0,
-                        scale: isClicked ? 0.97 : 1,
-                      }}
-                      transition={{
-                        duration: 0.3,
-                        delay: Math.min(index * 0.03, 0.3),
-                        ease: "easeOut",
-                      }}
-                      whileHover={{
-                        y: -3,
-                        borderColor: "#93C5FD",
-                        boxShadow: "0 10px 25px -5px rgba(37, 99, 235, 0.08)",
-                      }}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: Math.min(index * 0.02, 0.2) }}
+                      whileHover={{ y: -3 }}
                       onClick={() => handleSelectTool(tool.id)}
-                      className="group relative flex flex-col justify-between rounded-2xl border border-[#E5E7EB] bg-white p-5 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+                      className="group relative flex flex-col justify-between rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-xs hover:shadow-xl hover:border-[#8B1A24]/40 transition-all duration-300 cursor-pointer"
                     >
                       <div>
+                        {/* Top Row: Title + Category Pill */}
                         <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EFF6FF] text-[#2563EB] border border-blue-200">
-                              {tool.icon}
-                            </div>
-                            <h3 className="font-bold text-base text-[#111827] group-hover:text-[#2563EB] transition-colors duration-200">
-                              {tool.name}
-                            </h3>
-                          </div>
-                          
-                          {tool.badge && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-[#EFF6FF] px-2.5 py-0.5 text-xs font-bold flex-shrink-0 text-[#2563EB]">
-                              {tool.badge}
-                            </span>
-                          )}
+                          <h3 className="text-base sm:text-[1.08rem] font-black text-[#111827] group-hover:text-[#8B1A24] transition-colors leading-snug">
+                            {tool.name}
+                          </h3>
+                          <span className="inline-flex items-center gap-1 rounded-md border border-[#8B1A24]/20 bg-[#8B1A24]/5 px-2.5 py-0.5 text-xs font-bold text-[#8B1A24] shrink-0 lowercase">
+                            <Bookmark className="w-3 h-3 text-[#8B1A24]" />
+                            <span>{tool.badge || tool.category}</span>
+                          </span>
                         </div>
 
-                        <p className="mt-2.5 text-xs sm:text-sm line-clamp-3 leading-relaxed text-[#6B7280]">
+                        {/* Middle: Description */}
+                        <p className="mt-2.5 text-xs sm:text-sm text-[#4B5563] leading-relaxed line-clamp-2 min-h-[42px] font-normal">
                           {tool.description}
                         </p>
                       </div>
 
-                      <div className="mt-5 flex items-center justify-between border-t border-[#F3F4F6] pt-3">
-                        <span className="text-xs font-semibold text-[#9CA3AF]">
+                      {/* Bottom Row: Category Subtitle + Open Calculator Button */}
+                      <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+                        <span className="text-xs font-medium text-[#9CA3AF]">
                           {tool.categoryLabel}
                         </span>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectTool(tool.id);
-                          }}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] px-3.5 py-1.5 text-xs font-bold text-white transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
-                        >
-                          <span>Open</span>
-                          <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                        </button>
+                        <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#8B1A24] group-hover:text-[#60101B] transition-colors">
+                          <span>Open Calculator</span>
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                        </span>
                       </div>
-                    </motion.article>
-                  );
-                })
+                    </motion.div>
+                  ))}
+                </div>
               ) : (
-                <div className="col-span-full py-16 text-center">
-                  <Calculator className="w-10 h-10 mx-auto text-[#9CA3AF] mb-3" />
-                  <p className="text-base font-semibold text-[#111827]">
-                    No calculus tools found matching &ldquo;{searchTerm}&rdquo;
+                <div className="py-20 text-center rounded-3xl border border-dashed border-gray-200 bg-white p-8">
+                  <Calculator className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                  <h3 className="text-base font-bold text-[#111827]">No calculators found</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                    No results match &ldquo;{searchTerm}&rdquo;. Try clearing your search query.
                   </p>
-                  <p className="text-xs mt-1 text-[#6B7280]">
-                    Try selecting &quot;All Tools&quot; or clearing the search query.
-                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('all');
+                    }}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#7B1824] px-4 py-2 text-xs font-bold text-white hover:bg-[#60101B] transition-colors cursor-pointer"
+                  >
+                    Reset Filters
+                  </button>
                 </div>
               )}
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="calculator-active-view"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-6"
-          >
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5">
-              <button
-                onClick={handleBackToGrid}
-                className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#E5E7EB] bg-white text-[#374151] font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer shadow-sm hover:bg-[#F9FAFB] hover:border-slate-300"
-              >
-                <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
-                <span>All Calculators</span>
-                <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded font-mono bg-[#F3F4F6] text-[#6B7280]">
-                  ESC
-                </span>
-              </button>
-
-              <div className="relative z-40 flex-1 max-w-2xl">
+            </motion.div>
+          ) : (
+            /* ========================================================= */
+            /* VIEW 2: ACTIVE CALCULATOR WORKSPACE                       */
+            /* ========================================================= */
+            <motion.div
+              key="active-calculator"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* Workspace Top Bar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5 bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+                {/* Back Button */}
                 <button
-                  ref={buttonRef}
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={`group relative w-full flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 transition-all duration-200 cursor-pointer bg-white ${
-                    isDropdownOpen
-                      ? 'border-[#2563EB] shadow-md ring-2 ring-blue-500/10'
-                      : 'border-[#E5E7EB] hover:border-blue-300 shadow-sm'
-                  }`}
+                  onClick={handleBackToGrid}
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-xs sm:text-sm font-bold text-[#374151] transition-all cursor-pointer"
                 >
-                  <div className="flex items-center gap-3 text-left min-w-0">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-[#EFF6FF] text-[#2563EB]">
-                      {currentTool.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs sm:text-sm truncate text-[#111827]">
-                          {currentTool.name}
-                        </span>
-                        {currentTool.badge && (
-                          <span className="hidden sm:inline-flex items-center rounded-full border border-blue-200 bg-[#EFF6FF] px-2 py-0.5 text-[0.65rem] font-bold text-[#2563EB]">
-                            {currentTool.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] truncate text-[#6B7280]">
-                        {currentTool.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-2 py-0.5 text-[11px] font-mono font-bold text-[#374151]">
-                      {currentIndex + 1}/{tools.length}
-                    </span>
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md text-[#6B7280]">
-                      {isDropdownOpen ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </div>
-                  </div>
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>All Calculators</span>
                 </button>
 
-                {isDropdownOpen && (
-                  <div
-                    ref={dropdownRef}
-                    className="absolute left-0 right-0 top-full mt-2 z-50 rounded-2xl border border-[#E5E7EB] bg-white p-3.5 shadow-2xl shadow-slate-300/60 animate-in fade-in slide-in-from-top-2 duration-200"
+                {/* Dropdown Switcher */}
+                <div className="relative z-30 flex-1 max-w-md" ref={dropdownRef}>
+                  <button
+                    ref={buttonRef}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white hover:border-[#8B1A24]/50 px-4 py-2 text-left transition-all cursor-pointer shadow-xs"
                   >
-                    <div className="relative mb-3">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-                      <input
-                        type="text"
-                        placeholder="Switch to another calculator..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        autoFocus
-                        className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] pl-9 pr-8 py-2 text-xs sm:text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:border-[#2563EB] focus:ring-blue-500/15 transition-all"
-                      />
-                      {searchTerm && (
-                        <button
-                          onClick={() => setSearchTerm('')}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#111827]"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid max-h-[340px] gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
-                      {dropdownFilteredTools.map((tool) => {
-                        const isSelected = selectedToolId === tool.id;
-                        return (
-                          <button
-                            key={tool.id}
-                            onClick={() => handleSelectTool(tool.id)}
-                            className={`group flex items-start justify-between gap-2.5 rounded-xl border p-2.5 text-left transition-all duration-200 cursor-pointer ${
-                              isSelected
-                                ? 'border-blue-400 bg-[#EFF6FF] text-[#2563EB] shadow-sm font-bold'
-                                : 'border-[#E5E7EB] bg-white text-[#374151] hover:border-blue-300 hover:bg-[#F9FAFB] hover:text-[#111827]'
-                            }`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className={`text-xs font-bold transition-colors ${
-                                  isSelected ? 'text-[#2563EB]' : 'group-hover:text-[#2563EB]'
-                                }`}>
-                                  {tool.name}
-                                </span>
-                                {tool.badge && (
-                                  <span className="text-[0.6rem] px-1.5 py-0.5 rounded border border-blue-200 bg-[#EFF6FF] text-[#2563EB] font-bold">
-                                    {tool.badge}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] truncate mt-0.5 text-[#6B7280]">
-                                {tool.description}
-                              </p>
-                            </div>
-
-                            {isSelected && (
-                              <CheckCircle2 className="w-4 h-4 text-[#2563EB] flex-shrink-0 mt-0.5" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevTool}
-                  className="inline-flex items-center gap-1 rounded-xl border border-[#E5E7EB] bg-white px-3 py-2.5 text-xs font-bold text-[#374151] transition-all cursor-pointer hover:border-blue-300 hover:text-[#2563EB] hover:bg-[#F9FAFB] shadow-sm"
-                  title="Previous Calculator"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Prev</span>
-                </button>
-                <button
-                  onClick={handleNextTool}
-                  className="inline-flex items-center gap-1 rounded-xl border border-[#E5E7EB] bg-white px-3 py-2.5 text-xs font-bold text-[#374151] transition-all cursor-pointer hover:border-blue-300 hover:text-[#2563EB] hover:bg-[#F9FAFB] shadow-sm"
-                  title="Next Calculator"
-                >
-                  <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden rounded-3xl border border-[#E5E7EB] bg-white shadow-xl shadow-slate-200/50 text-[#111827]">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E5E7EB] bg-[#F9FAFB] px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-200 bg-[#EFF6FF] text-[#2563EB]">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-lg sm:text-xl text-[#111827]">
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="w-6 h-6 rounded-lg bg-[#8B1A24]/10 text-[#8B1A24] flex items-center justify-center shrink-0">
+                        <Calculator className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-[#111827] truncate">
                         {currentTool.name}
-                      </h2>
-                      <span className="rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold border border-blue-200 bg-[#EFF6FF] text-[#2563EB]">
-                        Ready
                       </span>
                     </div>
-                    <p className="text-xs mt-0.5 text-[#6B7280]">
-                      {currentTool.description}
-                    </p>
-                  </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-gray-200 bg-white shadow-2xl p-2 z-50 max-h-80 overflow-y-auto">
+                      <div className="space-y-1">
+                        {tools.map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              setSelectedToolId(t.id);
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl text-left transition-colors cursor-pointer ${
+                              t.id === selectedToolId
+                                ? 'bg-[#8B1A24] text-white'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            <span>{t.name}</span>
+                            <span className="text-[10px] opacity-75 font-mono">{t.categoryLabel}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Prev / Next Nav */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePrevTool}
+                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#8B1A24] transition-colors cursor-pointer"
+                    title="Previous Calculator"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleNextTool}
+                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#8B1A24] transition-colors cursor-pointer"
+                    title="Next Calculator"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              <div className="calculator-wrapper-theme light-mode p-5 sm:p-8">
+              {/* Calculator Workspace Container */}
+              <div className="bg-white rounded-3xl border border-gray-200/90 shadow-sm p-4 sm:p-8">
                 {currentTool.component}
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-      <style>{`
-        .calculator-wrapper-theme.light-mode {
-          color: #111827;
-        }
-
-        .calculator-wrapper-theme.light-mode input[type="text"],
-        .calculator-wrapper-theme.light-mode input[type="number"],
-        .calculator-wrapper-theme.light-mode textarea,
-        .calculator-wrapper-theme.light-mode select {
-          background-color: #ffffff !important;
-          color: #111827 !important;
-          border: 1px solid #e5e7eb !important;
-          border-radius: 0.75rem !important;
-          padding: 0.65rem 1rem !important;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-          font-weight: 600 !important;
-          transition: all 0.2s ease !important;
-        }
-
-        .calculator-wrapper-theme.light-mode input:focus,
-        .calculator-wrapper-theme.light-mode textarea:focus,
-        .calculator-wrapper-theme.light-mode select:focus {
-          border-color: #2563EB !important;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
-          background-color: #ffffff !important;
-        }
-
-        .calculator-wrapper-theme.light-mode button.bg-indigo-600,
-        .calculator-wrapper-theme.light-mode button.bg-blue-600,
-        .calculator-wrapper-theme.light-mode button.bg-green-600,
-        .calculator-wrapper-theme.light-mode button.bg-emerald-600,
-        .calculator-wrapper-theme.light-mode button.bg-emerald-500 {
-          background: #2563EB !important;
-          color: #ffffff !important;
-          font-weight: 700 !important;
-          border: none !important;
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
-          border-radius: 0.75rem !important;
-          transition: all 0.2s ease-in-out !important;
-        }
-
-        .calculator-wrapper-theme.light-mode button.bg-indigo-600:hover,
-        .calculator-wrapper-theme.light-mode button.bg-blue-600:hover,
-        .calculator-wrapper-theme.light-mode button.bg-green-600:hover,
-        .calculator-wrapper-theme.light-mode button.bg-emerald-600:hover,
-        .calculator-wrapper-theme.light-mode button.bg-emerald-500:hover {
-          background: #1D4ED8 !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
-        }
-
-        .calculator-wrapper-theme.light-mode button.border-gray-300,
-        .calculator-wrapper-theme.light-mode button.border-slate-300,
-        .calculator-wrapper-theme.light-mode button.border-slate-200,
-        .calculator-wrapper-theme.light-mode button.border {
-          background-color: #ffffff !important;
-          color: #374151 !important;
-          border-color: #e5e7eb !important;
-          border-radius: 0.75rem !important;
-          transition: all 0.2s ease !important;
-        }
-
-        .calculator-wrapper-theme.light-mode button.border-slate-300:hover,
-        .calculator-wrapper-theme.light-mode button.border-gray-300:hover,
-        .calculator-wrapper-theme.light-mode button.border:hover {
-          background-color: #f9fafb !important;
-          color: #111827 !important;
-          border-color: #93c5fd !important;
-        }
-
-        .calculator-wrapper-theme.light-mode .text-slate-700,
-        .calculator-wrapper-theme.light-mode .text-slate-800,
-        .calculator-wrapper-theme.light-mode .text-gray-800 {
-          color: #111827 !important;
-          font-weight: 600 !important;
-        }
-
-        .calculator-wrapper-theme.light-mode .text-gray-500,
-        .calculator-wrapper-theme.light-mode .text-slate-600,
-        .calculator-wrapper-theme.light-mode .text-gray-600 {
-          color: #6b7280 !important;
-        }
-
-        .calculator-wrapper-theme.light-mode .bg-slate-50,
-        .calculator-wrapper-theme.light-mode .bg-blue-50,
-        .calculator-wrapper-theme.light-mode .bg-indigo-50 {
-          background-color: #eff6ff !important;
-          border: 1px solid #dbeafe !important;
-          border-radius: 0.85rem !important;
-          color: #1e40af !important;
-        }
-
-        .calculator-wrapper-theme.light-mode pre {
-          background-color: #f9fafb !important;
-          border: 1px solid #e5e7eb !important;
-          color: #111827 !important;
-          border-radius: 0.75rem !important;
-          padding: 1rem !important;
-        }
-      `}</style>
+      {/* Footer */}
+      <footer className="mt-16 border-t border-gray-200 bg-white py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-xs text-gray-500 flex items-center justify-center gap-2">
+            <TrendingUp className="w-4 h-4 text-[#8B1A24]" />
+            <span>All 23 single-variable calculus solvers powered by step-by-step algorithms</span>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
