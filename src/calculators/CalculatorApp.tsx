@@ -195,10 +195,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
   }, [isDropdownOpen, selectedToolId]);
 
   const handleSelectTool = (toolId: string) => {
-    setSelectedToolId(toolId);
-    setIsDropdownOpen(false);
-    setSearchTerm('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate(`/calculators/${toolId}`);
   };
 
   const handleBackToGrid = () => {

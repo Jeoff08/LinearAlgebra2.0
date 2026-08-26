@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
 import LINEAR_TOPICS from "../data/topics/index";
 import ALL_CALCULUS_TOPICS from "../data/calculus-topics";
+import ALL_CALCULUS_2_TOPICS from "../data/calculus-2-topics";
 import mathBg from "../assets/math.jpeg";
 import { 
   ArrowRight, 
@@ -42,6 +43,7 @@ export interface CategorizedTopic {
   categoryLabel: string;
   subCategory?: string;
   subCategoryLabel?: string;
+  chapterNumber?: number;
 }
 
 export interface LinearCalculatorCard {
@@ -156,87 +158,353 @@ const ALL_TOPICS: CategorizedTopic[] = [
     ? ALL_CALCULUS_TOPICS
     : (ALL_CALCULUS_TOPICS as any)?.default || []
   ).filter((t: any) => Boolean(t && t.id && t.title)),
+  ...(Array.isArray(ALL_CALCULUS_2_TOPICS)
+    ? ALL_CALCULUS_2_TOPICS
+    : (ALL_CALCULUS_2_TOPICS as any)?.default || []
+  ).filter((t: any) => Boolean(t && t.id && t.title)),
 ];
 
-// Calculus Sidebar / Filter Categories (Matching Reference Image)
-const CALCULUS_CATEGORIES = [
-  { id: "all", label: "All Topics", icon: <Layers className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "foundations", label: "Foundations of Calculus", icon: <Landmark className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "limits", label: "Limit and Continuity", icon: <Activity className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "derivatives", label: "Derivatives", icon: <Zap className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "derivatives-common", label: "Derivatives of common function", icon: <FunctionSquare className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "implicit", label: "Implicit differentiation", icon: <SlidersHorizontal className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "applications-derivatives", label: "Applications of derivatives", icon: <TrendingUp className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "optimization", label: "Optimization", icon: <Maximize2 className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "lhopital", label: "L'Hôpital's Rule & Asymptotes", icon: <span className="font-serif font-bold text-xs text-[#7B1824] shrink-0">lim</span> },
-  { id: "integration", label: "Introduction to integration", icon: <BookOpen className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "mvt-extrema", label: "Mean value theorem & Extrema", icon: <Activity className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-];
-
-function filterTopicByCalculusCategory(topic: CategorizedTopic, catId: string): boolean {
-  if (catId === "all") return true;
-  const id = (topic.id || "").toLowerCase();
-  const sub = (topic.subCategory || "").toLowerCase();
-
-  if (catId === "foundations") {
-    return sub === "chapter-1" || id.includes("real-number") || id.includes("interval") || id.includes("distance") || id.includes("midpoint") || id.includes("line") || id.includes("circle") || id.includes("function");
-  }
-  if (catId === "limits") {
-    return sub === "chapter-2" || id.includes("limit") || id.includes("continuity");
-  }
-  if (catId === "derivatives") {
-    return (sub === "chapter-3" && !id.includes("implicit") && !id.includes("composite")) || id.includes("tangent") || id.includes("power-function") || id.includes("rate-of-change");
-  }
-  if (catId === "derivatives-common") {
-    return id.includes("composite") || id.includes("higher-order") || id.includes("algebraic");
-  }
-  if (catId === "implicit") {
-    return id.includes("implicit") || id.includes("related-rates");
-  }
-  if (catId === "applications-derivatives") {
-    return id.includes("velocity") || id.includes("rectilinear") || id.includes("economics") || id.includes("rate-of-change");
-  }
-  if (catId === "optimization") {
-    return id.includes("optimization") || id.includes("maximum-and-minimum-problems") || id.includes("absolute-extrema") || id.includes("absolute-maximum");
-  }
-  if (catId === "lhopital") {
-    return id.includes("infinity") || id.includes("asymptote");
-  }
-  if (catId === "integration") {
-    return sub === "chapter-6" || sub === "chapter-7" || sub === "chapter-8" || id.includes("integral") || id.includes("antiderivative") || id.includes("antidifferentiation") || id.includes("differential") || id.includes("area") || id.includes("volume") || id.includes("riemann") || id.includes("sigma");
-  }
-  if (catId === "mvt-extrema") {
-    return id.includes("rolle") || id.includes("mean-value") || id.includes("concavity") || id.includes("inflection") || id.includes("increasing-and-decreasing") || id.includes("derivative-test") || id.includes("curve-sketching");
-  }
-  return true;
+export interface ChapterCardItem {
+  id: string;
+  chapterNumber: number;
+  title: string;
+  description: string;
+  defaultTopicCount: number;
+  icon: React.ReactNode;
 }
 
-// Linear Algebra Sidebar / Filter Categories
-const LINEAR_CATEGORIES = [
-  { id: "all", label: "All Topics", icon: <Layers className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "foundations", label: "Foundations & Prerequisites", icon: <Landmark className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "vectors", label: "Vectors & Operations", icon: <TrendingUp className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "matrices", label: "Matrices & Matrix Algebra", icon: <FunctionSquare className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "systems", label: "Systems of Linear Equations", icon: <Activity className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "inverses-determinants", label: "Inverses & Determinants", icon: <Zap className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "spaces-basis", label: "Vector Spaces, Span & Basis", icon: <Compass className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "eigen", label: "Eigenvalues & Diagonalization", icon: <span className="font-serif font-bold text-xs text-[#7B1824] shrink-0">λ</span> },
-  { id: "factorizations", label: "Matrix Factorizations (LU, QR, SVD)", icon: <Layers className="w-4 h-4 text-[#7B1824] shrink-0" /> },
-  { id: "applications", label: "Applications & Optimization", icon: <SlidersHorizontal className="w-4 h-4 text-[#7B1824] shrink-0" /> },
+// 8 Chapter Cards for Calculus I (Chapters 1 to 8) - Matching Reference Image Precisely
+export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
+  {
+    id: "calc1-ch1",
+    chapterNumber: 1,
+    title: "Functions and Limits",
+    description: "Learn the basics of functions, limits, and continuity.",
+    defaultTopicCount: 8,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 16l15-7 15 7-15 7-15-7z" />
+        <path d="M7 23l15 7 15-7" />
+        <path d="M7 30l15 7 15-7" />
+      </svg>
+    ),
+  },
+  {
+    id: "calc1-ch2",
+    chapterNumber: 2,
+    title: "Derivatives",
+    description: "Master the rules and techniques of differentiation.",
+    defaultTopicCount: 7,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 36h28" />
+        <path d="M12 28l9-9 6 6 9-11" />
+        <path d="M29 14h7v7" />
+      </svg>
+    ),
+  },
+  {
+    id: "calc1-ch3",
+    chapterNumber: 3,
+    title: "Applications of Derivatives",
+    description: "Use derivatives to solve real-world problems.",
+    defaultTopicCount: 6,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 14c3 18 21 18 24 0" />
+        <line x1="6" y1="23" x2="38" y2="23" strokeDasharray="3 3" strokeWidth="1.8" />
+      </svg>
+    ),
+  },
+  {
+    id: "calc1-ch4",
+    chapterNumber: 4,
+    title: "Integrals",
+    description: "Understand antiderivatives, and integration techniques.",
+    defaultTopicCount: 6,
+    icon: (
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-3xl font-bold text-[#7B1824] select-none">
+        ∫
+      </div>
+    ),
+  },
+  {
+    id: "calc1-ch5",
+    chapterNumber: 5,
+    title: "Techniques of Integration",
+    description: "Learn substitution, parts, and other methods.",
+    defaultTopicCount: 7,
+    icon: (
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-3xl font-black text-[#7B1824] select-none">
+        Σ
+      </div>
+    ),
+  },
+  {
+    id: "calc1-ch6",
+    chapterNumber: 6,
+    title: "Infinite Series",
+    description: "Explore convergence, tests, and series.",
+    defaultTopicCount: 6,
+    icon: (
+      <div className="flex flex-col items-center justify-center w-10 h-10 font-serif leading-none select-none text-[#7B1824]">
+        <span className="text-xl font-black">Σ</span>
+        <span className="text-sm font-black -mt-1">Σ</span>
+      </div>
+    ),
+  },
+  {
+    id: "calc1-ch7",
+    chapterNumber: 7,
+    title: "Applications of Integration",
+    description: "Volume, area, and other geometric uses.",
+    defaultTopicCount: 6,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 6l15 8v16l-15 8-15-8V14l15-8z" />
+        <path d="M22 6v32" />
+        <path d="M7 14l15 8 15-8" />
+      </svg>
+    ),
+  },
+  {
+    id: "calc1-ch8",
+    chapterNumber: 8,
+    title: "Advanced Topics",
+    description: "Higher-order derivatives, techniques and more.",
+    defaultTopicCount: 6,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 8v28h28" />
+        <path d="M12 30c6-1 14-8 16-18" />
+        <circle cx="28" cy="12" r="2.5" fill="#7B1824" />
+      </svg>
+    ),
+  },
 ];
 
-function filterTopicByLinearCategory(topic: CategorizedTopic, catId: string): boolean {
-  if (catId === "all") return true;
+// 8 Chapter Cards for Calculus II (Chapters 9 to 16)
+export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
+  {
+    id: "calc2-ch9",
+    chapterNumber: 9,
+    title: "Inverse & Transcendental Functions",
+    description: "Logarithmic, exponential, and inverse trigonometric functions.",
+    defaultTopicCount: 6,
+    icon: (
+      <span className="font-mono text-sm font-bold text-[#7B1824]">f⁻¹(x)</span>
+    ),
+  },
+  {
+    id: "calc2-ch10",
+    chapterNumber: 10,
+    title: "Derivatives & Integrals of Trig",
+    description: "Trigonometric derivatives, integrals, and identities.",
+    defaultTopicCount: 6,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+        <path d="M8 22c4-12 8-12 12 0s8 12 12 0 8-12 12 0" />
+      </svg>
+    ),
+  },
+  {
+    id: "calc2-ch11",
+    chapterNumber: 11,
+    title: "Exponential & Logarithmic Functions",
+    description: "Natural logarithms, exponential growth, and decay models.",
+    defaultTopicCount: 6,
+    icon: (
+      <span className="font-mono text-base font-bold text-[#7B1824]">ln(x)</span>
+    ),
+  },
+  {
+    id: "calc2-ch12",
+    chapterNumber: 12,
+    title: "Techniques of Integration",
+    description: "Integration by parts, partial fractions, and trig substitutions.",
+    defaultTopicCount: 6,
+    icon: (
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-2xl font-bold text-[#7B1824]">
+        ∫udv
+      </div>
+    ),
+  },
+  {
+    id: "calc2-ch13",
+    chapterNumber: 13,
+    title: "Indeterminate Forms & Improper Integrals",
+    description: "L'Hôpital's rule, infinity limits, and improper integrals.",
+    defaultTopicCount: 6,
+    icon: (
+      <div className="flex flex-col items-center justify-center font-mono text-xs font-bold text-[#7B1824]">
+        <span>lim</span>
+        <span className="text-[9px]">x→∞</span>
+      </div>
+    ),
+  },
+  {
+    id: "calc2-ch14",
+    chapterNumber: 14,
+    title: "Infinite Sequences & Series",
+    description: "Convergence tests, geometric series, and alternating series.",
+    defaultTopicCount: 6,
+    icon: (
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-2xl font-black text-[#7B1824]">
+        ∑ aₙ
+      </div>
+    ),
+  },
+  {
+    id: "calc2-ch15",
+    chapterNumber: 15,
+    title: "Power Series & Taylor Polynomials",
+    description: "Taylor and Maclaurin series, radius and interval of convergence.",
+    defaultTopicCount: 6,
+    icon: (
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-sm font-bold text-[#7B1824]">
+        ∑ cₙxⁿ
+      </div>
+    ),
+  },
+  {
+    id: "calc2-ch16",
+    chapterNumber: 16,
+    title: "Polar Coordinates & Parametrics",
+    description: "Parametric equations, polar curves, areas, and conic sections.",
+    defaultTopicCount: 6,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+        <circle cx="22" cy="22" r="14" strokeDasharray="3 3" />
+        <path d="M22 8c6 5 8 10 5 14s-9 2-8-3 6-5 8-3" />
+      </svg>
+    ),
+  },
+];
+
+// 8 Chapter Cards for Linear Algebra (Chapters 1 to 8)
+export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
+  {
+    id: "linear-ch1",
+    chapterNumber: 1,
+    title: "Foundations & Linear Systems",
+    description: "Linear equations, Gaussian elimination, and row echelon forms.",
+    defaultTopicCount: 3,
+    icon: (
+      <span className="font-mono text-xs font-black tracking-tight text-[#7B1824]">
+        Ax=b
+      </span>
+    ),
+  },
+  {
+    id: "linear-ch2",
+    chapterNumber: 2,
+    title: "Vector Equations & Span",
+    description: "Vectors in Rⁿ, linear combinations, and spanning sets.",
+    defaultTopicCount: 3,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="8" y1="36" x2="36" y2="36" />
+        <line x1="8" y1="36" x2="8" y2="8" />
+        <line x1="8" y1="36" x2="32" y2="12" />
+        <path d="M24 12h8v8" />
+      </svg>
+    ),
+  },
+  {
+    id: "linear-ch3",
+    chapterNumber: 3,
+    title: "Matrix Algebra & Inverses",
+    description: "Matrix multiplication, transpose, and invertible matrices.",
+    defaultTopicCount: 3,
+    icon: (
+      <div className="flex items-center justify-center font-mono text-xs font-bold text-[#7B1824]">
+        [A⁻¹]
+      </div>
+    ),
+  },
+  {
+    id: "linear-ch4",
+    chapterNumber: 4,
+    title: "Determinants & Properties",
+    description: "Cofactor expansion, Cramer's rule, and geometric volume.",
+    defaultTopicCount: 2,
+    icon: (
+      <div className="flex items-center justify-center font-mono text-sm font-bold text-[#7B1824]">
+        |A|
+      </div>
+    ),
+  },
+  {
+    id: "linear-ch5",
+    chapterNumber: 5,
+    title: "Vector Spaces & Subspaces",
+    description: "Subspaces, null spaces, column spaces, basis, and coordinate systems.",
+    defaultTopicCount: 4,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="22 6 38 14 38 30 22 38 6 30 6 14" />
+        <line x1="22" y1="6" x2="22" y2="38" />
+        <line x1="6" y1="14" x2="38" y2="30" />
+      </svg>
+    ),
+  },
+  {
+    id: "linear-ch6",
+    chapterNumber: 6,
+    title: "Linear Transformations & Rank",
+    description: "Matrix transformations, kernel, range, and rank-nullity theorem.",
+    defaultTopicCount: 2,
+    icon: (
+      <span className="font-mono text-xs font-bold text-[#7B1824]">
+        T:V→W
+      </span>
+    ),
+  },
+  {
+    id: "linear-ch7",
+    chapterNumber: 7,
+    title: "Eigenvalues & Diagonalization",
+    description: "Characteristic polynomials, eigenspaces, and matrix powers.",
+    defaultTopicCount: 2,
+    icon: (
+      <span className="font-serif text-2xl font-bold text-[#7B1824]">
+        λ
+      </span>
+    ),
+  },
+  {
+    id: "linear-ch8",
+    chapterNumber: 8,
+    title: "Orthogonality & Factorizations",
+    description: "Inner products, Gram-Schmidt, LU, QR, and SVD factorizations.",
+    defaultTopicCount: 8,
+    icon: (
+      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="8" y1="36" x2="36" y2="36" />
+        <line x1="8" y1="36" x2="8" y2="8" />
+        <rect x="8" y="26" width="10" height="10" strokeDasharray="2 2" />
+      </svg>
+    ),
+  },
+];
+
+function filterTopicByCalculusChapter(topic: CategorizedTopic, chNum: number): boolean {
+  const ch = (topic as any).chapterNumber;
+  if (ch !== undefined && ch !== null) return ch === chNum;
+  const sub = (topic.subCategory || "").toLowerCase();
+  return sub === `chapter-${chNum}`;
+}
+
+function filterTopicByLinearChapter(topic: CategorizedTopic, chNum: number): boolean {
   const id = (topic.id || "").toLowerCase();
-  if (catId === "foundations") return id.includes("foundations") || id.includes("pre");
-  if (catId === "vectors") return id.includes("vector") || id.includes("dot") || id.includes("cross") || id.includes("projection");
-  if (catId === "matrices") return id.includes("matri") || id.includes("transpose");
-  if (catId === "systems") return id.includes("system") || id.includes("gaussian");
-  if (catId === "inverses-determinants") return id.includes("inverse") || id.includes("determinant");
-  if (catId === "spaces-basis") return id.includes("span") || id.includes("independence") || id.includes("basis") || id.includes("subspace") || id.includes("rank");
-  if (catId === "eigen") return id.includes("eigen") || id.includes("diagonalization");
-  if (catId === "factorizations") return id.includes("lu") || id.includes("qr") || id.includes("svd") || id.includes("factorization");
-  if (catId === "applications") return id.includes("application") || id.includes("optimization") || id.includes("numerical") || id.includes("least-square") || id.includes("transformation");
+  if (chNum === 1) return id === "foundations" || id === "systems" || id === "vectors";
+  if (chNum === 2) return id === "matrices" || id === "inverses" || id === "advanced-matrix-topics";
+  if (chNum === 3) return id === "determinants";
+  if (chNum === 4) return id === "independence-span" || id === "fundamental-subspaces" || id === "change-of-basis" || id === "complex-vector-spaces";
+  if (chNum === 5) return id === "linear-transformations" || id === "rank";
+  if (chNum === 6) return id === "eigen" || id === "diagonalization";
+  if (chNum === 7) return id === "orthogonality" || id === "inner-product" || id === "least-squares";
+  if (chNum === 8) return id === "lu" || id === "qr" || id === "svd" || id === "matrix-factorizations" || id === "quadratic-forms" || id === "numerical-linear-algebra" || id === "optimization" || id === "applications";
   return true;
 }
 
@@ -244,22 +512,25 @@ export default function PublicPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Active view: "main" | "categories" | "topics-linear" | "topics-calculus"
-  const [activeView, setActiveView] = useState<"main" | "categories" | "topics-linear" | "topics-calculus">("main");
+  // Active view: "main" | "categories" | "topics-linear" | "topics-calculus" | "topics-calculus-2"
+  const [activeView, setActiveView] = useState<"main" | "categories" | "topics-linear" | "topics-calculus" | "topics-calculus-2">("main");
   const [topicSearch, setTopicSearch] = useState("");
-  const [selectedCalculusCategory, setSelectedCalculusCategory] = useState<string>("all");
-  const [selectedLinearCategory, setSelectedLinearCategory] = useState<string>("all");
+  const [selectedLinearChapter, setSelectedLinearChapter] = useState<number | null>(null);
+  const [selectedCalculusChapter, setSelectedCalculusChapter] = useState<number | null>(null);
+  const [selectedCalculus2Chapter, setSelectedCalculus2Chapter] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<"popular" | "az" | "examples">("popular");
 
   // Split topics by subject
   const linearTopics = useMemo(() => ALL_TOPICS.filter((t) => t.category === "linear-algebra"), []);
-  const calculusTopics = useMemo(() => ALL_TOPICS.filter((t) => t.category === "calculus"), []);
+  const calculus1Topics = useMemo(() => ALL_TOPICS.filter((t) => t.category === "calculus" && ((t as any).chapterNumber || 1) <= 8), []);
+  const calculus2Topics = useMemo(() => ALL_TOPICS.filter((t) => t.category === "calculus" && ((t as any).chapterNumber || 1) >= 9), []);
+  const calculusTopics = calculus1Topics;
 
   // Filtered Linear Algebra topics
   const filteredLinearTopics = useMemo(() => {
     let list = linearTopics;
-    if (selectedLinearCategory !== "all") {
-      list = list.filter((t) => filterTopicByLinearCategory(t, selectedLinearCategory));
+    if (selectedLinearChapter !== null) {
+      list = list.filter((t) => filterTopicByLinearChapter(t, selectedLinearChapter));
     }
     const query = topicSearch.toLowerCase().trim();
     if (!query) return list;
@@ -267,7 +538,7 @@ export default function PublicPage() {
       t.title.toLowerCase().includes(query) ||
       t.summary.toLowerCase().includes(query)
     );
-  }, [linearTopics, topicSearch, selectedLinearCategory]);
+  }, [linearTopics, topicSearch, selectedLinearChapter]);
 
   const sortedLinearTopics = useMemo(() => {
     let list = filteredLinearTopics;
@@ -280,11 +551,11 @@ export default function PublicPage() {
     return list;
   }, [filteredLinearTopics, sortBy]);
 
-  // Filtered Calculus topics
-  const filteredCalculusTopics = useMemo(() => {
-    let list = calculusTopics;
-    if (selectedCalculusCategory !== "all") {
-      list = list.filter((t) => filterTopicByCalculusCategory(t, selectedCalculusCategory));
+  // Filtered Calculus 1 topics
+  const filteredCalculus1Topics = useMemo(() => {
+    let list = calculus1Topics;
+    if (selectedCalculusChapter !== null) {
+      list = list.filter((t) => filterTopicByCalculusChapter(t, selectedCalculusChapter));
     }
     const query = topicSearch.toLowerCase().trim();
     if (!query) return list;
@@ -293,10 +564,10 @@ export default function PublicPage() {
       t.summary.toLowerCase().includes(query) ||
       (t.subCategoryLabel && t.subCategoryLabel.toLowerCase().includes(query))
     );
-  }, [calculusTopics, topicSearch, selectedCalculusCategory]);
+  }, [calculus1Topics, topicSearch, selectedCalculusChapter]);
 
-  const sortedCalculusTopics = useMemo(() => {
-    let list = filteredCalculusTopics;
+  const sortedCalculus1Topics = useMemo(() => {
+    let list = filteredCalculus1Topics;
     if (sortBy === "az") {
       return [...list].sort((a, b) => a.title.localeCompare(b.title));
     }
@@ -304,7 +575,33 @@ export default function PublicPage() {
       return [...list].sort((a, b) => (b.examples?.length || 0) - (a.examples?.length || 0));
     }
     return list;
-  }, [filteredCalculusTopics, sortBy]);
+  }, [filteredCalculus1Topics, sortBy]);
+
+  // Filtered Calculus 2 topics
+  const filteredCalculus2Topics = useMemo(() => {
+    let list = calculus2Topics;
+    if (selectedCalculus2Chapter !== null) {
+      list = list.filter((t) => filterTopicByCalculusChapter(t, selectedCalculus2Chapter));
+    }
+    const query = topicSearch.toLowerCase().trim();
+    if (!query) return list;
+    return list.filter((t) => 
+      t.title.toLowerCase().includes(query) ||
+      t.summary.toLowerCase().includes(query) ||
+      (t.subCategoryLabel && t.subCategoryLabel.toLowerCase().includes(query))
+    );
+  }, [calculus2Topics, topicSearch, selectedCalculus2Chapter]);
+
+  const sortedCalculus2Topics = useMemo(() => {
+    let list = filteredCalculus2Topics;
+    if (sortBy === "az") {
+      return [...list].sort((a, b) => a.title.localeCompare(b.title));
+    }
+    if (sortBy === "examples") {
+      return [...list].sort((a, b) => (b.examples?.length || 0) - (a.examples?.length || 0));
+    }
+    return list;
+  }, [filteredCalculus2Topics, sortBy]);
 
   // Sync tab search param with view
   useEffect(() => {
@@ -314,8 +611,8 @@ export default function PublicPage() {
       setActiveView("main");
     } else if (tab === "topics") {
       const returnView = sessionStorage.getItem("returningTopicView");
-      if (returnView === "topics-linear" || returnView === "topics-calculus") {
-        setActiveView(returnView);
+      if (returnView === "topics-linear" || returnView === "topics-calculus" || returnView === "topics-calculus-2") {
+        setActiveView(returnView as any);
         sessionStorage.removeItem("returningTopicView");
       } else {
         setActiveView((prev) => (prev === "main" ? "categories" : prev));
@@ -342,7 +639,7 @@ export default function PublicPage() {
   // Check if returning from topic page
   useEffect(() => {
     const returnView = sessionStorage.getItem("returningTopicView");
-    if (returnView === "topics-linear" || returnView === "topics-calculus" || returnView === "categories") {
+    if (returnView === "topics-linear" || returnView === "topics-calculus" || returnView === "topics-calculus-2" || returnView === "categories") {
       setActiveView(returnView as any);
       sessionStorage.removeItem("returningTopicView");
     } else if (sessionStorage.getItem("returningFromTopic")) {
@@ -442,7 +739,16 @@ export default function PublicPage() {
 
   const handleTopicClick = (topicId: string, category: "linear-algebra" | "calculus", e: React.MouseEvent) => {
     e.preventDefault();
-    sessionStorage.setItem("returningTopicView", category === "calculus" ? "topics-calculus" : "topics-linear");
+    // If chapterNumber >= 9 it's a Calculus II topic
+    const topic = ALL_TOPICS.find(t => t.id === topicId);
+    const chNum = (topic as any)?.chapterNumber || 1;
+    if (category === "calculus" && chNum >= 9) {
+      sessionStorage.setItem("returningTopicView", "topics-calculus-2");
+    } else if (category === "calculus") {
+      sessionStorage.setItem("returningTopicView", "topics-calculus");
+    } else {
+      sessionStorage.setItem("returningTopicView", "topics-linear");
+    }
     navigate(`/topics/${topicId}`);
   };
 
@@ -790,75 +1096,6 @@ export default function PublicPage() {
               </div>
             </div>
 
-            {/* ── Bottom Hero: Floating Stats Glassmorphism Bar ── */}
-            <div className="w-full max-w-[1240px] mx-auto mt-2 sm:mt-4">
-              <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#0c1017]/85 backdrop-blur-xl px-5 sm:px-8 lg:px-12 py-4 sm:py-5 shadow-2xl">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-                  
-                  {/* Stat 1: 10K+ Students */}
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
-                      <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-lg sm:text-xl font-black text-white tracking-tight leading-none">
-                        10K+
-                      </span>
-                      <span className="mt-1 text-xs text-white/60 font-medium">
-                        Students
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Stat 2: 50+ Calculators */}
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
-                      <Calculator className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-lg sm:text-xl font-black text-white tracking-tight leading-none">
-                        50+
-                      </span>
-                      <span className="mt-1 text-xs text-white/60 font-medium">
-                        Calculators
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Stat 3: 146+ Topics */}
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
-                      <BookOpen className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-lg sm:text-xl font-black text-white tracking-tight leading-none">
-                        146+
-                      </span>
-                      <span className="mt-1 text-xs text-white/60 font-medium">
-                        Topics
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Stat 4: Worldwide Learners */}
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
-                      <Globe className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-lg sm:text-xl font-black text-white tracking-tight leading-none">
-                        Worldwide
-                      </span>
-                      <span className="mt-1 text-xs text-white/60 font-medium">
-                        Learners
-                      </span>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-
           </div>
         </motion.div>
       ) : activeView === "categories" ? (
@@ -949,16 +1186,17 @@ export default function PublicPage() {
           </section>
 
           {/* ========================================================================= */}
-          {/* 2. TWO MAIN DISCIPLINE CARDS (Overlapping Hero Bottom)                   */}
+          {/* 2. THREE MAIN DISCIPLINE CARDS (Overlapping Hero Bottom)                 */}
           {/* ========================================================================= */}
           <section id="disciplines-section" className="relative z-20 mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 -mt-16 sm:-mt-20">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
               {/* Card 1: Linear Algebra */}
               <motion.div
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => {
                   setTopicSearch("");
+                  setSelectedLinearChapter(null);
                   setActiveView("topics-linear");
                 }}
                 className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 cursor-pointer"
@@ -1025,7 +1263,7 @@ export default function PublicPage() {
                 transition={{ duration: 0.2 }}
                 onClick={() => {
                   setTopicSearch("");
-                  setSelectedCalculusCategory("all");
+                  setSelectedCalculusChapter(null);
                   setActiveView("topics-calculus");
                 }}
                 className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 cursor-pointer"
@@ -1082,6 +1320,72 @@ export default function PublicPage() {
                     <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
                       <FunctionSquare className="h-3.5 w-3.5 text-[#7B1824]" />
                       Functions &amp; Graphs
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 3: Calculus II */}
+              <motion.div
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => {
+                  setTopicSearch("");
+                  setSelectedCalculus2Chapter(null);
+                  setActiveView("topics-calculus-2");
+                }}
+                className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 cursor-pointer"
+              >
+                <div>
+                  {/* Top Row: Icon & Tag */}
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                      <GraduationCap className="h-6 w-6" />
+                    </div>
+                    <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                      CALC II
+                    </span>
+                  </div>
+
+                  {/* Header & Right Graphic Badge */}
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div>
+                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#7B1824] transition-colors">
+                        Calculus II
+                      </h3>
+                      <p className="mt-1 text-xs font-bold text-[#7B1824]">
+                        {calculus2Topics.length} Topics Available
+                      </p>
+                    </div>
+
+                    {/* Sigma Badge */}
+                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 font-mono font-bold leading-tight shrink-0">
+                      <span className="text-lg font-serif">Σ</span>
+                      <span className="text-[9px] mt-0.5 opacity-80">n=1</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-[#5D6067] leading-relaxed mb-6 font-normal">
+                    Explore advanced integration, transcendental functions, infinite series, polar coordinates, and conic sections.
+                  </p>
+
+                  {/* Feature Pills */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-[#F5EDEF]">
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <span className="font-serif font-bold text-[#7B1824]">∫</span>
+                      Integration
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <span className="font-serif font-bold text-[#7B1824]">∞</span>
+                      Series
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Compass className="h-3.5 w-3.5 text-[#7B1824]" />
+                      Polar &amp; Conics
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Activity className="h-3.5 w-3.5 text-[#7B1824]" />
+                      Transcendentals
                     </span>
                   </div>
                 </div>
@@ -1166,7 +1470,7 @@ export default function PublicPage() {
         </motion.div>
       ) : activeView === "topics-linear" ? (
         /* ========================================================================= */
-        /* VIEW 3: LINEAR ALGEBRA TOPICS LIST (MATCHING REFERENCE DESIGN EXACTLY)    */
+        /* VIEW 3: LINEAR ALGEBRA TOPICS (MATCHING USER REFERENCE DESIGN EXACTLY)   */
         /* ========================================================================= */
         <motion.div
           key="topics-linear-view"
@@ -1176,192 +1480,197 @@ export default function PublicPage() {
           transition={{ duration: 0.3 }}
           className="min-h-screen bg-[#FDFBFB]"
         >
-          {/* 1. TOP HERO SECTION (Chalkboard Background with Student) */}
-          <section className="relative w-full overflow-hidden bg-[#0e131b] pt-24 pb-20 sm:pt-28 sm:pb-24">
-            <div className="absolute inset-0 z-0">
+          {/* 1. TOP HERO SECTION (Authentic Chalkboard Background with Student) */}
+          <section className="relative w-full overflow-hidden bg-[#090D14] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-30 lg:pb-18">
+            <div className="absolute inset-0 z-0 pointer-events-none">
               <img
                 src={mathBg}
                 alt="Mathematics blackboard background"
-                className="h-full w-full object-cover object-center opacity-45"
+                className="h-full w-full object-cover object-center opacity-45 scale-[1.02]"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/35" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0e131b] via-transparent to-black/40" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090D14] via-transparent to-black/50" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_25%,rgba(9,13,20,0.85)_100%)]" />
             </div>
 
             <div className="relative z-10 mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12">
-              <div className="max-w-2xl">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#E05260] mb-2 block">
-                  TOPICS
-                </span>
-                <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-black tracking-tight leading-tight mb-3">
-                <span className="text-[#7B1824]">Linear Algebra Topics</span>
-              </h1>
-                <p className="text-sm sm:text-base text-white/80 leading-relaxed font-normal">
-                  Explore linear systems, matrix transformations, eigenvalues, and vector spaces with step-by-step verified explanations.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+                <div className="max-w-3xl">
+                  {/* Red TOPICS Eyebrow Tag */}
+                  <div className="inline-flex items-center rounded-full bg-[#3D0E14] border border-[#5E1620] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF6575] mb-3 shadow-xs">
+                    TOPICS
+                  </div>
+
+                  {/* Main Headline in Red */}
+                  <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-black tracking-tight leading-none mb-3">
+                    <span className="text-[#DE2438]">Linear Algebra Topics</span>
+                  </h1>
+
+                  {/* Subtitle Description */}
+                  <p className="text-sm sm:text-base text-gray-200/90 font-normal leading-relaxed max-w-2xl">
+                    Explore linear systems, matrix transformations, vector spaces, eigenvalues, and matrix factorizations with step-by-step verified explanations.
+                  </p>
+                </div>
+
+                {/* Back Button to Disciplines / All Topics */}
+                <button
+                  onClick={() => {
+                    setSelectedLinearChapter(null);
+                    setTopicSearch("");
+                    setActiveView("categories");
+                    navigate("/?tab=topics");
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 text-xs sm:text-sm font-bold text-white transition-all duration-200 cursor-pointer self-start backdrop-blur-md shadow-sm hover:scale-105 active:scale-95 shrink-0"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Topics</span>
+                </button>
               </div>
             </div>
           </section>
 
-          {/* 2. MAIN WHITE CONTAINER (OVERLAPPING HERO BOTTOM) */}
-          <section className="relative z-20 mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12 -mt-8 sm:-mt-10 pb-20">
-            <div className="flex flex-col lg:flex-row gap-7 items-start">
-              
-              {/* Left Sidebar */}
-              <aside className="w-full lg:w-72 shrink-0 rounded-[24px] border border-[#EAE2E4] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-                <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#9CA3AF] px-2 mb-3.5">
-                  BROWSE TOPICS
-                </div>
+          {/* 2. MAIN CARDS CONTAINER (8 Chapter Cards Grid or Chapter Drilldown) */}
+          <section className="relative z-20 mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12 py-8 sm:py-10 pb-24">
+            {selectedLinearChapter !== null ? (
+              /* View Mode B: Drill-down inside a specific chapter */
+              <div className="space-y-6">
+                {(() => {
+                  const chInfo = LINEAR_ALGEBRA_CHAPTER_CARDS.find((c) => c.chapterNumber === selectedLinearChapter);
+                  const chTopics = sortedLinearTopics;
 
-                <div className="flex flex-col gap-1">
-                  {LINEAR_CATEGORIES.map((cat) => {
-                    const isActive = selectedLinearCategory === cat.id;
-                    const count = cat.id === "all"
-                      ? linearTopics.length
-                      : linearTopics.filter((t) => filterTopicByLinearCategory(t, cat.id)).length;
-
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => setSelectedLinearCategory(cat.id)}
-                        className={`topic-sidebar-item ${isActive ? "active" : ""}`}
-                      >
-                        <div className="flex items-center gap-2.5 truncate">
-                          {cat.icon}
-                          <span className="truncate">{cat.label}</span>
-                        </div>
-                        <span className="topic-sidebar-count">{count}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* View All Topics Button */}
-                <div className="mt-5 pt-4 border-t border-[#F3F4F6]">
-                  <button
-                    onClick={() => {
-                      setActiveView("categories");
-                      navigate("/?tab=topics");
-                    }}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] py-2.5 px-4 text-xs font-bold text-[#7B1824] transition-all duration-200 cursor-pointer shadow-xs"
-                  >
-                    <span>View All Disciplines</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </aside>
-
-              {/* Right Main Content Area */}
-              <div className="flex-1 w-full space-y-5">
-                
-                {/* Search & Sort Bar Row */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-                    <input
-                      type="text"
-                      placeholder="Search topics (e.g. Matrices, Eigenvalues, Span...)"
-                      value={topicSearch}
-                      onChange={(e) => setTopicSearch(e.target.value)}
-                      className="w-full rounded-xl border border-[#E5E7EB] bg-white pl-10 pr-10 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7B1824] shadow-xs"
-                    />
-                    {topicSearch && (
-                      <button
-                        onClick={() => setTopicSearch("")}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#111827]"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Sort By Dropdown */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-medium text-[#6B7280]">Sort by</span>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
-                      className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2.5 text-xs font-semibold text-[#374151] focus:outline-none focus:border-[#7B1824] shadow-xs cursor-pointer"
-                    >
-                      <option value="popular">Most Popular</option>
-                      <option value="az">Alphabetical (A-Z)</option>
-                      <option value="examples">Most Examples</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Horizontal Filter Tabs */}
-                <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
-                  {LINEAR_CATEGORIES.map((cat) => {
-                    const isActive = selectedLinearCategory === cat.id;
-                    const count = cat.id === "all"
-                      ? linearTopics.length
-                      : linearTopics.filter((t) => filterTopicByLinearCategory(t, cat.id)).length;
-
-                    return (
-                      <button
-                        key={`pill-lin-${cat.id}`}
-                        onClick={() => setSelectedLinearCategory(cat.id)}
-                        className={`filter-pill ${isActive ? "active" : ""}`}
-                      >
-                        {cat.icon}
-                        <span>{cat.label}</span>
-                        <span className="pill-count">{count}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* 3-Column Topic Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {sortedLinearTopics.length > 0 ? (
-                    sortedLinearTopics.map((topic) => (
-                      <div
-                        key={topic.id}
-                        onClick={(e) => handleTopicClick(topic.id, "linear-algebra", e)}
-                        className="topic-grid-card group"
-                      >
+                  return (
+                    <>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
                         <div>
-                          {/* Top Row: Red Glyph Badge + Examples Count */}
-                          <div className="flex items-center justify-between mb-3">
-                            {renderTopicGlyph(topic)}
-                            <span className="text-xs font-medium text-[#6B7280]">
-                              {topic.examples?.length || 8} examples
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                              Chapter {selectedLinearChapter}
+                            </span>
+                            <span className="text-xs text-[#6B7280] font-medium">
+                              {chTopics.length} topics available
                             </span>
                           </div>
-
-                          {/* Title */}
-                          <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug mt-3 mb-2">
-                            {topic.title}
-                          </h3>
-
-                          {/* Summary */}
-                          <p className="text-xs sm:text-[13px] text-[#5D6067] leading-relaxed line-clamp-3 mb-6 font-normal">
-                            {topic.summary}
+                          <h2 className="text-2xl sm:text-3xl font-black text-[#111827]">
+                            {chInfo?.title || `Chapter ${selectedLinearChapter}`}
+                          </h2>
+                          <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
+                            {chInfo?.description}
                           </p>
                         </div>
 
-                        {/* Card Bottom Link */}
-                        <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
-                          <span className="text-xs sm:text-sm font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
-                            View Topic <ArrowRight className="w-3.5 h-3.5" />
-                          </span>
+                        <button
+                          onClick={() => setSelectedLinearChapter(null)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                        >
+                          <ArrowLeft className="w-4 h-4" />
+                          <span>Back to All Chapters</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        {chTopics.length > 0 ? (
+                          chTopics.map((topic) => (
+                            <div
+                              key={topic.id}
+                              onClick={(e) => handleTopicClick(topic.id, "linear-algebra", e)}
+                              className="topic-grid-card group"
+                            >
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  {renderTopicGlyph(topic)}
+                                  <span className="text-xs font-medium text-[#6B7280]">
+                                    {topic.examples?.length || 8} examples
+                                  </span>
+                                </div>
+
+                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug mt-3 mb-2">
+                                  {topic.title}
+                                </h3>
+
+                                <p className="text-xs sm:text-[13px] text-[#5D6067] leading-relaxed line-clamp-3 mb-6 font-normal">
+                                  {topic.summary}
+                                </p>
+                              </div>
+
+                              <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
+                                <span className="text-xs sm:text-sm font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                                  View Topic <ArrowRight className="w-3.5 h-3.5" />
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#EAE2E4]">
+                            No topics available in this chapter yet.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            ) : (
+              /* View Mode C: EXACT REFERENCE DESIGN — 8 CHAPTER CARDS GRID (4x2 Layout) */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {LINEAR_ALGEBRA_CHAPTER_CARDS.map((chapter) => {
+                  const chTopicsCount = linearTopics.filter(
+                    (t) => filterTopicByLinearChapter(t, chapter.chapterNumber)
+                  ).length || chapter.defaultTopicCount;
+
+                  return (
+                    <div
+                      key={chapter.id}
+                      onClick={() => {
+                        setSelectedLinearChapter(chapter.chapterNumber);
+                        setTopicSearch("");
+                      }}
+                      className="group relative overflow-hidden rounded-[26px] border border-[#EAE2E4] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
+                    >
+                      {/* Subtle pinkish/rose glow at bottom-left corner matching reference */}
+                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#FFF0F3]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+
+                      {/* Top Row: Chapter Badge + Topics Count */}
+                      <div className="flex items-center justify-between mb-4 relative z-10">
+                        <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
+                          Chapter {chapter.chapterNumber}
+                        </span>
+                        <span className="text-xs font-medium text-[#6B7280]">
+                          {chTopicsCount} topics
+                        </span>
+                      </div>
+
+                      {/* Body: Custom Maroon Glyph Icon + Title + Description */}
+                      <div className="flex items-start gap-4 mb-4 relative z-10">
+                        <div className="shrink-0 mt-0.5 group-hover:scale-105 transition-transform duration-200">
+                          {chapter.icon}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug tracking-tight mb-1.5">
+                            {chapter.title}
+                          </h3>
+                          <p className="text-xs text-[#6B7280] leading-relaxed font-normal">
+                            {chapter.description}
+                          </p>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#EAE2E4]">
-                      No linear algebra topics found matching &quot;{topicSearch}&quot;.
+
+                      {/* Bottom Right: Circular Dark Red Arrow Button */}
+                      <div className="flex justify-end relative z-10 mt-auto pt-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7B1824] group-hover:bg-[#9B1B28] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </section>
         </motion.div>
-      ) : (
+      ) : activeView === "topics-calculus" ? (
         /* ========================================================================= */
-        /* VIEW 4: CALCULUS 1 TOPICS (MATCHING REFERENCE DESIGN EXACTLY)             */
+        /* VIEW 4: CALCULUS 1 TOPICS (MATCHING USER REFERENCE DESIGN EXACTLY)        */
         /* ========================================================================= */
         <motion.div
           key="topics-calculus-view"
@@ -1371,190 +1680,395 @@ export default function PublicPage() {
           transition={{ duration: 0.3 }}
           className="min-h-screen bg-[#FDFBFB]"
         >
-          {/* 1. TOP HERO SECTION (Chalkboard Background with Student) */}
-          <section className="relative w-full overflow-hidden bg-[#0e131b] pt-24 pb-20 sm:pt-28 sm:pb-24">
-            <div className="absolute inset-0 z-0">
+          {/* 1. TOP HERO SECTION (Authentic Chalkboard Background with Student) */}
+          <section className="relative w-full overflow-hidden bg-[#090D14] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-30 lg:pb-18">
+            <div className="absolute inset-0 z-0 pointer-events-none">
               <img
                 src={mathBg}
                 alt="Mathematics blackboard background"
-                className="h-full w-full object-cover object-center opacity-45"
+                className="h-full w-full object-cover object-center opacity-45 scale-[1.02]"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/35" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0e131b] via-transparent to-black/40" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090D14] via-transparent to-black/50" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_25%,rgba(9,13,20,0.85)_100%)]" />
             </div>
 
             <div className="relative z-10 mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12">
-              <div className="max-w-2xl">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#E05260] mb-2 block">
-                  TOPICS
-                </span>
-                <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-black tracking-tight leading-tight mb-3">
-                  <span className="text-[#7B1824]">Calculus Topics</span>
-                </h1>
-                <p className="text-sm sm:text-base text-white/80 leading-relaxed font-normal">
-                  Explore foundations of Calculus, Limit &amp; Continuity, and Derivatives with step-by-step verified explanations.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+                <div className="max-w-3xl">
+                  {/* Red TOPICS Eyebrow Tag */}
+                  <div className="inline-flex items-center rounded-full bg-[#3D0E14] border border-[#5E1620] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF6575] mb-3 shadow-xs">
+                    TOPICS
+                  </div>
+
+                  {/* Main Headline in Red */}
+                  <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-black tracking-tight leading-none mb-3">
+                    <span className="text-[#DE2438]">Calculus Topics</span>
+                  </h1>
+
+                  {/* Subtitle Description */}
+                  <p className="text-sm sm:text-base text-gray-200/90 font-normal leading-relaxed max-w-2xl">
+                    Explore foundations of Calculus, Limit &amp; Continuity, and Derivatives with step-by-step verified explanations.
+                  </p>
+                </div>
+
+                {/* Back Button to Disciplines / All Topics */}
+                <button
+                  onClick={() => {
+                    setSelectedCalculusChapter(null);
+                    setTopicSearch("");
+                    setActiveView("categories");
+                    navigate("/?tab=topics");
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 text-xs sm:text-sm font-bold text-white transition-all duration-200 cursor-pointer self-start backdrop-blur-md shadow-sm hover:scale-105 active:scale-95 shrink-0"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Topics</span>
+                </button>
               </div>
             </div>
           </section>
 
-          {/* 2. MAIN WHITE CONTAINER (OVERLAPPING HERO BOTTOM) */}
-          <section className="relative z-20 mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12 -mt-8 sm:-mt-10 pb-20">
-            <div className="flex flex-col lg:flex-row gap-7 items-start">
-              
-              {/* Left Sidebar */}
-              <aside className="w-full lg:w-72 shrink-0 rounded-[24px] border border-[#EAE2E4] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-                <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#9CA3AF] px-2 mb-3.5">
-                  BROWSE TOPICS
-                </div>
+          {/* 2. MAIN CARDS CONTAINER (8 Chapter Cards Grid or Chapter Drilldown) */}
+          <section className="relative z-20 mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12 py-8 sm:py-10 pb-24">
+            {selectedCalculusChapter !== null ? (
+              /* View Mode B: Drill-down inside a specific chapter */
+              <div className="space-y-6">
+                {(() => {
+                  const chInfo = CALCULUS_1_CHAPTER_CARDS.find((c) => c.chapterNumber === selectedCalculusChapter);
+                  const chTopics = sortedCalculus1Topics;
 
-                <div className="flex flex-col gap-1 max-h-[640px] overflow-y-auto pr-1">
-                  {CALCULUS_CATEGORIES.map((cat) => {
-                    const isActive = selectedCalculusCategory === cat.id;
-                    const count = cat.id === "all" 
-                      ? calculusTopics.length 
-                      : calculusTopics.filter((t) => filterTopicByCalculusCategory(t, cat.id)).length;
-
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => setSelectedCalculusCategory(cat.id)}
-                        className={`topic-sidebar-item ${isActive ? "active" : ""}`}
-                      >
-                        <div className="flex items-center gap-2.5 truncate">
-                          {cat.icon}
-                          <span className="truncate">{cat.label}</span>
-                        </div>
-                        <span className="topic-sidebar-count">{count}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* View All Topics Button */}
-                <div className="mt-5 pt-4 border-t border-[#F3F4F6]">
-                  <button
-                    onClick={() => {
-                      setActiveView("categories");
-                      navigate("/?tab=topics");
-                    }}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] py-2.5 px-4 text-xs font-bold text-[#7B1824] transition-all duration-200 cursor-pointer shadow-xs"
-                  >
-                    <span>View All Disciplines</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </aside>
-
-              {/* Right Main Content Area */}
-              <div className="flex-1 w-full space-y-5">
-                
-                {/* Search & Sort Bar Row */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-                    <input
-                      type="text"
-                      placeholder="Search topics (e.g. Limits, Functions...)"
-                      value={topicSearch}
-                      onChange={(e) => setTopicSearch(e.target.value)}
-                      className="w-full rounded-xl border border-[#E5E7EB] bg-white pl-10 pr-10 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7B1824] shadow-xs"
-                    />
-                    {topicSearch && (
-                      <button
-                        onClick={() => setTopicSearch("")}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#111827]"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Sort By Dropdown */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-medium text-[#6B7280]">Sort by</span>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
-                      className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2.5 text-xs font-semibold text-[#374151] focus:outline-none focus:border-[#7B1824] shadow-xs cursor-pointer"
-                    >
-                      <option value="popular">Most Popular</option>
-                      <option value="az">Alphabetical (A-Z)</option>
-                      <option value="examples">Most Examples</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Horizontal Filter Tabs */}
-                <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
-                  {CALCULUS_CATEGORIES.map((cat) => {
-                    const isActive = selectedCalculusCategory === cat.id;
-                    const count = cat.id === "all"
-                      ? calculusTopics.length
-                      : calculusTopics.filter((t) => filterTopicByCalculusCategory(t, cat.id)).length;
-
-                    return (
-                      <button
-                        key={`pill-calc-${cat.id}`}
-                        onClick={() => setSelectedCalculusCategory(cat.id)}
-                        className={`filter-pill ${isActive ? "active" : ""}`}
-                      >
-                        {cat.icon}
-                        <span>{cat.label}</span>
-                        <span className="pill-count">{count}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* 3-Column Topic Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {sortedCalculusTopics.length > 0 ? (
-                    sortedCalculusTopics.map((topic) => (
-                      <div
-                        key={topic.id}
-                        onClick={(e) => handleTopicClick(topic.id, "calculus", e)}
-                        className="topic-grid-card group"
-                      >
+                  return (
+                    <>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
                         <div>
-                          {/* Top Row: Red Glyph Badge + Examples Count */}
-                          <div className="flex items-center justify-between mb-3">
-                            {renderTopicGlyph(topic)}
-                            <span className="text-xs font-medium text-[#6B7280]">
-                              {topic.examples?.length || 8} examples
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                              Chapter {selectedCalculusChapter}
+                            </span>
+                            <span className="text-xs text-[#6B7280] font-medium">
+                              {chTopics.length} topics available
                             </span>
                           </div>
-
-                          {/* Title */}
-                          <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug mt-3 mb-2">
-                            {topic.title}
-                          </h3>
-
-                          {/* Summary */}
-                          <p className="text-xs sm:text-[13px] text-[#5D6067] leading-relaxed line-clamp-3 mb-6 font-normal">
-                            {topic.summary}
+                          <h2 className="text-2xl sm:text-3xl font-black text-[#111827]">
+                            {chInfo?.title || `Chapter ${selectedCalculusChapter}`}
+                          </h2>
+                          <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
+                            {chInfo?.description}
                           </p>
                         </div>
 
-                        {/* Card Bottom Link */}
-                        <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
-                          <span className="text-xs sm:text-sm font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
-                            View Topic <ArrowRight className="w-3.5 h-3.5" />
-                          </span>
+                        <button
+                          onClick={() => setSelectedCalculusChapter(null)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                        >
+                          <ArrowLeft className="w-4 h-4" />
+                          <span>Back to All Chapters</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        {chTopics.length > 0 ? (
+                          chTopics.map((topic) => (
+                            <div
+                              key={topic.id}
+                              onClick={(e) => handleTopicClick(topic.id, "calculus", e)}
+                              className="topic-grid-card group"
+                            >
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  {renderTopicGlyph(topic)}
+                                  <span className="text-xs font-medium text-[#6B7280]">
+                                    {topic.examples?.length || 8} examples
+                                  </span>
+                                </div>
+
+                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug mt-3 mb-2">
+                                  {topic.title}
+                                </h3>
+
+                                <p className="text-xs sm:text-[13px] text-[#5D6067] leading-relaxed line-clamp-3 mb-6 font-normal">
+                                  {topic.summary}
+                                </p>
+                              </div>
+
+                              <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
+                                <span className="text-xs sm:text-sm font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                                  View Topic <ArrowRight className="w-3.5 h-3.5" />
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#EAE2E4]">
+                            No topics available in this chapter yet.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            ) : (
+              /* View Mode C: EXACT REFERENCE DESIGN — 8 CHAPTER CARDS GRID (4x2 Layout) */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {CALCULUS_1_CHAPTER_CARDS.map((chapter) => {
+                  const chTopicsCount = calculus1Topics.filter(
+                    (t) => filterTopicByCalculusChapter(t, chapter.chapterNumber)
+                  ).length || chapter.defaultTopicCount;
+
+                  return (
+                    <div
+                      key={chapter.id}
+                      onClick={() => {
+                        setSelectedCalculusChapter(chapter.chapterNumber);
+                        setTopicSearch("");
+                      }}
+                      className="group relative overflow-hidden rounded-[26px] border border-[#EAE2E4] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
+                    >
+                      {/* Subtle pinkish/rose glow at bottom-left corner matching reference */}
+                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#FFF0F3]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+
+                      {/* Top Row: Chapter Badge + Topics Count */}
+                      <div className="flex items-center justify-between mb-4 relative z-10">
+                        <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
+                          Chapter {chapter.chapterNumber}
+                        </span>
+                        <span className="text-xs font-medium text-[#6B7280]">
+                          {chTopicsCount} topics
+                        </span>
+                      </div>
+
+                      {/* Body: Custom Maroon Glyph Icon + Title + Description */}
+                      <div className="flex items-start gap-4 mb-4 relative z-10">
+                        <div className="shrink-0 mt-0.5 group-hover:scale-105 transition-transform duration-200">
+                          {chapter.icon}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug tracking-tight mb-1.5">
+                            {chapter.title}
+                          </h3>
+                          <p className="text-xs text-[#6B7280] leading-relaxed font-normal">
+                            {chapter.description}
+                          </p>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#EAE2E4]">
-                      No calculus topics found matching &quot;{topicSearch}&quot;.
+
+                      {/* Bottom Right: Circular Dark Red Arrow Button */}
+                      <div className="flex justify-end relative z-10 mt-auto pt-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7B1824] group-hover:bg-[#9B1B28] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </motion.div>
+      ) : activeView === "topics-calculus-2" ? (
+        /* ===================================================================== */
+        /* VIEW 5: CALCULUS II TOPICS (MATCHING USER REFERENCE DESIGN EXACTLY)   */
+        /* ===================================================================== */
+        <motion.div
+          key="topics-calculus-2-view"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="min-h-screen bg-[#FDFBFB]"
+        >
+          {/* 1. TOP HERO SECTION */}
+          <section className="relative w-full overflow-hidden bg-[#090D14] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-30 lg:pb-18">
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <img
+                src={mathBg}
+                alt="Mathematics blackboard background"
+                className="h-full w-full object-cover object-center opacity-45 scale-[1.02]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090D14] via-transparent to-black/50" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_25%,rgba(9,13,20,0.85)_100%)]" />
+            </div>
+
+            <div className="relative z-10 mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+                <div className="max-w-3xl">
+                  {/* Red TOPICS Eyebrow Tag */}
+                  <div className="inline-flex items-center rounded-full bg-[#3D0E14] border border-[#5E1620] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF6575] mb-3 shadow-xs">
+                    TOPICS
+                  </div>
+
+                  {/* Main Headline in Red */}
+                  <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-black tracking-tight leading-none mb-3">
+                    <span className="text-[#DE2438]">Calculus II Topics</span>
+                  </h1>
+
+                  {/* Subtitle Description */}
+                  <p className="text-sm sm:text-base text-gray-200/90 font-normal leading-relaxed max-w-2xl">
+                    Explore advanced integration techniques, transcendental functions, infinite series, polar coordinates, and conic sections with step-by-step explanations.
+                  </p>
                 </div>
+
+                {/* Back Button to Disciplines / All Topics */}
+                <button
+                  onClick={() => {
+                    setSelectedCalculus2Chapter(null);
+                    setTopicSearch("");
+                    setActiveView("categories");
+                    navigate("/?tab=topics");
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 text-xs sm:text-sm font-bold text-white transition-all duration-200 cursor-pointer self-start backdrop-blur-md shadow-sm hover:scale-105 active:scale-95 shrink-0"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Topics</span>
+                </button>
               </div>
             </div>
           </section>
+
+          {/* 2. MAIN CARDS CONTAINER (8 Chapter Cards Grid or Chapter Drilldown) */}
+          <section className="relative z-20 mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12 py-8 sm:py-10 pb-24">
+            {selectedCalculus2Chapter !== null ? (
+              /* View Mode B: Drill-down inside a specific chapter */
+              <div className="space-y-6">
+                {(() => {
+                  const chInfo = CALCULUS_2_CHAPTER_CARDS.find((c) => c.chapterNumber === selectedCalculus2Chapter);
+                  const chTopics = sortedCalculus2Topics;
+
+                  return (
+                    <>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                              Chapter {selectedCalculus2Chapter}
+                            </span>
+                            <span className="text-xs text-[#6B7280] font-medium">
+                              {chTopics.length} topics available
+                            </span>
+                          </div>
+                          <h2 className="text-2xl sm:text-3xl font-black text-[#111827]">
+                            {chInfo?.title || `Chapter ${selectedCalculus2Chapter}`}
+                          </h2>
+                          <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
+                            {chInfo?.description}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => setSelectedCalculus2Chapter(null)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                        >
+                          <ArrowLeft className="w-4 h-4" />
+                          <span>Back to All Chapters</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        {chTopics.length > 0 ? (
+                          chTopics.map((topic) => (
+                            <div
+                              key={topic.id}
+                              onClick={(e) => handleTopicClick(topic.id, "calculus", e)}
+                              className="topic-grid-card group"
+                            >
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  {renderTopicGlyph(topic)}
+                                  <span className="text-xs font-medium text-[#6B7280]">
+                                    {topic.examples?.length || 8} examples
+                                  </span>
+                                </div>
+
+                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug mt-3 mb-2">
+                                  {topic.title}
+                                </h3>
+
+                                <p className="text-xs sm:text-[13px] text-[#5D6067] leading-relaxed line-clamp-3 mb-6 font-normal">
+                                  {topic.summary}
+                                </p>
+                              </div>
+
+                              <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
+                                <span className="text-xs sm:text-sm font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                                  View Topic <ArrowRight className="w-3.5 h-3.5" />
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#EAE2E4]">
+                            No topics available in this chapter yet.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            ) : (
+              /* View Mode C: EXACT REFERENCE DESIGN — 8 CHAPTER CARDS GRID (4x2 Layout) */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {CALCULUS_2_CHAPTER_CARDS.map((chapter) => {
+                  const chTopicsCount = calculus2Topics.filter(
+                    (t) => filterTopicByCalculusChapter(t, chapter.chapterNumber)
+                  ).length || chapter.defaultTopicCount;
+
+                  return (
+                    <div
+                      key={chapter.id}
+                      onClick={() => {
+                        setSelectedCalculus2Chapter(chapter.chapterNumber);
+                        setTopicSearch("");
+                      }}
+                      className="group relative overflow-hidden rounded-[26px] border border-[#EAE2E4] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
+                    >
+                      {/* Subtle pinkish/rose glow at bottom-left corner matching reference */}
+                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#FFF0F3]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+
+                      {/* Top Row: Chapter Badge + Topics Count */}
+                      <div className="flex items-center justify-between mb-4 relative z-10">
+                        <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
+                          Chapter {chapter.chapterNumber}
+                        </span>
+                        <span className="text-xs font-medium text-[#6B7280]">
+                          {chTopicsCount} topics
+                        </span>
+                      </div>
+
+                      {/* Body: Custom Maroon Glyph Icon + Title + Description */}
+                      <div className="flex items-start gap-4 mb-4 relative z-10">
+                        <div className="shrink-0 mt-0.5 group-hover:scale-105 transition-transform duration-200">
+                          {chapter.icon}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug tracking-tight mb-1.5">
+                            {chapter.title}
+                          </h3>
+                          <p className="text-xs text-[#6B7280] leading-relaxed font-normal">
+                            {chapter.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Bottom Right: Circular Dark Red Arrow Button */}
+                      <div className="flex justify-end relative z-10 mt-auto pt-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7B1824] group-hover:bg-[#9B1B28] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </motion.div>
-      )}
+      ) : null}
     </AnimatePresence>
   );
 }

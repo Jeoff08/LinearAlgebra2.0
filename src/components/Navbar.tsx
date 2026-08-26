@@ -96,9 +96,10 @@ export default function Navbar() {
 
   // Determine if we're on the dark background view (dark navbar needed)
   const isHeroPage = 
-    (location.pathname === "/" && (activeTab === "home" || currentView === "main" || currentView === "categories" || currentView === "topics-linear" || currentView === "topics-calculus")) || 
+    location.pathname.startsWith("/topics") ||
+    location.pathname.startsWith("/calculators") ||
+    (location.pathname === "/" && (activeTab === "home" || currentView === "main" || currentView === "categories" || currentView === "topics-linear" || currentView === "topics-calculus" || currentView === "topics-calculus-2")) || 
     location.pathname === "/calculator-hub" || 
-    location.pathname === "/calculators" || 
     location.pathname === "/calculus-calculators" || 
     location.pathname === "/calculator" || 
     location.pathname === "/login" || 

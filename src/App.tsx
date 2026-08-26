@@ -12,6 +12,7 @@ import CalculatorApp from "./calculators/CalculatorApp";
 import CalculatorsPage from "./pages/CalculatorsPage";
 import CalculusCalculatorsPage from "./pages/CalculusCalculatorsPage";
 import CalculatorHubPage from "./pages/CalculatorHubPage";
+import CalculatorDetailPage from "./pages/CalculatorDetailPage";
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
                 <Route path="/topics" element={<Navigate to="/?tab=topics" replace />} />
                 <Route path="/calculator" element={<CalculatorApp />} />
                 <Route path="/calculators" element={<CalculatorsPage />} />
+                <Route path="/calculators/:id" element={<CalculatorDetailPage />} />
                 <Route path="/calculus-calculators" element={<CalculusCalculatorsPage />} />
                 <Route path="/calculator-hub" element={<CalculatorHubPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
