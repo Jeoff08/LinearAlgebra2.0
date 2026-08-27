@@ -56,13 +56,23 @@ import LeastSquares from "../calculators/LeastSquares";
 import LinearTransformation from "../calculators/LinearTransformation";
 import QuadraticForm from "../calculators/QuadraticForm";
 
-// Import Calculus calculators
-import LimitCalculator from "../CalculusOneCalculator/LimitCalculator";
-import DerivativeCalculator from "../CalculusOneCalculator/DerivativeCalculator";
-import TangentLineCalculator from "../CalculusOneCalculator/TangentLineCalculator";
-import CurveSketchingCalculator from "../CalculusOneCalculator/CurveSketchingCalculator";
-import ContinuityCalculator from "../CalculusOneCalculator/ContinuityCalculator";
-import DefiniteIntegralCalculator from "../CalculusOneCalculator/DefiniteIntegralCalculator";
+// Calculus solver placeholder component
+function CalculusPlaceholderCalculator({ name, description }: { name: string; description: string }) {
+  return (
+    <div className="p-8 rounded-2xl border border-[#FFD0D8] bg-[#FFF8F9] text-center space-y-4">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md">
+        <Calculator className="h-6 w-6" />
+      </div>
+      <div>
+        <h4 className="text-lg font-bold text-[#111827]">{name}</h4>
+        <p className="text-xs text-[#6B7280] mt-1">{description}</p>
+      </div>
+      <p className="text-xs text-[#4B5563] max-w-md mx-auto leading-relaxed">
+        Interactive calculation engine for this calculus module is currently undergoing system optimization. Please explore the verified practice problems and step-by-step solutions below.
+      </p>
+    </div>
+  );
+}
 
 export interface UniversalTopic {
   id: string;
@@ -167,12 +177,12 @@ const CALCULATORS: Record<string, { name: string; description: string; component
   leastsquares: { name: "Least Squares Solver", description: "Overdetermined systems & regression", component: <LeastSquares /> },
   transformation: { name: "Linear Transformation", description: "Matrix T(v) = Av geometric mappings", component: <LinearTransformation /> },
   quadratic: { name: "Quadratic Form", description: "Matrix x^T A x analysis", component: <QuadraticForm /> },
-  limit: { name: "Limit Calculator", description: "Evaluate limits & one-sided limits", component: <LimitCalculator /> },
-  derivative: { name: "Derivative Calculator", description: "First & higher order derivatives", component: <DerivativeCalculator /> },
-  tangent: { name: "Tangent Line Calculator", description: "Tangent line equation and slope", component: <TangentLineCalculator /> },
-  curvesketch: { name: "Curve & Function Sketcher", description: "Intercepts, asymptotes & domain", component: <CurveSketchingCalculator /> },
-  continuity: { name: "Continuity Calculator", description: "Check function continuity", component: <ContinuityCalculator /> },
-  integral: { name: "Definite & Indefinite Integral", description: "Antiderivatives & area under curve", component: <DefiniteIntegralCalculator /> }
+  limit: { name: "Limit Calculator", description: "Evaluate limits & one-sided limits", component: <CalculusPlaceholderCalculator name="Limit Calculator" description="Evaluate limits & one-sided limits" /> },
+  derivative: { name: "Derivative Calculator", description: "First & higher order derivatives", component: <CalculusPlaceholderCalculator name="Derivative Calculator" description="First & higher order derivatives" /> },
+  tangent: { name: "Tangent Line Calculator", description: "Tangent line equation and slope", component: <CalculusPlaceholderCalculator name="Tangent Line Calculator" description="Tangent line equation and slope" /> },
+  curvesketch: { name: "Curve & Function Sketcher", description: "Intercepts, asymptotes & domain", component: <CalculusPlaceholderCalculator name="Curve & Function Sketcher" description="Intercepts, asymptotes & domain" /> },
+  continuity: { name: "Continuity Calculator", description: "Check function continuity", component: <CalculusPlaceholderCalculator name="Continuity Calculator" description="Check function continuity" /> },
+  integral: { name: "Definite & Indefinite Integral", description: "Antiderivatives & area under curve", component: <CalculusPlaceholderCalculator name="Definite & Indefinite Integral" description="Antiderivatives & area under curve" /> }
 };
 
 function getRecommendedCalculatorId(topicId: string): string {
