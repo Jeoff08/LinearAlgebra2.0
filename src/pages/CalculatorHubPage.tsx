@@ -311,7 +311,7 @@ export default function CalculatorHubPage() {
                   <TrendingUp className="h-6 w-6" />
                 </div>
                 <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
-                  Calculus Suite
+                  29 Tools
                 </span>
               </div>
 
@@ -319,13 +319,13 @@ export default function CalculatorHubPage() {
               <div className="flex items-start justify-between gap-6 mb-4">
                 <div className="flex-1">
                   <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
-                    Calculus I
+                    Calculus 1 &amp; 2
                   </h3>
                   <p className="mt-1 text-xs sm:text-sm font-bold text-[#7B1824]">
-                    Limits, Derivatives &amp; Integrals
+                    Limits, Derivatives, Integrals &amp; Series
                   </p>
                   <p className="mt-3 text-xs sm:text-sm text-[#5D6067] leading-relaxed max-w-sm">
-                    Evaluate limits, compute derivatives with all rules, graph functions, solve tangent lines, and compute definite integrals.
+                    Evaluate limits, derivatives, integration techniques, curve analysis, series convergence tests, and Taylor/Maclaurin series step-by-step.
                   </p>
                 </div>
 

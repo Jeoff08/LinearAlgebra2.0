@@ -34,7 +34,7 @@ export default function LoginPage() {
       setError(err);
       return;
     }
-    navigate("/");
+    navigate("/dashboard", { replace: true });
   }
 
   return (
@@ -61,10 +61,12 @@ export default function LoginPage() {
           {/* Header Title */}
           <div className="text-center space-y-1 mb-5">
             <h1 className="text-2xl font-extrabold tracking-tight">
-              <span className="text-white">Welcome</span> <span className="text-[#E05260]">Back</span>
+              <span className="text-white">Welcome</span>{" "}
+              <span className="text-[#E05260]">Back</span>
             </h1>
             <p className="text-[0.7rem] sm:text-[0.75rem] text-white/70 leading-relaxed max-w-xs mx-auto">
-              Sign in to continue your mathematics journey with <span className="text-[#E05260] font-medium">MathVerse</span>.
+              Sign in to continue your mathematics journey with{" "}
+              <span className="text-[#E05260] font-medium">MathVerse</span>.
             </p>
             <div className="w-7 h-[2px] bg-[#E05260] mx-auto mt-1.5 rounded-full" />
           </div>
@@ -144,7 +146,11 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => alert("Password reset functionality will be sent to your email address.")}
+                onClick={() =>
+                  alert(
+                    "Password reset functionality will be sent to your email address.",
+                  )
+                }
                 className="text-[0.65rem] text-[#E05260] hover:underline font-medium cursor-pointer"
               >
                 Forgot password?
@@ -218,7 +224,9 @@ export default function LoginPage() {
       {/* Bottom Security Notice */}
       <div className="relative z-10 mt-5 flex items-center justify-center gap-2 text-[0.6rem] text-white/60 text-center">
         <Lock className="w-3 h-3 text-white/50 shrink-0" />
-        <span>Your data is secure with us. We never share your information.</span>
+        <span>
+          Your data is secure with us. We never share your information.
+        </span>
       </div>
     </div>
   );

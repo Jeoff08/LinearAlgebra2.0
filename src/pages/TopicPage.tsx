@@ -56,6 +56,8 @@ import LeastSquares from "../calculators/LeastSquares";
 import LinearTransformation from "../calculators/LinearTransformation";
 import QuadraticForm from "../calculators/QuadraticForm";
 
+
+
 // Calculus solver placeholder component
 function CalculusPlaceholderCalculator({ name, description }: { name: string; description: string }) {
   return (
@@ -109,7 +111,7 @@ const TOPICS: UniversalTopic[] = [
         title: t.title,
         summary: t.summary || "",
         details: t.details || "",
-        examples: Array.isArray(t.examples) ? t.examples : [],
+        examples: t.examples || [],
         category: "linear-algebra" as const,
         categoryLabel: "Linear Algebra",
         subCategory: `chapter-${chNum}`,
@@ -117,36 +119,30 @@ const TOPICS: UniversalTopic[] = [
         chapterNumber: chNum
       };
     }),
-  ...(Array.isArray(ALL_CALCULUS_TOPICS)
-    ? ALL_CALCULUS_TOPICS
-    : (ALL_CALCULUS_TOPICS as any)?.default || []
-  )
+  ...(Array.isArray(ALL_CALCULUS_TOPICS) ? ALL_CALCULUS_TOPICS : (ALL_CALCULUS_TOPICS as any)?.default || [])
     .filter((t: any) => Boolean(t && t.id && t.title))
-    .map((t: any) => ({
+    .map((t: any) => ({ 
       id: t.id,
       title: t.title,
       summary: t.summary || "",
       details: t.details || "",
-      examples: Array.isArray(t.examples) ? t.examples : [],
+      examples: t.examples || [],
       category: "calculus" as const,
-      categoryLabel: t.categoryLabel || "Calculus I",
-      subCategory: t.subCategory || "calculus",
-      subCategoryLabel: t.subCategoryLabel || "Calculus I",
+      categoryLabel: "Calculus I",
+      subCategory: t.subCategory || `chapter-${t.chapterNumber || 1}`,
+      subCategoryLabel: t.subCategoryLabel || `Chapter ${t.chapterNumber || 1}: Calculus I`,
       chapterNumber: t.chapterNumber || 1
     })),
-  ...(Array.isArray(ALL_CALCULUS_2_TOPICS)
-    ? ALL_CALCULUS_2_TOPICS
-    : (ALL_CALCULUS_2_TOPICS as any)?.default || []
-  )
+  ...(Array.isArray(ALL_CALCULUS_2_TOPICS) ? ALL_CALCULUS_2_TOPICS : (ALL_CALCULUS_2_TOPICS as any)?.default || [])
     .filter((t: any) => Boolean(t && t.id && t.title))
-    .map((t: any) => ({
+    .map((t: any) => ({ 
       id: t.id,
       title: t.title,
       summary: t.summary || "",
       details: t.details || "",
-      examples: Array.isArray(t.examples) ? t.examples : [],
+      examples: t.examples || [],
       category: "calculus" as const,
-      categoryLabel: t.categoryLabel || "Calculus II",
+      categoryLabel: "Calculus II",
       subCategory: t.subCategory || `chapter-${t.chapterNumber || 9}`,
       subCategoryLabel: t.subCategoryLabel || `Chapter ${t.chapterNumber || 9}: Calculus II`,
       chapterNumber: t.chapterNumber || 9
@@ -154,6 +150,17 @@ const TOPICS: UniversalTopic[] = [
 ];
 
 const CALCULATORS: Record<string, { name: string; description: string; component: React.ReactNode }> = {
+  // Calculus 1 & 2 Solvers
+  "calculus-simplify": { name: "Algebraic Simplifier", description: "Simplify polynomials, expand parentheses & combine like terms", component: <CalculusPlaceholderCalculator name="Algebraic Simplifier" description="Simplify polynomials, expand parentheses & combine like terms" /> },
+  "calculus-linear-equation": { name: "Linear Equation Solver", description: "Solve single-variable linear equations step-by-step", component: <CalculusPlaceholderCalculator name="Linear Equation Solver" description="Solve single-variable linear equations step-by-step" /> },
+  "calculus-quadratic-equation": { name: "Quadratic Equation Solver", description: "Solve ax² + bx + c = 0 via quadratic formula & discriminant", component: <CalculusPlaceholderCalculator name="Quadratic Equation Solver" description="Solve ax² + bx + c = 0 via quadratic formula & discriminant" /> },
+  "calculus-linear-inequality": { name: "Linear Inequality Solver", description: "Solve linear inequalities with interval notation", component: <CalculusPlaceholderCalculator name="Linear Inequality Solver" description="Solve linear inequalities with interval notation" /> },
+  "calculus-quadratic-inequality": { name: "Quadratic Inequality Solver", description: "Solve quadratic inequalities with sign interval analysis", component: <CalculusPlaceholderCalculator name="Quadratic Inequality Solver" description="Solve quadratic inequalities with sign interval analysis" /> },
+  "calculus-abs-equation": { name: "Absolute Value Equation & Eval", description: "Solve |ax + b| = c and evaluate absolute expressions", component: <CalculusPlaceholderCalculator name="Absolute Value Equation & Eval" description="Solve |ax + b| = c and evaluate absolute expressions" /> },
+  "calculus-abs-inequality": { name: "Absolute Value Inequality Solver", description: "Solve |ax + b| < c & |ax + b| > c with interval solutions", component: <CalculusPlaceholderCalculator name="Absolute Value Inequality Solver" description="Solve |ax + b| < c & |ax + b| > c with interval solutions" /> },
+  "calculus-smart": { name: "Calculus & Algebra Problem Solver", description: "Step-by-step mathematical problem solver with auto-detection", component: <CalculusPlaceholderCalculator name="Calculus & Algebra Problem Solver" description="Step-by-step mathematical problem solver with auto-detection" /> },
+
+  // Linear Algebra Solvers
   determinant: { name: "Determinant Calculator", description: "Laplace expansion & cofactor calculation", component: <DeterminantCalculator /> },
   inverse: { name: "Matrix Inverse (A⁻¹)", description: "Invert matrices step-by-step", component: <MatrixInverse /> },
   equations: { name: "System of Linear Equations", description: "Gaussian elimination solver", component: <SystemOfEquations /> },
@@ -176,74 +183,54 @@ const CALCULATORS: Record<string, { name: string; description: string; component
   svd: { name: "SVD Calculator (UΣVᵀ)", description: "Singular Value Decomposition", component: <SVDCalculator /> },
   leastsquares: { name: "Least Squares Solver", description: "Overdetermined systems & regression", component: <LeastSquares /> },
   transformation: { name: "Linear Transformation", description: "Matrix T(v) = Av geometric mappings", component: <LinearTransformation /> },
-  quadratic: { name: "Quadratic Form", description: "Matrix x^T A x analysis", component: <QuadraticForm /> },
-  limit: { name: "Limit Calculator", description: "Evaluate limits & one-sided limits", component: <CalculusPlaceholderCalculator name="Limit Calculator" description="Evaluate limits & one-sided limits" /> },
-  derivative: { name: "Derivative Calculator", description: "First & higher order derivatives", component: <CalculusPlaceholderCalculator name="Derivative Calculator" description="First & higher order derivatives" /> },
-  tangent: { name: "Tangent Line Calculator", description: "Tangent line equation and slope", component: <CalculusPlaceholderCalculator name="Tangent Line Calculator" description="Tangent line equation and slope" /> },
-  curvesketch: { name: "Curve & Function Sketcher", description: "Intercepts, asymptotes & domain", component: <CalculusPlaceholderCalculator name="Curve & Function Sketcher" description="Intercepts, asymptotes & domain" /> },
-  continuity: { name: "Continuity Calculator", description: "Check function continuity", component: <CalculusPlaceholderCalculator name="Continuity Calculator" description="Check function continuity" /> },
-  integral: { name: "Definite & Indefinite Integral", description: "Antiderivatives & area under curve", component: <CalculusPlaceholderCalculator name="Definite & Indefinite Integral" description="Antiderivatives & area under curve" /> }
+  quadratic: { name: "Quadratic Form", description: "Matrix x^T A x analysis", component: <QuadraticForm /> }
 };
 
-function getRecommendedCalculatorId(topicId: string): string {
-  const combined = topicId.toLowerCase();
-  if (combined.includes("continuity")) return "continuity";
-  if (combined.includes("limit")) return "limit";
-  if (combined.includes("tangent") || combined.includes("equation-of-a-line") || combined.includes("line")) return "tangent";
-  if (
-    combined.includes("integral") ||
-    combined.includes("antiderivative") ||
-    combined.includes("antidifferentiation") ||
-    combined.includes("riemann") ||
-    combined.includes("area") ||
-    combined.includes("volume") ||
-    combined.includes("differential") ||
-    combined.includes("center-of-mass") ||
-    combined.includes("arc") ||
-    combined.includes("work") ||
-    combined.includes("pressure") ||
-    combined.includes("disk") ||
-    combined.includes("washer") ||
-    combined.includes("shell") ||
-    combined.includes("cross-section") ||
-    combined.includes("ftc")
-  ) return "integral";
-  if (
-    combined.includes("derivative") ||
-    combined.includes("differentiab") ||
-    combined.includes("rate-of-change") ||
-    combined.includes("velocity") ||
-    combined.includes("rectilinear") ||
-    combined.includes("implicit") ||
-    combined.includes("power-function")
-  ) return "derivative";
-  if (
-    combined.includes("curve") ||
-    combined.includes("sketch") ||
-    combined.includes("asymptote") ||
-    combined.includes("extrema") ||
-    combined.includes("concavity") ||
-    combined.includes("inflection") ||
-    combined.includes("maximum") ||
-    combined.includes("minimum") ||
-    combined.includes("optimization") ||
-    combined.includes("rolles") ||
-    combined.includes("mean-value") ||
-    combined.includes("function") ||
-    combined.includes("domain") ||
-    combined.includes("range") ||
-    combined.includes("circle") ||
-    combined.includes("graph")
-  ) return "curvesketch";
+function getRecommendedCalculatorId(topicId: string, category?: string): string {
+  const combined = (topicId || "").toLowerCase();
+
+  // If topic is Calculus 1 or Calculus 2, STRICTLY use Calculus solvers
+  if (category === "calculus" || combined.includes("calculus") || combined.includes("chapter-")) {
+    if (combined.includes("abs") || combined.includes("absolute")) {
+      if (combined.includes("inequal")) return "calculus-abs-inequality";
+      return "calculus-abs-equation";
+    }
+    if (combined.includes("quadratic")) {
+      if (combined.includes("inequal")) return "calculus-quadratic-inequality";
+      return "calculus-quadratic-equation";
+    }
+    if (combined.includes("inequal")) return "calculus-linear-inequality";
+    if (combined.includes("linear") && (combined.includes("equation") || combined.includes("solve") || combined.includes("system"))) {
+      return "calculus-linear-equation";
+    }
+    if (combined.includes("simplif") || combined.includes("polynomial") || combined.includes("expression") || combined.includes("factor")) {
+      return "calculus-simplify";
+    }
+    return "calculus-smart";
+  }
+
+  // Linear Algebra topics mapping
   if (combined.includes("eigen")) return "eigen";
   if (combined.includes("determinant")) return "determinant";
   if (combined.includes("inverse")) return "inverse";
   if (combined.includes("system") || combined.includes("gaussian")) return "equations";
   if (combined.includes("rank")) return "rank";
   if (combined.includes("span")) return "span";
+  if (combined.includes("basis")) return "basis";
+  if (combined.includes("dot")) return "dot";
+  if (combined.includes("cross")) return "cross";
+  if (combined.includes("projection")) return "projection";
+  if (combined.includes("independence")) return "independence";
+  if (combined.includes("combination")) return "combination";
+  if (combined.includes("diagonalization")) return "diagonalization";
   if (combined.includes("lu")) return "lu";
   if (combined.includes("qr")) return "qr";
   if (combined.includes("svd")) return "svd";
+  if (combined.includes("least")) return "leastsquares";
+  if (combined.includes("transform")) return "transformation";
+  if (combined.includes("quadratic")) return "quadratic";
+  if (combined.includes("transpose")) return "transpose";
+  if (combined.includes("vector")) return "vector";
   return "matrixops";
 }
 
@@ -492,8 +479,8 @@ export default function TopicPage() {
     }, 120);
   };
 
-  const calcId = topic ? getRecommendedCalculatorId(topic.id) : "matrixops";
-  const calculatorInfo = CALCULATORS[calcId] || CALCULATORS["matrixops"];
+  const calcId = topic ? getRecommendedCalculatorId(topic.id, topic.category) : "calculus-smart";
+  const calculatorInfo = CALCULATORS[calcId] || (topic?.category === "linear-algebra" ? CALCULATORS["matrixops"] : CALCULATORS["calculus-smart"]);
   const chapterTag = useMemo(() => !topic ? "C1" : topic.category === "linear-algebra" ? "LA" : `C${topic.chapterNumber || 1}`, [topic]);
 
   if (!topic) {

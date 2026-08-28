@@ -2,7 +2,17 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { LogIn, UserPlus, LogOut, Home, Calculator, BookOpen, Menu, X } from "lucide-react";
+import {
+  LogIn,
+  UserPlus,
+  LogOut,
+  Home,
+  Calculator,
+  BookOpen,
+  LayoutDashboard,
+  Menu,
+  X,
+} from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -10,7 +20,9 @@ export default function Navbar() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"home" | "calculators" | "topics">("home");
+  const [activeTab, setActiveTab] = useState<
+    "home" | "dashboard" | "calculators" | "topics"
+  >("home");
   const [currentView, setCurrentView] = useState<string>(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab");
@@ -30,7 +42,9 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (location.pathname.includes("calculator")) {
+    if (location.pathname === "/dashboard") {
+      setActiveTab("dashboard");
+    } else if (location.pathname.includes("calculator")) {
       setActiveTab("calculators");
     } else if (location.pathname.startsWith("/topics")) {
       setActiveTab("topics");
@@ -54,7 +68,9 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleTabChange = (e: Event) => {
-      const customEvent = e as CustomEvent<"home" | "calculators" | "topics">;
+      const customEvent = e as CustomEvent<
+        "home" | "calculators" | "topics" | "dashboard"
+      >;
       if (customEvent.detail) {
         setActiveTab(customEvent.detail);
         sessionStorage.setItem("currentActiveNavTab", customEvent.detail);
@@ -79,7 +95,9 @@ export default function Navbar() {
     setActiveTab("calculators");
     setMobileMenuOpen(false);
     sessionStorage.setItem("currentActiveNavTab", "calculators");
-    window.dispatchEvent(new CustomEvent("navtabchange", { detail: "calculators" }));
+    window.dispatchEvent(
+      new CustomEvent("navtabchange", { detail: "calculators" }),
+    );
     navigate("/calculator-hub");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -94,15 +112,34 @@ export default function Navbar() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleDashboardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setActiveTab("dashboard");
+    setMobileMenuOpen(false);
+    sessionStorage.setItem("currentActiveNavTab", "dashboard");
+    window.dispatchEvent(
+      new CustomEvent("navtabchange", { detail: "dashboard" }),
+    );
+    navigate("/dashboard");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // Determine if we're on the dark background view (dark navbar needed)
-  const isHeroPage = 
+  const isHeroPage =
+    location.pathname === "/dashboard" ||
     location.pathname.startsWith("/topics") ||
     location.pathname.startsWith("/calculators") ||
-    (location.pathname === "/" && (activeTab === "home" || currentView === "main" || currentView === "categories" || currentView === "topics-linear" || currentView === "topics-calculus" || currentView === "topics-calculus-2")) || 
-    location.pathname === "/calculator-hub" || 
-    location.pathname === "/calculus-calculators" || 
-    location.pathname === "/calculator" || 
-    location.pathname === "/login" || 
+    (location.pathname === "/" &&
+      (activeTab === "home" ||
+        currentView === "main" ||
+        currentView === "categories" ||
+        currentView === "topics-linear" ||
+        currentView === "topics-calculus" ||
+        currentView === "topics-calculus-2")) ||
+    location.pathname === "/calculator-hub" ||
+    location.pathname === "/calculus-calculators" ||
+    location.pathname === "/calculator" ||
+    location.pathname === "/login" ||
     location.pathname === "/register";
 
   const navLinkClass = (tab: string) =>
@@ -112,8 +149,8 @@ export default function Navbar() {
           ? "text-white"
           : "text-[#8B1A24]"
         : isHeroPage
-        ? "text-white/70 hover:text-white"
-        : "text-[#4B5563] hover:text-[#111827]"
+          ? "text-white/70 hover:text-white"
+          : "text-[#4B5563] hover:text-[#111827]"
     }`;
 
   return (
@@ -133,14 +170,25 @@ export default function Navbar() {
         >
           {/* Sigma icon in crimson square */}
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] shadow-sm transition-transform duration-200 group-hover:scale-105">
-            <span className="font-serif text-xl font-bold text-white leading-none">Σ</span>
+            <span className="font-serif text-xl font-bold text-white leading-none">
+              Σ
+            </span>
           </div>
 
           <div className="flex flex-col">
-            <span className={`text-lg font-bold tracking-tight ${isHeroPage ? "text-white" : "text-[#111827]"}`}>
-              Math<span className={isHeroPage ? "text-[#E05260]" : "text-[#8B1A24]"}>Verse</span>
+            <span
+              className={`text-lg font-bold tracking-tight ${isHeroPage ? "text-white" : "text-[#111827]"}`}
+            >
+              Math
+              <span
+                className={isHeroPage ? "text-[#E05260]" : "text-[#8B1A24]"}
+              >
+                Workspace
+              </span>
             </span>
-            <span className={`text-[0.65rem] font-medium leading-none ${isHeroPage ? "text-white/70" : "text-[#9CA3AF]"}`}>
+            <span
+              className={`text-[0.65rem] font-medium leading-none ${isHeroPage ? "text-white/70" : "text-[#9CA3AF]"}`}
+            >
               Learn. Think. Create.
             </span>
           </div>
@@ -199,6 +247,24 @@ export default function Navbar() {
               />
             )}
           </Link>
+
+          {isAuthenticated && (
+            <Link
+              to="/dashboard"
+              onClick={handleDashboardClick}
+              className={navLinkClass("dashboard")}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Dashboard</span>
+              {activeTab === "dashboard" && (
+                <motion.span
+                  layoutId="activeNavUnderline"
+                  className="absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full bg-[#E05260]"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+            </Link>
+          )}
         </nav>
 
         {/* Right Nav Actions */}
@@ -213,7 +279,9 @@ export default function Navbar() {
                     : "border-[#D1D5DB] bg-white text-[#1F2937] hover:bg-[#F9FAFB] hover:border-[#9CA3AF]"
                 }`}
               >
-                <LogIn className={`w-4 h-4 ${isHeroPage ? "text-white" : "text-[#6B7280]"}`} />
+                <LogIn
+                  className={`w-4 h-4 ${isHeroPage ? "text-white" : "text-[#6B7280]"}`}
+                />
                 <span>Login</span>
               </Link>
 
@@ -228,23 +296,34 @@ export default function Navbar() {
           ) : (
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex flex-col text-right">
-                <span className={`text-xs font-medium ${
-                  isHeroPage ? "text-white/80" : "text-[#374151]"
-                }`}>
+                <span
+                  className={`text-xs font-medium ${
+                    isHeroPage ? "text-white/80" : "text-[#374151]"
+                  }`}
+                >
                   {user?.name}
                 </span>
-                <span className={`text-[0.65rem] font-bold uppercase tracking-wider ${
-                  isHeroPage ? "text-[#E05260]" : "text-[#8B1A24]"
-                }`}>
+                <span
+                  className={`text-[0.65rem] font-bold uppercase tracking-wider ${
+                    isHeroPage ? "text-[#E05260]" : "text-[#8B1A24]"
+                  }`}
+                >
                   {user?.role}
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => { navigate("/"); void logout(); }}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition-all duration-200 hover:bg-red-100 hover:border-red-300"
+                onClick={() => {
+                  navigate("/");
+                  void logout();
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  isHeroPage
+                    ? "border-[#E05260]/60 bg-[#7B1824]/20 text-[#E05260] hover:bg-[#7B1824]/40 hover:border-[#E05260]"
+                    : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
+                }`}
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
                 <span>Logout</span>
               </button>
             </div>
@@ -259,7 +338,11 @@ export default function Navbar() {
             }`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
@@ -279,6 +362,20 @@ export default function Navbar() {
             <Home className="w-4 h-4" />
             Home
           </Link>
+          {isAuthenticated && (
+            <Link
+              to="/dashboard"
+              onClick={handleDashboardClick}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                activeTab === "dashboard"
+                  ? "bg-[#EFF6FF] text-[#2563EB]"
+                  : "text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]"
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </Link>
+          )}
           <Link
             to="/calculator-hub"
             onClick={handleCalculatorsClick}

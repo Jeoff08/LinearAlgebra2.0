@@ -62,7 +62,7 @@ export default function PageTransitionOverlay({
           duration: 0.2,
           ease: "power2.out",
         },
-        "-=0.15"
+        "-=0.15",
       )
       .to(
         logo,
@@ -73,7 +73,7 @@ export default function PageTransitionOverlay({
           duration: 0.22,
           ease: "back.out(2)",
         },
-        "-=0.2"
+        "-=0.2",
       )
       // 3. Callback at peak of transition when screen is covered
       .call(() => {
@@ -88,7 +88,7 @@ export default function PageTransitionOverlay({
           duration: 0.15,
           ease: "power2.in",
         },
-        "+=0.05"
+        "+=0.05",
       )
       // 5. Staggered panels sweep out upward
       .to(
@@ -102,7 +102,7 @@ export default function PageTransitionOverlay({
           },
           ease: "power4.inOut",
         },
-        "-=0.05"
+        "-=0.05",
       );
 
     return () => {
@@ -123,46 +123,34 @@ export default function PageTransitionOverlay({
           ref={(el) => {
             columnRefs.current[index] = el;
           }}
-          className="relative flex-1 h-full bg-[#060B14] border-r border-[#00D2FF]/20 last:border-r-0 shadow-[0_0_30px_rgba(0,0,0,0.8)]"
+          className="relative flex-1 h-full bg-[#0F172A] border-r border-slate-500/20 last:border-r-0 shadow-[0_0_20px_rgba(15,23,42,0.45)]"
           style={{
             background:
               index % 2 === 0
-                ? "linear-gradient(180deg, #07101E 0%, #050912 100%)"
-                : "linear-gradient(180deg, #091426 0%, #060B16 100%)",
+                ? "linear-gradient(180deg, #111827 0%, #0F172A 100%)"
+                : "linear-gradient(180deg, #1F2937 0%, #111827 100%)",
           }}
         >
-          {/* Top colored accent indicator on each panel */}
-          <div
-            className={`absolute top-0 inset-x-0 h-1.5 ${
-              index % 2 === 0 ? "bg-[#00D2FF]" : "bg-[#B6FF2E]"
-            } shadow-[0_0_12px_currentColor]`}
-          />
-          {/* Bottom colored accent indicator on each panel */}
-          <div
-            className={`absolute bottom-0 inset-x-0 h-1.5 ${
-              index % 2 === 0 ? "bg-[#B6FF2E]" : "bg-[#00D2FF]"
-            } shadow-[0_0_12px_currentColor]`}
-          />
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-slate-400/80" />
+          <div className="absolute bottom-0 inset-x-0 h-1.5 bg-slate-500/80" />
         </div>
       ))}
 
-      {/* Center glowing mathematical transition line */}
       <div
         ref={lineRef}
-        className="absolute top-1/2 left-0 right-0 h-[2px] -translate-y-1/2 bg-gradient-to-r from-transparent via-[#00D2FF] to-[#B6FF2E] shadow-[0_0_20px_#00D2FF] pointer-events-none origin-center"
+        className="absolute top-1/2 left-0 right-0 h-[2px] -translate-y-1/2 bg-gradient-to-r from-transparent via-slate-300 to-slate-500 shadow-[0_0_10px_rgba(148,163,184,0.35)] pointer-events-none origin-center"
       />
 
-      {/* Central floating transition emblem */}
       <div
         ref={logoRef}
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center justify-center gap-1 z-10"
       >
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0A1628] to-[#040810] border border-[#00D2FF]/50 flex items-center justify-center shadow-[0_0_30px_rgba(0,210,255,0.4)]">
-          <span className="font-mono text-2xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-[#00D2FF] via-white to-[#B6FF2E]">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 border border-slate-400/50 flex items-center justify-center shadow-[0_0_18px_rgba(148,163,184,0.2)]">
+          <span className="font-mono text-2xl font-black text-slate-200">
             λ
           </span>
         </div>
-        <span className="font-mono text-[9px] tracking-[0.3em] font-bold text-[#00D2FF] uppercase">
+        <span className="font-mono text-[9px] tracking-[0.3em] font-bold text-slate-300 uppercase">
           TRANSITION
         </span>
       </div>

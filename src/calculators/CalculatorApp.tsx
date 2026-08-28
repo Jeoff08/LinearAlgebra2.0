@@ -232,15 +232,25 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
         {/* Hero Content */}
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
           <div className="max-w-2xl space-y-5">
-            {/* Top Pill Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs"
-            >
-              <span>23 Powerful Calculators</span>
-            </motion.div>
+            {/* Top Back Breadcrumb & Pill Badges */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => navigate("/calculator-hub")}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white/90 hover:text-white px-3 py-1 text-xs font-semibold backdrop-blur-md transition cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>All Math Tools</span>
+              </button>
+
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs"
+              >
+                <span>23 Powerful Calculators</span>
+              </motion.div>
+            </div>
 
             {/* Main Headline */}
               <motion.h1
@@ -277,6 +287,14 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
               >
                 <span>Explore Calculators</span>
                 <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => navigate('/calculator-hub')}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-md px-5 py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <ArrowLeft className="w-4 h-4 text-white/80" />
+                <span>All Math Tools</span>
               </button>
 
               <button

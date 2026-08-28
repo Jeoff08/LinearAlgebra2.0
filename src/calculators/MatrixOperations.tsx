@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import PDFExport from './PDFExport';
 
-type OperationType = 'add' | 'subtract' | 'multiply' | 'scalar' | 'determinant' | 'transpose' | 'inverse' | 'trace' | 'power';
+type OperationType = 'add' | 'subtract' | 'multiply' | 'scalar' | 'determinant' | 'transpose' | 'inverse' | 'trace' | 'power' | 'rank' | 'lu' | 'eigen';
 
 const MatrixOperations: React.FC = () => {
   const [matrixA, setMatrixA] = useState<number[][]>([
@@ -213,6 +213,202 @@ const MatrixOperations: React.FC = () => {
     return { inverse, steps, stepExplanations };
   };
 
+  // ---------- NEW OPERATIONS ----------
+  // 1. Matrix Rank (using Gaussian elimination)
+  const getMatrixRank = (matrix: number[][]): { rank: number; steps: string[]; stepExplanations: string[] } => {
+    const steps: string[] = [];
+    const stepExplanations: string[] = [];
+    const A = matrix.map(row => [...row]); // copy
+    const rows = A.length;
+    const cols = A[0]?.length || 0;
+    let rank = 0;
+    let row = 0;
+
+    steps.push(`Matrix dimensions: ${rows}×${cols}`);
+    stepExplanations.push('Rank is the number of linearly independent rows (or columns).');
+
+    for (let col = 0; col < cols && row < rows; col++) {
+      // Find pivot
+      let maxRow = row;
+      for (let i = row + 1; i < rows; i++) {
+        if (Math.abs(A[i][col]) > Math.abs(A[maxRow][col])) {
+          maxRow = i;
+        }
+      }
+      if (Math.abs(A[maxRow][col]) < 1e-10) continue;
+
+      // Swap rows
+      if (maxRow !== row) {
+        [A[row], A[maxRow]] = [A[maxRow], A[row]];
+        steps.push(`Swap row ${row+1} with row ${maxRow+1} for pivot at col ${col+1}`);
+        stepExplanations.push('Row swap to get a non-zero pivot.');
+      }
+
+      // Eliminate below
+      const pivot = A[row][col];
+      for (let i = row + 1; i < rows; i++) {
+        const factor = A[i][col] / pivot;
+        for (let j = col; j < cols; j++) {
+          A[i][j] -= factor * A[row][j];
+        }
+        A[i][col] = 0; // avoid floating errors
+        steps.push(`R${i+1} <- R${i+1} - (${factor.toFixed(4)}) R${row+1}`);
+        stepExplanations.push(`Eliminate below pivot in column ${col+1}.`);
+      }
+      rank++;
+      row++;
+    }
+
+    steps.push(`Rank = ${rank}`);
+    stepExplanations.push('Rank is the number of non-zero rows in row-echelon form.');
+    return { rank, steps, stepExplanations };
+  };
+
+  // 2. LU Decomposition (Doolittle's method, square matrix)
+  const getLU = (matrix: number[][]): { L: number[][]; U: number[][]; steps: string[]; stepExplanations: string[] } | null => {
+    const steps: string[] = [];
+    const stepExplanations: string[] = [];
+    const n = matrix.length;
+    if (n !== matrix[0]?.length) {
+      steps.push('❌ LU decomposition requires a square matrix.');
+      stepExplanations.push('Only square matrices can be decomposed into L and U.');
+      return null;
+    }
+
+    const L: number[][] = Array.from({ length: n }, (_, i) => Array(n).fill(0));
+    const U: number[][] = Array.from({ length: n }, (_, i) => Array(n).fill(0));
+    const A = matrix.map(row => [...row]);
+
+    steps.push(`LU Decomposition (Doolittle) for ${n}×${n} matrix`);
+    stepExplanations.push('L has ones on diagonal, U is upper triangular.');
+
+    for (let i = 0; i < n; i++) {
+      // U row
+      for (let j = i; j < n; j++) {
+        let sum = 0;
+        for (let k = 0; k < i; k++) {
+          sum += L[i][k] * U[k][j];
+        }
+        U[i][j] = A[i][j] - sum;
+        steps.push(`U[${i+1}][${j+1}] = ${A[i][j]} - ${sum.toFixed(4)} = ${U[i][j].toFixed(4)}`);
+        stepExplanations.push(`Compute U element (${i+1},${j+1}).`);
+      }
+      // L column (i+1)
+      for (let j = i; j < n; j++) {
+        if (i === j) {
+          L[i][i] = 1;
+        } else {
+          let sum = 0;
+          for (let k = 0; k < i; k++) {
+            sum += L[j][k] * U[k][i];
+          }
+          if (Math.abs(U[i][i]) < 1e-12) {
+            steps.push(`❌ Pivot zero at U[${i+1}][${i+1}], decomposition fails.`);
+            stepExplanations.push('Zero pivot in U, matrix may be singular or need pivoting.');
+            return null;
+          }
+          L[j][i] = (A[j][i] - sum) / U[i][i];
+          steps.push(`L[${j+1}][${i+1}] = (${A[j][i]} - ${sum.toFixed(4)}) / ${U[i][i].toFixed(4)} = ${L[j][i].toFixed(4)}`);
+          stepExplanations.push(`Compute L element (${j+1},${i+1}).`);
+        }
+      }
+    }
+
+    steps.push('✅ LU decomposition complete.');
+    stepExplanations.push('L (lower triangular) and U (upper triangular) matrices.');
+    return { L, U, steps, stepExplanations };
+  };
+
+  // 3. Eigenvalues & Eigenvectors (Power iteration for dominant eigenpair)
+  const getEigen = (matrix: number[][]): { eigenvalues: number[]; eigenvectors: number[][]; steps: string[]; stepExplanations: string[] } | null => {
+    const steps: string[] = [];
+    const stepExplanations: string[] = [];
+    const n = matrix.length;
+    if (n !== matrix[0]?.length) {
+      steps.push('❌ Eigenvalues require a square matrix.');
+      stepExplanations.push('Only square matrices have eigenvalues.');
+      return null;
+    }
+
+    // For simplicity and educational demo, we compute eigenvalues using the characteristic polynomial
+    // for 2x2 exactly, and for larger matrices we use the power iteration to find the dominant eigenvalue and vector.
+    // We'll also show the characteristic polynomial for educational purposes.
+
+    if (n === 2) {
+      // Exact for 2x2
+      const a = matrix[0][0], b = matrix[0][1], c = matrix[1][0], d = matrix[1][1];
+      const trace = a + d;
+      const det = a * d - b * c;
+      const disc = trace * trace - 4 * det;
+      steps.push(`Characteristic polynomial: λ² - (${trace})λ + (${det}) = 0`);
+      stepExplanations.push('For 2×2, eigenvalues are roots of λ² - tr(A)λ + det(A) = 0.');
+      if (disc < 0) {
+        const real = trace / 2;
+        const imag = Math.sqrt(-disc) / 2;
+        steps.push(`Eigenvalues: λ₁ = ${real.toFixed(4)} + ${imag.toFixed(4)}i, λ₂ = ${real.toFixed(4)} - ${imag.toFixed(4)}i`);
+        stepExplanations.push('Complex eigenvalues (conjugate pair).');
+        return { eigenvalues: [real, real], eigenvectors: [[1, 0], [0, 1]], steps, stepExplanations };
+      } else {
+        const sqrtDisc = Math.sqrt(disc);
+        const λ1 = (trace + sqrtDisc) / 2;
+        const λ2 = (trace - sqrtDisc) / 2;
+        steps.push(`Eigenvalues: λ₁ = ${λ1.toFixed(4)}, λ₂ = ${λ2.toFixed(4)}`);
+        stepExplanations.push('Real eigenvalues.');
+        // Eigenvectors (simple)
+        const v1 = [1, (λ1 - a) / b];
+        const v2 = [1, (λ2 - a) / b];
+        steps.push(`Eigenvector for λ₁: [1, ${v1[1].toFixed(4)}]`);
+        steps.push(`Eigenvector for λ₂: [1, ${v2[1].toFixed(4)}]`);
+        stepExplanations.push('Eigenvectors computed from (A - λI)v = 0.');
+        return { eigenvalues: [λ1, λ2], eigenvectors: [v1, v2], steps, stepExplanations };
+      }
+    } else {
+      // Power iteration for dominant eigenvalue & vector (educational)
+      steps.push('Using Power Iteration to find dominant eigenvalue and eigenvector.');
+      stepExplanations.push('Power iteration converges to dominant eigenpair.');
+      let v: number[] = Array(n).fill(1);
+      const maxIter = 20;
+      let prevλ = 0;
+      for (let iter = 0; iter < maxIter; iter++) {
+        // multiply matrix by v
+        const w = v.map((_, i) => {
+          let sum = 0;
+          for (let j = 0; j < n; j++) sum += matrix[i][j] * v[j];
+          return sum;
+        });
+        // normalize
+        let norm = Math.sqrt(w.reduce((s, x) => s + x * x, 0));
+        if (norm < 1e-12) {
+          steps.push('Convergence failed (zero vector).');
+          stepExplanations.push('Matrix may be singular or method diverged.');
+          return null;
+        }
+        const vNew = w.map(x => x / norm);
+        // Rayleigh quotient
+        let λ = 0;
+        for (let i = 0; i < n; i++) {
+          let sum = 0;
+          for (let j = 0; j < n; j++) sum += matrix[i][j] * vNew[j];
+          λ += vNew[i] * sum;
+        }
+        steps.push(`Iter ${iter+1}: λ ≈ ${λ.toFixed(4)}, norm = ${norm.toFixed(4)}`);
+        stepExplanations.push(`Power iteration step ${iter+1}.`);
+        if (Math.abs(λ - prevλ) < 1e-6 && iter > 1) break;
+        v = vNew;
+        prevλ = λ;
+      }
+      steps.push(`Dominant eigenvalue: ${prevλ.toFixed(4)}`);
+      stepExplanations.push('Converged dominant eigenvalue.');
+      steps.push(`Eigenvector: [${v.map(x => x.toFixed(4)).join(', ')}]`);
+      stepExplanations.push('Corresponding eigenvector.');
+      // For completeness, show characteristic polynomial for n>2 (symbolic not possible, but we mention)
+      steps.push('Note: For n>2, eigenvalues are typically computed numerically.');
+      stepExplanations.push('Characteristic polynomial degree > 2 requires numerical methods.');
+      return { eigenvalues: [prevλ], eigenvectors: [v], steps, stepExplanations };
+    }
+  };
+  // ---------- END NEW OPERATIONS ----------
+
   const performOperation = () => {
     const steps: string[] = [];
     const stepExplanations: string[] = [];
@@ -226,7 +422,7 @@ const MatrixOperations: React.FC = () => {
     steps.push(formatMatrix(matrixA));
     stepExplanations.push('Matrix A displayed in matrix form.');
 
-    if (operation !== 'determinant' && operation !== 'trace' && operation !== 'scalar' && operation !== 'transpose' && operation !== 'inverse' && operation !== 'power') {
+    if (operation !== 'determinant' && operation !== 'trace' && operation !== 'scalar' && operation !== 'transpose' && operation !== 'inverse' && operation !== 'power' && operation !== 'rank' && operation !== 'lu' && operation !== 'eigen') {
       steps.push(`Matrix B (${matrixB.length}×${matrixB[0]?.length || 0}):`);
       stepExplanations.push('Matrix B is the second input matrix (used for binary operations).');
       steps.push(formatMatrix(matrixB));
@@ -499,6 +695,59 @@ const MatrixOperations: React.FC = () => {
           break;
         }
 
+        // ---------- NEW CASES ----------
+        case 'rank': {
+          const { rank, steps: rankSteps, stepExplanations: rankExplanations } = getMatrixRank(matrixA);
+          steps.push(...rankSteps);
+          stepExplanations.push(...rankExplanations);
+          resultValue = `Rank = ${rank}`;
+          break;
+        }
+
+        case 'lu': {
+          const luResult = getLU(matrixA);
+          if (!luResult) {
+            setResult({ data: 'LU decomposition failed (singular or non-square).', steps, stepExplanations });
+            return;
+          }
+          steps.push(...luResult.steps);
+          stepExplanations.push(...luResult.stepExplanations);
+          steps.push('\n✅ L matrix:');
+          stepExplanations.push('Lower triangular matrix L.');
+          steps.push(formatMatrix(luResult.L));
+          steps.push('\n✅ U matrix:');
+          stepExplanations.push('Upper triangular matrix U.');
+          steps.push(formatMatrix(luResult.U));
+          // Verification: L*U = original?
+          const LU = multiplyMatrices(luResult.L, luResult.U);
+          steps.push('\n🔍 Verification: L × U = A');
+          stepExplanations.push('Product of L and U should equal original matrix.');
+          steps.push(formatMatrix(LU));
+          resultMatrix = luResult.L; // show L as primary result
+          break;
+        }
+
+        case 'eigen': {
+          const eigenResult = getEigen(matrixA);
+          if (!eigenResult) {
+            setResult({ data: 'Eigen decomposition failed.', steps, stepExplanations });
+            return;
+          }
+          steps.push(...eigenResult.steps);
+          stepExplanations.push(...eigenResult.stepExplanations);
+          steps.push('\n✅ Eigenvalues:');
+          stepExplanations.push('Computed eigenvalues.');
+          steps.push(eigenResult.eigenvalues.map((v, i) => `λ${i+1} = ${v.toFixed(4)}`).join(', '));
+          steps.push('\n✅ Eigenvectors:');
+          stepExplanations.push('Corresponding eigenvectors.');
+          eigenResult.eigenvectors.forEach((v, i) => {
+            steps.push(`v${i+1} = [${v.map(x => x.toFixed(4)).join(', ')}]`);
+          });
+          resultValue = `Eigenvalues: ${eigenResult.eigenvalues.map(v => v.toFixed(4)).join(', ')}`;
+          break;
+        }
+        // ---------- END NEW CASES ----------
+
         default:
           throw new Error('Operation not supported');
       }
@@ -640,6 +889,10 @@ const MatrixOperations: React.FC = () => {
             <option value="inverse">A⁻¹ (Inverse)</option>
             <option value="trace">tr(A) (Trace)</option>
             <option value="power">Aⁿ (Power)</option>
+            {/* New operations */}
+            <option value="rank">Rank(A)</option>
+            <option value="lu">LU Decomposition</option>
+            <option value="eigen">Eigenvalues & Eigenvectors</option>
           </select>
         </div>
 
@@ -793,6 +1046,9 @@ const MatrixOperations: React.FC = () => {
           <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Inverse</span>
           <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Trace</span>
           <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Matrix Power</span>
+          <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Rank</span>
+          <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">LU Decomposition</span>
+          <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Eigenvalues</span>
         </div>
       </div>
     </div>

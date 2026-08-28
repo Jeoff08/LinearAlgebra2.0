@@ -91,15 +91,23 @@ export default function CalculatorDetailPage() {
       <div className="sticky top-16 z-30 bg-[#0B0F15] border-b border-white/10 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-3">
 
-          {/* Left: Back Button */}
-          <button
-            onClick={() => navigate("/calculators")}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">All Calculators</span>
-            <span className="sm:hidden">All</span>
-          </button>
+          {/* Left: Back Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => navigate("/calculator-hub")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>All Math Tools</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/calculators")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/15 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:text-white backdrop-blur-md transition-all cursor-pointer hidden sm:inline-flex"
+            >
+              <span>Linear Algebra (23)</span>
+            </button>
+          </div>
 
           {/* Center: Calculator Dropdown Switcher */}
           <div className="relative flex-1 max-w-sm sm:max-w-md mx-auto" ref={dropdownRef}>
