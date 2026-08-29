@@ -1145,9 +1145,9 @@ export default function PublicPage() {
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="mt-5 max-w-lg text-sm sm:text-base font-normal text-white/80 leading-relaxed"
                 >
-                  Interactive learning, powerful calculators, and
+                  Interactive learning, calculators, and
                   <br className="hidden sm:inline" />
-                  step-by-step solutions — all in one place.
+                  step-by-step solutions all in one place.
                 </motion.p>
 
                 {/* CTA Buttons */}
@@ -1397,75 +1397,6 @@ export default function PublicPage() {
           {/* 3. 6-FEATURE FOOTER CARD (Matching Image 3 Bottom Bar)                    */}
           {/* ========================================================================= */}
           <section className="relative z-10 mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 mt-12 sm:mt-16">
-            <div className="rounded-[26px] border border-[#EAE2E4] bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 sm:gap-8 text-center">
-                {/* Feature 1: Smart Search */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
-                    <Search className="h-5 w-5" />
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Smart Search</h4>
-                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
-                    Search any topic, formula or problem instantly.
-                  </p>
-                </div>
-
-                {/* Feature 2: Powerful Calculators */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
-                    <Calculator className="h-5 w-5" />
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Powerful Calculators</h4>
-                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
-                    Advanced tools for solving complex math problems.
-                  </p>
-                </div>
-
-                {/* Feature 3: Step-by-Step Solutions */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
-                    <BookOpen className="h-5 w-5" />
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Step-by-Step Solutions</h4>
-                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
-                    Detailed solutions with clear explanations.
-                  </p>
-                </div>
-
-                {/* Feature 4: Verified Examples */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Verified Examples</h4>
-                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
-                    Explore real examples with verified answers.
-                  </p>
-                </div>
-
-                {/* Feature 5: Save & Organize */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
-                    <Bookmark className="h-5 w-5" />
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Save &amp; Organize</h4>
-                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
-                    Bookmark topics and track your progress.
-                  </p>
-                </div>
-
-                {/* Feature 6: Learn Analytics */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF2F4] text-[#7B1824]">
-                    <TrendingUp className="h-5 w-5" />
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#111827]">Learn Analytics</h4>
-                  <p className="mt-1 text-[0.72rem] text-[#6B7280] leading-snug">
-                    Visualize your learning and improvement.
-                  </p>
-                </div>
-              </div>
-            </div>
           </section>
         </motion.div>
       ) : activeView === "topics-linear" ? (
