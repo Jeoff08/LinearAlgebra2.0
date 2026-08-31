@@ -9,6 +9,7 @@ import LoginPage from "./pages/LoginPage";
 import PublicPage from "./pages/PublicPage";
 import RegisterPage from "./pages/RegisterPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import CalculatorApp from "./calculators/CalculatorApp";
 import CalculatorsPage from "./pages/CalculatorsPage";
 import CalculusCalculatorsPage from "./pages/CalculusCalculatorsPage";
@@ -36,6 +37,22 @@ export default function App() {
                     element={
                       <ProtectedRoute>
                         <UserDashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedRoute role="admin">
+                        <AdminDashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/dashboard"
+                    element={
+                      <ProtectedRoute role="admin">
+                        <AdminDashboardPage />
                       </ProtectedRoute>
                     }
                   />

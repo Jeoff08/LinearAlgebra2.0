@@ -29,8 +29,13 @@ export function ProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
-  if (role === "admin" && user?.role !== "admin") {
-    return <Navigate to="/" replace />;
+  if (role === "admin") {
+    const isAuthorizedAdmin =
+      user?.email?.toLowerCase().trim() === "admin@gmail.com" ||
+      user?.role === "admin";
+    if (!isAuthorizedAdmin) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;

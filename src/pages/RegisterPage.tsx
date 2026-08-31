@@ -6,7 +6,7 @@ import { UserPlus, Lock, Mail, User, Eye, EyeOff } from "lucide-react";
 import mathBg from "../assets/math.jpeg";
 
 export default function RegisterPage() {
-  const { register, isAuthenticated, loading } = useAuth();
+  const { register, isAuthenticated, loading, user } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,9 +17,16 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate("/", { replace: true });
+      if (
+        user?.role === "admin" ||
+        user?.email?.toLowerCase().trim() === "admin@gmail.com"
+      ) {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, user, navigate]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,7 +38,11 @@ export default function RegisterPage() {
       setError(err);
       return;
     }
-    navigate("/dashboard");
+    if (email.toLowerCase().trim() === "admin@gmail.com") {
+      navigate("/admin", { replace: true });
+    } else {
+      navigate("/dashboard", { replace: true });
+    }
   }
 
   return (

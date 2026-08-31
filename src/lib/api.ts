@@ -15,11 +15,12 @@ function mapProfile(row: {
   role: 'admin' | 'user'
   created_at: string
 }): PublicUser {
+  const isAdminEmail = row.email?.toLowerCase().trim() === 'admin@gmail.com'
   return {
     id: row.id,
     email: row.email,
     name: row.name,
-    role: row.role,
+    role: isAdminEmail ? 'admin' : (row.role || 'user'),
     created_at: row.created_at,
   }
 }
@@ -55,11 +56,13 @@ export const api = {
       if (!data.session) {
         return toAuthError('Account created. Confirm your email, then sign in.')
       }
+      const userEmail = data.user.email ?? input.email.trim()
+      const isAdminUser = userEmail.toLowerCase().trim() === 'admin@gmail.com'
       const user = (await loadProfile(data.user.id)) ?? {
         id: data.user.id,
-        email: data.user.email ?? input.email.trim(),
+        email: userEmail,
         name: input.name.trim() || 'User',
-        role: 'user' as const,
+        role: (isAdminUser ? 'admin' : 'user') as 'admin' | 'user',
         created_at: new Date().toISOString(),
       }
       return { ok: true, user, token: data.session.access_token }
@@ -77,11 +80,13 @@ export const api = {
       })
       if (error) return toAuthError(error.message)
       if (!data.user || !data.session) return toAuthError('Invalid email or password')
+      const userEmail = data.user.email ?? input.email.trim()
+      const isAdminUser = userEmail.toLowerCase().trim() === 'admin@gmail.com'
       const user = (await loadProfile(data.user.id)) ?? {
         id: data.user.id,
-        email: data.user.email ?? input.email.trim(),
+        email: userEmail,
         name: (data.user.user_metadata?.name as string | undefined) || 'User',
-        role: 'user' as const,
+        role: (isAdminUser ? 'admin' : 'user') as 'admin' | 'user',
         created_at: data.user.created_at,
       }
       return { ok: true, user, token: data.session.access_token }

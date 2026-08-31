@@ -72,12 +72,43 @@ export function generateGraphPoints(
   return points;
 }
 
-/** Symbolic derivative using mathjs with simplification */
-export function symbolicDerivative(expr: string, variable: string = 'x'): string {
+export function symbolicDerivative(
+  expr: string,
+  variable: string = 'x'
+): string {
   try {
     const parsed = math.parse(expr);
     const d = math.derivative(parsed, variable);
-    return math.simplify(d).toString();
+
+    let result = math.simplify(d).toString();
+
+    // Additional expansion + simplification pass
+    try {
+      result = math.simplify(
+        math.parse(result).toString(),
+        {},
+        { exactFractions: false }
+      ).toString();
+    } catch {}
+
+    // Special handling for quotient expressions
+    if (expr.includes('/')) {
+      try {
+        const slash = expr.indexOf('/');
+        const u = expr.slice(0, slash).trim().replace(/^\(|\)$/g, '');
+        const v = expr.slice(slash + 1).trim().replace(/^\(|\)$/g, '');
+
+        const uPrime = math.derivative(u, variable).toString();
+        const vPrime = math.derivative(v, variable).toString();
+
+        const quotientForm =
+          `((${uPrime})*(${v}) - (${u})*(${vPrime})) / ((${v})^2)`;
+
+        result = math.simplify(quotientForm).toString();
+      } catch {}
+    }
+
+    return result;
   } catch {
     return '';
   }

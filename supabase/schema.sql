@@ -1,4 +1,4 @@
--- Run this once in the Supabase SQL editor.
+-- Run this in the Supabase SQL editor.
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -44,26 +44,37 @@ alter table public.notes enable row level security;
 alter table public.documents enable row level security;
 alter table public.pdfs enable row level security;
 
+-- Profiles policies
+drop policy if exists "Read own profile" on public.profiles;
 create policy "Read own profile" on public.profiles
   for select to authenticated using (id = auth.uid());
 
+drop policy if exists "Update own profile" on public.profiles;
 create policy "Update own profile" on public.profiles
   for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
+-- Notes policies
+drop policy if exists "Notes by owner" on public.notes;
 create policy "Notes by owner" on public.notes
   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
+-- Documents policies
+drop policy if exists "Documents by owner" on public.documents;
 create policy "Documents by owner" on public.documents
   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
+-- PDFs policies
+drop policy if exists "Authenticated read pdfs" on public.pdfs;
 create policy "Authenticated read pdfs" on public.pdfs
   for select to authenticated using (true);
 
+drop policy if exists "Admins write pdfs" on public.pdfs;
 create policy "Admins write pdfs" on public.pdfs
   for all to authenticated
   using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))
   with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
 
+-- Trigger for new user profiles
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -80,7 +91,8 @@ begin
       when lower(coalesce(new.email, '')) = 'admin@gmail.com' then 'admin'
       else 'user'
     end
-  );
+  )
+  on conflict (id) do nothing;
   return new;
 end;
 $$;
@@ -90,14 +102,17 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Storage bucket
 insert into storage.buckets (id, name, public)
 values ('pdfs', 'pdfs', false)
 on conflict (id) do nothing;
 
+drop policy if exists "Authenticated read pdf files" on storage.objects;
 create policy "Authenticated read pdf files"
   on storage.objects for select to authenticated
   using (bucket_id = 'pdfs');
 
+drop policy if exists "Admins upload pdf files" on storage.objects;
 create policy "Admins upload pdf files"
   on storage.objects for insert to authenticated
   with check (
@@ -105,9 +120,109 @@ create policy "Admins upload pdf files"
     and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
   );
 
+drop policy if exists "Admins delete pdf files" on storage.objects;
 create policy "Admins delete pdf files"
   on storage.objects for delete to authenticated
   using (
     bucket_id = 'pdfs'
     and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
+  );
+
+-- =========================================================================
+-- QUIZ SYSTEM TABLES
+-- =========================================================================
+
+-- 1. Quizzes (created by admin)
+create table if not exists public.quizzes (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  topic text not null default 'Linear Algebra',
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- 2. Quiz Questions (belongs to a quiz)
+create table if not exists public.quiz_questions (
+  id uuid primary key default gen_random_uuid(),
+  quiz_id uuid not null references public.quizzes(id) on delete cascade,
+  question_index int not null default 0,
+  prompt text not null,
+  option_a text not null,
+  option_b text not null,
+  option_c text not null,
+  option_d text not null,
+  correct_answer text not null check (correct_answer in ('A', 'B', 'C', 'D'))
+);
+
+-- 3. Quiz Attempts (student submissions)
+create table if not exists public.quiz_attempts (
+  id uuid primary key default gen_random_uuid(),
+  quiz_id uuid not null references public.quizzes(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  score int not null default 0,
+  total_questions int not null default 0,
+  answers_json text not null default '[]',
+  time_spent_seconds int not null default 0,
+  submitted_at timestamptz not null default now()
+);
+
+-- Enable RLS
+alter table public.quizzes enable row level security;
+alter table public.quiz_questions enable row level security;
+alter table public.quiz_attempts enable row level security;
+
+-- QUIZZES policies: everyone reads, admins write
+drop policy if exists "Authenticated read quizzes" on public.quizzes;
+create policy "Authenticated read quizzes"
+  on public.quizzes for select to authenticated using (true);
+
+drop policy if exists "Admins insert quizzes" on public.quizzes;
+create policy "Admins insert quizzes"
+  on public.quizzes for insert to authenticated
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+drop policy if exists "Admins update quizzes" on public.quizzes;
+create policy "Admins update quizzes"
+  on public.quizzes for update to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+drop policy if exists "Admins delete quizzes" on public.quizzes;
+create policy "Admins delete quizzes"
+  on public.quizzes for delete to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+-- QUIZ_QUESTIONS policies: everyone reads, admins write
+drop policy if exists "Authenticated read quiz_questions" on public.quiz_questions;
+create policy "Authenticated read quiz_questions"
+  on public.quiz_questions for select to authenticated using (true);
+
+drop policy if exists "Admins insert quiz_questions" on public.quiz_questions;
+create policy "Admins insert quiz_questions"
+  on public.quiz_questions for insert to authenticated
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+drop policy if exists "Admins update quiz_questions" on public.quiz_questions;
+create policy "Admins update quiz_questions"
+  on public.quiz_questions for update to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+drop policy if exists "Admins delete quiz_questions" on public.quiz_questions;
+create policy "Admins delete quiz_questions"
+  on public.quiz_questions for delete to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+-- QUIZ_ATTEMPTS policies: students insert own, read own; admins read all
+drop policy if exists "Students insert own attempts" on public.quiz_attempts;
+create policy "Students insert own attempts"
+  on public.quiz_attempts for insert to authenticated
+  with check (user_id = auth.uid());
+
+drop policy if exists "Students read own attempts" on public.quiz_attempts;
+create policy "Students read own attempts"
+  on public.quiz_attempts for select to authenticated
+  using (
+    user_id = auth.uid()
+    or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
   );

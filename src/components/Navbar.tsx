@@ -6,7 +6,6 @@ import {
   LogIn,
   UserPlus,
   LogOut,
-  Home,
   Calculator,
   BookOpen,
   LayoutDashboard,
@@ -120,7 +119,14 @@ export default function Navbar() {
     window.dispatchEvent(
       new CustomEvent("navtabchange", { detail: "dashboard" }),
     );
-    navigate("/dashboard");
+    if (
+      user?.role === "admin" ||
+      user?.email?.toLowerCase().trim() === "admin@gmail.com"
+    ) {
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -152,6 +158,10 @@ export default function Navbar() {
           ? "text-white/70 hover:text-white"
           : "text-[#4B5563] hover:text-[#111827]"
     }`;
+
+  if (location.pathname.startsWith("/admin") || location.pathname === "/dashboard") {
+    return null;
+  }
 
   return (
     <header
@@ -196,23 +206,25 @@ export default function Navbar() {
 
         {/* Center Nav Links (Desktop) */}
         <nav className="hidden md:flex items-center gap-8 lg:gap-10">
-          <Link
-            to="/?tab=home"
-            onClick={handleHomeClick}
-            className={navLinkClass("home")}
-          >
-            <Home className="w-4 h-4" />
-            <span>Home</span>
-            {activeTab === "home" && (
-              <motion.span
-                layoutId="activeNavUnderline"
-                className={`absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full ${
-                  isHeroPage ? "bg-white" : "bg-[#8B1A24]"
-                }`}
-                transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              />
-            )}
-          </Link>
+          {!isAuthenticated && (
+            <Link
+              to="/?tab=home"
+              onClick={handleHomeClick}
+              className={navLinkClass("home")}
+            >
+              <Calculator className="w-4 h-4" />
+              <span>Home</span>
+              {activeTab === "home" && (
+                <motion.span
+                  layoutId="activeNavUnderline"
+                  className={`absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full ${
+                    isHeroPage ? "bg-white" : "bg-[#8B1A24]"
+                  }`}
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+            </Link>
+          )}
 
           <Link
             to="/calculator-hub"
@@ -350,18 +362,20 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-[#E5E7EB] bg-white px-4 py-3 space-y-1">
-          <Link
-            to="/?tab=home"
-            onClick={handleHomeClick}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === "home"
-                ? "bg-[#EFF6FF] text-[#2563EB]"
-                : "text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]"
-            }`}
-          >
-            <Home className="w-4 h-4" />
-            Home
-          </Link>
+          {!isAuthenticated && (
+            <Link
+              to="/?tab=home"
+              onClick={handleHomeClick}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                activeTab === "home"
+                  ? "bg-[#EFF6FF] text-[#2563EB]"
+                  : "text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]"
+              }`}
+            >
+              <Calculator className="w-4 h-4" />
+              Home
+            </Link>
+          )}
           {isAuthenticated && (
             <Link
               to="/dashboard"
