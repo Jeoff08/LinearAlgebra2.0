@@ -31,6 +31,13 @@ import ALL_CALCULUS_TOPICS from "../data/calculus-topics";
 import ALL_CALCULUS_2_TOPICS from "../data/calculus-2-topics";
 import mathBg from "../assets/math.jpeg";
 
+import {
+  CALCULATOR_DEFINITIONS,
+  getCalculusDefinitionForTopic,
+  type CalculatorDefinition,
+} from "../Calculus_One_Calculator/CalculatorData";
+import CalculusCalculator from "../Calculus_One_Calculator/Calculator";
+
 // Import all calculators (Linear Algebra)
 import SystemOfEquations from "../calculators/SystemOfEquations";
 import MatrixCalculator from "../calculators/MatrixCalculator";
@@ -149,17 +156,10 @@ const TOPICS: UniversalTopic[] = [
     })),
 ];
 
-const CALCULATORS: Record<string, { name: string; description: string; component: React.ReactNode }> = {
-  // Calculus 1 & 2 Solvers
-  "calculus-simplify": { name: "Algebraic Simplifier", description: "Simplify polynomials, expand parentheses & combine like terms", component: <CalculusPlaceholderCalculator name="Algebraic Simplifier" description="Simplify polynomials, expand parentheses & combine like terms" /> },
-  "calculus-linear-equation": { name: "Linear Equation Solver", description: "Solve single-variable linear equations step-by-step", component: <CalculusPlaceholderCalculator name="Linear Equation Solver" description="Solve single-variable linear equations step-by-step" /> },
-  "calculus-quadratic-equation": { name: "Quadratic Equation Solver", description: "Solve ax² + bx + c = 0 via quadratic formula & discriminant", component: <CalculusPlaceholderCalculator name="Quadratic Equation Solver" description="Solve ax² + bx + c = 0 via quadratic formula & discriminant" /> },
-  "calculus-linear-inequality": { name: "Linear Inequality Solver", description: "Solve linear inequalities with interval notation", component: <CalculusPlaceholderCalculator name="Linear Inequality Solver" description="Solve linear inequalities with interval notation" /> },
-  "calculus-quadratic-inequality": { name: "Quadratic Inequality Solver", description: "Solve quadratic inequalities with sign interval analysis", component: <CalculusPlaceholderCalculator name="Quadratic Inequality Solver" description="Solve quadratic inequalities with sign interval analysis" /> },
-  "calculus-abs-equation": { name: "Absolute Value Equation & Eval", description: "Solve |ax + b| = c and evaluate absolute expressions", component: <CalculusPlaceholderCalculator name="Absolute Value Equation & Eval" description="Solve |ax + b| = c and evaluate absolute expressions" /> },
-  "calculus-abs-inequality": { name: "Absolute Value Inequality Solver", description: "Solve |ax + b| < c & |ax + b| > c with interval solutions", component: <CalculusPlaceholderCalculator name="Absolute Value Inequality Solver" description="Solve |ax + b| < c & |ax + b| > c with interval solutions" /> },
-  "calculus-smart": { name: "Calculus & Algebra Problem Solver", description: "Step-by-step mathematical problem solver with auto-detection", component: <CalculusPlaceholderCalculator name="Calculus & Algebra Problem Solver" description="Step-by-step mathematical problem solver with auto-detection" /> },
 
+
+
+const CALCULATORS: Record<string, { name: string; description: string; component: React.ReactNode }> = {
   // Linear Algebra Solvers
   determinant: { name: "Determinant Calculator", description: "Laplace expansion & cofactor calculation", component: <DeterminantCalculator /> },
   inverse: { name: "Matrix Inverse (A⁻¹)", description: "Invert matrices step-by-step", component: <MatrixInverse /> },
@@ -186,28 +186,8 @@ const CALCULATORS: Record<string, { name: string; description: string; component
   quadratic: { name: "Quadratic Form", description: "Matrix x^T A x analysis", component: <QuadraticForm /> }
 };
 
-function getRecommendedCalculatorId(topicId: string, category?: string): string {
+function getRecommendedCalculatorId(topicId: string, _category?: string): string {
   const combined = (topicId || "").toLowerCase();
-
-  // If topic is Calculus 1 or Calculus 2, STRICTLY use Calculus solvers
-  if (category === "calculus" || combined.includes("calculus") || combined.includes("chapter-")) {
-    if (combined.includes("abs") || combined.includes("absolute")) {
-      if (combined.includes("inequal")) return "calculus-abs-inequality";
-      return "calculus-abs-equation";
-    }
-    if (combined.includes("quadratic")) {
-      if (combined.includes("inequal")) return "calculus-quadratic-inequality";
-      return "calculus-quadratic-equation";
-    }
-    if (combined.includes("inequal")) return "calculus-linear-inequality";
-    if (combined.includes("linear") && (combined.includes("equation") || combined.includes("solve") || combined.includes("system"))) {
-      return "calculus-linear-equation";
-    }
-    if (combined.includes("simplif") || combined.includes("polynomial") || combined.includes("expression") || combined.includes("factor")) {
-      return "calculus-simplify";
-    }
-    return "calculus-smart";
-  }
 
   // Linear Algebra topics mapping
   if (combined.includes("eigen")) return "eigen";
@@ -233,6 +213,7 @@ function getRecommendedCalculatorId(topicId: string, category?: string): string 
   if (combined.includes("vector")) return "vector";
   return "matrixops";
 }
+
 
 export default function TopicPage() {
   const { id } = useParams<{ id: string }>();
@@ -475,13 +456,41 @@ export default function TopicPage() {
           primaryInput.dispatchEvent(new Event("change", { bubbles: true }));
         }
         primaryInput.focus();
+
+        // Automatically trigger calculation
+        setTimeout(() => {
+          const form = calcSection?.querySelector<HTMLFormElement>("form");
+          if (form) {
+            form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+          } else {
+            const solveBtn = calcSection?.querySelector<HTMLButtonElement>('button[type="submit"]');
+            if (solveBtn) solveBtn.click();
+          }
+        }, 150);
       }
     }, 120);
   };
 
-  const calcId = topic ? getRecommendedCalculatorId(topic.id, topic.category) : "calculus-smart";
-  const calculatorInfo = CALCULATORS[calcId] || (topic?.category === "linear-algebra" ? CALCULATORS["matrixops"] : CALCULATORS["calculus-smart"]);
+
+  const calculusDef = useMemo(() => {
+    if (!topic || topic.category !== "calculus") return null;
+    return getCalculusDefinitionForTopic(topic);
+  }, [topic]);
+
+  const calculatorInfo = useMemo(() => {
+    if (topic?.category === "calculus" && calculusDef) {
+      return {
+        name: calculusDef.name,
+        description: calculusDef.description,
+        component: <CalculusCalculator key={calculusDef.id} definition={calculusDef} />,
+      };
+    }
+    const calcId = topic ? getRecommendedCalculatorId(topic.id, topic.category) : "matrixops";
+    return CALCULATORS[calcId] || CALCULATORS["matrixops"];
+  }, [topic, calculusDef]);
+
   const chapterTag = useMemo(() => !topic ? "C1" : topic.category === "linear-algebra" ? "LA" : `C${topic.chapterNumber || 1}`, [topic]);
+
 
   if (!topic) {
     return (

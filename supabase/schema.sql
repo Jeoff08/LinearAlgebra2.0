@@ -46,8 +46,13 @@ alter table public.pdfs enable row level security;
 
 -- Profiles policies
 drop policy if exists "Read own profile" on public.profiles;
-create policy "Read own profile" on public.profiles
-  for select to authenticated using (id = auth.uid());
+drop policy if exists "Authenticated read profiles" on public.profiles;
+create policy "Authenticated read profiles" on public.profiles
+  for select to authenticated using (true);
+
+drop policy if exists "Users insert own profile" on public.profiles;
+create policy "Users insert own profile" on public.profiles
+  for insert to authenticated with check (id = auth.uid());
 
 drop policy if exists "Update own profile" on public.profiles;
 create policy "Update own profile" on public.profiles
@@ -138,7 +143,8 @@ create table if not exists public.quizzes (
   title text not null,
   topic text not null default 'Linear Algebra',
   created_by uuid references auth.users(id) on delete set null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  points_per_item int not null default 1
 );
 
 -- 2. Quiz Questions (belongs to a quiz)
@@ -151,7 +157,9 @@ create table if not exists public.quiz_questions (
   option_b text not null,
   option_c text not null,
   option_d text not null,
-  correct_answer text not null check (correct_answer in ('A', 'B', 'C', 'D'))
+  correct_answer text not null check (correct_answer in ('A', 'B', 'C', 'D')),
+  question_type text default 'multiple_choice',
+  correct_answer_text text default ''
 );
 
 -- 3. Quiz Attempts (student submissions)
@@ -165,6 +173,9 @@ create table if not exists public.quiz_attempts (
   time_spent_seconds int not null default 0,
   submitted_at timestamptz not null default now()
 );
+
+-- Migration safety: ensures column exists on previously created quizzes tables
+alter table public.quizzes add column if not exists points_per_item int not null default 1;
 
 -- Enable RLS
 alter table public.quizzes enable row level security;
@@ -213,7 +224,7 @@ create policy "Admins delete quiz_questions"
   on public.quiz_questions for delete to authenticated
   using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
 
--- QUIZ_ATTEMPTS policies: students insert own, read own; admins read all
+-- QUIZ_ATTEMPTS policies: students insert own, read own; admins read all and delete
 drop policy if exists "Students insert own attempts" on public.quiz_attempts;
 create policy "Students insert own attempts"
   on public.quiz_attempts for insert to authenticated
@@ -226,3 +237,11 @@ create policy "Students read own attempts"
     user_id = auth.uid()
     or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
   );
+
+drop policy if exists "Admins delete attempts" on public.quiz_attempts;
+create policy "Admins delete attempts"
+  on public.quiz_attempts for delete to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+-- Notify PostgREST to reload schema cache
+notify pgrst, 'reload schema';

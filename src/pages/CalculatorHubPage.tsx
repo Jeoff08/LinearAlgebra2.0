@@ -93,99 +93,10 @@ export default function CalculatorHubPage() {
           </div>
         </div>
       </section>
-
-      {/* ========================================================================= */}
-      {/* 2. FLOATING 4-STAT / HIGHLIGHTS ROW (Overlapping Hero Banner)             */}
-      {/* ========================================================================= */}
-      <div className="relative z-20 mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 -mt-10 sm:-mt-12">
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-          className="rounded-[26px] border border-[#EAE2E4] bg-white p-5 sm:p-7 shadow-[0_12px_40px_rgba(0,0,0,0.07)]"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-0 lg:divide-x lg:divide-[#F0E6E8]">
-            {/* Stat 1: 23+ Calculators */}
-            <div className="flex items-center gap-4 lg:px-6 first:pl-0">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
-                <Calculator className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#111827] leading-none">
-                  23+
-                </div>
-                <div className="text-xs sm:text-sm font-bold text-[#111827] mt-1 leading-tight">
-                  Calculators
-                </div>
-                <div className="text-[0.72rem] text-[#6B7280] font-normal leading-tight mt-0.5">
-                  Across all disciplines
-                </div>
-              </div>
-            </div>
-
-            {/* Stat 2: 100+ Step-by-Step Solvers */}
-            <div className="flex items-center gap-4 lg:px-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
-                <BookOpen className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#111827] leading-none">
-                  100+
-                </div>
-                <div className="text-xs sm:text-sm font-bold text-[#111827] mt-1 leading-tight">
-                  Step-by-Step Solvers
-                </div>
-                <div className="text-[0.72rem] text-[#6B7280] font-normal leading-tight mt-0.5">
-                  Detailed explanations
-                </div>
-              </div>
-            </div>
-
-            {/* Stat 3: Interactive Visual Tools */}
-            <div className="flex items-center gap-4 lg:px-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#111827] leading-none">
-                  Interactive
-                </div>
-                <div className="text-xs sm:text-sm font-bold text-[#111827] mt-1 leading-tight">
-                  Visual Tools
-                </div>
-                <div className="text-[0.72rem] text-[#6B7280] font-normal leading-tight mt-0.5">
-                  Graphs and plots
-                </div>
-              </div>
-            </div>
-
-            {/* Stat 4: Reliable Accurate & Fast */}
-            <div className="flex items-center gap-4 lg:px-6 last:pr-0">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 shrink-0">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#111827] leading-none">
-                  Reliable
-                </div>
-                <div className="text-xs sm:text-sm font-bold text-[#111827] mt-1 leading-tight">
-                  Accurate &amp; Fast
-                </div>
-                <div className="text-[0.72rem] text-[#6B7280] font-normal leading-tight mt-0.5">
-                  Trusted results
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 3. SECTION HEADER: "Select a Mathematics Discipline"                     */}
-      {/* ========================================================================= */}
+      
       <section className="mx-auto max-w-[1320px] px-5 sm:px-8 lg:px-12 pt-16 sm:pt-20 text-center">
         <h2 className="text-2xl sm:text-3xl lg:text-[2.25rem] font-extrabold text-[#111827] tracking-tight">
-          Select a Mathematics Discipline
+          Select a Mathematics Calculator
         </h2>
         <p className="mt-2 text-xs sm:text-sm text-[#6B7280] max-w-lg mx-auto">
           Choose a subject to access specialized calculators, solvers, and tools.

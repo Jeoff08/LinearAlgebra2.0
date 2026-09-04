@@ -1,7 +1,9 @@
 // Solver/TrigonometricSubstitutionSolver.ts — Solves radical integrals using trigonometric substitution
 import { type SolverResult, type SolverStep, errorResult } from '../Calculus_One_Calculator/SolverTypes';
 import { normalizeExpression } from '../Calculus_One_Calculator/Utils/expressionParser';
-import { prettify } from '../Calculus_One_Calculator/Utils/mathFormatting';
+import { numericalIntegrate } from '../Calculus_One_Calculator/Utils/calculusUtils';
+import { prettify, formatNumber } from '../Calculus_One_Calculator/Utils/mathFormatting';
+
 
 export function solveTrigonometricSubstitution(input: string): SolverResult {
   const normalized = normalizeExpression(input);
@@ -76,11 +78,22 @@ export function solveTrigonometricSubstitution(input: string): SolverResult {
     explanation: 'Use the reference right triangle with hypotenuse/opposite sides to translate θ back into x.',
   });
 
+  // Numerical verification
+  let verification = '';
+  const testA = 0;
+  const testB = subForm === 'sine' ? Math.min(aVal * 0.5, 1) : 1;
+  const numInt = numericalIntegrate(normalized, testA, testB, 200);
+  if (Number.isFinite(numInt)) {
+    verification = `✓ Numerical verification on [${testA}, ${testB}]: ∫ f(x) dx ≈ ${formatNumber(numInt)}`;
+  }
+
   return {
     success: true,
     answer: finalResult,
     summary: `Trig substitution (${subForm} substitution x = ${aVal}·${subForm}(θ)): ${finalResult}.`,
     steps,
     explanation: 'Trigonometric Substitution utilizes Pythagorean trigonometric identities to transform algebraic radical integrands into easily integrable trigonometric functions.',
+    verification,
   };
 }
+

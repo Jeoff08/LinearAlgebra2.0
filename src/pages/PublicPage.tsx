@@ -941,7 +941,7 @@ export default function PublicPage() {
                 transition={{ duration: 0.4 }}
               >
                 <span className="text-[#C0212B] font-extrabold text-xs sm:text-[13px] tracking-[0.25em] uppercase block mb-2 sm:mb-3">
-                  POWERFUL TOOLS
+                  MATH TOOLS & TOPICS
                 </span>
               </motion.div>
 

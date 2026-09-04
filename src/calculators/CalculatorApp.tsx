@@ -346,7 +346,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
 
             {/* Search Input Box */}
             <div className="relative w-full lg:w-80 shrink-0">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search calculators (e.g., Eigen, Inverse)"

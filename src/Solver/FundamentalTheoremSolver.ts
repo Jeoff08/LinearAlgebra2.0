@@ -1,8 +1,8 @@
-// Solver/FundamentalTheoremSolver.ts — Solves FTC Part 1 (differentiation of integrals) and Part 2 (evaluation of integrals)
+// Solver/FundamentalTheoremSolver.ts — FTC Part 1 (derivative of integrals) and Part 2 (evaluation)
 import { type SolverResult, type SolverStep, errorResult } from '../Calculus_One_Calculator/SolverTypes';
 import { normalizeExpression, extractBounds } from '../Calculus_One_Calculator/Utils/expressionParser';
-import { symbolicDerivative } from '../Calculus_One_Calculator/Utils/calculusUtils';
-import { prettify } from '../Calculus_One_Calculator/Utils/mathFormatting';
+import { symbolicDerivative, symbolicAntiderivative, evaluateAt, numericalIntegrate, generateGraphPoints } from '../Calculus_One_Calculator/Utils/calculusUtils';
+import { prettify, formatNumber } from '../Calculus_One_Calculator/Utils/mathFormatting';
 
 export function solveFundamentalTheorem(input: string): SolverResult {
   const trimmed = input.trim();
@@ -21,12 +21,9 @@ export function solveFundamentalTheorem(input: string): SolverResult {
   const isPart1 = trimmed.toLowerCase().includes('d/dx') || trimmed.toLowerCase().includes('derivative');
 
   if (isPart1) {
-    // Extract upper bound g(x) and integrand f(t)
-    // Format: d/dx int[a to g(x)] f(t) dt
     const upperMatch = trimmed.match(/to\s+([a-zA-Z0-9^()+*-]+)\]/i) || trimmed.match(/_\w+\^([a-zA-Z0-9^()+*-]+)/i);
     const upperLimit = upperMatch ? upperMatch[1] : 'x';
 
-    // Extract integrand
     let integrand = trimmed.replace(/d\/dx/i, '').replace(/∫\s*\[.+?\]/i, '').replace(/dt|dx/gi, '').trim();
     if (!integrand || integrand.length < 2) integrand = 'sin(t^2)';
 
@@ -62,27 +59,78 @@ export function solveFundamentalTheorem(input: string): SolverResult {
     };
   }
 
-  // FTC Part 2 (Evaluation theorem)
-  const { expr, aStr, bStr } = extractBounds(trimmed, 1, 3);
+  // FTC Part 2 (Evaluation theorem) — now with real antiderivative + evaluation
+  const { expr, a, b, aStr, bStr } = extractBounds(trimmed, 1, 3);
   const normalized = normalizeExpression(expr);
 
   steps.push({
     title: '1. FTC Part 2 (The Evaluation Theorem)',
-    expression: `∫[a to b] f(x) dx = F(b) - F(a)`,
-    explanation: 'If f is continuous on [a, b] and F is any antiderivative of f, then the definite integral equals the difference F(b) - F(a).',
+    expression: `∫[a to b] f(x) dx = F(b) − F(a)\nwhere F(x) is any antiderivative of f(x).`,
+    explanation: 'If f is continuous on [a, b] and F is any antiderivative of f, then the definite integral equals the difference F(b) − F(a).',
   });
 
   steps.push({
     title: '2. State Integrand and Bounds',
     expression: `f(x) = ${prettify(normalized)}\na = ${aStr}, b = ${bStr}`,
-    explanation: 'Integrate the function and evaluate at the limits of integration.',
+    explanation: 'Identify the function to integrate and the limits of integration.',
+  });
+
+  // Find antiderivative
+  const antideriv = symbolicAntiderivative(normalized);
+
+  if (antideriv) {
+    steps.push({
+      title: '3. Find Antiderivative F(x)',
+      expression: `F(x) = ∫ (${prettify(normalized)}) dx = ${prettify(antideriv)}`,
+      explanation: 'Compute the antiderivative using integration rules.',
+    });
+
+    const Fb = evaluateAt(antideriv, b);
+    const Fa = evaluateAt(antideriv, a);
+    const result = Fb - Fa;
+
+    steps.push({
+      title: '4. Evaluate F(b) − F(a)',
+      expression: `F(${bStr}) = ${prettify(antideriv)}|_{x=${bStr}} = ${formatNumber(Fb)}\nF(${aStr}) = ${prettify(antideriv)}|_{x=${aStr}} = ${formatNumber(Fa)}\n\n∫[${aStr} to ${bStr}] (${prettify(normalized)}) dx = ${formatNumber(Fb)} − ${formatNumber(Fa)} = ${formatNumber(result)}`,
+      explanation: 'Substitute the upper and lower bounds into the antiderivative and compute the difference.',
+    });
+
+    // Numerical verification
+    const numResult = numericalIntegrate(normalized, a, b, 200);
+    const verified = Math.abs(result - numResult) < 0.01 * (Math.abs(result) + 1);
+
+    const points = generateGraphPoints(normalized, a - 1, b + 1, 100);
+
+    return {
+      success: true,
+      answer: `∫[${aStr} to ${bStr}] (${prettify(normalized)}) dx = ${formatNumber(result)}`,
+      summary: `FTC Part 2: ∫[${aStr} to ${bStr}] (${prettify(normalized)}) dx = ${formatNumber(result)}.`,
+      steps,
+      explanation: 'FTC Part 2 connects definite integrals (areas) directly with antiderivatives.',
+      verification: `✓ Numerical cross-check (Simpson's rule): ${formatNumber(numResult)} ${verified ? '✓' : '⚠'}`,
+      graph: {
+        points,
+        equation: `f(x) = ${prettify(normalized)}`,
+        xMin: a - 1,
+        xMax: b + 1,
+        shadedRegion: { from: a, to: b, label: `Area = ${formatNumber(result)}` },
+      },
+    };
+  }
+
+  // Numerical fallback
+  const numResult = numericalIntegrate(normalized, a, b, 200);
+  steps.push({
+    title: '3. Numerical Evaluation (Composite Simpson\'s Rule)',
+    expression: `∫[${aStr} to ${bStr}] (${prettify(normalized)}) dx ≈ ${formatNumber(numResult)}`,
+    explanation: 'No closed-form antiderivative found. Using numerical integration.',
   });
 
   return {
     success: true,
-    answer: `∫[${aStr} to ${bStr}] (${prettify(normalized)}) dx = F(${bStr}) - F(${aStr})`,
-    summary: `FTC Part 2 evaluation theorem applied to ${prettify(normalized)} on [${aStr}, ${bStr}].`,
+    answer: `∫[${aStr} to ${bStr}] (${prettify(normalized)}) dx ≈ ${formatNumber(numResult)}`,
+    summary: `FTC Part 2 evaluation: ≈ ${formatNumber(numResult)}.`,
     steps,
-    explanation: 'FTC Part 2 connects definite integrals (areas) directly with indefinite integrals (antiderivatives).',
+    explanation: 'FTC Part 2 connects definite integrals (areas) directly with antiderivatives.',
   };
 }

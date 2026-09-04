@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import gsap from "gsap";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,6 +21,7 @@ import {
   Plus,
   GraduationCap,
   LogOut,
+  Bell,
   Menu,
   ArrowLeft,
   ArrowRight,
@@ -28,15 +30,41 @@ import {
   TrendingUp,
   Sparkles,
   BookMarked,
+  Check,
   CheckCircle2,
+  Copy,
+  Play,
   HelpCircle,
   FileText,
   Lightbulb,
   Trash2,
   Loader2,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Clock,
+  User,
+  CheckSquare,
+  Square,
+  Wand2,
+  FileQuestion,
+  ListOrdered,
+  SlidersHorizontal,
+  AlertCircle,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import adminLogo from "../assets/Admin logo.png";
+import quizLoaderLogo from "../assets/Logo(2).png";
+import {
+  generateQuizQuestions,
+  regenerateSingleQuestion,
+  type QuizQuestionType,
+  type GeneratedQuestion,
+  type TopicInput,
+} from "../utils/quizGenerator";
 
 // Linear Algebra Real Interactive Calculators (All 23 Solvers)
 import SystemOfEquations from "../calculators/SystemOfEquations";
@@ -67,6 +95,7 @@ import QuadraticForm from "../calculators/QuadraticForm";
 import CalculusCalculator from "../Calculus_One_Calculator/Calculator";
 import {
   CALCULATOR_DEFINITIONS,
+  getCalculusDefinitionForTopic,
   type CalculatorDefinition,
 } from "../Calculus_One_Calculator/CalculatorData";
 
@@ -74,18 +103,23 @@ import {
 import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
 import { ALL_CALCULUS_TOPICS } from "../data/calculus-topics";
 import { ALL_CALCULUS_2_TOPICS } from "../data/calculus-2-topics";
+import studentLogoSigma from "../assets/Logo Student.png";
 
-interface QuizQuestionDraft {
+export interface QuizQuestionDraft {
   id: string;
   prompt: string;
+  questionType?: QuizQuestionType;
   optionA: string;
   optionB: string;
   optionC: string;
   optionD: string;
   correct: "A" | "B" | "C" | "D";
+  correctAnswerText?: string;
+  explanation?: string;
+  topicTitle?: string;
 }
 
-interface QuizItem {
+export interface QuizItem {
   id: string;
   title: string;
   topic: string;
@@ -94,17 +128,25 @@ interface QuizItem {
   attempts: number;
   averageScore: number;
   createdAt: string;
+  questionType?: QuizQuestionType;
+  pointsPerItem: number;
 }
 
-function createEmptyQuestions(count: number): QuizQuestionDraft[] {
+function createEmptyQuestions(
+  count: number,
+  type: QuizQuestionType = "multiple_choice"
+): QuizQuestionDraft[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
     prompt: "",
+    questionType: type,
     optionA: "",
     optionB: "",
-    optionC: "",
+    optionC: type,
     optionD: "",
     correct: "A",
+    correctAnswerText: "",
+    explanation: "",
   }));
 }
 
@@ -125,6 +167,24 @@ interface ActivityItem {
   score: number;
   totalQuestions: number;
   submittedAt: string;
+  rawDate?: string;
+}
+
+export interface StudentSubmissionItem {
+  id: string;
+  userId: string;
+  studentName: string;
+  studentEmail: string;
+  quizId: string;
+  quizTitle: string;
+  topic: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  passed: boolean;
+  timeSpentSeconds: number;
+  submittedAt: string;
+  answers: any[];
 }
 
 interface CalculatorCardMeta {
@@ -456,6 +516,21 @@ export default function AdminDashboardPage() {
   >("This Month");
   const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("admin_read_notifications") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [deletedNotificationIds, setDeletedNotificationIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("admin_deleted_notifications") || "[]");
+    } catch {
+      return [];
+    }
+  });
 
   // New Quiz Form State
   const [newQuizTitle, setNewQuizTitle] = useState("");
@@ -467,10 +542,208 @@ export default function AdminDashboardPage() {
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
   const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
 
+  // Smart Quiz Generator States
+  const [generatorCategory, setGeneratorCategory] = useState<
+    "linear-algebra" | "calculus-1" | "calculus-2"
+  >("linear-algebra");
+  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [generatorQuestionType, setGeneratorQuestionType] =
+    useState<QuizQuestionType>("multiple_choice");
+  const [generatorItemCount, setGeneratorItemCount] = useState<number | "">(5);
+  const [generatorPointsPerItem, setGeneratorPointsPerItem] = useState<number | "">(1);
+  const [generatorTopicSearch, setGeneratorTopicSearch] = useState("");
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [isShowingGenerateLoader, setIsShowingGenerateLoader] = useState(false);
+  const [showPublishedSuccess, setShowPublishedSuccess] = useState(false);
+  const publishedGSAPRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (showPublishedSuccess && publishedGSAPRef.current) {
+      const ctx = gsap.context(() => {
+        gsap.fromTo(
+          ".gsap-publish-circle",
+          { scale: 0, rotation: -45, opacity: 0 },
+          { scale: 1, rotation: 0, opacity: 1, duration: 0.6, ease: "back.out(2)" }
+        );
+        gsap.fromTo(
+          ".gsap-publish-check",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.4, delay: 0.25, ease: "elastic.out(1.2, 0.4)" }
+        );
+        gsap.fromTo(
+          ".gsap-publish-text",
+          { y: 20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.4, delay: 0.35, stagger: 0.1, ease: "power2.out" }
+        );
+      }, publishedGSAPRef);
+
+      return () => ctx.revert();
+    }
+  }, [showPublishedSuccess]);
+  const [showAdminAnswers, setShowAdminAnswers] = useState(true);
+  const [generatorStep, setGeneratorStep] = useState<1 | 2>(1);
+  const [adminReviewQuizModal, setAdminReviewQuizModal] = useState<QuizItem | null>(null);
+  const [isPublishedQuizzesDrawerOpen, setIsPublishedQuizzesDrawerOpen] = useState(false);
+
   // Sample or Supabase live data
   const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [studentSubmissions, setStudentSubmissions] = useState<
+    StudentSubmissionItem[]
+  >([]);
+  const [onlineStudentKeys, setOnlineStudentKeys] = useState<Set<string>>(new Set());
+
+  // Track online students via Supabase Realtime Presence
+  useEffect(() => {
+    if (!supabase) return;
+
+    const channel = supabase.channel("online-students");
+
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        const keys = new Set<string>();
+        Object.values(state).forEach((presences: any) => {
+          if (Array.isArray(presences)) {
+            presences.forEach((p: any) => {
+              if (p.userId) keys.add(p.userId.toLowerCase());
+              if (p.email) keys.add(p.email.toLowerCase());
+            });
+          }
+        });
+        setOnlineStudentKeys(keys);
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, []);
+  const [recentSubmissionToast, setRecentSubmissionToast] = useState<{
+    id: string;
+    studentName: string;
+    quizTitle: string;
+    score: number;
+    totalQuestions: number;
+  } | null>(null);
+
+  // Realtime Quiz Submission Listener
+  useEffect(() => {
+    if (!supabase) return;
+
+    // 1. Broadcast channel for instant notification
+    const broadcastChannel = supabase.channel("quiz-submissions");
+
+    broadcastChannel
+      .on("broadcast", { event: "new-quiz-submission" }, (event) => {
+        const payload = event.payload;
+        if (!payload) return;
+
+        const newAct: ActivityItem = {
+          id: payload.id || Date.now().toString(),
+          studentName: payload.studentName || "Student",
+          quizTitle: payload.quizTitle || "Quiz",
+          score: payload.score ?? 0,
+          totalQuestions: payload.totalQuestions ?? 1,
+          submittedAt: "Just now",
+          rawDate: new Date().toISOString(),
+        };
+
+        // Add to activities feed
+        setActivities((prev) => [newAct, ...prev]);
+
+        // Trigger visible floating toast notification
+        setRecentSubmissionToast(newAct);
+
+        // Re-fetch database to sync quizzes & student performance
+        fetchQuizzesAndStats();
+      })
+      .subscribe();
+
+    // 2. Postgres changes fallback on quiz_attempts table
+    const tableSub = supabase
+      .channel("table-quiz-attempts")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "quiz_attempts" },
+        () => {
+          fetchQuizzesAndStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      broadcastChannel.unsubscribe();
+      tableSub.unsubscribe();
+    };
+  }, []);
+
+  // Auto-dismiss floating toast after 5s
+  useEffect(() => {
+    if (!recentSubmissionToast) return;
+    const timer = setTimeout(() => {
+      setRecentSubmissionToast(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [recentSubmissionToast]);
+  const activeAdminNotifications = useMemo(() => {
+    return activities.filter((a) => !deletedNotificationIds.includes(a.id));
+  }, [activities, deletedNotificationIds]);
+
+  const unreadActivities = useMemo(() => {
+    return activeAdminNotifications.filter((a) => !readNotificationIds.includes(a.id));
+  }, [activeAdminNotifications, readNotificationIds]);
+
+  const markAllAdminNotificationsAsRead = () => {
+    const allIds = activeAdminNotifications.map((a) => a.id);
+    setReadNotificationIds(allIds);
+    try {
+      localStorage.setItem("admin_read_notifications", JSON.stringify(allIds));
+    } catch {}
+  };
+
+  const handleDeleteAdminNotification = (actId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = [...deletedNotificationIds, actId];
+    setDeletedNotificationIds(updated);
+    try {
+      localStorage.setItem("admin_deleted_notifications", JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleDeleteAllAdminNotifications = () => {
+    const allIds = activities.map((a) => a.id);
+    setDeletedNotificationIds(allIds);
+    try {
+      localStorage.setItem("admin_deleted_notifications", JSON.stringify(allIds));
+    } catch {}
+  };
+
+  const handleAdminNotificationClick = (actId: string) => {
+    if (!readNotificationIds.includes(actId)) {
+      const updated = [...readNotificationIds, actId];
+      setReadNotificationIds(updated);
+      try {
+        localStorage.setItem("admin_read_notifications", JSON.stringify(updated));
+      } catch {}
+    }
+    setIsNotificationsOpen(false);
+    handleNavClick("history-quizzes");
+  };
+  const [selectedSubmissionForReview, setSelectedSubmissionForReview] =
+    useState<StudentSubmissionItem | null>(null);
+  const [resultsViewMode, setResultsViewMode] = useState<
+    "students" | "quizzes"
+  >("students");
+  const [resultsSearchQuery, setResultsSearchQuery] = useState("");
+  const [resultsTopicFilter, setResultsTopicFilter] = useState("all");
+
+  // Topic Interactive Practice Calculator state
+  const [isTopicCalculatorOpen, setIsTopicCalculatorOpen] = useState(false);
+  const [loadedTopicExample, setLoadedTopicExample] = useState<{ text: string; index: number } | null>(null);
+  const [topicCalcKey, setTopicCalcKey] = useState<number>(0);
+  const [topicCopiedIdx, setTopicCopiedIdx] = useState<number | null>(null);
 
   // Build the complete combined list of all 52+ calculators from across the codebase
   const allCombinedCalculators = useMemo<CalculatorCardMeta[]>(() => {
@@ -617,6 +890,46 @@ export default function AdminDashboardPage() {
     );
   }, [students, studentSearchQuery, searchQuery]);
 
+  // Filtered student quiz submissions
+  const filteredSubmissions = useMemo(() => {
+    const q = resultsSearchQuery.toLowerCase().trim();
+    return studentSubmissions.filter((sub) => {
+      const matchesTopic =
+        resultsTopicFilter === "all" || sub.topic === resultsTopicFilter;
+      if (!matchesTopic) return false;
+      if (!q) return true;
+      return (
+        sub.studentName.toLowerCase().includes(q) ||
+        sub.studentEmail.toLowerCase().includes(q) ||
+        sub.quizTitle.toLowerCase().includes(q) ||
+        sub.topic.toLowerCase().includes(q)
+      );
+    });
+  }, [studentSubmissions, resultsSearchQuery, resultsTopicFilter]);
+
+  // Summary statistics for quiz results view
+  const resultsStats = useMemo(() => {
+    const totalSubmissions = studentSubmissions.length;
+    const avgScore =
+      totalSubmissions > 0
+        ? Math.round(
+            studentSubmissions.reduce((a, s) => a + s.percentage, 0) /
+              totalSubmissions,
+          )
+        : 0;
+    const passedCount = studentSubmissions.filter((s) => s.passed).length;
+    const passRate =
+      totalSubmissions > 0
+        ? Math.round((passedCount / totalSubmissions) * 100)
+        : 0;
+    return {
+      totalSubmissions,
+      avgScore,
+      passedCount,
+      passRate,
+    };
+  }, [studentSubmissions]);
+
   // Enforce admin-only access
   useEffect(() => {
     if (user) {
@@ -655,6 +968,7 @@ export default function AdminDashboardPage() {
           title,
           topic,
           created_at,
+          points_per_item,
           quiz_questions (
             id,
             question_index,
@@ -672,7 +986,7 @@ export default function AdminDashboardPage() {
         console.error("Error fetching quizzes:", qError);
       }
 
-      // 2. Fetch attempts
+      // 2. Fetch attempts with answers_json
       const { data: attemptsData, error: aError } = await supabase
         .from("quiz_attempts")
         .select(`
@@ -682,7 +996,8 @@ export default function AdminDashboardPage() {
           score,
           total_questions,
           submitted_at,
-          time_spent_seconds
+          time_spent_seconds,
+          answers_json
         `)
         .order("submitted_at", { ascending: false });
 
@@ -698,18 +1013,14 @@ export default function AdminDashboardPage() {
 
       const attemptsByQuiz: Record<
         string,
-        { count: number; totalScorePercent: number }
+        { count: number; totalScorePoints: number }
       > = {};
       (attemptsData || []).forEach((att: any) => {
         if (!attemptsByQuiz[att.quiz_id]) {
-          attemptsByQuiz[att.quiz_id] = { count: 0, totalScorePercent: 0 };
+          attemptsByQuiz[att.quiz_id] = { count: 0, totalScorePoints: 0 };
         }
         attemptsByQuiz[att.quiz_id].count += 1;
-        const pct =
-          att.total_questions > 0
-            ? (att.score / att.total_questions) * 100
-            : 0;
-        attemptsByQuiz[att.quiz_id].totalScorePercent += pct;
+        attemptsByQuiz[att.quiz_id].totalScorePoints += (att.score || 0);
       });
 
       if (quizzesData) {
@@ -720,22 +1031,47 @@ export default function AdminDashboardPage() {
           const sortedQuestions = [...rawQuestions].sort(
             (a: any, b: any) => (a.question_index ?? 0) - (b.question_index ?? 0),
           );
-          const qDrafts: QuizQuestionDraft[] = sortedQuestions.map((sq: any) => ({
-            id: sq.id,
-            prompt: sq.prompt,
-            optionA: sq.option_a,
-            optionB: sq.option_b,
-            optionC: sq.option_c,
-            optionD: sq.option_d,
-            correct: (sq.correct_answer || "A") as "A" | "B" | "C" | "D",
-          }));
+          const qDrafts: QuizQuestionDraft[] = sortedQuestions.map((sq: any) => {
+            const isNonMC =
+              sq.option_c === "identification" ||
+              sq.option_c === "enumeration" ||
+              sq.option_c === "problem_solving";
+            const qType: QuizQuestionType = isNonMC
+              ? (sq.option_c as QuizQuestionType)
+              : ((sq.question_type as QuizQuestionType) || "multiple_choice");
+            const answerText = isNonMC
+              ? (sq.correct_answer_text || sq.option_a)
+              : sq.correct_answer === "A"
+              ? sq.option_a
+              : sq.correct_answer === "B"
+              ? sq.option_b
+              : sq.correct_answer === "C"
+              ? sq.option_c
+              : sq.option_d;
+
+            return {
+              id: sq.id,
+              prompt: sq.prompt,
+              questionType: qType,
+              optionA: sq.option_a,
+              optionB: sq.option_b,
+              optionC: sq.option_c,
+              optionD: sq.option_d,
+              correct: (sq.correct_answer || "A") as "A" | "B" | "C" | "D",
+              correctAnswerText: answerText,
+              explanation: isNonMC ? sq.option_b : "",
+            };
+          });
 
           const stat = attemptsByQuiz[q.id];
           const attemptsCount = stat ? stat.count : 0;
+          const ppi = q.points_per_item || 1;
           const avgScore =
             attemptsCount > 0
-              ? Math.round(stat.totalScorePercent / attemptsCount)
+              ? Math.round((stat.totalScorePoints / attemptsCount) * ppi)
               : 0;
+
+          const primaryType = qDrafts[0]?.questionType || "multiple_choice";
 
           return {
             id: q.id,
@@ -750,6 +1086,8 @@ export default function AdminDashboardPage() {
               day: "numeric",
               year: "numeric",
             }),
+            questionType: primaryType,
+            pointsPerItem: ppi,
           };
         });
         setQuizzes(formatted);
@@ -771,11 +1109,11 @@ export default function AdminDashboardPage() {
             userAttempts.length > 0
               ? Math.round(
                   userAttempts.reduce(
-                    (acc: number, a: any) =>
-                      acc +
-                      (a.total_questions > 0
-                        ? (a.score / a.total_questions) * 100
-                        : 0),
+                    (acc: number, a: any) => {
+                      const quiz = quizzesData?.find((qq: any) => qq.id === a.quiz_id);
+                      const ppi = quiz?.points_per_item || 1;
+                      return acc + (a.score || 0) * ppi;
+                    },
                     0,
                   ) / userAttempts.length,
                 )
@@ -805,27 +1143,89 @@ export default function AdminDashboardPage() {
         setStudents(studentList);
       }
 
-      // Format activity items
+      // Format complete student submissions & activity items
       if (attemptsData && quizzesData) {
-        const quizMap = new Map(quizzesData.map((q: any) => [q.id, q.title]));
+        const quizMap = new Map(quizzesData.map((q: any) => [q.id, q]));
         const profileMap = new Map(
-          (profilesData || []).map((p: any) => [
-            p.id,
-            p.name || p.email?.split("@")[0] || "Student",
-          ]),
+          (profilesData || []).map((p: any) => [p.id, p]),
         );
-        const actList: ActivityItem[] = attemptsData.slice(0, 15).map((a: any) => ({
-          id: a.id,
-          studentName: profileMap.get(a.user_id) || "Student",
-          quizTitle: quizMap.get(a.quiz_id) || "Practice Quiz",
-          score: a.score,
-          totalQuestions: a.total_questions,
-          submittedAt: new Date(a.submitted_at).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+
+        const allSubmissions: StudentSubmissionItem[] = attemptsData.map(
+          (a: any) => {
+            const quiz = quizMap.get(a.quiz_id);
+            const prof = profileMap.get(a.user_id);
+
+            let parsedAnswers: any[] = [];
+            let payloadStudentName = "";
+            let payloadStudentEmail = "";
+
+            try {
+              if (a.answers_json) {
+                const raw =
+                  typeof a.answers_json === "string"
+                    ? JSON.parse(a.answers_json)
+                    : a.answers_json;
+                if (Array.isArray(raw)) {
+                  parsedAnswers = raw;
+                } else if (raw && typeof raw === "object") {
+                  payloadStudentName = raw.student_name || "";
+                  payloadStudentEmail = raw.student_email || "";
+                  parsedAnswers = Array.isArray(raw.answers) ? raw.answers : [];
+                }
+              }
+            } catch {
+              parsedAnswers = [];
+            }
+
+            const sName =
+              payloadStudentName?.trim() ||
+              prof?.name?.trim() ||
+              prof?.email?.split("@")[0] ||
+              (a.user_id ? `Student (${a.user_id.slice(0, 6)})` : "Student");
+            const sEmail = payloadStudentEmail?.trim() || prof?.email || "";
+            const qTitle = quiz?.title || "Practice Quiz";
+            const qTopic = quiz?.topic || "Linear Algebra";
+            const totalQ = a.total_questions || 1;
+            const pct = Math.round((a.score / totalQ) * 100);
+
+            return {
+              id: a.id,
+              userId: a.user_id,
+              studentName: sName,
+              studentEmail: sEmail,
+              quizId: a.quiz_id,
+              quizTitle: qTitle,
+              topic: qTopic,
+              score: a.score,
+              totalQuestions: totalQ,
+              percentage: pct,
+              passed: pct >= 60,
+              timeSpentSeconds: a.time_spent_seconds || 0,
+              submittedAt: new Date(a.submitted_at).toLocaleDateString(
+                "en-US",
+                {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              ),
+              answers: parsedAnswers,
+            };
+          },
+        );
+
+        setStudentSubmissions(allSubmissions);
+
+        const actList: ActivityItem[] = allSubmissions.map((s) => ({
+          id: s.id,
+          studentName: s.studentName,
+          quizTitle: s.quizTitle,
+          score: s.score,
+          totalQuestions: s.totalQuestions,
+          submittedAt: s.submittedAt,
+          rawDate: s.submittedAt,
         }));
         setActivities(actList);
       }
@@ -847,14 +1247,189 @@ export default function AdminDashboardPage() {
     setMobileSidebarOpen(false);
   };
 
+  // Filtered topics for the Quiz Generator
+  const availableGeneratorTopics = useMemo(() => {
+    return allCombinedTopics.filter((t) => {
+      const matchCat = t.category === generatorCategory;
+      if (!matchCat) return false;
+      if (!generatorTopicSearch.trim()) return true;
+      const q = generatorTopicSearch.toLowerCase().trim();
+      return (
+        t.title.toLowerCase().includes(q) ||
+        t.chapter.toLowerCase().includes(q) ||
+        t.summary.toLowerCase().includes(q)
+      );
+    });
+  }, [allCombinedTopics, generatorCategory, generatorTopicSearch]);
+
+  const handleToggleTopic = (topicId: string) => {
+    setSelectedTopicIds((prev) =>
+      prev.includes(topicId)
+        ? prev.filter((id) => id !== topicId)
+        : [...prev, topicId]
+    );
+  };
+
+  const handleSelectAllTopics = () => {
+    const currentCatTopics = allCombinedTopics
+      .filter((t) => t.category === generatorCategory)
+      .map((t) => t.id);
+    setSelectedTopicIds(currentCatTopics);
+  };
+
+  const handleDeselectAllTopics = () => {
+    setSelectedTopicIds([]);
+  };
+
+  // Run the smart quiz generator
+  const handleGenerateQuiz = () => {
+    setIsShowingGenerateLoader(true);
+    setIsGeneratingQuiz(true);
+    setTimeout(() => {
+      try {
+        // Get chosen topic objects (or all topics in category if none explicitly checked)
+        const topicsInCat = allCombinedTopics.filter(
+          (t) => t.category === generatorCategory
+        );
+        const chosenTopics =
+          selectedTopicIds.length > 0
+            ? topicsInCat.filter((t) => selectedTopicIds.includes(t.id))
+            : topicsInCat;
+
+        const effectiveItemCount = typeof generatorItemCount === "number" && generatorItemCount > 0 ? generatorItemCount : 5;
+        const generated = generateQuizQuestions(
+          chosenTopics,
+          generatorCategory,
+          effectiveItemCount,
+          generatorQuestionType
+        );
+
+        const drafts: QuizQuestionDraft[] = generated.map((g) => ({
+          id: g.id,
+          prompt: g.prompt,
+          questionType: g.questionType,
+          optionA: g.optionA,
+          optionB: g.optionB,
+          optionC: g.optionC,
+          optionD: g.optionD,
+          correct: g.correct,
+          correctAnswerText: g.correctAnswerText,
+          explanation: g.explanation,
+          topicTitle: g.topicTitle,
+        }));
+
+        setNewQuizQuestionDrafts(drafts);
+        setNewQuizQuestions(String(drafts.length));
+
+        // Category label for quiz
+        const catLabel =
+          generatorCategory === "linear-algebra"
+            ? "Linear Algebra"
+            : generatorCategory === "calculus-1"
+            ? "Calculus 1"
+            : "Calculus 2";
+        setNewQuizTopic(catLabel);
+
+        // Auto-suggest title if not manually set
+        const typeLabel =
+          generatorQuestionType === "multiple_choice"
+            ? "Multiple Choice"
+            : generatorQuestionType === "identification"
+            ? "Identification"
+            : generatorQuestionType === "enumeration"
+            ? "Enumeration"
+            : "Problem Solving";
+
+        const topicFocus =
+          chosenTopics.length === 1
+            ? chosenTopics[0].title
+            : chosenTopics.length <= 3
+            ? chosenTopics.map((t) => t.title).join(" & ")
+            : `${catLabel} Comprehensive`;
+
+        setNewQuizTitle(`${topicFocus} - ${typeLabel} Quiz`);
+        setGeneratorStep(2); // Advance to Review & Publish step
+      } catch (err) {
+        console.error("Failed to generate quiz:", err);
+        alert("Error generating quiz questions. Please try again.");
+      } finally {
+        setIsGeneratingQuiz(false);
+        setIsShowingGenerateLoader(false);
+      }
+    }, 2000);
+  };
+
+  // Regenerate a single question draft
+  const handleRegenerateQuestion = (index: number) => {
+    const currentQ = newQuizQuestionDrafts[index];
+    if (!currentQ) return;
+
+    const topicsInCat = allCombinedTopics.filter(
+      (t) => t.category === generatorCategory
+    );
+    const chosenTopics =
+      selectedTopicIds.length > 0
+        ? topicsInCat.filter((t) => selectedTopicIds.includes(t.id))
+        : topicsInCat;
+
+    const qInput: GeneratedQuestion = {
+      id: currentQ.id,
+      prompt: currentQ.prompt,
+      questionType: currentQ.questionType || generatorQuestionType,
+      optionA: currentQ.optionA,
+      optionB: currentQ.optionB,
+      optionC: currentQ.optionC,
+      optionD: currentQ.optionD,
+      correct: currentQ.correct,
+      correctAnswerText: currentQ.correctAnswerText || currentQ.optionA,
+      explanation: currentQ.explanation || "",
+      topicTitle: currentQ.topicTitle || "",
+    };
+
+    const newQ = regenerateSingleQuestion(
+      qInput,
+      chosenTopics,
+      generatorCategory,
+      currentQ.questionType || generatorQuestionType
+    );
+
+    setNewQuizQuestionDrafts((prev) =>
+      prev.map((item, idx) =>
+        idx === index
+          ? {
+              id: `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+              prompt: newQ.prompt,
+              questionType: newQ.questionType,
+              optionA: newQ.optionA,
+              optionB: newQ.optionB,
+              optionC: newQ.optionC,
+              optionD: newQ.optionD,
+              correct: newQ.correct,
+              correctAnswerText: newQ.correctAnswerText,
+              explanation: newQ.explanation,
+              topicTitle: newQ.topicTitle,
+            }
+          : item
+      )
+    );
+  };
+
+  const handleRegenerateAllQuestions = () => {
+    handleGenerateQuiz();
+  };
+
   const handleQuestionCountChange = (raw: string) => {
     const parsed = parseInt(raw, 10);
     const count = Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
     setNewQuizQuestions(String(count));
+    setGeneratorItemCount(count);
     setNewQuizQuestionDrafts((prev) => {
       if (count === prev.length) return prev;
       if (count > prev.length) {
-        return [...prev, ...createEmptyQuestions(count - prev.length)];
+        return [
+          ...prev,
+          ...createEmptyQuestions(count - prev.length, generatorQuestionType),
+        ];
       }
       return prev.slice(0, count);
     });
@@ -863,10 +1438,10 @@ export default function AdminDashboardPage() {
   const updateQuestionDraft = (
     id: string,
     field: keyof Omit<QuizQuestionDraft, "id">,
-    value: string,
+    value: string
   ) => {
     setNewQuizQuestionDrafts((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, [field]: value } : q)),
+      prev.map((q) => (q.id === id ? { ...q, [field]: value } : q))
     );
   };
 
@@ -878,7 +1453,7 @@ export default function AdminDashboardPage() {
     }
 
     const validDrafts = newQuizQuestionDrafts.filter(
-      (q) => q.prompt.trim() !== "",
+      (q) => q.prompt.trim() !== ""
     );
     if (validDrafts.length === 0) {
       alert("Please fill in at least one question prompt.");
@@ -896,6 +1471,7 @@ export default function AdminDashboardPage() {
               title: newQuizTitle.trim(),
               topic: newQuizTopic,
               created_by: user?.id || null,
+              points_per_item: typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1,
             },
           ])
           .select("id")
@@ -905,17 +1481,27 @@ export default function AdminDashboardPage() {
           throw quizError || new Error("Failed to insert quiz into database");
         }
 
-        // 2. Insert Questions
-        const questionsToInsert = validDrafts.map((q, index) => ({
-          quiz_id: quizData.id,
-          question_index: index + 1,
-          prompt: q.prompt.trim(),
-          option_a: q.optionA.trim() || "Choice A",
-          option_b: q.optionB.trim() || "Choice B",
-          option_c: q.optionC.trim() || "Choice C",
-          option_d: q.optionD.trim() || "Choice D",
-          correct_answer: q.correct,
-        }));
+        // 2. Insert Questions with multi-type support
+        const questionsToInsert = validDrafts.map((q, index) => {
+          const isMC =
+            (q.questionType || "multiple_choice") === "multiple_choice";
+          const ansText =
+            q.correctAnswerText?.trim() || q.optionA.trim() || "Answer";
+          return {
+            quiz_id: quizData.id,
+            question_index: index + 1,
+            prompt: q.prompt.trim(),
+            option_a: isMC ? q.optionA.trim() || "Choice A" : ansText,
+            option_b: isMC
+              ? q.optionB.trim() || "Choice B"
+              : q.explanation?.trim() || q.optionB.trim() || "",
+            option_c: isMC
+              ? q.optionC.trim() || "Choice C"
+              : q.questionType || "multiple_choice",
+            option_d: isMC ? q.optionD.trim() || "Choice D" : q.optionD || "",
+            correct_answer: q.correct || "A",
+          };
+        });
 
         const { error: questionsError } = await supabase
           .from("quiz_questions")
@@ -934,20 +1520,23 @@ export default function AdminDashboardPage() {
           title: newQuizTitle.trim(),
           topic: newQuizTopic,
           questionsCount: count,
+          pointsPerItem: typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1,
           questions: validDrafts,
           attempts: 0,
           averageScore: 0,
           createdAt: "Just now",
+          questionType: generatorQuestionType,
         };
         setQuizzes((prev) => [newQuiz, ...prev]);
       }
 
-      // Reset form
+      // Reset form & state
       setNewQuizTitle("");
-      setNewQuizTopic("Linear Algebra");
+      setGeneratorStep(1);
       setNewQuizQuestions("5");
       setNewQuizQuestionDrafts(createEmptyQuestions(5));
-      alert("Quiz published successfully! It is now visible to all students.");
+      setShowPublishedSuccess(true);
+      setTimeout(() => setShowPublishedSuccess(false), 2500);
     } catch (err: any) {
       console.error("Error creating quiz:", err);
       alert("Error publishing quiz: " + (err.message || "Unknown error"));
@@ -979,6 +1568,103 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // History Archiving & Deletion State & Handlers
+  const [historyTab, setHistoryTab] = useState<"active" | "archived">("active");
+  const [archivedSearchQuery, setArchivedSearchQuery] = useState("");
+  const [archivedActivityIds, setArchivedActivityIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("admin_archived_history_ids");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleArchiveActivity = (id: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to archive this submission? It will be moved from Active History and organized under Archived by Month & Year."
+      )
+    ) {
+      return;
+    }
+    setArchivedActivityIds((prev) => {
+      const updated = prev.includes(id) ? prev : [...prev, id];
+      try {
+        localStorage.setItem("admin_archived_history_ids", JSON.stringify(updated));
+      } catch (err) {
+        console.error("LocalStorage save error:", err);
+      }
+      return updated;
+    });
+  };
+
+  const handleRestoreActivity = (id: string) => {
+    if (
+      !window.confirm(
+        "Restore this submission back to the Active History list?"
+      )
+    ) {
+      return;
+    }
+    setArchivedActivityIds((prev) => {
+      const updated = prev.filter((item) => item !== id);
+      try {
+        localStorage.setItem("admin_archived_history_ids", JSON.stringify(updated));
+      } catch (err) {
+        console.error("LocalStorage save error:", err);
+      }
+      return updated;
+    });
+  };
+
+  const handleDeleteActivity = async (id: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to permanently delete this submission record? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      if (supabase) {
+        const { error } = await supabase.from("quiz_attempts").delete().eq("id", id);
+        if (error) console.warn("Supabase attempt delete note:", error.message);
+      }
+    } catch (err) {
+      console.error("Error deleting attempt:", err);
+    }
+
+    setActivities((prev) => prev.filter((a) => a.id !== id));
+    setStudentSubmissions((prev) => prev.filter((s) => s.id !== id));
+    setArchivedActivityIds((prev) => {
+      const updated = prev.filter((item) => item !== id);
+      try {
+        localStorage.setItem("admin_archived_history_ids", JSON.stringify(updated));
+      } catch (err) {
+        console.error("LocalStorage save error:", err);
+      }
+      return updated;
+    });
+  };
+
+  const getMonthYearLabel = (rawDateStr?: string, fallbackFormatted?: string) => {
+    if (rawDateStr) {
+      const d = new Date(rawDateStr);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      }
+    }
+    if (fallbackFormatted) {
+      const d = new Date(fallbackFormatted);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      }
+    }
+    return "Earlier Submissions";
+  };
+
   // Metrics calculations
   const totalQuizzes = quizzes.length;
   const totalStudents = students.length;
@@ -990,14 +1676,13 @@ export default function AdminDashboardPage() {
         )
       : 0;
 
-  // Chart data points
+  // Chart data points matching reference image
   const chartLabels = [
-    "May 1",
-    "May 7",
-    "May 14",
-    "May 21",
-    "May 28",
-    "May 31",
+    "Aug 1",
+    "Aug 8",
+    "Aug 15",
+    "Aug 22",
+    "Aug 29",
   ];
 
   // Helper to render the active Linear Algebra Calculator Component
@@ -1069,7 +1754,7 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col gap-6">
           {/* Brand Logo Header */}
           <div className="flex items-center gap-3 px-1 py-1">
-            <div className="w-10 h-10 rounded-xl bg-[#801424] flex items-center justify-center shadow-md shadow-[#801424]/20 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#8B1526] to-[#5A0A15] flex items-center justify-center shadow-md shadow-[#801424]/30 border border-white/20 shrink-0">
               <span className="font-serif text-2xl font-bold text-white leading-none select-none">
                 Σ
               </span>
@@ -1091,7 +1776,7 @@ export default function AdminDashboardPage() {
               onClick={() => handleNavClick("dashboard")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${
                 activeNav === "dashboard"
-                  ? "bg-[#801424] text-white shadow-sm shadow-[#801424]/25"
+                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
             >
@@ -1104,7 +1789,7 @@ export default function AdminDashboardPage() {
               onClick={() => handleNavClick("calculators")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${
                 activeNav === "calculators"
-                  ? "bg-[#801424] text-white shadow-sm shadow-[#801424]/25"
+                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
             >
@@ -1117,7 +1802,7 @@ export default function AdminDashboardPage() {
               onClick={() => handleNavClick("topics")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${
                 activeNav === "topics"
-                  ? "bg-[#801424] text-white shadow-sm shadow-[#801424]/25"
+                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
             >
@@ -1137,7 +1822,7 @@ export default function AdminDashboardPage() {
               onClick={() => handleNavClick("add-quiz")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
                 activeNav === "add-quiz"
-                  ? "bg-[#801424] text-white"
+                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
             >
@@ -1150,7 +1835,7 @@ export default function AdminDashboardPage() {
               onClick={() => handleNavClick("quiz-results")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
                 activeNav === "quiz-results"
-                  ? "bg-[#801424] text-white"
+                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
             >
@@ -1163,7 +1848,7 @@ export default function AdminDashboardPage() {
               onClick={() => handleNavClick("history-quizzes")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
                 activeNav === "history-quizzes"
-                  ? "bg-[#801424] text-white"
+                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
             >
@@ -1183,7 +1868,7 @@ export default function AdminDashboardPage() {
               onClick={() => handleNavClick("view-students")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
                 activeNav === "view-students"
-                  ? "bg-[#801424] text-white"
+                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
             >
@@ -1193,20 +1878,14 @@ export default function AdminDashboardPage() {
           </nav>
         </div>
 
-        {/* Bottom Sidebar Card: Admin Panel */}
-        <div className="mt-8 pt-4">
-          <div className="w-full bg-[#FFFFFF] border border-[#EBECEF] rounded-2xl p-4.5 text-center shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex flex-col items-center">
-            <div className="w-9 h-9 rounded-xl bg-[#801424] flex items-center justify-center text-white shadow-sm shadow-[#801424]/30 mb-2.5">
-              <Shield className="w-4 h-4 fill-white/20 stroke-white" />
-            </div>
-            <h4 className="text-[0.88rem] font-bold text-[#1F242D] leading-snug">
-              Admin Panel
-            </h4>
-            <p className="text-[0.73rem] text-[#717A8A] mt-1 leading-relaxed max-w-[190px]">
-              Manage quizzes, curriculum, calculators, and view performance in
-              one place.
-            </p>
-          </div>
+        {/* Bottom Sidebar: Admin Logo */}
+        <div className="mt-4 flex items-center justify-center">
+          <img
+            src={adminLogo}
+            alt="Admin Panel"
+            className="w-full max-w-[220px] object-contain select-none pointer-events-none"
+            draggable={false}
+          />
         </div>
       </aside>
 
@@ -1231,7 +1910,7 @@ export default function AdminDashboardPage() {
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#801424] flex items-center justify-center shadow-md shadow-[#801424]/20 shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#8B1526] to-[#5A0A15] flex items-center justify-center shadow-md shadow-[#801424]/30 border border-white/20 shrink-0">
                       <span className="font-serif text-2xl font-bold text-white leading-none">
                         Σ
                       </span>
@@ -1247,7 +1926,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <button
                     onClick={() => setMobileSidebarOpen(false)}
-                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600"
+                    className="p-1 rounded-lg hover:bg-gray-100 text-gray-500"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -1258,7 +1937,7 @@ export default function AdminDashboardPage() {
                     onClick={() => handleNavClick("dashboard")}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
                       activeNav === "dashboard"
-                        ? "bg-[#801424] text-white"
+                        ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                         : "text-[#4B5565] hover:bg-[#F4F5F7]"
                     }`}
                   >
@@ -1269,7 +1948,7 @@ export default function AdminDashboardPage() {
                     onClick={() => handleNavClick("calculators")}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
                       activeNav === "calculators"
-                        ? "bg-[#801424] text-white"
+                        ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                         : "text-[#4B5565] hover:bg-[#F4F5F7]"
                     }`}
                   >
@@ -1280,7 +1959,7 @@ export default function AdminDashboardPage() {
                     onClick={() => handleNavClick("topics")}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
                       activeNav === "topics"
-                        ? "bg-[#801424] text-white"
+                        ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                         : "text-[#4B5565] hover:bg-[#F4F5F7]"
                     }`}
                   >
@@ -1328,18 +2007,13 @@ export default function AdminDashboardPage() {
                 </nav>
               </div>
 
-              <div className="mt-6">
-                <div className="w-full bg-[#FFFFFF] border border-[#EBECEF] rounded-2xl p-4 text-center">
-                  <div className="w-8 h-8 rounded-xl bg-[#801424] flex items-center justify-center text-white mx-auto mb-2">
-                    <Shield className="w-4 h-4 fill-white/20 stroke-white" />
-                  </div>
-                  <h4 className="text-xs font-bold text-[#1F242D]">
-                    Admin Panel
-                  </h4>
-                  <p className="text-[0.7rem] text-[#717A8A] mt-0.5">
-                    Manage quizzes and performance.
-                  </p>
-                </div>
+              <div className="mt-4 flex items-center justify-center">
+                <img
+                  src={adminLogo}
+                  alt="Admin Panel"
+                  className="w-full max-w-[220px] object-contain select-none pointer-events-none"
+                  draggable={false}
+                />
               </div>
             </motion.aside>
           </div>
@@ -1352,6 +2026,53 @@ export default function AdminDashboardPage() {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto bg-[#F8F9FA]">
         {/* Top Header Bar */}
         <header className="sticky top-0 z-20 bg-[#F8F9FA]/95 backdrop-blur-md px-6 py-4 flex items-center justify-between gap-4 border-b border-[#EAEBED]">
+          {/* Floating Realtime Submission Alert Toast */}
+          <AnimatePresence>
+            {recentSubmissionToast && (
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                onClick={() => {
+                  setRecentSubmissionToast(null);
+                  handleNavClick("history-quizzes");
+                }}
+                className="fixed top-5 right-6 z-[120] bg-white border border-[#801424]/20 rounded-2xl shadow-xl p-4 flex items-center gap-3.5 max-w-sm cursor-pointer hover:shadow-2xl transition"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs animate-bounce">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold text-[#801424] uppercase tracking-wide">
+                      New Quiz Submission!
+                    </span>
+                    <span className="text-[10px] text-gray-400">Just now</span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-900 truncate">
+                    {recentSubmissionToast.studentName}
+                  </p>
+                  <p className="text-[11px] text-gray-500 truncate">
+                    {recentSubmissionToast.quizTitle} • Score:{" "}
+                    <span className="font-bold text-[#801424]">
+                      {recentSubmissionToast.score}/{recentSubmissionToast.totalQuestions}
+                    </span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRecentSubmissionToast(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileSidebarOpen(true)}
@@ -1363,7 +2084,7 @@ export default function AdminDashboardPage() {
           {/* Search Bar with Ctrl+K */}
           <div className="relative flex-1 max-w-xl">
             <div className="relative flex items-center w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0] pointer-events-none" />
               <input
                 id="admin-search-input"
                 type="text"
@@ -1383,25 +2104,165 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Right Header Controls (Admin Profile) */}
-          <div className="flex items-center gap-3.5">
+          {/* Right Header Controls (Notifications & Admin Profile) */}
+          <div className="flex items-center gap-3">
+            {/* Notification Bell Button & Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNotificationsOpen(!isNotificationsOpen);
+                  setIsAdminDropdownOpen(false);
+                }}
+                className="relative p-2.5 rounded-xl text-gray-600 hover:text-[#801424] hover:bg-gray-100/80 transition cursor-pointer border border-gray-200 shadow-2xs"
+                title="Student Submission Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadActivities.length > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#801424] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                    {unreadActivities.length > 9 ? "9+" : unreadActivities.length}
+                  </span>
+                )}
+              </button>
+
+              <AnimatePresence>
+                {isNotificationsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-[#EAEBED] rounded-2xl shadow-xl z-40 overflow-hidden"
+                  >
+                    <div className="p-3.5 border-b border-gray-100 flex items-center justify-between bg-[#FAFBFD]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-red-50 text-[#801424] flex items-center justify-center">
+                          <Bell className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-900">
+                          Student Submissions
+                        </span>
+                        {unreadActivities.length > 0 && (
+                          <span className="px-2 py-0.5 bg-red-100 text-[#801424] text-[10px] font-extrabold rounded-full">
+                            {unreadActivities.length} new
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        {unreadActivities.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={markAllAdminNotificationsAsRead}
+                            className="text-[11px] font-bold text-[#801424] hover:underline cursor-pointer"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                        {activeAdminNotifications.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleDeleteAllAdminNotifications}
+                            className="text-[11px] font-semibold text-gray-400 hover:text-red-600 transition cursor-pointer"
+                            title="Clear all notifications"
+                          >
+                            Clear all
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                      {activeAdminNotifications.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400 text-xs">
+                          No notifications right now.
+                        </div>
+                      ) : (
+                        activeAdminNotifications.slice(0, 15).map((act) => {
+                          const isUnread = !readNotificationIds.includes(act.id);
+                          return (
+                            <div
+                              key={act.id}
+                              onClick={() => handleAdminNotificationClick(act.id)}
+                              className={`group/notif relative w-full text-left p-3.5 hover:bg-gray-50 transition cursor-pointer flex items-start gap-3 ${
+                                isUnread ? "bg-[#FFF8F8]" : "bg-white"
+                              }`}
+                            >
+                              <div className="w-8 h-8 rounded-xl bg-[#801424] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-2xs">
+                                {act.studentName.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0 pr-6">
+                                <div className="flex items-center justify-between gap-1">
+                                  <p className="text-xs font-bold text-gray-900 truncate">
+                                    {act.studentName}
+                                  </p>
+                                  {isUnread && (
+                                    <span className="w-2 h-2 rounded-full bg-[#801424] shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-gray-600 truncate mt-0.5">
+                                  Submitted <span className="font-semibold text-gray-900">{act.quizTitle}</span>
+                                </p>
+                                <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400">
+                                  <span className="font-bold text-[#801424]">
+                                    {act.score} / {act.totalQuestions} pts
+                                  </span>
+                                  <span>{act.submittedAt}</span>
+                                </div>
+                              </div>
+                              {/* Individual Delete Button */}
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteAdminNotification(act.id, e)}
+                                className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all shrink-0 cursor-pointer"
+                                title="Delete notification"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {activities.length > 0 && (
+                      <div className="p-2.5 bg-gray-50/70 border-t border-gray-100 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsNotificationsOpen(false);
+                            handleNavClick("history-quizzes");
+                          }}
+                          className="text-xs font-bold text-[#801424] hover:underline cursor-pointer"
+                        >
+                          View All in History →
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Admin Profile Details */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
+                onClick={() => {
+                  setIsAdminDropdownOpen(!isAdminDropdownOpen);
+                  setIsNotificationsOpen(false);
+                }}
                 className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-white/80 transition-colors cursor-pointer"
               >
                 <div className="hidden sm:flex flex-col text-right leading-tight">
                   <span className="text-sm font-bold text-[#1F242D]">
-                    {user?.name || "Admin"}
+                    {user?.name || "User"}
                   </span>
                   <span className="text-[0.72rem] font-medium text-[#8C93A0]">
                     Administrator
                   </span>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-[#801424] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-[#801424]/30">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
+                <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#8B1526] to-[#5A0A15] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[#801424]/25 border border-white/20">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                 </div>
                 <ChevronDown className="w-4 h-4 text-[#717A8A]" />
               </button>
@@ -1418,7 +2279,7 @@ export default function AdminDashboardPage() {
                   >
                     <div className="px-4 py-2 border-b border-[#F0F1F3]">
                       <p className="text-xs font-bold text-[#1F242D]">
-                        {user?.name || "Admin"}
+                        {user?.name || "User"}
                       </p>
                       <p className="text-[0.72rem] text-[#8C93A0] truncate">
                         {user?.email || "admin@gmail.com"}
@@ -1469,168 +2330,102 @@ export default function AdminDashboardPage() {
         {activeNav === "dashboard" && (
           <div className="p-6 sm:p-7 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-12">
             {/* 3. HERO / WELCOME BANNER CARD WITH MATHEMATICAL TEXTURE & 3D SIGMA */}
-            <section className="relative overflow-hidden bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 lg:p-9 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-              {/* Subtle Mathematical Watermark Background with faint formulas */}
-              <div className="absolute inset-0 pointer-events-none opacity-[0.045] select-none flex items-center justify-between px-10 text-[#801424] font-serif text-3xl font-bold">
-                <span>{"\\oint_C \\mathbf{F} \\cdot d\\mathbf{r}"}</span>
-                <span>
-                  {
-                    "\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}"
-                  }
-                </span>
-                <span>{"\\det(A - \\lambda I) = 0"}</span>
+            <section className="relative overflow-hidden bg-white border border-[#E8ECF2] rounded-[26px] p-7 sm:p-9 shadow-[0_8px_30px_rgba(0,0,0,0.03)] min-h-[190px] flex items-center">
+              {/* 3D Sigma Graphic on the Right Background */}
+              <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[55%] pointer-events-none select-none flex items-center justify-end">
+                <img
+                  src={studentLogoSigma}
+                  alt="3D Math Illustration"
+                  className="w-full h-full object-contain object-right opacity-95 drop-shadow-md"
+                />
               </div>
 
-              <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-                {/* Left Welcome Copy */}
-                <div className="max-w-xl flex flex-col">
-                  <span className="text-[0.92rem] font-semibold text-[#5A6372]">
-                    Welcome back,
+              {/* Left Welcome Copy */}
+              <div className="relative z-10 max-w-xl flex flex-col">
+                <span className="text-xs sm:text-sm font-semibold text-[#6B7280] mb-1">
+                  Welcome back,
+                </span>
+                <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-black text-[#111827] tracking-tight leading-none mb-3 flex items-center gap-2.5">
+                  <span className="text-[#801424]">{user?.name || "User"}</span>
+                  <span className="inline-block animate-wave text-3xl">
+                    👋
                   </span>
-                  <h1 className="text-3xl sm:text-4xl font-extrabold text-[#111827] tracking-tight mt-0.5 mb-2.5 flex items-center gap-2.5">
-                    <span>{user?.name || "Admin"}</span>
-                    <span className="inline-block animate-wave text-3xl">
-                      👋
-                    </span>
-                  </h1>
-                  <p className="text-[0.92rem] text-[#6B7280] font-normal leading-relaxed">
-                    Manage quizzes, track performance, and help students learn
-                    math better.
-                  </p>
-                </div>
-
-                {/* Right 3D Sigma Illustration with Math Formulas & Red Glow */}
-                <div className="relative w-full lg:w-[480px] h-[130px] sm:h-[150px] flex items-center justify-center">
-                  {/* Glowing red ambient aura */}
-                  <div className="absolute w-48 h-48 rounded-full bg-gradient-to-r from-red-500/10 via-[#801424]/15 to-transparent blur-3xl pointer-events-none" />
-
-                  {/* Left Floating Integral Formula */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
-                    className="absolute left-2 sm:left-6 top-6 bg-white/70 backdrop-blur-xs border border-red-100/60 rounded-xl px-3 py-1.5 shadow-xs text-xs sm:text-sm font-serif font-bold text-[#1F242D]"
-                  >
-                    <span className="text-[#801424] mr-1">∫</span>
-                    <sub className="text-[0.65rem] text-gray-500">a</sub>
-                    <sup className="text-[0.65rem] text-gray-500">b</sup> f(x)
-                    dx
-                  </motion.div>
-
-                  {/* Center Big 3D Crimson Sigma */}
-                  <div className="relative z-10 flex items-center justify-center">
-                    <div className="relative group">
-                      <span
-                        className="font-serif text-6xl sm:text-7xl lg:text-8xl font-black text-[#801424] leading-none select-none drop-shadow-[0_12px_24px_rgba(128,20,36,0.3)] transition-transform duration-300 group-hover:scale-105"
-                        style={{
-                          textShadow:
-                            "0 1px 0 #600f1b, 0 2px 0 #500d16, 0 3px 0 #400a12, 0 4px 0 #30080d, 0 6px 12px rgba(128, 20, 36, 0.4)",
-                        }}
-                      >
-                        Σ
-                      </span>
-                      {/* Glowing bokeh particles */}
-                      <div className="absolute -top-2 -right-2 w-2.5 h-2.5 rounded-full bg-[#801424] shadow-[0_0_8px_#801424] animate-pulse" />
-                      <div className="absolute -bottom-1 -left-2 w-2 h-2 rounded-full bg-red-400 shadow-[0_0_6px_#ef4444]" />
-                    </div>
-                  </div>
-
-                  {/* Right Floating Matrix Formula */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="absolute right-4 sm:right-8 top-4 bg-white/70 backdrop-blur-xs border border-red-100/60 rounded-xl px-3 py-1.5 shadow-xs text-xs sm:text-sm font-serif font-semibold text-[#1F242D]"
-                  >
-                    <span className="font-bold">A = </span>
-                    <span className="inline-block px-1 border-l-2 border-r-2 border-[#1F242D] text-xs leading-tight">
-                      a &nbsp; b <br /> c &nbsp; d
-                    </span>
-                  </motion.div>
-
-                  {/* Bottom Right Floating Derivative Formula */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                    className="absolute right-6 sm:right-12 bottom-1 bg-white/70 backdrop-blur-xs border border-red-100/60 rounded-xl px-2.5 py-1 shadow-xs text-[0.75rem] font-serif font-semibold text-[#1F242D]"
-                  >
-                    <span className="text-[#801424] font-mono">d/dx</span>(x²) =
-                    2x
-                  </motion.div>
-                </div>
+                </h1>
+                <p className="text-xs sm:text-sm text-[#6B7280] font-normal leading-relaxed max-w-md">
+                  Manage quizzes, track performance, and help students learn math better.
+                </p>
               </div>
             </section>
 
             {/* 4. FOUR STATS METRIC CARDS ROW */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               {/* Card 1: Total Quizzes */}
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center gap-4 hover:border-[#801424]/30 transition-all duration-200">
-                <div className="w-12 h-12 rounded-full bg-[#801424] flex items-center justify-center text-white shadow-md shadow-[#801424]/20 shrink-0">
-                  <ClipboardList className="w-5 h-5 stroke-[2.2]" />
+              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#DFE3E8] transition-all duration-200 flex items-center gap-4">
+                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10 flex items-center justify-center">
+                  <ClipboardList className="w-5 h-5 text-white stroke-[2.2]" />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-semibold text-[#6B7280]">
                     Total Quizzes
                   </span>
-                  <span className="text-2xl font-black text-[#111827] tracking-tight mt-0.5">
+                  <span className="text-2xl sm:text-[1.75rem] font-black text-[#111827] tracking-tight leading-tight mt-0.5">
                     {totalQuizzes}
                   </span>
-                  <span className="text-[0.75rem] font-medium text-[#9CA3AF] mt-0.5">
+                  <span className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">
                     — 0% this month
                   </span>
                 </div>
               </div>
 
               {/* Card 2: Total Students */}
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center gap-4 hover:border-[#801424]/30 transition-all duration-200">
-                <div className="w-12 h-12 rounded-full bg-[#801424] flex items-center justify-center text-white shadow-md shadow-[#801424]/20 shrink-0">
-                  <Users className="w-5 h-5 stroke-[2.2]" />
+              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#DFE3E8] transition-all duration-200 flex items-center gap-4">
+                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white stroke-[2.2]" />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-semibold text-[#6B7280]">
                     Total Students
                   </span>
-                  <span className="text-2xl font-black text-[#111827] tracking-tight mt-0.5">
+                  <span className="text-2xl sm:text-[1.75rem] font-black text-[#111827] tracking-tight leading-tight mt-0.5">
                     {totalStudents}
                   </span>
-                  <span className="text-[0.75rem] font-medium text-[#9CA3AF] mt-0.5">
+                  <span className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">
                     — 0% this month
                   </span>
                 </div>
               </div>
 
               {/* Card 3: Total Attempts */}
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center gap-4 hover:border-[#801424]/30 transition-all duration-200">
-                <div className="w-12 h-12 rounded-full bg-[#801424] flex items-center justify-center text-white shadow-md shadow-[#801424]/20 shrink-0">
-                  <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
+              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#DFE3E8] transition-all duration-200 flex items-center gap-4">
+                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10 flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5 text-white stroke-[2.2]" />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-semibold text-[#6B7280]">
                     Total Attempts
                   </span>
-                  <span className="text-2xl font-black text-[#111827] tracking-tight mt-0.5">
+                  <span className="text-2xl sm:text-[1.75rem] font-black text-[#111827] tracking-tight leading-tight mt-0.5">
                     {totalAttempts}
                   </span>
-                  <span className="text-[0.75rem] font-medium text-[#9CA3AF] mt-0.5">
+                  <span className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">
                     — 0% this month
                   </span>
                 </div>
               </div>
 
               {/* Card 4: Average Score */}
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center gap-4 hover:border-[#801424]/30 transition-all duration-200">
-                <div className="w-12 h-12 rounded-full bg-[#801424] flex items-center justify-center text-white shadow-md shadow-[#801424]/20 shrink-0">
-                  <Star className="w-5 h-5 stroke-[2.2]" />
+              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#DFE3E8] transition-all duration-200 flex items-center gap-4">
+                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10 flex items-center justify-center">
+                  <Star className="w-5 h-5 text-white stroke-[2.2]" />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-semibold text-[#6B7280]">
                     Average Score
                   </span>
-                  <span className="text-2xl font-black text-[#111827] tracking-tight mt-0.5">
-                    {averageScore}%
+                  <span className="text-2xl sm:text-[1.75rem] font-black text-[#111827] tracking-tight leading-tight mt-0.5">
+                    {averageScore} pts
                   </span>
-                  <span className="text-[0.75rem] font-medium text-[#9CA3AF] mt-0.5">
+                  <span className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">
                     — 0% this month
                   </span>
                 </div>
@@ -1640,12 +2435,15 @@ export default function AdminDashboardPage() {
             {/* 5. MIDDLE ROW: QUIZ OVERVIEW & RECENT QUIZ ACTIVITY */}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left Card: Quiz Overview (Chart) */}
-              <div className="lg:col-span-7 bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+              <div className="lg:col-span-7 bg-white border border-[#ECEFF3] rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-[#111827]">
-                    Quiz Overview
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-[#801424]" />
+                    <h3 className="text-base font-bold text-[#111827]">
+                      Quiz Overview
+                    </h3>
+                  </div>
 
                   {/* Dropdown Filter */}
                   <div className="relative">
@@ -1799,15 +2597,6 @@ export default function AdminDashboardPage() {
                     <circle cx="300" cy="175" r="3.5" fill="#801424" />
                     <circle cx="380" cy="175" r="3.5" fill="#801424" />
                     <circle cx="460" cy="175" r="3.5" fill="#801424" />
-
-                    {/* Grey Line: Average Score Baseline */}
-                    <polyline
-                      fill="none"
-                      stroke="#9CA3AF"
-                      strokeWidth="1.5"
-                      strokeDasharray="3 3"
-                      points="60,175 140,175 220,175 300,175 380,175 460,175"
-                    />
                   </svg>
 
                   {/* X-Axis Date Labels */}
@@ -1817,27 +2606,18 @@ export default function AdminDashboardPage() {
                     ))}
                   </div>
                 </div>
-
-                {/* Chart Legend */}
-                <div className="flex items-center justify-center gap-6 mt-5 pt-3 border-t border-[#F3F4F6] text-xs font-semibold text-[#4B5563]">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-[2.5px] bg-[#801424] rounded-full inline-block" />
-                    <span>Attempts</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-[2px] bg-[#9CA3AF] rounded-full inline-block" />
-                    <span>Average Score (%)</span>
-                  </div>
-                </div>
               </div>
 
               {/* Right Card: Recent Quiz Activity */}
-              <div className="lg:col-span-5 bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+              <div className="lg:col-span-5 bg-white border border-[#ECEFF3] rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-[#111827]">
-                    Recent Quiz Activity
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#801424]" />
+                    <h3 className="text-base font-bold text-[#111827]">
+                      Recent Quiz Activity
+                    </h3>
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleNavClick("quiz-results")}
@@ -1848,9 +2628,9 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Activity List / Empty State */}
-                <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
+                <div className="flex-1 flex flex-col justify-center py-2">
                   {activities.length === 0 ? (
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center py-8 text-center">
                       <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3.5">
                         <ClipboardList className="w-7 h-7 stroke-[1.8]" />
                       </div>
@@ -1866,21 +2646,21 @@ export default function AdminDashboardPage() {
                       {activities.map((act) => (
                         <div
                           key={act.id}
-                          className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-xl border border-[#F0F1F3]"
+                          className="flex items-center justify-between p-3.5 bg-[#F9FAFB] rounded-2xl border border-gray-100 hover:bg-gray-50 transition"
                         >
                           <div className="flex flex-col text-left">
-                            <span className="text-xs font-bold text-[#111827]">
+                            <span className="text-sm font-bold text-[#111827]">
                               {act.studentName}
                             </span>
-                            <span className="text-[0.7rem] text-[#6B7280]">
+                            <span className="text-xs text-[#6B7280]">
                               {act.quizTitle}
                             </span>
                           </div>
                           <div className="flex flex-col text-right">
-                            <span className="text-xs font-bold text-[#801424]">
+                            <span className="text-sm font-bold text-[#801424]">
                               {act.score}/{act.totalQuestions}
                             </span>
-                            <span className="text-[0.68rem] text-[#9CA3AF]">
+                            <span className="text-[11px] text-[#9CA3AF]">
                               {act.submittedAt}
                             </span>
                           </div>
@@ -1959,7 +2739,7 @@ export default function AdminDashboardPage() {
                             {quiz.attempts}
                           </span>
                           <span className="text-right font-bold text-[#801424]">
-                            {quiz.averageScore}%
+                            {quiz.averageScore} pts
                           </span>
                         </div>
                       ))}
@@ -2012,30 +2792,44 @@ export default function AdminDashboardPage() {
                     </div>
                   ) : (
                     <div className="w-full flex flex-col divide-y divide-[#F3F4F6]">
-                      {students.slice(0, 5).map((st) => (
-                        <div
-                          key={st.id}
-                          className="grid grid-cols-4 text-xs py-3 items-center text-left hover:bg-[#F9FAFB] rounded-lg px-1 transition"
-                        >
-                          <div className="col-span-1 min-w-0 pr-2">
-                            <p className="font-bold text-[#111827] truncate">
-                              {st.name}
-                            </p>
-                            <p className="text-[11px] text-[#9CA3AF] truncate">
-                              {st.email}
-                            </p>
-                          </div>
+                      {students.slice(0, 5).map((st) => {
+                        const isStudentOnline =
+                          onlineStudentKeys.has(st.id.toLowerCase()) ||
+                          onlineStudentKeys.has(st.email.toLowerCase());
+
+                        return (
+                          <div
+                            key={st.id}
+                            className="grid grid-cols-4 text-xs py-3 items-center text-left hover:bg-[#F9FAFB] rounded-lg px-1 transition"
+                          >
+                            <div className="col-span-1 min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5">
+                                <p className="font-bold text-[#111827] truncate">
+                                  {st.name}
+                                </p>
+                                {isStudentOnline && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    Online
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-[#9CA3AF] truncate">
+                                {st.email}
+                              </p>
+                            </div>
                           <div className="col-span-1 text-center font-medium text-[#4B5563]">
                             {st.quizzesTaken}
                           </div>
                           <div className="col-span-1 text-center font-bold text-[#801424]">
-                            {st.averageScore}%
+                            {st.averageScore} pts
                           </div>
                           <div className="col-span-1 text-right text-[11px] text-[#6B7280]">
                             {st.lastActive}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -2081,7 +2875,7 @@ export default function AdminDashboardPage() {
 
                     {/* Calculator Quick Search */}
                     <div className="w-full lg:w-72 relative">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0]" />
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0] pointer-events-none" />
                       <input
                         type="text"
                         value={calcSearchQuery}
@@ -2367,7 +3161,7 @@ export default function AdminDashboardPage() {
 
                     {/* Topic Search Box */}
                     <div className="w-full lg:w-72 relative">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0]" />
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0] pointer-events-none" />
                       <input
                         type="text"
                         value={topicSearchQuery}
@@ -2584,19 +3378,36 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveNav("calculators");
-                          setSelectedCalcCategory(activeTopic.category);
-                        }}
-                        className="px-4 py-2.5 bg-[#801424] hover:bg-[#68101D] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
-                      >
-                        <Calculator className="w-4 h-4" />
-                        <span>Open Solvers</span>
-                      </button>
-                    </div>
+                    {/* Top Aligned Interactive Calculator Button with Hover Tooltip */}
+                    {(() => {
+                      const calcDef = getCalculusDefinitionForTopic(activeTopic);
+                      return (
+                        <div className="relative group/topcalc flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => setIsTopicCalculatorOpen(true)}
+                            className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#801424] hover:bg-[#68101D] text-white font-bold text-xs shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-95 group/btn"
+                            aria-label={calcDef.name}
+                          >
+                            <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 group-hover/btn:rotate-12 transition-transform">
+                              <Calculator className="w-3.5 h-3.5 text-white" />
+                            </div>
+                            <span className="hidden sm:inline-block max-w-0 group-hover/topcalc:max-w-xs overflow-hidden whitespace-nowrap transition-all duration-300 ease-out opacity-0 group-hover/topcalc:opacity-100 text-white font-semibold pr-1">
+                              {calcDef.name}
+                            </span>
+                            <span className="sm:hidden font-semibold">Calculator</span>
+                          </button>
+
+                          {/* Hover Tooltip Popup for Desktop */}
+                          <div className="absolute right-0 top-full mt-2 hidden sm:group-hover/topcalc:flex flex-col items-end z-50 pointer-events-none animate-in fade-in slide-in-from-top-1 duration-150">
+                            <div className="bg-[#111827] text-white text-[11px] font-medium py-1.5 px-3 rounded-lg shadow-lg border border-white/10 whitespace-nowrap flex items-center gap-1.5">
+                              <Sparkles className="w-3 h-3 text-[#FF7A8A]" />
+                              <span>Launch <strong>{calcDef.name}</strong></span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Main Lesson Content Grid */}
@@ -2619,52 +3430,177 @@ export default function AdminDashboardPage() {
                       </div>
 
                       {/* Worked Example Problems Card */}
-                      {activeTopic.examples &&
-                        activeTopic.examples.length > 0 && (
-                          <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
-                            <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-[#F3F4F6]">
+                      {activeTopic.examples && activeTopic.examples.length > 0 && (
+                        <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
+                          <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#F3F4F6]">
+                            <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-lg bg-red-50 text-[#801424] flex items-center justify-center">
                                 <HelpCircle className="w-4 h-4" />
                               </div>
                               <h3 className="text-base font-bold text-[#111827]">
-                                Step-by-Step Worked Problems & Solutions
+                                Step-by-Step Worked Problems ({activeTopic.examples.length})
                               </h3>
                             </div>
+                            <span className="text-xs text-[#6B7280]">
+                              Click &ldquo;Try to Solve&rdquo; to open solver
+                            </span>
+                          </div>
 
-                            <div className="space-y-4">
-                              {activeTopic.examples.map((ex, i) => (
+                          <div className="space-y-4">
+                            {activeTopic.examples.map((ex, i) => {
+                              const rawExText = typeof ex === "string" ? ex : (ex as any).question || JSON.stringify(ex);
+                              return (
                                 <div
                                   key={i}
-                                  className="p-4.5 bg-[#F9FAFB] border border-[#F0F1F3] rounded-2xl"
+                                  className="p-4.5 bg-[#F9FAFB] border border-[#F0F1F3] rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                                 >
-                                  <div className="flex items-start gap-2.5 mb-2">
-                                    <span className="px-2 py-0.5 text-[0.7rem] font-bold text-[#801424] bg-white border border-red-200 rounded-md shrink-0">
-                                      Example {i + 1}
+                                  <div className="flex items-start gap-2.5">
+                                    <span className="px-2 py-0.5 text-[0.7rem] font-bold text-[#801424] bg-white border border-red-200 rounded-md shrink-0 mt-0.5">
+                                      Problem {i + 1}
                                     </span>
-                                    <p className="text-xs sm:text-sm font-semibold text-[#111827]">
-                                      {typeof ex === "string"
-                                        ? ex
-                                        : (ex as any).question ||
-                                          JSON.stringify(ex)}
+                                    <p className="text-xs sm:text-sm font-semibold text-[#111827] leading-relaxed">
+                                      {rawExText}
                                     </p>
                                   </div>
-                                  {typeof ex !== "string" &&
-                                    (ex as any).solution && (
-                                      <div className="mt-2.5 pl-3 border-l-2 border-[#801424]">
-                                        <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#6B7280] block mb-0.5">
-                                          Solution
-                                        </span>
-                                        <p className="text-xs sm:text-sm font-mono text-[#374151]">
-                                          {(ex as any).solution}
-                                        </p>
-                                      </div>
-                                    )}
+
+                                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(rawExText);
+                                        setTopicCopiedIdx(i);
+                                        setTimeout(() => setTopicCopiedIdx(null), 2000);
+                                      }}
+                                      className="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-xs text-gray-600 font-semibold transition cursor-pointer flex items-center gap-1"
+                                      title="Copy text"
+                                    >
+                                      {topicCopiedIdx === i ? (
+                                        <>
+                                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                          <span className="text-emerald-600 text-[11px]">Copied</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3.5 h-3.5" />
+                                          <span className="text-[11px]">Copy</span>
+                                        </>
+                                      )}
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(rawExText);
+                                        setLoadedTopicExample({ text: rawExText, index: i });
+                                        setTopicCalcKey((prev) => prev + 1);
+                                        setIsTopicCalculatorOpen(true);
+                                      }}
+                                      className="px-3.5 py-1.5 rounded-lg bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                                    >
+                                      <Play className="w-3 h-3 fill-current" />
+                                      <span>Try to Solve</span>
+                                    </button>
+                                  </div>
                                 </div>
-                              ))}
-                            </div>
+                              );
+                            })}
                           </div>
-                        )}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Slide-out Calculator Drawer from Right */}
+                    <AnimatePresence>
+                      {isTopicCalculatorOpen && activeTopic && (() => {
+                        const calcDef = getCalculusDefinitionForTopic(activeTopic);
+                        return (
+                          <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+                            {/* Backdrop */}
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              onClick={() => setIsTopicCalculatorOpen(false)}
+                              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+                            />
+
+                            {/* Slide-in Drawer */}
+                            <motion.div
+                              initial={{ x: "100%" }}
+                              animate={{ x: 0 }}
+                              exit={{ x: "100%" }}
+                              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                              className="relative w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl bg-[#F8F9FA] h-full shadow-2xl z-10 flex flex-col overflow-hidden border-l border-[#EAEBED]"
+                            >
+                              {/* Drawer Header */}
+                              <div className="bg-white border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between shadow-xs shrink-0">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center shadow-xs">
+                                    <Calculator className="w-5 h-5" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="text-base sm:text-lg font-black text-[#111827]">
+                                        {calcDef.name}
+                                      </h3>
+                                      <span className="text-xs font-bold text-[#801424] bg-white border border-[#F8D7DA] px-2.5 py-0.5 rounded-lg">
+                                        {calcDef.badge}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-[#6B7280]">
+                                      {activeTopic.title} • {activeTopic.chapter}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setIsTopicCalculatorOpen(false)}
+                                  className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                                >
+                                  <X className="w-4 h-4" />
+                                  <span className="hidden sm:inline">Close</span>
+                                </button>
+                              </div>
+
+                              {/* Loaded Problem Notification Banner */}
+                              {loadedTopicExample && (
+                                <div className="bg-[#FFF0F2] border-b border-[#F8D7DA] px-6 py-3 flex items-center justify-between text-xs text-[#801424] shrink-0">
+                                  <div className="flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-[#801424] shrink-0" />
+                                    <span>
+                                      <strong>Loaded Problem #{loadedTopicExample.index + 1}:</strong> &ldquo;{loadedTopicExample.text}&rdquo;
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setLoadedTopicExample(null)}
+                                    className="p-1 hover:bg-[#F8D7DA] rounded-md transition text-[#801424] cursor-pointer"
+                                    title="Clear problem"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Scrollable Calculator Body */}
+                              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                                <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-xs">
+                                  <CalculusCalculator
+                                    key={`${calcDef.id}-${topicCalcKey}`}
+                                    definition={
+                                      loadedTopicExample
+                                        ? { ...calcDef, example: loadedTopicExample.text }
+                                        : calcDef
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      })()}
+                    </AnimatePresence>
 
                     {/* Right Column: Key Takeaways & Quick Solver Suite */}
                     <div className="lg:col-span-4 flex flex-col gap-6">
@@ -2739,413 +3675,1571 @@ export default function AdminDashboardPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW D: ADD QUIZ (inline page, not a modal)                                 */}
+        {/* VIEW D: ADD QUIZ - SMART QUIZ GENERATOR & PUBLISHER (Admin Suite)        */}
         {/* ========================================================================= */}
         {activeNav === "add-quiz" && (
-        <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
-          <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#801424] flex items-center justify-center text-white shrink-0">
-                  <PlusSquare className="w-5 h-5" />
+          <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
+            {/* Top Banner */}
+            <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] flex items-center justify-center text-white shrink-0 shadow-md shadow-[#801424]/25 border border-white/20">
+                    <Wand2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-md">
+                        Admin Quiz Generator
+                      </span>
+                      <span className="text-xs text-gray-500 font-medium">
+                        1 Attempt Only • Admin Answer Key
+                      </span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                      Generate & Publish Quiz
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#6B7280] mt-1 max-w-2xl leading-relaxed">
+                      Choose from Linear Algebra, Calculus 1, or Calculus 2 topics. Select the question type (Multiple Choice, Identification, Enumeration, or Problem Solving), preview with the answer key, and publish live to students.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
-                    Add Quiz
-                  </h2>
-                  <p className="text-sm text-[#6B7280] mt-1">
-                    Create a quiz on this page, set any number of questions, then
-                    publish it. Added quizzes appear on the right.
-                  </p>
-                </div>
-              </div>
-              <span className="inline-flex items-center rounded-full bg-[#801424]/10 border border-[#801424]/20 px-3 py-1 text-xs font-bold text-[#801424]">
-                {quizzes.length} quiz{quizzes.length === 1 ? "" : "zes"} added
-              </span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)] gap-6 items-start">
-            <form
-              onSubmit={handleCreateQuiz}
-              className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-5"
-            >
-              <div>
-                <h3 className="text-base font-bold text-[#111827]">
-                  Quiz details
-                </h3>
-                <p className="text-xs text-[#6B7280] mt-0.5">
-                  Choose how many questions you need, then scroll through each
-                  one below.
-                </p>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wide">
-                  Quiz Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newQuizTitle}
-                  onChange={(e) => setNewQuizTitle(e.target.value)}
-                  placeholder="e.g. Matrix Inversion & Determinants Quiz 1"
-                  className="w-full px-3.5 py-2.5 bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:border-[#801424] focus:ring-1 focus:ring-[#801424]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wide">
-                    Math Domain / Topic
-                  </label>
-                  <select
-                    value={newQuizTopic}
-                    onChange={(e) => setNewQuizTopic(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:border-[#801424]"
+              {/* Step Navigation Bar & Published Quizzes Button */}
+              <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setGeneratorStep(1)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      generatorStep === 1
+                        ? "bg-[#801424] text-white shadow-xs"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                   >
-                    <option value="Linear Algebra">Linear Algebra</option>
-                    <option value="Calculus 1">Calculus 1</option>
-                    <option value="Calculus 2">Calculus 2</option>
-                    <option value="Differential Equations">
-                      Differential Equations
-                    </option>
-                  </select>
+                    <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                      1
+                    </span>
+                    <span>1. Choose Topics & Format</span>
+                  </button>
+
+                  <div className="w-6 h-0.5 bg-gray-200 hidden sm:block" />
+
+                  <button
+                    type="button"
+                    disabled={newQuizQuestionDrafts.length === 0}
+                    onClick={() => setGeneratorStep(2)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      generatorStep === 2
+                        ? "bg-[#801424] text-white shadow-xs"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                  >
+                    <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                      2
+                    </span>
+                    <span>2. Review Answers & Publish</span>
+                    {newQuizQuestionDrafts.length > 0 && (
+                      <span className="ml-1 px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">
+                        {newQuizQuestionDrafts.length}
+                      </span>
+                    )}
+                  </button>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wide">
-                    Number of Questions
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={newQuizQuestions}
-                    onChange={(e) => handleQuestionCountChange(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:border-[#801424]"
-                  />
-                  <p className="text-[11px] text-[#9CA3AF] mt-1.5">
-                    Showing {newQuizQuestionDrafts.length} question
-                    {newQuizQuestionDrafts.length === 1 ? "" : "s"} — scroll to
-                    edit all of them.
-                  </p>
+                {/* Published Quizzes Button: shows count and reveals 'Published Quizzes' on hover, opens slide drawer from right */}
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setIsPublishedQuizzesDrawerOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-[#801424] bg-white hover:bg-[#FCE8EB]/40 text-gray-700 hover:text-[#801424] text-xs font-bold transition-all duration-300 cursor-pointer shadow-xs"
+                    title="Published Quizzes"
+                  >
+                    <ClipboardList className="w-4 h-4 text-[#801424] shrink-0" />
+                    <span className="max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-300 ease-in-out whitespace-nowrap">
+                      Published Quizzes
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-[#801424] text-white shadow-xs shrink-0">
+                      {quizzes.length}
+                    </span>
+                  </button>
+                  <div className="absolute -bottom-8 right-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-md whitespace-nowrap z-30">
+                    Published Quizzes ({quizzes.length})
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="pt-1">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-bold text-[#111827]">
-                    Questions
-                  </h4>
-                  <span className="text-xs font-semibold text-[#801424]">
-                    {newQuizQuestionDrafts.length} total
-                  </span>
-                </div>
-
-                <div className="space-y-4">
-                  {newQuizQuestionDrafts.map((question, index) => (
-                    <div
-                      key={question.id}
-                      className="rounded-2xl border border-[#EAEBED] bg-[#F9FAFB] p-4 sm:p-5 space-y-3"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="inline-flex items-center rounded-lg bg-[#801424] text-white text-xs font-bold px-2.5 py-1">
-                          Question {index + 1}
-                        </span>
-                        <span className="text-[11px] text-[#9CA3AF]">
-                          of {newQuizQuestionDrafts.length}
-                        </span>
-                      </div>
-
+            <div className="w-full">
+              {/* ================================================================= */}
+              {/* STEP 1: CATEGORY, TOPICS, AND SETTINGS                           */}
+              {/* ================================================================= */}
+              {generatorStep === 1 && (
+                <div className="space-y-6">
+                  {/* Category Selection Cards */}
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <label className="block text-xs font-bold text-[#374151] mb-1.5">
-                          Prompt
-                        </label>
-                        <textarea
-                          required
-                          rows={2}
-                          value={question.prompt}
-                          onChange={(e) =>
-                            updateQuestionDraft(
-                              question.id,
-                              "prompt",
-                              e.target.value,
-                            )
-                          }
-                          placeholder={`Enter question ${index + 1}`}
-                          className="w-full px-3.5 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:border-[#801424] resize-y"
-                        />
+                        <h3 className="text-base font-bold text-[#111827]">
+                          Step 1: Select Math Category
+                        </h3>
+                        <p className="text-xs text-[#6B7280] mt-0.5">
+                          Pick the primary course domain to load all associated curriculum topics.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                      {/* Card 1: Linear Algebra */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGeneratorCategory("linear-algebra");
+                          setSelectedTopicIds([]);
+                        }}
+                        className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                          generatorCategory === "linear-algebra"
+                            ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424] shadow-xs"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="w-9 h-9 rounded-xl bg-[#801424]/10 text-[#801424] flex items-center justify-center">
+                            <Layers className="w-5 h-5" />
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                            28 Topics
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#111827]">
+                          Linear Algebra
+                        </h4>
+                        <p className="text-[11px] text-gray-500 mt-1 leading-snug">
+                          Matrices, determinants, eigenvalues, vector spaces, and transformations.
+                        </p>
+                      </button>
+
+                      {/* Card 2: Calculus 1 */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGeneratorCategory("calculus-1");
+                          setSelectedTopicIds([]);
+                        }}
+                        className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                          generatorCategory === "calculus-1"
+                            ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424] shadow-xs"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="w-9 h-9 rounded-xl bg-[#801424]/10 text-[#801424] flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5" />
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                            30+ Topics
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#111827]">
+                          Calculus 1
+                        </h4>
+                        <p className="text-[11px] text-gray-500 mt-1 leading-snug">
+                          Limits, continuity, derivatives, optimization, and definite integrals.
+                        </p>
+                      </button>
+
+                      {/* Card 3: Calculus 2 */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGeneratorCategory("calculus-2");
+                          setSelectedTopicIds([]);
+                        }}
+                        className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                          generatorCategory === "calculus-2"
+                            ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424] shadow-xs"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="w-9 h-9 rounded-xl bg-[#801424]/10 text-[#801424] flex items-center justify-center">
+                            <Zap className="w-5 h-5" />
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                            30+ Topics
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#111827]">
+                          Calculus 2
+                        </h4>
+                        <p className="text-[11px] text-gray-500 mt-1 leading-snug">
+                          Integration techniques, polar coordinates, conics, and infinite series.
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Topic Selection Grid */}
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-bold text-[#111827]">
+                          Step 2: Choose Topics
+                        </h3>
+                        <p className="text-xs text-[#6B7280] mt-0.5">
+                          Select one, several, or all topics to include in this quiz generation.
+                        </p>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {(
-                          [
-                            ["optionA", "A"],
-                            ["optionB", "B"],
-                            ["optionC", "C"],
-                            ["optionD", "D"],
-                          ] as const
-                        ).map(([field, letter]) => (
-                          <div key={field}>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSelectAllTopics}
+                          className="px-2.5 py-1 text-xs font-bold text-[#801424] hover:bg-red-50 rounded-lg transition cursor-pointer"
+                        >
+                          Select All ({availableGeneratorTopics.length})
+                        </button>
+                        <span className="text-gray-300">•</span>
+                        <button
+                          type="button"
+                          onClick={handleDeselectAllTopics}
+                          className="px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                        <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
+                          {selectedTopicIds.length} Selected
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Topic Search Input */}
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search topics by keyword (e.g. matrices, chain rule, series)..."
+                        value={generatorTopicSearch}
+                        onChange={(e) => setGeneratorTopicSearch(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#801424] focus:border-[#801424]"
+                      />
+                    </div>
+
+                    {/* Topics Grid with Checkboxes */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+                      {availableGeneratorTopics.map((topic) => {
+                        const isChecked = selectedTopicIds.includes(topic.id);
+                        return (
+                          <div
+                            key={topic.id}
+                            onClick={() => handleToggleTopic(topic.id)}
+                            className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+                              isChecked
+                                ? "border-[#801424] bg-[#FCE8EB]/30 ring-1 ring-[#801424]"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
+                            }`}
+                          >
+                            <div className="pt-0.5 text-[#801424]">
+                              {isChecked ? (
+                                <CheckSquare className="w-4 h-4 text-[#801424]" />
+                              ) : (
+                                <Square className="w-4 h-4 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[10px] font-bold text-gray-400 block truncate">
+                                {topic.chapter}
+                              </span>
+                              <h5 className="text-xs font-bold text-[#111827] truncate">
+                                {topic.title}
+                              </h5>
+                              <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
+                                {topic.summary}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Quiz Settings: Question Type and Count */}
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-5">
+                    <div>
+                      <h3 className="text-base font-bold text-[#111827]">
+                        Step 3: Question Type & Settings
+                      </h3>
+                      <p className="text-xs text-[#6B7280] mt-0.5">
+                        Select the question format and the number of questions to generate.
+                      </p>
+                    </div>
+
+                    {/* Question Type 4-card selector */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#374151] mb-2 uppercase tracking-wide">
+                        Question Type
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* Option 1: Multiple Choice */}
+                        <button
+                          type="button"
+                          onClick={() => setGeneratorQuestionType("multiple_choice")}
+                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                            generatorQuestionType === "multiple_choice"
+                              ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424]"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#801424]/10 text-[#801424] flex items-center justify-center mb-2">
+                            <FileQuestion className="w-4 h-4" />
+                          </div>
+                          <h5 className="text-xs font-bold text-[#111827]">
+                            Multiple Choice
+                          </h5>
+                          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                            4 choices A, B, C, D with 1 correct option.
+                          </p>
+                        </button>
+
+                        {/* Option 2: Identification */}
+                        <button
+                          type="button"
+                          onClick={() => setGeneratorQuestionType("identification")}
+                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                            generatorQuestionType === "identification"
+                              ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424]"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#801424]/10 text-[#801424] flex items-center justify-center mb-2">
+                            <Lightbulb className="w-4 h-4" />
+                          </div>
+                          <h5 className="text-xs font-bold text-[#111827]">
+                            Identification
+                          </h5>
+                          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                            Identify the exact mathematical term or formula.
+                          </p>
+                        </button>
+
+                        {/* Option 3: Enumeration */}
+                        <button
+                          type="button"
+                          onClick={() => setGeneratorQuestionType("enumeration")}
+                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                            generatorQuestionType === "enumeration"
+                              ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424]"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#801424]/10 text-[#801424] flex items-center justify-center mb-2">
+                            <ListOrdered className="w-4 h-4" />
+                          </div>
+                          <h5 className="text-xs font-bold text-[#111827]">
+                            Enumeration
+                          </h5>
+                          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                            List key properties, theorems, or steps.
+                          </p>
+                        </button>
+
+                        {/* Option 4: Problem Solving */}
+                        <button
+                          type="button"
+                          onClick={() => setGeneratorQuestionType("problem_solving")}
+                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                            generatorQuestionType === "problem_solving"
+                              ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424]"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#801424]/10 text-[#801424] flex items-center justify-center mb-2">
+                            <Calculator className="w-4 h-4" />
+                          </div>
+                          <h5 className="text-xs font-bold text-[#111827]">
+                            Problem Solving
+                          </h5>
+                          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                            Problem only and then solve with full steps.
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Number of Items Selector */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#374151] mb-2 uppercase tracking-wide">
+                        Number of Items (Questions)
+                      </label>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {[5, 10, 15, 20].map((cnt) => (
+                          <button
+                            key={cnt}
+                            type="button"
+                            onClick={() => setGeneratorItemCount(cnt)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                              generatorItemCount === cnt
+                                ? "bg-[#801424] text-white shadow-xs"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            }`}
+                          >
+                            {cnt} Items
+                          </button>
+                        ))}
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 font-medium">Custom:</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="e.g. 8"
+                            value={generatorItemCount}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              if (val === "") {
+                                setGeneratorItemCount("");
+                              } else {
+                                const parsed = parseInt(val, 10);
+                                setGeneratorItemCount(Math.min(50, parsed));
+                              }
+                            }}
+                            onBlur={() => {
+                              if (generatorItemCount === "" || generatorItemCount < 1) {
+                                setGeneratorItemCount(1);
+                              }
+                            }}
+                            className="w-20 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Points Per Item Selector */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-bold text-[#374151] uppercase tracking-wide">
+                          Points Per Item
+                        </label>
+                        <span className="text-xs font-semibold text-[#801424] bg-red-50 px-2.5 py-0.5 rounded-full border border-red-100">
+                          Total: {(typeof generatorItemCount === "number" ? generatorItemCount : 1) * (typeof generatorPointsPerItem === "number" ? generatorPointsPerItem : 1)} pts
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {[1, 2, 5, 10].map((pts) => (
+                          <button
+                            key={pts}
+                            type="button"
+                            onClick={() => setGeneratorPointsPerItem(pts)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                              generatorPointsPerItem === pts
+                                ? "bg-[#801424] text-white shadow-xs"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            }`}
+                          >
+                            {pts} {pts === 1 ? "pt" : "pts"}
+                          </button>
+                        ))}
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 font-medium">Custom:</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="e.g. 3"
+                            value={generatorPointsPerItem}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              if (val === "") {
+                                setGeneratorPointsPerItem("");
+                              } else {
+                                const parsed = parseInt(val, 10);
+                                setGeneratorPointsPerItem(Math.min(100, parsed));
+                              }
+                            }}
+                            onBlur={() => {
+                              if (generatorPointsPerItem === "" || generatorPointsPerItem < 1) {
+                                setGeneratorPointsPerItem(1);
+                              }
+                            }}
+                            className="w-20 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* === Published Success Overlay === */}
+                    <AnimatePresence>
+                      {showPublishedSuccess && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/85 backdrop-blur-md"
+                        >
+                          <div
+                            ref={publishedGSAPRef}
+                            className="flex flex-col items-center gap-4"
+                          >
+                            {/* Green Check Circle */}
+                            <div className="gsap-publish-circle w-24 h-24 rounded-full bg-emerald-500/15 border-2 border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                              <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
+                                <CheckCircle2 className="gsap-publish-check w-10 h-10 text-white" />
+                              </div>
+                            </div>
+                            <h3 className="gsap-publish-text text-emerald-700 text-2xl font-bold tracking-wide">
+                              Published!
+                            </h3>
+                            <p className="gsap-publish-text text-emerald-600/80 text-sm text-center max-w-[240px]">
+                              Quiz is now live for students.
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* === Quiz Generation Loading Overlay === */}
+                    <AnimatePresence>
+                      {isShowingGenerateLoader && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/85 backdrop-blur-md"
+                        >
+                          {/* Spinning ring */}
+                          <div className="relative w-28 h-28 mb-6">
+                            <div className="absolute inset-0 rounded-full border-4 border-[#801424]/10" />
+                            <div className="absolute inset-0 rounded-full border-4 border-t-[#801424] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                            <div className="absolute inset-2 rounded-full border-4 border-t-transparent border-r-[#9C1D2E]/60 border-b-transparent border-l-transparent animate-spin [animation-direction:reverse] [animation-duration:0.8s]" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <img src={quizLoaderLogo} alt="Loading" className="w-14 h-14 object-contain animate-pulse" />
+                            </div>
+                          </div>
+                          {/* Text */}
+                          <h3 className="text-[#801424] text-xl font-bold tracking-wide mb-1">Generating Quiz</h3>
+                          <p className="text-[#801424]/60 text-sm mb-6">Crafting your questions, please wait...</p>
+                          {/* Animated dots bar */}
+                          <div className="flex gap-2">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                              <motion.div
+                                key={i}
+                                className="w-2.5 h-2.5 rounded-full bg-[#801424]"
+                                animate={{ scale: [1, 1.6, 1], opacity: [0.4, 1, 0.4] }}
+                                transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
+                              />
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Big Action: Generate Quiz Button */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        disabled={isGeneratingQuiz}
+                        onClick={handleGenerateQuiz}
+                        className="w-full py-3.5 bg-gradient-to-r from-[#9C1D2E] via-[#801424] to-[#5C0A15] hover:opacity-95 text-white rounded-2xl text-sm font-bold shadow-md shadow-[#801424]/20 transition flex items-center justify-center gap-2.5 cursor-pointer"
+                      >
+                        {isGeneratingQuiz ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Synthesizing Questions from Topics...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            <span>
+                              Generate {generatorItemCount || 1}-Item Quiz with Answers
+                            </span>
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+                      <p className="text-[11px] text-center text-gray-400 mt-2">
+                        Questions will be generated with full answers displayed for admin verification.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================================================================= */}
+              {/* STEP 2: REVIEW QUESTIONS, ADMIN ANSWER KEY & PUBLISH             */}
+              {/* ================================================================= */}
+              {generatorStep === 2 && (
+                <div className="space-y-6">
+                  {/* Step 2 Header & Quiz Title */}
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2 py-0.5 rounded">
+                          {newQuizTopic} • {newQuizQuestionDrafts.length} Questions
+                        </span>
+                        <h3 className="text-lg font-extrabold text-[#111827] mt-1">
+                          Review Generated Quiz & Answer Key
+                        </h3>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAdminAnswers(!showAdminAnswers)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                            showAdminAnswers
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          {showAdminAnswers ? (
+                            <>
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Answers Visible</span>
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="w-3.5 h-3.5" />
+                              <span>Answers Hidden</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleRegenerateAllQuestions}
+                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Regenerate All</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Quiz Title Input */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wide">
+                        Quiz Title (Students will see this)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newQuizTitle}
+                        onChange={(e) => setNewQuizTitle(e.target.value)}
+                        placeholder="e.g. Linear Algebra: Matrix Operations Quiz 1"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#801424] focus:border-[#801424]"
+                      />
+                    </div>
+
+                    {/* Notice Banner */}
+                    <div className="p-3.5 rounded-2xl bg-[#FFFBEB] border border-[#FEF3C7] flex items-start gap-3 text-xs text-[#92400E]">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-[#D97706] mt-0.5" />
+                      <div>
+                        <strong className="font-bold">Admin-Only View:</strong> The correct answers and solution explanations are displayed below for your review. When published, answers remain strictly hidden from students until they submit their quiz. Students are limited to strictly 1 attempt with no redo.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* List of Generated Questions */}
+                  <div className="space-y-4">
+                    {newQuizQuestionDrafts.map((question, index) => {
+                      const qType = question.questionType || generatorQuestionType;
+                      return (
+                        <div
+                          key={question.id}
+                          className="bg-white border border-[#EAEBED] rounded-3xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4"
+                        >
+                          {/* Question Card Header */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center rounded-lg bg-[#801424] text-white text-xs font-bold px-2.5 py-1">
+                                Question {index + 1}
+                              </span>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                                {qType.replace("_", " ")}
+                              </span>
+                              {question.topicTitle && (
+                                <span className="text-[10px] text-gray-400 font-medium">
+                                  Topic: {question.topicTitle}
+                                </span>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleRegenerateQuestion(index)}
+                              className="px-2.5 py-1 text-xs font-bold text-[#801424] hover:bg-red-50 rounded-lg transition flex items-center gap-1 cursor-pointer"
+                              title="Regenerate this question"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              <span>Regenerate</span>
+                            </button>
+                          </div>
+
+                          {/* Prompt Input */}
+                          <div>
                             <label className="block text-xs font-bold text-[#374151] mb-1.5">
-                              Option {letter}
+                              Question Prompt
                             </label>
-                            <input
-                              type="text"
+                            <textarea
+                              rows={2}
                               required
-                              value={question[field]}
+                              value={question.prompt}
                               onChange={(e) =>
                                 updateQuestionDraft(
                                   question.id,
-                                  field,
-                                  e.target.value,
+                                  "prompt",
+                                  e.target.value
                                 )
                               }
-                              placeholder={`Choice ${letter}`}
-                              className="w-full px-3.5 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:border-[#801424]"
+                              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#801424] focus:border-[#801424] resize-y font-medium"
                             />
                           </div>
-                        ))}
-                      </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-[#374151] mb-1.5">
-                          Correct answer
-                        </label>
-                        <select
-                          value={question.correct}
-                          onChange={(e) =>
-                            updateQuestionDraft(
-                              question.id,
-                              "correct",
-                              e.target.value as QuizQuestionDraft["correct"],
-                            )
-                          }
-                          className="w-full sm:w-48 px-3.5 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:border-[#801424]"
-                        >
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                        </select>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                          {/* MULTIPLE CHOICE TYPE UI */}
+                          {qType === "multiple_choice" && (
+                            <div className="space-y-3 pt-1">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {(
+                                  [
+                                    ["optionA", "A"],
+                                    ["optionB", "B"],
+                                    ["optionC", "C"],
+                                    ["optionD", "D"],
+                                  ] as const
+                                ).map(([field, letter]) => {
+                                  const isCorrect = question.correct === letter;
+                                  return (
+                                    <div
+                                      key={field}
+                                      className={`p-3 rounded-2xl border transition ${
+                                        showAdminAnswers && isCorrect
+                                          ? "border-emerald-300 bg-emerald-50/40 ring-1 ring-emerald-400"
+                                          : "border-gray-200 bg-white"
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between mb-1">
+                                        <label className="text-[11px] font-bold text-gray-700">
+                                          Choice {letter}
+                                        </label>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            updateQuestionDraft(
+                                              question.id,
+                                              "correct",
+                                              letter
+                                            )
+                                          }
+                                          className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
+                                            isCorrect
+                                              ? "bg-emerald-600 text-white"
+                                              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                          }`}
+                                        >
+                                          {isCorrect ? "✓ Correct" : "Mark Correct"}
+                                        </button>
+                                      </div>
+                                      <input
+                                        type="text"
+                                        required
+                                        value={question[field]}
+                                        onChange={(e) =>
+                                          updateQuestionDraft(
+                                            question.id,
+                                            field,
+                                            e.target.value
+                                          )
+                                        }
+                                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#801424]"
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#F0F1F3]">
-                <button
-                  type="button"
-                  onClick={() => handleNavClick("dashboard")}
-                  className="px-4 py-2.5 text-xs font-semibold text-[#4B5563] hover:bg-[#F3F4F6] rounded-xl transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingQuiz}
-                  className="px-5 py-2.5 bg-[#801424] hover:bg-[#68101D] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer flex items-center gap-2"
-                >
-                  {isSubmittingQuiz ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Publishing...</span>
-                    </>
-                  ) : (
-                    <span>Publish Quiz</span>
-                  )}
-                </button>
-              </div>
-            </form>
+                              {showAdminAnswers && question.explanation && (
+                                <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-xs text-emerald-900">
+                                  <span className="font-bold">Answer Explanation: </span>
+                                  <span>{question.explanation}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
-            <aside className="bg-white border border-[#EAEBED] rounded-3xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] xl:sticky xl:top-24">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold text-[#111827]">
-                  Quizzes added
-                </h3>
-                <span className="text-xs font-bold text-[#801424]">
-                  {quizzes.length}
-                </span>
-              </div>
+                          {/* IDENTIFICATION TYPE UI */}
+                          {qType === "identification" && (
+                            <div className="space-y-3 pt-1">
+                              <div>
+                                <label className="block text-xs font-bold text-[#374151] mb-1.5">
+                                  Correct Answer / Identified Concept (Admin Answer Key)
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={question.correctAnswerText || question.optionA}
+                                  onChange={(e) => {
+                                    updateQuestionDraft(
+                                      question.id,
+                                      "correctAnswerText",
+                                      e.target.value
+                                    );
+                                    updateQuestionDraft(
+                                      question.id,
+                                      "optionA",
+                                      e.target.value
+                                    );
+                                  }}
+                                  placeholder="e.g. Intermediate Value Theorem, or Determinant"
+                                  className="w-full px-3.5 py-2.5 bg-emerald-50/40 border border-emerald-300 rounded-xl text-xs sm:text-sm font-bold text-emerald-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                />
+                              </div>
 
-              {isLoadingQuizzes ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center">
-                  <Loader2 className="w-7 h-7 animate-spin text-[#801424] mb-2" />
-                  <p className="text-xs text-[#6B7280]">Loading quizzes...</p>
-                </div>
-              ) : quizzes.length === 0 ? (
-                <div className="py-10 text-center flex flex-col items-center">
-                  <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
-                    <ClipboardList className="w-6 h-6 stroke-[1.8]" />
+                              {showAdminAnswers && (
+                                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700">
+                                  <span className="font-bold">Context / Explanation: </span>
+                                  <input
+                                    type="text"
+                                    value={question.explanation || question.optionB || ""}
+                                    onChange={(e) =>
+                                      updateQuestionDraft(
+                                        question.id,
+                                        "explanation",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Explanation of this concept..."
+                                    className="w-full mt-1 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-800"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* ENUMERATION TYPE UI */}
+                          {qType === "enumeration" && (
+                            <div className="space-y-3 pt-1">
+                              <div>
+                                <label className="block text-xs font-bold text-[#374151] mb-1.5">
+                                  Items to Enumerate (Admin Answer Key)
+                                </label>
+                                <textarea
+                                  rows={3}
+                                  required
+                                  value={question.correctAnswerText || question.optionA}
+                                  onChange={(e) => {
+                                    updateQuestionDraft(
+                                      question.id,
+                                      "correctAnswerText",
+                                      e.target.value
+                                    );
+                                    updateQuestionDraft(
+                                      question.id,
+                                      "optionA",
+                                      e.target.value
+                                    );
+                                  }}
+                                  placeholder="1. First item&#10;2. Second item&#10;3. Third item..."
+                                  className="w-full px-3.5 py-2.5 bg-emerald-50/40 border border-emerald-300 rounded-xl text-xs sm:text-sm font-semibold text-emerald-900 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
+                                />
+                              </div>
+
+                              {showAdminAnswers && question.explanation && (
+                                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-600">
+                                  <span className="font-bold">Evaluation Criteria: </span>
+                                  <span>{question.explanation}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* PROBLEM SOLVING TYPE UI */}
+                          {qType === "problem_solving" && (
+                            <div className="space-y-3 pt-1">
+                              <div>
+                                <label className="block text-xs font-bold text-[#374151] mb-1.5">
+                                  Final Solved Answer (Admin Answer Key)
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={question.correctAnswerText || question.optionA}
+                                  onChange={(e) => {
+                                    updateQuestionDraft(
+                                      question.id,
+                                      "correctAnswerText",
+                                      e.target.value
+                                    );
+                                    updateQuestionDraft(
+                                      question.id,
+                                      "optionA",
+                                      e.target.value
+                                    );
+                                  }}
+                                  placeholder="e.g. 12, or 2 and 5, or x e^x - e^x + C"
+                                  className="w-full px-3.5 py-2.5 bg-emerald-50/40 border border-emerald-300 rounded-xl text-xs sm:text-sm font-bold text-emerald-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-bold text-[#374151] mb-1.5">
+                                  Step-by-Step Solution (Shown to students after submission)
+                                </label>
+                                <textarea
+                                  rows={3}
+                                  value={question.explanation || question.optionB || ""}
+                                  onChange={(e) => {
+                                    updateQuestionDraft(
+                                      question.id,
+                                      "explanation",
+                                      e.target.value
+                                    );
+                                    updateQuestionDraft(
+                                      question.id,
+                                      "optionB",
+                                      e.target.value
+                                    );
+                                  }}
+                                  placeholder="Step 1...&#10;Step 2...&#10;Step 3..."
+                                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#801424] resize-y"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <h4 className="text-sm font-bold text-[#111827]">
-                    No quizzes added yet
-                  </h4>
-                  <p className="text-xs text-[#6B7280] mt-1 max-w-[220px]">
-                    Publish a quiz and it will show up in this list and on student dashboards.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-                  {quizzes.map((quiz) => (
-                    <div
-                      key={quiz.id}
-                      className="rounded-2xl border border-[#EAEBED] bg-[#F9FAFB] p-4 transition hover:border-[#D0D4DC]"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-bold text-[#111827] truncate">
-                            {quiz.title}
-                          </h4>
-                          <p className="text-xs text-[#6B7280] mt-0.5">
-                            {quiz.topic}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-[#801424] bg-[#801424]/10 px-2 py-0.5 rounded-md">
-                            Active
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteQuiz(quiz.id)}
-                            title="Delete Quiz"
-                            className="p-1 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between text-xs text-[#6B7280]">
-                        <span>
-                          {quiz.questionsCount} question
-                          {quiz.questionsCount === 1 ? "" : "s"}
+
+                  {/* Sticky Publish Bar */}
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky bottom-6 z-10">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setGeneratorStep(1)}
+                        className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition cursor-pointer flex items-center gap-1.5"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Back to Topics</span>
+                      </button>
+
+                      <div className="hidden sm:flex flex-col text-xs text-gray-500">
+                        <span className="font-bold text-gray-800">
+                          {newQuizQuestionDrafts.length} Questions Ready
                         </span>
-                        <span>{quiz.createdAt}</span>
+                        <span>Strictly 1 attempt allowed per student</span>
                       </div>
                     </div>
-                  ))}
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        disabled={isSubmittingQuiz}
+                        onClick={handleCreateQuiz}
+                        className="px-6 py-2.5 bg-gradient-to-r from-[#9C1D2E] via-[#801424] to-[#5C0A15] hover:opacity-95 disabled:opacity-60 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#801424]/20 transition flex items-center gap-2 cursor-pointer"
+                      >
+                        {isSubmittingQuiz ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Publishing Live Quiz...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Publish Quiz to Students</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
-            </aside>
+            </div>
+
+            {/* Slide-out Published Quizzes Drawer from Right (Matching Screenshot Style) */}
+            <AnimatePresence>
+              {isPublishedQuizzesDrawerOpen && (
+                <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+                  {/* Backdrop */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsPublishedQuizzesDrawerOpen(false)}
+                    className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+                  />
+
+                  {/* Slide-in Drawer */}
+                  <motion.div
+                    initial={{ x: "100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "100%" }}
+                    transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                    className="relative w-full max-w-lg sm:max-w-xl bg-white h-full shadow-2xl z-10 flex flex-col overflow-hidden border-l border-[#EAEBED]"
+                  >
+                    {/* Drawer Header */}
+                    <div className="bg-white border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between shadow-xs shrink-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center shadow-xs">
+                          <ClipboardList className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-base sm:text-lg font-black text-[#111827]">
+                              Published Quizzes
+                            </h3>
+                            <span className="text-xs font-bold text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-lg">
+                              {quizzes.length}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#6B7280]">
+                            Live quizzes available to students • 1 attempt only
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsPublishedQuizzesDrawerOpen(false)}
+                        className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Close</span>
+                      </button>
+                    </div>
+
+                    {/* Drawer Content */}
+                    <div className="p-6 overflow-y-auto flex-1 space-y-3">
+                      {isLoadingQuizzes ? (
+                        <div className="py-16 flex flex-col items-center justify-center text-center">
+                          <Loader2 className="w-8 h-8 animate-spin text-[#801424] mb-3" />
+                          <p className="text-xs text-[#6B7280]">Loading quizzes...</p>
+                        </div>
+                      ) : quizzes.length === 0 ? (
+                        <div className="py-16 text-center flex flex-col items-center">
+                          <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
+                            <ClipboardList className="w-7 h-7 stroke-[1.8]" />
+                          </div>
+                          <h4 className="text-sm font-bold text-[#111827]">
+                            No quizzes published yet
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-1 max-w-[240px]">
+                            Generate a quiz using the form and publish it to show up here.
+                          </p>
+                        </div>
+                      ) : (
+                        quizzes.map((quiz) => (
+                          <div
+                            key={quiz.id}
+                            className="rounded-2xl border border-[#EAEBED] bg-[#F9FAFB] hover:bg-white p-4 transition shadow-xs hover:border-[#D0D4DC] space-y-2.5"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-sm font-bold text-[#111827] truncate">
+                                  {quiz.title}
+                                </h4>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <span className="text-[10px] font-bold text-[#801424] bg-red-50 border border-red-100 px-2 py-0.5 rounded">
+                                    {quiz.topic}
+                                  </span>
+                                  {quiz.questionType && (
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded">
+                                      {quiz.questionType.replace("_", " ")}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsPublishedQuizzesDrawerOpen(false);
+                                    setAdminReviewQuizModal(quiz);
+                                  }}
+                                  title="View questions and answer key"
+                                  className="p-1.5 rounded-xl text-gray-600 hover:text-[#801424] hover:bg-red-50 border border-gray-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Answers</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteQuiz(quiz.id)}
+                                  title="Delete Quiz"
+                                  className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-200 transition cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-200/60">
+                              <span>
+                                {quiz.questionsCount} question{quiz.questionsCount === 1 ? "" : "s"}
+                              </span>
+                              <span>
+                                {quiz.attempts} student attempt{quiz.attempts === 1 ? "" : "s"}
+                              </span>
+                              <span>{quiz.createdAt}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
+            {/* Modal: Admin Answer Key Preview for Published Quizzes */}
+            <AnimatePresence>
+              {adminReviewQuizModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="bg-white rounded-3xl border border-gray-200 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden"
+                  >
+                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2 py-0.5 rounded">
+                          {adminReviewQuizModal.topic} • Admin Answer Key
+                        </span>
+                        <h3 className="text-lg font-extrabold text-[#111827] mt-1">
+                          {adminReviewQuizModal.title}
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => setAdminReviewQuizModal(null)}
+                        className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-500 transition cursor-pointer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                      {adminReviewQuizModal.questions.map((q, idx) => (
+                        <div
+                          key={q.id || idx}
+                          className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2 text-xs"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[#801424]">
+                              Item {idx + 1}
+                            </span>
+                            <span className="font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                              Correct: {q.correctAnswerText || q.correct}
+                            </span>
+                          </div>
+                          <p className="font-semibold text-gray-800 text-sm">
+                            {q.prompt}
+                          </p>
+                          {(q.questionType === "multiple_choice" || (!q.questionType && q.optionB)) && (
+                            <div className="grid grid-cols-2 gap-1.5 text-gray-600 pt-1">
+                              <span>A: {q.optionA}</span>
+                              <span>B: {q.optionB}</span>
+                              <span>C: {q.optionC}</span>
+                              <span>D: {q.optionD}</span>
+                            </div>
+                          )}
+                          {q.explanation && (
+                            <p className="text-gray-500 text-[11px] pt-1 border-t border-gray-200">
+                              <span className="font-bold">Explanation: </span>
+                              {q.explanation}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setAdminReviewQuizModal(null)}
+                        className="px-4 py-2 bg-[#801424] text-white rounded-xl text-xs font-bold hover:bg-[#6b101e] transition cursor-pointer"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW E: QUIZ RESULTS (Admin View)                                         */}
+        {/* VIEW E: QUIZ RESULTS & STUDENT SUBMISSIONS (Admin View)                   */}
         {/* ========================================================================= */}
         {activeNav === "quiz-results" && (
           <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
+            {/* Header Banner */}
             <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-[#801424] flex items-center justify-center text-white shrink-0">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-[#801424] flex items-center justify-center text-white shrink-0 shadow-sm shadow-[#801424]/20">
                     <BarChart3 className="w-5 h-5" />
                   </div>
                   <div>
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
-                      Quiz Results & Analytics
+                      Quiz Results & Student Performance
                     </h2>
                     <p className="text-sm text-[#6B7280] mt-1">
-                      Monitor student quiz performance, average scores, and overall submission statistics.
+                      View live student quiz submissions, individual student names, scores, and class performance analytics.
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleNavClick("add-quiz")}
-                  className="px-4 py-2.5 bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create New Quiz</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={fetchQuizzesAndStats}
+                    className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                    title="Refresh submissions"
+                  >
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 ${
+                        isLoadingQuizzes ? "animate-spin text-[#801424]" : ""
+                      }`}
+                    />
+                    <span>Refresh</span>
+                  </button>
+                  <button
+                    onClick={() => handleNavClick("add-quiz")}
+                    className="px-4 py-2.5 bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create New Quiz</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {quizzes.length === 0 ? (
-              <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
-                <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
-                  <BarChart3 className="w-6 h-6 stroke-[1.8]" />
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-[#FCE8EB] text-[#801424] flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5" />
                 </div>
-                <h4 className="text-base font-bold text-[#111827]">
-                  No Quizzes Available
-                </h4>
-                <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
-                  Create and publish a quiz to start tracking student scores and analytics.
-                </p>
+                <div>
+                  <p className="text-xs font-semibold text-[#8C93A0]">
+                    Total Submissions
+                  </p>
+                  <p className="text-2xl font-extrabold text-[#111827]">
+                    {resultsStats.totalSubmissions}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center shrink-0">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[#8C93A0]">
+                    Class Average
+                  </p>
+                  <p className="text-2xl font-extrabold text-[#111827]">
+                    {resultsStats.avgScore}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[#8C93A0]">
+                    Passing Rate
+                  </p>
+                  <p className="text-2xl font-extrabold text-[#111827]">
+                    {resultsStats.passRate}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[#8C93A0]">
+                    Published Quizzes
+                  </p>
+                  <p className="text-2xl font-extrabold text-[#111827]">
+                    {quizzes.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* View Switcher & Controls */}
+            <div className="bg-white border border-[#EAEBED] rounded-2xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl">
                 <button
-                  onClick={() => handleNavClick("add-quiz")}
-                  className="mt-4 px-4 py-2 bg-[#801424] text-white text-xs font-bold rounded-xl cursor-pointer"
+                  onClick={() => setResultsViewMode("students")}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    resultsViewMode === "students"
+                      ? "bg-white text-[#801424] shadow-xs"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
                 >
-                  Add Your First Quiz
+                  Student Results ({studentSubmissions.length})
+                </button>
+                <button
+                  onClick={() => setResultsViewMode("quizzes")}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    resultsViewMode === "quizzes"
+                      ? "bg-white text-[#801424] shadow-xs"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Quizzes Summary ({quizzes.length})
                 </button>
               </div>
-            ) : (
-              <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-[#EAEBED] text-xs font-bold uppercase text-[#6B7280]">
-                        <th className="pb-3 px-3">Quiz Title</th>
-                        <th className="pb-3 px-3">Topic</th>
-                        <th className="pb-3 px-3">Questions</th>
-                        <th className="pb-3 px-3">Student Attempts</th>
-                        <th className="pb-3 px-3">Avg. Score</th>
-                        <th className="pb-3 px-3">Published Date</th>
-                        <th className="pb-3 px-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#F3F4F6]">
-                      {quizzes.map((quiz) => (
-                        <tr key={quiz.id} className="hover:bg-[#F9FAFB] transition">
-                          <td className="py-3.5 px-3 font-semibold text-[#111827]">
-                            {quiz.title}
-                          </td>
-                          <td className="py-3.5 px-3 text-xs text-[#6B7280]">
-                            <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">
-                              {quiz.topic}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-3 text-xs text-[#4B5563]">
-                            {quiz.questionsCount}
-                          </td>
-                          <td className="py-3.5 px-3 text-xs font-medium text-[#111827]">
-                            {quiz.attempts}
-                          </td>
-                          <td className="py-3.5 px-3">
-                            <span
-                              className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                                quiz.averageScore >= 75
-                                  ? "bg-green-100 text-green-700"
-                                  : quiz.averageScore >= 50
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : quiz.averageScore > 0
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-gray-100 text-gray-500"
-                              }`}
-                            >
-                              {quiz.attempts > 0 ? `${quiz.averageScore}%` : "No attempts"}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-3 text-xs text-[#6B7280]">
-                            {quiz.createdAt}
-                          </td>
-                          <td className="py-3.5 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteQuiz(quiz.id)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                              title="Delete Quiz"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+              {resultsViewMode === "students" && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Search student name, email, or quiz..."
+                      value={resultsSearchQuery}
+                      onChange={(e) => setResultsSearchQuery(e.target.value)}
+                      className="pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#801424] w-full sm:w-64"
+                    />
+                  </div>
+
+                  <select
+                    value={resultsTopicFilter}
+                    onChange={(e) => setResultsTopicFilter(e.target.value)}
+                    className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#801424] cursor-pointer"
+                  >
+                    <option value="all">All Topics</option>
+                    <option value="Linear Algebra">Linear Algebra</option>
+                    <option value="Calculus 1">Calculus 1</option>
+                    <option value="Calculus 2">Calculus 2</option>
+                  </select>
                 </div>
-              </div>
+              )}
+            </div>
+
+            {/* TAB 1: STUDENT RESULTS TABLE */}
+            {resultsViewMode === "students" && (
+              <>
+                {filteredSubmissions.length === 0 ? (
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center shadow-xs">
+                    <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
+                      <GraduationCap className="w-6 h-6 stroke-[1.8]" />
+                    </div>
+                    <h4 className="text-base font-bold text-[#111827]">
+                      {studentSubmissions.length === 0
+                        ? "No Student Quiz Results Recorded Yet"
+                        : "No Matching Submissions Found"}
+                    </h4>
+                    <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                      {studentSubmissions.length === 0
+                        ? "When students take and submit a quiz, their names, scores, and submission details will appear here automatically."
+                        : "Try clearing your search query or topic filter."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-[#EAEBED] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                            <th className="pb-3 px-3">Student Name</th>
+                            <th className="pb-3 px-3">Quiz Title</th>
+                            <th className="pb-3 px-3">Topic</th>
+                            <th className="pb-3 px-3">Score</th>
+                            <th className="pb-3 px-3">Percentage</th>
+                            <th className="pb-3 px-3">Status</th>
+                            <th className="pb-3 px-3">Time Spent</th>
+                            <th className="pb-3 px-3">Submitted At</th>
+                            <th className="pb-3 px-3 text-right">Details</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#F3F4F6]">
+                          {filteredSubmissions.map((sub) => (
+                            <tr
+                              key={sub.id}
+                              className="hover:bg-[#F9FAFB] transition group"
+                            >
+                              <td className="py-3.5 px-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-full bg-[#801424] text-white flex items-center justify-center text-xs font-bold uppercase shrink-0">
+                                    {sub.studentName.slice(0, 2)}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-[#111827] text-sm truncate">
+                                      {sub.studentName}
+                                    </p>
+                                    <p className="text-[11px] text-[#6B7280] truncate">
+                                      {sub.studentEmail || "No email"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-3 font-semibold text-[#111827] text-xs max-w-xs truncate">
+                                {sub.quizTitle}
+                              </td>
+                              <td className="py-3.5 px-3 text-xs">
+                                <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium text-[11px]">
+                                  {sub.topic}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-3 font-bold text-xs text-[#111827]">
+                                {sub.score} / {sub.totalQuestions}
+                              </td>
+                              <td className="py-3.5 px-3">
+                                <span
+                                  className={`text-xs font-extrabold px-2.5 py-0.5 rounded-md ${
+                                    sub.percentage >= 75
+                                      ? "bg-emerald-100 text-emerald-700"
+                                      : sub.percentage >= 60
+                                      ? "bg-amber-100 text-amber-800"
+                                      : "bg-red-100 text-red-700"
+                                  }`}
+                                >
+                                  {sub.percentage}%
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-3">
+                                <span
+                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                                    sub.passed
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                      : "bg-red-50 text-red-700 border border-red-200"
+                                  }`}
+                                >
+                                  {sub.passed ? "Passed" : "Needs Review"}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                                {sub.timeSpentSeconds > 0
+                                  ? `${Math.floor(sub.timeSpentSeconds / 60)}m ${
+                                      sub.timeSpentSeconds % 60
+                                    }s`
+                                  : "—"}
+                              </td>
+                              <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                                {sub.submittedAt}
+                              </td>
+                              <td className="py-3.5 px-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSubmissionForReview(sub)}
+                                  className="px-2.5 py-1.5 bg-gray-100 hover:bg-[#801424] hover:text-white text-gray-700 text-xs font-bold rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
+                                  title="Inspect student quiz responses"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Review</span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* TAB 2: QUIZZES OVERVIEW TABLE */}
+            {resultsViewMode === "quizzes" && (
+              <>
+                {quizzes.length === 0 ? (
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center shadow-xs">
+                    <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
+                      <BarChart3 className="w-6 h-6 stroke-[1.8]" />
+                    </div>
+                    <h4 className="text-base font-bold text-[#111827]">
+                      No Quizzes Available
+                    </h4>
+                    <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                      Create and publish a quiz to start tracking student scores and analytics.
+                    </p>
+                    <button
+                      onClick={() => handleNavClick("add-quiz")}
+                      className="mt-4 px-4 py-2 bg-[#801424] text-white text-xs font-bold rounded-xl cursor-pointer"
+                    >
+                      Add Your First Quiz
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-[#EAEBED] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                            <th className="pb-3 px-3">Quiz Title</th>
+                            <th className="pb-3 px-3">Topic</th>
+                            <th className="pb-3 px-3">Questions</th>
+                            <th className="pb-3 px-3">Students Completed</th>
+                            <th className="pb-3 px-3">Class Avg. Score</th>
+                            <th className="pb-3 px-3">Published Date</th>
+                            <th className="pb-3 px-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#F3F4F6]">
+                          {quizzes.map((quiz) => (
+                            <tr key={quiz.id} className="hover:bg-[#F9FAFB] transition">
+                              <td className="py-3.5 px-3 font-semibold text-[#111827]">
+                                {quiz.title}
+                              </td>
+                              <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                                <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">
+                                  {quiz.topic}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-3 text-xs text-[#4B5563]">
+                                {quiz.questionsCount}
+                              </td>
+                              <td className="py-3.5 px-3 text-xs font-medium text-[#111827]">
+                                <span className="font-bold text-[#801424]">
+                                  {quiz.attempts}
+                                </span>{" "}
+                                student{quiz.attempts === 1 ? "" : "s"}
+                              </td>
+                              <td className="py-3.5 px-3">
+                                <span
+                                  className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                                    quiz.averageScore >= 75
+                                      ? "bg-green-100 text-green-700"
+                                      : quiz.averageScore >= 50
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : quiz.averageScore > 0
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-gray-100 text-gray-500"
+                                  }`}
+                                >
+                                  {quiz.attempts > 0 ? `${quiz.averageScore} pts` : "No submissions"}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                                {quiz.createdAt}
+                              </td>
+                              <td className="py-3.5 px-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteQuiz(quiz.id)}
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                  title="Delete Quiz"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -3153,95 +5247,381 @@ export default function AdminDashboardPage() {
         {/* ========================================================================= */}
         {/* VIEW F: HISTORY QUIZZES (Admin View)                                       */}
         {/* ========================================================================= */}
-        {activeNav === "history-quizzes" && (
-          <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
-            <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-              <div className="flex items-start gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#801424] flex items-center justify-center text-white shrink-0">
-                  <History className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
-                    Quiz Submission History
-                  </h2>
-                  <p className="text-sm text-[#6B7280] mt-1">
-                    Complete chronological record of all student quiz submissions and grading results.
-                  </p>
-                </div>
-              </div>
-            </div>
+        {activeNav === "history-quizzes" && (() => {
+          const activeActivities = activities.filter(
+            (a) => !archivedActivityIds.includes(a.id)
+          );
+          const archivedActivities = activities.filter((a) =>
+            archivedActivityIds.includes(a.id)
+          );
+          const filteredArchivedActivities = archivedActivities.filter((act) => {
+            if (!archivedSearchQuery.trim()) return true;
+            const q = archivedSearchQuery.toLowerCase().trim();
+            const monthYear = getMonthYearLabel(act.rawDate, act.submittedAt).toLowerCase();
+            return (
+              act.studentName.toLowerCase().includes(q) ||
+              act.quizTitle.toLowerCase().includes(q) ||
+              monthYear.includes(q)
+            );
+          });
+          const archivedByMonthYear = filteredArchivedActivities.reduce(
+            (acc, act) => {
+              const key = getMonthYearLabel(act.rawDate, act.submittedAt);
+              if (!acc[key]) acc[key] = [];
+              acc[key].push(act);
+              return acc;
+            },
+            {} as Record<string, ActivityItem[]>
+          );
 
-            {activities.length === 0 ? (
-              <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
-                <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
-                  <History className="w-6 h-6 stroke-[1.8]" />
+          return (
+            <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
+              {/* Header Banner & Tabs */}
+              <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-[#801424] flex items-center justify-center text-white shrink-0 shadow-xs">
+                      <History className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                        Quiz Submission History
+                      </h2>
+                      <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
+                        Chronological record of student quiz attempts with archive & deletion controls.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Active / Archived Tab Selector */}
+                  <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-2xl border border-gray-200 self-start sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => setHistoryTab("active")}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        historyTab === "active"
+                          ? "bg-white text-[#801424] shadow-xs"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      <span>Active</span>
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                          historyTab === "active"
+                            ? "bg-[#801424] text-white"
+                            : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {activeActivities.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setHistoryTab("archived")}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        historyTab === "archived"
+                          ? "bg-white text-[#801424] shadow-xs"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                      <span>Archived</span>
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                          historyTab === "archived"
+                            ? "bg-[#801424] text-white"
+                            : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {archivedActivities.length}
+                      </span>
+                    </button>
+                  </div>
                 </div>
-                <h4 className="text-base font-bold text-[#111827]">
-                  No Submissions Recorded Yet
-                </h4>
-                <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
-                  Student quiz attempts and scores will automatically appear here as they take quizzes.
-                </p>
               </div>
-            ) : (
-              <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-[#EAEBED] text-xs font-bold uppercase text-[#6B7280]">
-                        <th className="pb-3 px-3">Student</th>
-                        <th className="pb-3 px-3">Quiz Title</th>
-                        <th className="pb-3 px-3">Score</th>
-                        <th className="pb-3 px-3">Percentage</th>
-                        <th className="pb-3 px-3">Status</th>
-                        <th className="pb-3 px-3">Submitted At</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#F3F4F6]">
-                      {activities.map((act) => {
-                        const pct =
-                          act.totalQuestions > 0
-                            ? Math.round((act.score / act.totalQuestions) * 100)
-                            : 0;
-                        const passed = pct >= 60;
-                        return (
-                          <tr key={act.id} className="hover:bg-[#F9FAFB] transition">
-                            <td className="py-3.5 px-3 font-semibold text-[#111827]">
-                              {act.studentName}
-                            </td>
-                            <td className="py-3.5 px-3 text-xs text-[#4B5563]">
-                              {act.quizTitle}
-                            </td>
-                            <td className="py-3.5 px-3 text-xs font-bold text-[#111827]">
-                              {act.score} / {act.totalQuestions}
-                            </td>
-                            <td className="py-3.5 px-3 text-xs font-bold">
-                              {pct}%
-                            </td>
-                            <td className="py-3.5 px-3">
-                              <span
-                                className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                                  passed
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}
-                              >
-                                {passed ? "Passed" : "Needs Review"}
+
+              {/* TAB 1: ACTIVE SUBMISSIONS */}
+              {historyTab === "active" && (
+                <>
+                  {activeActivities.length === 0 ? (
+                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
+                        <History className="w-6 h-6 stroke-[1.8]" />
+                      </div>
+                      <h4 className="text-base font-bold text-[#111827]">
+                        No Active Submissions
+                      </h4>
+                      <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                        {archivedActivities.length > 0
+                          ? "All submissions have been archived. You can view them in the Archived tab."
+                          : "Student quiz attempts and scores will automatically appear here as they take quizzes."}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead>
+                            <tr className="border-b border-[#EAEBED] text-xs font-bold uppercase text-[#6B7280]">
+                              <th className="pb-3 px-3">Student</th>
+                              <th className="pb-3 px-3">Quiz Title</th>
+                              <th className="pb-3 px-3">Points Earned</th>
+                              <th className="pb-3 px-3">Status</th>
+                              <th className="pb-3 px-3">Submitted At</th>
+                              <th className="pb-3 px-3 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#F3F4F6]">
+                            {activeActivities.map((act) => {
+                              const pct =
+                                act.totalQuestions > 0
+                                  ? Math.round(
+                                      (act.score / act.totalQuestions) * 100
+                                    )
+                                  : 0;
+                              const passed = pct >= 60;
+                              return (
+                                <tr
+                                  key={act.id}
+                                  className="hover:bg-[#F9FAFB] transition"
+                                >
+                                  <td className="py-3.5 px-3 font-semibold text-[#111827]">
+                                    {act.studentName}
+                                  </td>
+                                  <td className="py-3.5 px-3 text-xs text-[#4B5563]">
+                                    {act.quizTitle}
+                                  </td>
+                                  <td className="py-3.5 px-3 text-xs font-bold text-[#801424]">
+                                    {act.score} / {act.totalQuestions} pts
+                                  </td>
+                                  <td className="py-3.5 px-3">
+                                    <span
+                                      className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                                        passed
+                                          ? "bg-green-100 text-green-700"
+                                          : "bg-red-100 text-red-700"
+                                      }`}
+                                    >
+                                      {passed ? "Passed" : "Needs Review"}
+                                    </span>
+                                  </td>
+                                  <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                                    {act.submittedAt}
+                                  </td>
+                                  <td className="py-3.5 px-3 text-right">
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleArchiveActivity(act.id)
+                                        }
+                                        title="Archive submission (hide from active history)"
+                                        className="px-2.5 py-1 rounded-xl text-gray-600 hover:text-[#801424] hover:bg-red-50 border border-gray-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                                      >
+                                        <Archive className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline">
+                                          Archive
+                                        </span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleDeleteActivity(act.id)
+                                        }
+                                        title="Delete submission permanently"
+                                        className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-200 transition cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* TAB 2: ARCHIVED SUBMISSIONS GROUPED BY MONTH AND YEAR */}
+              {historyTab === "archived" && (
+                <>
+                  {/* Search Bar for Archived Submissions */}
+                  {archivedActivities.length > 0 && (
+                    <div className="bg-white border border-[#EAEBED] rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={archivedSearchQuery}
+                          onChange={(e) => setArchivedSearchQuery(e.target.value)}
+                          placeholder="Search archived by student name, quiz title, or month/year..."
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition"
+                        />
+                      </div>
+                      {archivedSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setArchivedSearchQuery("")}
+                          className="px-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {archivedActivities.length === 0 ? (
+                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 mb-3">
+                        <Archive className="w-6 h-6 stroke-[1.8]" />
+                      </div>
+                      <h4 className="text-base font-bold text-[#111827]">
+                        No Archived Records
+                      </h4>
+                      <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                        When you click "Archive" on any active history entry, it will be categorized here grouped by Month and Year.
+                      </p>
+                    </div>
+                  ) : filteredArchivedActivities.length === 0 ? (
+                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 mb-3">
+                        <Search className="w-6 h-6 stroke-[1.8]" />
+                      </div>
+                      <h4 className="text-base font-bold text-[#111827]">
+                        No Matching Archived Records
+                      </h4>
+                      <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                        No archived records match "{archivedSearchQuery}". Try another keyword or clear search.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {Object.entries(archivedByMonthYear).map(
+                        ([monthYear, groupItems]) => (
+                          <div
+                            key={monthYear}
+                            className="bg-white border border-[#EAEBED] rounded-3xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
+                          >
+                            {/* Month & Year Group Header */}
+                            <div className="bg-[#FAFBFD] border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 text-[#801424] flex items-center justify-center">
+                                  <Archive className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <h3 className="text-sm sm:text-base font-extrabold text-[#111827]">
+                                    {monthYear}
+                                  </h3>
+                                  <span className="text-[10px] text-gray-500 font-medium">
+                                    Archived Submissions
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-xs font-bold text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-full">
+                                {groupItems.length} record
+                                {groupItems.length === 1 ? "" : "s"}
                               </span>
-                            </td>
-                            <td className="py-3.5 px-3 text-xs text-[#6B7280]">
-                              {act.submittedAt}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                            </div>
+
+                            {/* Group Items Table */}
+                            <div className="p-6 overflow-x-auto">
+                              <table className="w-full text-left text-sm">
+                                <thead>
+                                  <tr className="border-b border-[#EAEBED] text-xs font-bold uppercase text-[#6B7280]">
+                                    <th className="pb-3 px-3">Student</th>
+                                    <th className="pb-3 px-3">Quiz Title</th>
+                                    <th className="pb-3 px-3">Points Earned</th>
+                                    <th className="pb-3 px-3">Status</th>
+                                    <th className="pb-3 px-3">Submitted At</th>
+                                    <th className="pb-3 px-3 text-right">
+                                      Actions
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#F3F4F6]">
+                                  {groupItems.map((act) => {
+                                    const pct =
+                                      act.totalQuestions > 0
+                                        ? Math.round(
+                                            (act.score / act.totalQuestions) *
+                                              100
+                                          )
+                                        : 0;
+                                    const passed = pct >= 60;
+                                    return (
+                                      <tr
+                                        key={act.id}
+                                        className="hover:bg-[#F9FAFB] transition"
+                                      >
+                                        <td className="py-3.5 px-3 font-semibold text-[#111827]">
+                                          {act.studentName}
+                                        </td>
+                                        <td className="py-3.5 px-3 text-xs text-[#4B5563]">
+                                          {act.quizTitle}
+                                        </td>
+                                        <td className="py-3.5 px-3 text-xs font-bold text-[#801424]">
+                                          {act.score} / {act.totalQuestions} pts
+                                        </td>
+                                        <td className="py-3.5 px-3">
+                                          <span
+                                            className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                                              passed
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-red-100 text-red-700"
+                                            }`}
+                                          >
+                                            {passed ? "Passed" : "Needs Review"}
+                                          </span>
+                                        </td>
+                                        <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                                          {act.submittedAt}
+                                        </td>
+                                        <td className="py-3.5 px-3 text-right">
+                                          <div className="flex items-center justify-end gap-1.5">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleRestoreActivity(act.id)
+                                              }
+                                              title="Restore back to active history"
+                                              className="px-2.5 py-1 rounded-xl text-emerald-700 hover:bg-emerald-50 border border-emerald-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                                            >
+                                              <ArchiveRestore className="w-3.5 h-3.5" />
+                                              <span>Restore</span>
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleDeleteActivity(act.id)
+                                              }
+                                              title="Permanently delete from archive"
+                                              className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-200 transition cursor-pointer"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ========================================================================= */}
         {/* VIEW G: VIEW STUDENTS (Full Page Table & Analytics Directory)             */}
@@ -3272,40 +5652,11 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Quick Summary Metrics Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-gray-100">
-                <div className="bg-[#F8F9FA] p-3.5 rounded-2xl border border-gray-100">
-                  <p className="text-[11px] text-gray-500 font-medium">Total Registered</p>
-                  <p className="text-xl font-bold text-[#111827]">{students.length}</p>
-                </div>
-                <div className="bg-[#F8F9FA] p-3.5 rounded-2xl border border-gray-100">
-                  <p className="text-[11px] text-gray-500 font-medium">Active Quiz Takers</p>
-                  <p className="text-xl font-bold text-green-700">
-                    {students.filter((s) => s.quizzesTaken > 0).length}
-                  </p>
-                </div>
-                <div className="bg-[#F8F9FA] p-3.5 rounded-2xl border border-gray-100">
-                  <p className="text-[11px] text-gray-500 font-medium">Average Student Score</p>
-                  <p className="text-xl font-bold text-[#801424]">
-                    {students.length > 0
-                      ? Math.round(
-                          students.reduce((acc, s) => acc + s.averageScore, 0) /
-                            students.length,
-                        )
-                      : 0}
-                    %
-                  </p>
-                </div>
-                <div className="bg-[#F8F9FA] p-3.5 rounded-2xl border border-gray-100">
-                  <p className="text-[11px] text-gray-500 font-medium">Total Quiz Attempts</p>
-                  <p className="text-xl font-bold text-gray-800">{totalAttempts}</p>
-                </div>
-              </div>
 
               {/* Search Bar */}
               <div className="mt-5 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="relative w-full sm:w-80">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
                     value={studentSearchQuery}
@@ -3362,14 +5713,36 @@ export default function AdminDashboardPage() {
                       {filteredStudents.map((st) => {
                         const hasAttempts = st.quizzesTaken > 0;
                         const isGoodScore = st.averageScore >= 75;
+                        const isOnline =
+                          onlineStudentKeys.has(st.id.toLowerCase()) ||
+                          onlineStudentKeys.has(st.email.toLowerCase());
+
                         return (
                           <tr key={st.id} className="hover:bg-[#F9FAFB] transition">
                             <td className="py-3.5 px-3">
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-[#801424] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-                                  {st.name.slice(0, 2).toUpperCase()}
+                                <div className="relative">
+                                  <div className="w-9 h-9 rounded-xl bg-[#801424] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                                    {st.name.slice(0, 2).toUpperCase()}
+                                  </div>
+                                  {isOnline && (
+                                    <span
+                                      title="Online now"
+                                      className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-xs animate-pulse ring-1 ring-emerald-500/40"
+                                    />
+                                  )}
                                 </div>
-                                <span className="font-bold text-[#111827]">{st.name}</span>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-[#111827]">{st.name}</span>
+                                    {isOnline && (
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                                        Online
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </td>
                             <td className="py-3.5 px-3 text-xs text-[#4B5563]">
@@ -3392,7 +5765,7 @@ export default function AdminDashboardPage() {
                                       : "bg-red-100 text-red-800"
                                   }`}
                                 >
-                                  {st.averageScore}%
+                                  {st.averageScore} pts
                                 </span>
                               ) : (
                                 <span className="text-gray-400 font-normal">No attempts</span>
@@ -3422,6 +5795,189 @@ export default function AdminDashboardPage() {
             )}
           </div>
         )}
+
+      {/* ========================================================================= */}
+      {/* REVIEW STUDENT QUIZ SUBMISSION MODAL                                      */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {selectedSubmissionForReview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-3xl bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#EAEBED] max-h-[85vh] flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center text-sm font-bold uppercase shrink-0">
+                    {selectedSubmissionForReview.studentName.slice(0, 2)}
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-[#111827]">
+                      {selectedSubmissionForReview.studentName}'s Submission
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {selectedSubmissionForReview.studentEmail} • Quiz:{" "}
+                      <span className="font-semibold text-gray-700">
+                        {selectedSubmissionForReview.quizTitle}
+                      </span>{" "}
+                      ({selectedSubmissionForReview.topic})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubmissionForReview(null)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Submission Overview Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4 shrink-0">
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Score</p>
+                  <p className="text-base font-extrabold text-[#111827]">
+                    {selectedSubmissionForReview.score} / {selectedSubmissionForReview.totalQuestions}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Grade</p>
+                  <p
+                    className={`text-base font-extrabold ${
+                      selectedSubmissionForReview.percentage >= 75
+                        ? "text-emerald-700"
+                        : selectedSubmissionForReview.percentage >= 60
+                        ? "text-amber-700"
+                        : "text-red-700"
+                    }`}
+                  >
+                    {selectedSubmissionForReview.percentage}%
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Status</p>
+                  <p
+                    className={`text-sm font-bold ${
+                      selectedSubmissionForReview.passed ? "text-emerald-700" : "text-red-700"
+                    }`}
+                  >
+                    {selectedSubmissionForReview.passed ? "Passed" : "Needs Review"}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Submitted</p>
+                  <p className="text-xs font-semibold text-gray-700 truncate">
+                    {selectedSubmissionForReview.submittedAt}
+                  </p>
+                </div>
+              </div>
+
+              {/* Answers Breakdown */}
+              <div className="overflow-y-auto flex-1 pr-1 space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Question-by-Question Response Breakdown
+                </h4>
+
+                {(!selectedSubmissionForReview.answers || selectedSubmissionForReview.answers.length === 0) ? (
+                  <p className="text-xs text-gray-400 italic py-4 text-center">
+                    Detailed answer history is not available for this legacy submission.
+                  </p>
+                ) : (
+                  selectedSubmissionForReview.answers.map((ans: any, idx: number) => {
+                    const isRight = ans.isCorrect;
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-2xl border ${
+                          isRight
+                            ? "border-emerald-200 bg-emerald-50/30"
+                            : "border-red-200 bg-red-50/30"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <p className="font-bold text-xs text-[#111827]">
+                            <span className="text-gray-400 mr-1.5">Q{idx + 1}.</span>
+                            {ans.prompt}
+                          </p>
+                          <span
+                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded shrink-0 ${
+                              isRight
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {isRight ? "Correct" : "Incorrect"}
+                          </span>
+                        </div>
+
+                        {ans.options && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                            {(["A", "B", "C", "D"] as const).map((choice) => {
+                              const text = ans.options[choice];
+                              if (!text) return null;
+                              const isStudentPick = ans.selected === choice;
+                              const isCorrectPick = ans.correct === choice;
+
+                              let choiceClass =
+                                "bg-white border-gray-200 text-gray-700";
+                              if (isCorrectPick) {
+                                choiceClass =
+                                  "bg-emerald-100 border-emerald-400 text-emerald-950 font-bold";
+                              } else if (isStudentPick && !isRight) {
+                                choiceClass =
+                                  "bg-red-100 border-red-400 text-red-950 font-bold";
+                              }
+
+                              return (
+                                <div
+                                  key={choice}
+                                  className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${choiceClass}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono font-bold">
+                                      {choice}.
+                                    </span>
+                                    <span>{text}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0 text-[10px] font-bold">
+                                    {isStudentPick && (
+                                      <span className="px-1.5 py-0.5 rounded bg-black/10">
+                                        Student Pick
+                                      </span>
+                                    )}
+                                    {isCorrectPick && (
+                                      <span className="text-emerald-700">✓ Correct</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubmissionForReview(null)}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       </div>
     </div>
   );

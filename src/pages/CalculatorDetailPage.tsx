@@ -132,16 +132,18 @@ export default function CalculatorDetailPage() {
             {isDropdownOpen && (
               <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-white/15 bg-[#121824] text-white shadow-2xl p-2 z-50 max-h-[380px] flex flex-col animate-in fade-in zoom-in-95 duration-150">
                 {/* Search inside Dropdown */}
-                <div className="relative px-1 pb-2 mb-1 border-b border-white/10">
-                  <Search className="absolute left-3.5 top-2.5 w-3.5 h-3.5 text-white/50" />
-                  <input
-                    type="text"
-                    placeholder="Search all 23 calculators..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    autoFocus
-                    className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#E05260] focus:border-[#E05260]"
-                  />
+                <div className="px-1 pb-2 mb-1 border-b border-white/10">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Search all 23 calculators..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      autoFocus
+                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#E05260] focus:border-[#E05260]"
+                    />
+                  </div>
                 </div>
 
                 {/* List of calculators */}

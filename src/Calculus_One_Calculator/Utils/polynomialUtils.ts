@@ -6,10 +6,14 @@ export interface PolyTerm {
   exponent: number;
 }
 
-/** Parses standard polynomial expressions like "4x^3 - 7x^2 + 2x - 5" into PolyTerm array */
+/** Parses standard polynomial expressions like "x^3 - 4x^2 - 5x + 8" into PolyTerm array */
 export function parsePolynomial(expr: string, variable: string = 'x'): PolyTerm[] {
   const terms: PolyTerm[] = [];
-  const clean = expr.replace(/\s+/g, '').replace(/-/g, '+-');
+  // Normalize minus signs and insert + before minus for splitting, but preserve scientific notation or parentheses
+  const clean = expr
+    .replace(/\s+/g, '')
+    .replace(/([^\^(\[])-/g, '$1+-')
+    .replace(/^-(.+)$/, '+-$1');
   const rawParts = clean.split('+').filter(p => p.length > 0);
 
   for (const part of rawParts) {
@@ -17,17 +21,27 @@ export function parsePolynomial(expr: string, variable: string = 'x'): PolyTerm[
     const varIndex = part.indexOf(variable);
     if (varIndex === -1) {
       // Constant term
-      const c = parseFloat(part);
+      const cleanConst = part.replace(/[()]/g, '');
+      const c = parseFloat(cleanConst);
       if (!Number.isNaN(c) && c !== 0) {
         terms.push({ coeff: c, exponent: 0 });
       }
     } else {
       // Has variable
-      const coeffPart = part.slice(0, varIndex);
+      let coeffPart = part.slice(0, varIndex).replace(/\*+$/, '');
       let coeff = 1;
       if (coeffPart === '' || coeffPart === '+') coeff = 1;
       else if (coeffPart === '-') coeff = -1;
-      else coeff = parseFloat(coeffPart);
+      else {
+        // Handle potential fractions like (1/2)
+        const cleanCoeff = coeffPart.replace(/[()]/g, '');
+        if (cleanCoeff.includes('/')) {
+          const [n, d] = cleanCoeff.split('/');
+          coeff = parseFloat(n) / parseFloat(d);
+        } else {
+          coeff = parseFloat(cleanCoeff);
+        }
+      }
 
       let exponent = 1;
       const caretIndex = part.indexOf('^', varIndex);
@@ -41,6 +55,7 @@ export function parsePolynomial(expr: string, variable: string = 'x'): PolyTerm[
       }
     }
   }
+
 
   // Combine like terms
   const map: Record<number, number> = {};

@@ -31,7 +31,7 @@ export function solveRelatedRates(input: string): SolverResult {
 
     steps.push({
       title: '1. Geometric Relationship (Pythagorean Theorem)',
-      expression: `x² + y² = L²\nHere L = ${L}, x = ${x} ⇒ y = √(100 - 36) = ${y.toFixed(2)} ft`,
+      expression: `x² + y² = L²\nHere L = ${L}, x = ${x} ⇒ y = √(${L * L} - ${x * x}) = ${y.toFixed(4)} ft`,
       explanation: 'Relate the horizontal position x and vertical height y via the ladder length L.',
     });
 
@@ -43,18 +43,18 @@ export function solveRelatedRates(input: string): SolverResult {
 
     steps.push({
       title: '3. Isolate the Unknown Rate dy/dt',
-      expression: `dy/dt = - (x · dx/dt) / y\n     = - (${x} · ${dxdt}) / ${y.toFixed(2)} = ${dydt.toFixed(4)} ft/sec`,
-      explanation: 'Substitute known values x = ' + x + ', y = ' + y.toFixed(2) + ', and dx/dt = ' + dxdt + '.',
+      expression: `dy/dt = - (x · dx/dt) / y\n     = - (${x} · ${dxdt}) / ${y.toFixed(4)} = ${dydt.toFixed(4)} ft/sec`,
+      explanation: `Substitute known values x = ${x}, y = ${y.toFixed(4)}, dx/dt = ${dxdt}.`,
     });
 
-    const answer = `dy/dt = ${formatNumber(dydt)} units/sec (Top is sliding down at ${Math.abs(dydt).toFixed(2)} units/sec)`;
+    const answer = `dy/dt = ${formatNumber(dydt)} units/sec (Top is sliding down at ${Math.abs(dydt).toFixed(4)} units/sec)`;
     return {
       success: true,
       answer,
       summary: `Sliding Ladder problem: Rate of top descent dy/dt = ${dydt.toFixed(4)}.`,
       steps,
       explanation: 'As the bottom of the ladder moves away at dx/dt, the top must slide downward at dy/dt to maintain fixed hypotenuse L.',
-      verification: `✓ Verified: x(dx/dt) + y(dy/dt) = (${x})(${dxdt}) + (${y.toFixed(2)})(${dydt.toFixed(4)}) ≈ 0.`,
+      verification: `✓ Verified: x(dx/dt) + y(dy/dt) = (${x})(${dxdt}) + (${y.toFixed(4)})(${dydt.toFixed(4)}) ≈ ${(x * dxdt + y * dydt).toFixed(6)} ≈ 0.`,
     };
   }
 
@@ -82,21 +82,74 @@ export function solveRelatedRates(input: string): SolverResult {
 
     steps.push({
       title: '3. Substitute Given Values',
-      expression: `dV/dt = 4π (${r})² · (${drdt}) = ${4 * r * r * drdt}π ≈ ${dVdt.toFixed(2)} cubic units/sec`,
+      expression: `dV/dt = 4π (${r})² · (${drdt}) = ${4 * r * r * drdt}π ≈ ${dVdt.toFixed(4)} cubic units/sec`,
       explanation: 'Evaluate the surface area 4πr² multiplied by the radial growth rate dr/dt.',
     });
 
-    const answer = `dV/dt = ${4 * r * r * drdt}π ≈ ${dVdt.toFixed(2)} units³/sec`;
+    const answer = `dV/dt = ${4 * r * r * drdt}π ≈ ${dVdt.toFixed(4)} units³/sec`;
     return {
       success: true,
       answer,
-      summary: `Spherical expansion: Rate of volume change dV/dt = ${4 * r * r * drdt}π ≈ ${dVdt.toFixed(2)}.`,
+      summary: `Spherical expansion: Rate of volume change dV/dt = ${4 * r * r * drdt}π ≈ ${dVdt.toFixed(4)}.`,
       steps,
       explanation: 'The rate of change of volume is directly proportional to the surface area 4πr² multiplied by dr/dt.',
     };
   }
 
-  // Model 3: Expanding Circle / Ripple (A = π r^2)
+  // Model 3: Cone (V = (1/3)π r² h) — water filling or draining
+  if (trimmed.includes('cone')) {
+    const rTankMatch = trimmed.match(/radius\s*=\s*(\d+(?:\.\d+)?)/) || trimmed.match(/r\s*=\s*(\d+(?:\.\d+)?)/);
+    const hTankMatch = trimmed.match(/height\s*=\s*(\d+(?:\.\d+)?)/) || trimmed.match(/h\s*=\s*(\d+(?:\.\d+)?)/);
+    const dvdtMatch = trimmed.match(/dv(?:\/dt)?\s*=\s*([+-]?\d+(?:\.\d+)?)/);
+    // Current height of water
+    const hCurrentMatch = trimmed.match(/(?:at\s+)?h\s*=\s*(\d+(?:\.\d+)?)/);
+
+    const R = rTankMatch ? parseFloat(rTankMatch[1]) : 4;
+    const H = hTankMatch ? parseFloat(hTankMatch[1]) : 10;
+    const dVdt = dvdtMatch ? parseFloat(dvdtMatch[1]) : 2;
+    const hCur = hCurrentMatch ? parseFloat(hCurrentMatch[1]) : 5;
+
+    // Ratio: r/h = R/H  ⟹  r = (R/H) * h
+    const ratio = R / H;
+    // V = (1/3)π r² h = (1/3)π (R/H)² h³ = (π R²)/(3H²) · h³
+    // dV/dt = (π R²)/(H²) · h² · dh/dt
+    const dhdt = dVdt / (Math.PI * ratio * ratio * hCur * hCur);
+
+    steps.push({
+      title: '1. Conical Tank Relationship',
+      expression: `Tank: R = ${R}, H = ${H}\nSimilar triangles: r / h = R / H = ${ratio.toFixed(4)}\n⟹ r(h) = (${ratio.toFixed(4)}) · h`,
+      explanation: 'Use similar triangles to express radius r as a function of water height h.',
+    });
+
+    steps.push({
+      title: '2. Volume in Terms of h Only',
+      expression: `V = (1/3)π r² h = (1/3)π (${ratio.toFixed(4)})² h³\n  = ${formatNumber(Math.PI * ratio * ratio / 3)} · h³`,
+      explanation: 'Substitute the similar-triangle relation r = (R/H)h into the cone volume formula.',
+    });
+
+    steps.push({
+      title: '3. Differentiate with Respect to Time t',
+      expression: `dV/dt = π (R/H)² h² · dh/dt\n      = π · ${formatNumber(ratio * ratio)} · (${hCur})² · dh/dt`,
+      explanation: 'Apply the chain rule: dV/dt = dV/dh · dh/dt.',
+    });
+
+    steps.push({
+      title: '4. Solve for dh/dt',
+      expression: `dh/dt = dV/dt / [π (R/H)² h²]\n      = ${dVdt} / [π · ${formatNumber(ratio * ratio)} · ${hCur * hCur}]\n      = ${dhdt.toFixed(6)} units/sec`,
+      explanation: `Substitute dV/dt = ${dVdt} and h = ${hCur}.`,
+    });
+
+    const answer = `dh/dt = ${formatNumber(dhdt)} units/sec (water level ${dVdt > 0 ? 'rises' : 'falls'} at ${Math.abs(dhdt).toFixed(6)} units/sec)`;
+    return {
+      success: true,
+      answer,
+      summary: `Conical tank: dh/dt = ${dhdt.toFixed(6)} at h = ${hCur}.`,
+      steps,
+      explanation: 'Related rates in a cone use similar triangles to reduce V(r, h) to a single-variable function V(h).',
+    };
+  }
+
+  // Model 4: Expanding Circle / Ripple (A = π r^2) — default fallback
   const rMatch = trimmed.match(/radius\s*=\s*(\d+(?:\.\d+)?)/) || trimmed.match(/r\s*=\s*(\d+(?:\.\d+)?)/);
   const drdtMatch = trimmed.match(/dr(?:\/dt)?\s*=\s*([+-]?\d+(?:\.\d+)?)/);
   const r = rMatch ? parseFloat(rMatch[1]) : 5;
@@ -117,14 +170,14 @@ export function solveRelatedRates(input: string): SolverResult {
 
   steps.push({
     title: '3. Compute the Rate of Area Increase',
-    expression: `dA/dt = 2π (${r}) · (${drdt}) = ${2 * r * drdt}π ≈ ${dAdt.toFixed(2)} units²/sec`,
+    expression: `dA/dt = 2π (${r}) · (${drdt}) = ${2 * r * drdt}π ≈ ${dAdt.toFixed(4)} units²/sec`,
     explanation: 'Multiply circumference 2πr by radial speed dr/dt.',
   });
 
   return {
     success: true,
-    answer: `dA/dt = ${2 * r * drdt}π ≈ ${dAdt.toFixed(2)} units²/sec`,
-    summary: `Circular expansion: dA/dt = ${2 * r * drdt}π ≈ ${dAdt.toFixed(2)}.`,
+    answer: `dA/dt = ${2 * r * drdt}π ≈ ${dAdt.toFixed(4)} units²/sec`,
+    summary: `Circular expansion: dA/dt = ${2 * r * drdt}π ≈ ${dAdt.toFixed(4)}.`,
     steps,
     explanation: 'Related rates connects derivatives of related geometric quantities with respect to time.',
   };

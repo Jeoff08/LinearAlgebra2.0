@@ -275,13 +275,16 @@ export default function CalculusCalculatorsPage() {
                         className="absolute left-0 mt-2 w-80 bg-[#111827] border border-white/15 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
                       >
                         <div className="p-2 border-b border-white/10 mb-1">
-                          <input
-                            type="text"
-                            placeholder="Search 29 calculators..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full px-3 py-1.5 rounded-lg bg-white/5 text-white text-xs placeholder-gray-400 border border-white/10 outline-none focus:border-[#7B1824]"
-                          />
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <input
+                              type="text"
+                              placeholder="Search 29 calculators..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 text-white text-xs placeholder-gray-400 border border-white/10 outline-none focus:border-[#7B1824]"
+                            />
+                          </div>
                         </div>
                         <div className="max-h-72 overflow-y-auto space-y-1">
                           {CALCULATOR_DEFINITIONS.filter((t) =>
@@ -387,7 +390,7 @@ export default function CalculusCalculatorsPage() {
 
                 {/* Search box */}
                 <div className="relative w-full md:w-72 shrink-0">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     value={searchTerm}

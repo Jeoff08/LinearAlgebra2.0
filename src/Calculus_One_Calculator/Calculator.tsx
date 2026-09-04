@@ -14,7 +14,9 @@ import {
   ChevronUp,
   Sparkles,
   Info,
+  GripHorizontal,
 } from 'lucide-react';
+
 import { type CalculatorDefinition, getSolver } from './CalculatorData';
 import type { SolverResult, GraphData } from './SolverTypes';
 
@@ -28,14 +30,86 @@ export default function Calculator({ definition }: CalculatorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showSteps, setShowSteps] = useState(true);
+  const [showKeypad, setShowKeypad] = useState(false);
+  const [keypadTab, setKeypadTab] = useState<'standard' | 'calculus' | 'functions'>('standard');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const keypadRef = useRef<HTMLDivElement>(null);
 
   // Update input placeholder and reset when definition changes
   useEffect(() => {
     setInput(definition.example || '');
     setResult(null);
+    setShowKeypad(false);
   }, [definition.id]);
+
+  // Automatically close keypad when clicking outside both the keypad and the input textarea
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (!showKeypad) return;
+      const target = e.target as Node | null;
+      if (
+        target &&
+        keypadRef.current &&
+        !keypadRef.current.contains(target) &&
+        textareaRef.current &&
+        !textareaRef.current.contains(target)
+      ) {
+        setShowKeypad(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [showKeypad]);
+
+
+  // Insert symbol or template text right at the cursor position
+  const insertSymbol = (textToInsert: string, cursorOffset?: number) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setInput((prev) => prev + textToInsert);
+      return;
+    }
+
+    const start = textarea.selectionStart ?? input.length;
+    const end = textarea.selectionEnd ?? input.length;
+    const newValue = input.slice(0, start) + textToInsert + input.slice(end);
+    setInput(newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = cursorOffset !== undefined ? start + cursorOffset : start + textToInsert.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 10);
+  };
+
+  // Backspace at current cursor position
+  const handleBackspace = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart ?? input.length;
+    const end = textarea.selectionEnd ?? input.length;
+    if (start === end && start > 0) {
+      const newValue = input.slice(0, start - 1) + input.slice(end);
+      setInput(newValue);
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start - 1, start - 1);
+      }, 10);
+    } else if (start !== end) {
+      const newValue = input.slice(0, start) + input.slice(end);
+      setInput(newValue);
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start, start);
+      }, 10);
+    }
+  };
 
   const handleSolve = (e?: FormEvent) => {
     if (e) e.preventDefault();
@@ -167,21 +241,19 @@ export default function Calculator({ definition }: CalculatorProps) {
       ctx.stroke();
     }
 
-    // Draw Shaded Region if applicable (Definite Integral / Area)
+    // Draw Shaded Region (if definite integral area)
     if (graph.shadedRegion) {
-      const fromX = Math.max(graph.shadedRegion.from, minX);
-      const toX = Math.min(graph.shadedRegion.to, maxX);
-      const regionPoints = points.filter(p => p.x >= fromX && p.x <= toX);
-
-      if (regionPoints.length > 0) {
-        ctx.fillStyle = 'rgba(123, 24, 36, 0.14)';
+      const { from, to } = graph.shadedRegion;
+      const subPoints = points.filter(p => p.x >= from && p.x <= to);
+      if (subPoints.length > 1) {
+        ctx.fillStyle = 'rgba(123, 24, 36, 0.15)';
         ctx.beginPath();
-        const yZero = scaleY(0);
-        ctx.moveTo(scaleX(fromX), yZero);
-        for (const p of regionPoints) {
+        const yBase = scaleY(0);
+        ctx.moveTo(scaleX(subPoints[0].x), yBase);
+        for (const p of subPoints) {
           ctx.lineTo(scaleX(p.x), scaleY(p.y));
         }
-        ctx.lineTo(scaleX(toX), yZero);
+        ctx.lineTo(scaleX(subPoints[subPoints.length - 1].x), yBase);
         ctx.closePath();
         ctx.fill();
       }
@@ -195,6 +267,10 @@ export default function Calculator({ definition }: CalculatorProps) {
     for (const p of points) {
       const sx = scaleX(p.x);
       const sy = scaleY(p.y);
+      if (!Number.isFinite(sy) || sy < 0 || sy > height) {
+        started = false;
+        continue;
+      }
       if (!started) {
         ctx.moveTo(sx, sy);
         started = true;
@@ -204,20 +280,24 @@ export default function Calculator({ definition }: CalculatorProps) {
     }
     ctx.stroke();
 
-    // Draw Additional Curves
+    // Draw Additional Curves (derivatives, asymptotes, g(x))
     if (graph.additionalCurves) {
       for (const curve of graph.additionalCurves) {
         ctx.strokeStyle = curve.color || '#2563EB';
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
-        let s2 = false;
+        let cStarted = false;
         for (const p of curve.points) {
           const sx = scaleX(p.x);
           const sy = scaleY(p.y);
-          if (!s2) {
+          if (!Number.isFinite(sy) || sy < 0 || sy > height) {
+            cStarted = false;
+            continue;
+          }
+          if (!cStarted) {
             ctx.moveTo(sx, sy);
-            s2 = true;
+            cStarted = true;
           } else {
             ctx.lineTo(sx, sy);
           }
@@ -227,16 +307,15 @@ export default function Calculator({ definition }: CalculatorProps) {
       }
     }
 
-    // Draw Highlight Points (Extrema, Roots, Inflection, Limit Points)
+    // Draw Highlight Points (roots, extrema, inflection points)
     if (graph.highlights) {
       for (const h of graph.highlights) {
-        if (h.x >= minX && h.x <= maxX && h.y >= minY && h.y <= maxY) {
-          const sx = scaleX(h.x);
-          const sy = scaleY(h.y);
-
-          ctx.fillStyle = h.color || '#7B1824';
+        const sx = scaleX(h.x);
+        const sy = scaleY(h.y);
+        if (Number.isFinite(sx) && Number.isFinite(sy)) {
+          ctx.fillStyle = '#7B1824';
           ctx.beginPath();
-          ctx.arc(sx, sy, 4.5, 0, Math.PI * 2);
+          ctx.arc(sx, sy, 5, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = '#111827';
@@ -301,62 +380,621 @@ export default function Calculator({ definition }: CalculatorProps) {
         )}
       </div>
 
-      {/* ── 2. INPUT & ACTIONS FORM ── */}
-      <form onSubmit={handleSolve} className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
-        <div>
-          <label htmlFor="math-input" className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
-            Mathematical Expression / Input
-          </label>
+      {/* ── 2. INPUT & ACTIONS FORM WITH POP-OUT MATH KEYPAD ── */}
+      <div className="relative">
+        <form onSubmit={handleSolve} className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <label htmlFor="math-input" className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+              Mathematical Expression / Input
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setShowKeypad((prev) => !prev);
+                if (!showKeypad && textareaRef.current) textareaRef.current.focus();
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                showKeypad
+                  ? 'bg-[#7B1824] text-white shadow-xs'
+                  : 'bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824]/15 border border-[#7B1824]/20'
+              }`}
+            >
+              <CalcIcon className="w-3.5 h-3.5" />
+              <span>{showKeypad ? 'Hide Math Keypad' : 'Open Math Keypad'}</span>
+            </button>
+          </div>
+
           <div className="relative rounded-xl border border-gray-300 bg-[#0C1017] p-1 shadow-inner focus-within:border-[#7B1824] transition">
             <textarea
               id="math-input"
               ref={textareaRef}
               value={input}
+              onFocus={() => setShowKeypad(true)}
+              onClick={() => setShowKeypad(true)}
               onChange={(e) => setInput(e.target.value)}
               placeholder={definition.placeholder}
               rows={3}
               className="w-full bg-transparent px-3.5 py-2.5 text-sm sm:text-base text-white placeholder-gray-500 font-mono outline-none resize-none"
             />
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-[11px] text-gray-400">
-            <span>Supports standard notation: ^, +, -, *, /, sin, cos, e^x, sqrt, ln</span>
+
+          <div className="flex items-center justify-between text-[11px] text-gray-400">
+            <span>Click input or toggle button above to pop out math symbols</span>
             <span>Press Enter or click Solve</span>
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-          {input && (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-700 transition cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4 text-gray-500" />
-              <span>Clear</span>
-            </button>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] disabled:opacity-40 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#7B1824]/20 transition-all cursor-pointer active:scale-95"
-          >
-            {isLoading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Computing...</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 fill-white" />
-                <span>Calculate &amp; Solve</span>
-              </>
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+            {input && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-700 transition cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4 text-gray-500" />
+                <span>Clear</span>
+              </button>
             )}
-          </button>
-        </div>
-      </form>
+
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] disabled:opacity-40 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#7B1824]/20 transition-all cursor-pointer active:scale-95"
+            >
+              {isLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Computing...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 fill-white" />
+                  <span>Calculate &amp; Solve</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        {/* ── DRAGGABLE FLOATING RIGHT-SIDE POP-OUT MATH KEYPAD (White & Maroon Palette) ── */}
+        <AnimatePresence>
+          {showKeypad && (
+            <motion.div
+              ref={keypadRef}
+              drag
+              dragMomentum={false}
+              dragElastic={0.05}
+              whileDrag={{ scale: 1.02 }}
+              initial={{ opacity: 0, x: 25, scale: 0.94 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 25, scale: 0.94 }}
+              transition={{ type: "spring", stiffness: 400, damping: 28 }}
+              className="absolute right-0 top-0 sm:-top-36 md:-top-44 z-50 w-full sm:w-[350px] md:w-[370px] rounded-2xl border-2 border-[#7B1824]/25 bg-white/98 backdrop-blur-xl p-4 sm:p-5 shadow-2xl shadow-[#7B1824]/20 select-none touch-none"
+            >
+              {/* Keypad Draggable Floating Header */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-gray-100 cursor-grab active:cursor-grabbing">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#7B1824] text-white flex items-center justify-center shadow-xs">
+                    <CalcIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+                        Math Keypad
+                      </h3>
+                      <span className="inline-flex items-center text-[#7B1824]/60" title="Click & hold to drag">
+                        <GripHorizontal className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-400">Click &amp; hold to drag anywhere</p>
+                  </div>
+                </div>
+
+
+                {/* Tabs & Close Button */}
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 bg-gray-100 p-0.5 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setKeypadTab('standard')}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                        keypadTab === 'standard'
+                          ? 'bg-white text-[#7B1824] shadow-xs'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Basic
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setKeypadTab('calculus')}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                        keypadTab === 'calculus'
+                          ? 'bg-white text-[#7B1824] shadow-xs'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Calculus
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setKeypadTab('functions')}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                        keypadTab === 'functions'
+                          ? 'bg-white text-[#7B1824] shadow-xs'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Trig/Fn
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowKeypad(false)}
+                    className="p-1 text-gray-400 hover:text-[#7B1824] hover:bg-[#FDF2F4] rounded-md transition"
+                    title="Close Floating Keypad"
+                  >
+                    <span className="text-sm font-black leading-none">&times;</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Memory / Quick Variable Bar */}
+              <div className="grid grid-cols-6 gap-1 pt-2.5 pb-2 text-[10px] font-bold text-gray-500 text-center">
+                <button
+                  type="button"
+                  onClick={() => insertSymbol('x')}
+                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                >
+                  x
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSymbol('y')}
+                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                >
+                  y
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSymbol('t')}
+                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                >
+                  t
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSymbol('n')}
+                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                >
+                  n
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSymbol('pi')}
+                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                >
+                  π
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSymbol('e')}
+                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                >
+                  e
+                </button>
+              </div>
+
+              {/* Keypad Grid Body */}
+              <div>
+                {/* ── TAB 1: STANDARD (LAYOUT FROM USER IMAGE) ── */}
+                {keypadTab === 'standard' && (
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                    {/* Row 1: %, CE, C, ⌫ */}
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('%')}
+                      className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                    >
+                      %
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const parts = input.trim().split(/[\s+\-*/^,]+/);
+                        if (parts.length > 0) {
+                          const last = parts[parts.length - 1];
+                          setInput(input.slice(0, input.lastIndexOf(last)));
+                        }
+                      }}
+                      className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                    >
+                      CE
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClear}
+                      className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                    >
+                      C
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBackspace}
+                      className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                      title="Backspace"
+                    >
+                      ⌫
+                    </button>
+
+                    {/* Row 2: 1/x, x², ²√x, ÷ */}
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('1/(' , 3)}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                    >
+                      ¹/x
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('^2')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                    >
+                      x²
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('sqrt()', 5)}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                    >
+                      ²√x
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol(' / ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-sm sm:text-base transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                    >
+                      ÷
+                    </button>
+
+                    {/* Row 3: 7, 8, 9, × */}
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('7')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      7
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('8')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      8
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('9')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      9
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol(' * ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      ×
+                    </button>
+
+                    {/* Row 4: 4, 5, 6, − */}
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('4')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      4
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('5')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      5
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('6')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      6
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol(' - ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      −
+                    </button>
+
+                    {/* Row 5: 1, 2, 3, + */}
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('1')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('2')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      2
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('3')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      3
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol(' + ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      +
+                    </button>
+
+                    {/* Row 6: +/-, 0, ., = (Big Maroon Solve Button) */}
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('-')}
+                      className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      +/−
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('0')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      0
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('.')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      .
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSolve()}
+                      className="p-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] text-white font-black text-lg sm:text-xl transition active:scale-95 cursor-pointer shadow-md shadow-[#7B1824]/30 flex items-center justify-center"
+                      title="Calculate & Solve"
+                    >
+                      =
+                    </button>
+                  </div>
+                )}
+
+                {/* ── TAB 2: CALCULUS SYMBOLS ── */}
+                {keypadTab === 'calculus' && (
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('^3')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      x³
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('^', 1)}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      xⁿ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('d/dx ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      d/dx
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('∫ ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      ∫ dx
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('∫[0 to 1] ', 2)}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      ∫ₐᵇ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('sum ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      ∑ (Sum)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('lim ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      lim
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('inf')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      ∞
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('(')}
+                      className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-800 font-bold text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      (
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol(')')}
+                      className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-800 font-bold text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      )
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('[0, 1]', 1)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      [a, b]
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol(', ')}
+                      className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-800 font-bold text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      ,
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('d/dt ')}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      d/dt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('u')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      u
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('v')}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      v
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSolve()}
+                      className="p-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] text-white font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-xs flex items-center justify-center gap-1"
+                    >
+                      <Play className="w-3 h-3 fill-white" />
+                      <span>Solve</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* ── TAB 3: TRANSCENDENTAL & TRIG FUNCTIONS ── */}
+                {keypadTab === 'functions' && (
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('sin(x)', 4)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      sin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('cos(x)', 4)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      cos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('tan(x)', 4)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      tan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('sec(x)', 4)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      sec
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('csc(x)', 4)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      csc
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('cot(x)', 4)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      cot
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('arcsin(x)', 7)}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      arcsin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('arctan(x)', 7)}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      arctan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('ln(x)', 3)}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      ln
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('log(x)', 4)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      log
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('e^x', 3)}
+                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      eˣ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertSymbol('abs()', 4)}
+                      className="p-2.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      |x|
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* ── 3. RESULTS & STEP-BY-STEP DISPLAY ── */}
+
       <AnimatePresence mode="wait">
         {result && (
           <motion.div
