@@ -98,6 +98,7 @@ import {
   getCalculusDefinitionForTopic,
   type CalculatorDefinition,
 } from "../Calculus_One_Calculator/CalculatorData";
+import { getLinearAlgebraDefinitionForTopic } from "../data/linearAlgebraCalculators";
 
 // Real Complete Topic Data from Codebase
 import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
@@ -2081,31 +2082,8 @@ export default function AdminDashboardPage() {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Search Bar with Ctrl+K */}
-          <div className="relative flex-1 max-w-xl">
-            <div className="relative flex items-center w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0] pointer-events-none" />
-              <input
-                id="admin-search-input"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search quizzes, topics, students, calculators..."
-                className="w-full pl-10 pr-20 py-2.5 bg-white border border-[#E2E4E8] rounded-xl text-sm text-[#1F242D] placeholder-[#9AA1B0] shadow-[0_1px_3px_rgba(0,0,0,0.02)] focus:outline-none focus:border-[#801424] focus:ring-2 focus:ring-[#801424]/10 transition-all"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                <span className="px-1.5 py-0.5 text-[0.68rem] font-bold text-[#717A8A] bg-[#F1F2F5] border border-[#E0E2E7] rounded">
-                  Ctrl
-                </span>
-                <span className="px-1.5 py-0.5 text-[0.68rem] font-bold text-[#717A8A] bg-[#F1F2F5] border border-[#E0E2E7] rounded">
-                  K
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Right Header Controls (Notifications & Admin Profile) */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             {/* Notification Bell Button & Dropdown */}
             <div className="relative">
               <button
@@ -2308,9 +2286,10 @@ export default function AdminDashboardPage() {
                     </button>
                     <div className="my-1 border-t border-[#F0F1F3]" />
                     <button
-                      onClick={() => {
-                        void logout();
-                        navigate("/");
+                      onClick={async () => {
+                        setIsAdminDropdownOpen(false);
+                        await logout();
+                        navigate("/login", { replace: true });
                       }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 text-left cursor-pointer"
                     >
@@ -2351,9 +2330,6 @@ export default function AdminDashboardPage() {
                     👋
                   </span>
                 </h1>
-                <p className="text-xs sm:text-sm text-[#6B7280] font-normal leading-relaxed max-w-md">
-                  Manage quizzes, track performance, and help students learn math better.
-                </p>
               </div>
             </section>
 
@@ -3380,7 +3356,8 @@ export default function AdminDashboardPage() {
 
                     {/* Top Aligned Interactive Calculator Button with Hover Tooltip */}
                     {(() => {
-                      const calcDef = getCalculusDefinitionForTopic(activeTopic);
+                      const isLinear = activeTopic.category === "linear-algebra";
+                      const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
                       return (
                         <div className="relative group/topcalc flex items-center">
                           <button
@@ -3432,14 +3409,24 @@ export default function AdminDashboardPage() {
                       {/* Worked Example Problems Card */}
                       {activeTopic.examples && activeTopic.examples.length > 0 && (
                         <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
-                          <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#F3F4F6]">
-                            <div className="flex items-center gap-2.5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-3 border-b border-[#F3F4F6] gap-2">
+                            <div className="flex flex-wrap items-center gap-2.5">
                               <div className="w-8 h-8 rounded-lg bg-red-50 text-[#801424] flex items-center justify-center">
                                 <HelpCircle className="w-4 h-4" />
                               </div>
                               <h3 className="text-base font-bold text-[#111827]">
                                 Step-by-Step Worked Problems ({activeTopic.examples.length})
                               </h3>
+                              {activeTopic.category === "linear-algebra" && (() => {
+                                const laCalc = getLinearAlgebraDefinitionForTopic(activeTopic);
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#801424] bg-[#FFF0F3] border border-[#FFCCD5] px-2.5 py-0.5 rounded-md">
+                                    <span>{activeTopic.title}</span>
+                                    <span>→</span>
+                                    <span>{laCalc.name}</span>
+                                  </span>
+                                );
+                              })()}
                             </div>
                             <span className="text-xs text-[#6B7280]">
                               Click &ldquo;Try to Solve&rdquo; to open solver
@@ -3512,7 +3499,8 @@ export default function AdminDashboardPage() {
                     {/* Slide-out Calculator Drawer from Right */}
                     <AnimatePresence>
                       {isTopicCalculatorOpen && activeTopic && (() => {
-                        const calcDef = getCalculusDefinitionForTopic(activeTopic);
+                        const isLinear = activeTopic.category === "linear-algebra";
+                        const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
                         return (
                           <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
                             {/* Backdrop */}
@@ -3539,7 +3527,7 @@ export default function AdminDashboardPage() {
                                     <Calculator className="w-5 h-5" />
                                   </div>
                                   <div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                       <h3 className="text-base sm:text-lg font-black text-[#111827]">
                                         {calcDef.name}
                                       </h3>
@@ -3547,8 +3535,10 @@ export default function AdminDashboardPage() {
                                         {calcDef.badge}
                                       </span>
                                     </div>
-                                    <p className="text-xs text-[#6B7280]">
-                                      {activeTopic.title} • {activeTopic.chapter}
+                                    <p className="text-xs text-[#6B7280] flex items-center gap-1.5 flex-wrap">
+                                      <span>{activeTopic.title}</span>
+                                      <span>→</span>
+                                      <span className="font-semibold text-[#801424]">{calcDef.name}</span>
                                     </p>
                                   </div>
                                 </div>
@@ -3569,7 +3559,7 @@ export default function AdminDashboardPage() {
                                   <div className="flex items-center gap-2">
                                     <Sparkles className="w-4 h-4 text-[#801424] shrink-0" />
                                     <span>
-                                      <strong>Loaded Problem #{loadedTopicExample.index + 1}:</strong> &ldquo;{loadedTopicExample.text}&rdquo;
+                                      <strong>Loaded Problem #{loadedTopicExample.index + 1}:</strong> &ldquo;{loadedTopicExample.text}&rdquo; (Copied to clipboard)
                                     </span>
                                   </div>
                                   <button
@@ -3586,14 +3576,18 @@ export default function AdminDashboardPage() {
                               {/* Scrollable Calculator Body */}
                               <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                                 <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-xs">
-                                  <CalculusCalculator
-                                    key={`${calcDef.id}-${topicCalcKey}`}
-                                    definition={
-                                      loadedTopicExample
-                                        ? { ...calcDef, example: loadedTopicExample.text }
-                                        : calcDef
-                                    }
-                                  />
+                                  {isLinear ? (
+                                    <div>{(calcDef as any).component}</div>
+                                  ) : (
+                                    <CalculusCalculator
+                                      key={`${(calcDef as any).id}-${topicCalcKey}`}
+                                      definition={
+                                        loadedTopicExample
+                                          ? { ...calcDef, example: loadedTopicExample.text } as any
+                                          : calcDef as any
+                                      }
+                                    />
+                                  )}
                                 </div>
                               </div>
                             </motion.div>
@@ -4910,65 +4904,6 @@ export default function AdminDashboardPage() {
                     <Plus className="w-4 h-4" />
                     <span>Create New Quiz</span>
                   </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Metrics Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[#FCE8EB] text-[#801424] flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[#8C93A0]">
-                    Total Submissions
-                  </p>
-                  <p className="text-2xl font-extrabold text-[#111827]">
-                    {resultsStats.totalSubmissions}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center shrink-0">
-                  <Trophy className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[#8C93A0]">
-                    Class Average
-                  </p>
-                  <p className="text-2xl font-extrabold text-[#111827]">
-                    {resultsStats.avgScore}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[#8C93A0]">
-                    Passing Rate
-                  </p>
-                  <p className="text-2xl font-extrabold text-[#111827]">
-                    {resultsStats.passRate}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[#8C93A0]">
-                    Published Quizzes
-                  </p>
-                  <p className="text-2xl font-extrabold text-[#111827]">
-                    {quizzes.length}
-                  </p>
                 </div>
               </div>
             </div>

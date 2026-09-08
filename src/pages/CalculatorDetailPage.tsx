@@ -3,14 +3,43 @@ import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
+  ArrowRight,
+  BookOpen,
   Calculator, 
   ChevronDown, 
   ChevronLeft, 
-  ChevronRight,
-  Search,
-  Check
+  ChevronRight, 
+  Search, 
+  Sparkles 
 } from "lucide-react";
+import mathBg from "../assets/math.jpeg";
 import { tools } from "../calculators/CalculatorApp";
+
+const LINEAR_ALGEBRA_EXAMPLES: Record<string, string> = {
+  equations: "2x + y - z = 8, -3x - y + 2z = -11, -2x + y + 2z = -3",
+  leastsquares: "A = [[1, 1], [1, 2], [1, 3]], b = [1, 2, 2]",
+  transformation: "T(x, y) = (2x + y, x - 3y), v = [1, 2]",
+  quadratic: "Q(x, y) = 3x² + 2xy + 3y²",
+  matrix: "A = [[2, 1], [1, 3]], power = 3",
+  matrixops: "A = [[1, 2], [3, 4]], B = [[5, 6], [7, 8]]",
+  inverse: "A = [[4, 7], [2, 6]]",
+  determinant: "det([[1, 2, 3], [0, 4, 5], [1, 0, 6]])",
+  rank: "A = [[1, 2, 3], [2, 4, 6], [1, 1, 1]]",
+  transpose: "A = [[1, 2, 3], [4, 5, 6]]",
+  vector: "v = [3, -4, 12]",
+  dot: "u = [1, 2, 3], v = [4, -5, 6]",
+  cross: "u = [1, 0, 0], v = [0, 1, 0]",
+  projection: "proj_v(u) where u = [2, 1], v = [3, 4]",
+  independence: "v₁ = [1, 2], v₂ = [3, 6]",
+  combination: "b = [7, 11] as c₁[1, 2] + c₂[3, 1]",
+  basis: "S = {[1, 0, 1], [0, 1, 1], [1, 1, 2]}",
+  span: "v = [2, 3, 5] in span([1, 1, 2], [0, 1, 1])",
+  eigen: "A = [[4, 1], [2, 3]]",
+  diagonalization: "A = [[1, 3], [3, 1]]",
+  lu: "A = [[2, 1, 1], [4, 3, 3], [8, 7, 9]]",
+  qr: "A = [[1, 1], [1, 0], [1, 2]]",
+  svd: "A = [[3, 2, 2], [2, 3, -2]]",
+};
 
 export default function CalculatorDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -84,123 +113,172 @@ export default function CalculatorDetailPage() {
     t.categoryLabel.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const exampleProblem = LINEAR_ALGEBRA_EXAMPLES[currentTool.id] || "";
+
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex flex-col">
+    <div className="relative min-h-screen bg-[#FDFDFD] text-[#111827]">
+      {/* ======================================================================= */}
+      {/* 1. HERO SECTION (Chalkboard Background with Action Buttons)             */}
+      {/* ======================================================================= */}
+      <section className="relative overflow-hidden min-h-[380px] lg:min-h-[420px] flex items-center bg-[#0C1017] pt-16 sm:pt-20">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img
+            src={mathBg}
+            alt="Mathematics background"
+            className="w-full h-full object-cover object-center lg:object-[center_right] opacity-75"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 via-50% to-black/35 lg:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+        </div>
 
-      {/* ── Slim Sub-Nav Bar (Dark, matching site style) ── */}
-      <div className="sticky top-16 z-30 bg-[#0B0F15] border-b border-white/10 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-3">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <div className="max-w-2xl space-y-5">
+            {/* Top Back Breadcrumb & Pill Badges */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => navigate("/calculator-hub")}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white/90 hover:text-white px-3 py-1 text-xs font-semibold backdrop-blur-md transition cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>All Math Tools</span>
+              </button>
 
-          {/* Left: Back Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs">
+                <Calculator className="w-3.5 h-3.5" />
+                <span>Linear Algebra Suite · 23 Solvers</span>
+              </div>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.65rem] font-black tracking-tight text-white leading-[1.08]">
+              <span className="text-white">Solve Smarter with</span>
+              <br />
+              <span className="text-[#A31D24]">Linear Algebra Calculators</span>
+            </h1>
+
+            <p className="text-sm sm:text-base text-white/80 leading-relaxed font-normal max-w-xl">
+              From systems of equations and matrices to eigenvalues and vector spaces, explore comprehensive step-by-step solvers for all 23 linear algebra modules.
+            </p>
+
+            {/* CTA Buttons matching Image 2 */}
+            <div className="flex flex-wrap items-center gap-3.5 pt-2">
+              <button
+                onClick={() => navigate("/calculators")}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#7B1824]/30 transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <span>Browse All 23 Solvers</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => navigate("/calculator-hub")}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-md px-5 py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <ArrowLeft className="w-4 h-4 text-white/80" />
+                <span>All Math Tools</span>
+              </button>
+
+              <button
+                onClick={() => navigate("/?tab=topics")}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 hover:bg-white/15 backdrop-blur-md px-5 py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 cursor-pointer active:scale-95"
+              >
+                <BookOpen className="w-4 h-4 text-white/80" />
+                <span>View Topics</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ======================================================================= */}
+      {/* 2. WORKSPACE TOP NAV BAR (Sticky, matching Image 2)                     */}
+      {/* ======================================================================= */}
+      <div className="sticky top-16 sm:top-[4.5rem] z-30 bg-[#0B0F15] border-b border-white/10 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/calculators")}
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>All Solvers</span>
+            </button>
+
             <button
               onClick={() => navigate("/calculator-hub")}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-gray-300 hover:text-white text-xs font-semibold px-3 py-2 transition cursor-pointer hidden sm:inline-flex"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>All Math Tools</span>
             </button>
 
-            <button
-              onClick={() => navigate("/calculators")}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/15 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:text-white backdrop-blur-md transition-all cursor-pointer hidden sm:inline-flex"
-            >
-              <span>Linear Algebra (23)</span>
-            </button>
-          </div>
+            {/* Dropdown Selector */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="inline-flex items-center gap-1.5 sm:gap-2 bg-white/10 hover:bg-white/15 text-white px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition border border-white/10 cursor-pointer"
+              >
+                <span className="hidden sm:inline">Switch Calculator</span>
+                <span className="sm:hidden">Switch</span>
+                <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
 
-          {/* Center: Calculator Dropdown Switcher */}
-          <div className="relative flex-1 max-w-sm sm:max-w-md mx-auto" ref={dropdownRef}>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full flex items-center justify-between gap-2.5 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 px-3.5 py-1.5 transition-all cursor-pointer group shadow-inner"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#7B1824] text-white shadow-xs shrink-0">
-                  <Calculator className="w-3.5 h-3.5" />
-                </div>
-                <div className="min-w-0 text-left">
-                  <span className="block text-xs sm:text-sm font-black text-white truncate tracking-tight">
-                    {currentTool.name}
-                  </span>
-                </div>
-              </div>
-              <ChevronDown className={`w-4 h-4 text-white transition-transform duration-200 shrink-0 ${isDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {/* Dropdown Menu Popup */}
-            {isDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-white/15 bg-[#121824] text-white shadow-2xl p-2 z-50 max-h-[380px] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-                {/* Search inside Dropdown */}
-                <div className="px-1 pb-2 mb-1 border-b border-white/10">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Search all 23 calculators..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      autoFocus
-                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#E05260] focus:border-[#E05260]"
-                    />
+              {isDropdownOpen && (
+                <div className="absolute left-0 sm:left-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-[#111827] border border-white/15 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden">
+                  <div className="p-2 border-b border-white/10 mb-1">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search 23 calculators..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        autoFocus
+                        className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 text-white text-xs placeholder-gray-400 border border-white/10 outline-none focus:border-[#7B1824]"
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto space-y-1">
+                    {filteredTools.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => handleSelectTool(t.id)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition cursor-pointer ${
+                          t.id === currentTool.id
+                            ? "bg-[#7B1824] text-white font-bold"
+                            : "text-gray-300 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        <Calculator className="w-3.5 h-3.5 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold">{t.name}</div>
+                          <div className="text-[10px] opacity-60 font-mono">{t.categoryLabel}</div>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
-
-                {/* List of calculators */}
-                <div className="overflow-y-auto space-y-1 flex-1 pr-1 scrollbar-thin scrollbar-thumb-white/20">
-                  {filteredTools.length > 0 ? (
-                    filteredTools.map((t) => {
-                      const isSelected = t.id === currentTool.id;
-                      return (
-                        <button
-                          key={t.id}
-                          onClick={() => handleSelectTool(t.id)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
-                            isSelected
-                              ? "bg-[#7B1824] text-white font-bold shadow-xs"
-                              : "text-white/80 hover:bg-white/10 hover:text-white"
-                          }`}
-                        >
-                          <div className="min-w-0 pr-2">
-                            <p className="text-xs font-bold leading-snug truncate">
-                              {t.name}
-                            </p>
-                            <span className="text-[10px] text-white/50 font-medium">
-                              {t.categoryLabel}
-                            </span>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="py-6 text-center text-xs text-white/50">
-                      No calculator matching &quot;{searchTerm}&quot;
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          {/* Right: Prev / Next Navigation */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[11px] text-white/60 font-mono hidden md:inline mr-1">
-              {currentIndex + 1} / {tools.length}
-            </span>
+          {/* Prev / Next controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={handlePrev}
               disabled={currentIndex <= 0}
-              title="Previous Calculator"
-              className="p-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/15 text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              title="Previous solver"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
+            <span className="text-xs text-gray-400 font-mono hidden sm:inline">
+              {currentIndex + 1} / {tools.length}
+            </span>
             <button
               onClick={handleNext}
               disabled={currentIndex >= tools.length - 1}
-              title="Next Calculator"
-              className="p-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/15 text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              title="Next solver"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -208,13 +286,57 @@ export default function CalculatorDetailPage() {
         </div>
       </div>
 
-      {/* ── Calculator — Centered ── */}
-      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-10 pb-10">
-        <div className="w-full max-w-3xl">
+      {/* ======================================================================= */}
+      {/* 3. WORKSPACE CONTAINER (Matching Image 2 exactly)                       */}
+      {/* ======================================================================= */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-5">
+        {/* ── 1. CALCULATOR HEADER CARD ── */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-7 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-3.5">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#7B1824] text-white flex items-center justify-center shadow-md shadow-[#7B1824]/20 shrink-0">
+                <Calculator className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#7B1824]/10 text-[#7B1824]">
+                    LINEAR ALGEBRA
+                  </span>
+                  <span className="text-[11px] sm:text-xs text-gray-400 font-mono">
+                    Linear Algebra • {currentTool.categoryLabel}
+                  </span>
+                </div>
+                <h2 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight mt-0.5 truncate">
+                  {currentTool.name}
+                </h2>
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-3xl">
+            {currentTool.description}
+          </p>
+
+          {/* Quick Example Suggestion Chip */}
+          {exampleProblem && (
+            <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-[#7B1824]" />
+                <span>Example:</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-[11px] sm:text-xs font-mono font-medium text-gray-800 break-all">
+                <span>{exampleProblem}</span>
+                <span className="text-[10px] text-[#7B1824] font-bold shrink-0">Use</span>
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* ── 2. CALCULATOR WORKSPACE CARD ── */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-8 shadow-xs overflow-x-auto">
           {currentTool.component}
         </div>
-      </main>
-
+      </div>
     </div>
   );
 }

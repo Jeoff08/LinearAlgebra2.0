@@ -246,7 +246,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs"
+                className="inline-flex items-center gap-2 rounded-full border border-[#7B1824]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs"
               >
                 <span>23 Powerful Calculators</span>
               </motion.div>
@@ -261,7 +261,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
               >
                 <span className="text-white">Solve Smarter with</span>
                 <br />
-                <span className="text-[#A31D24]">Linear Algebra</span>
+                <span className="text-[#E05260]">Linear Algebra</span>
               </motion.h1>
 
             {/* Paragraph Subtitle */}
@@ -329,7 +329,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                     }}
                     className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                       isActive
-                        ? 'bg-[#8B1A24] text-white shadow-md shadow-[#8B1A24]/30'
+                        ? 'bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/30'
                         : 'bg-[#18202C] text-gray-300 hover:text-white hover:bg-[#222C3D] border border-white/10'
                     }`}
                   >
@@ -355,7 +355,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                   setSearchTerm(e.target.value);
                   if (selectedToolId) setSelectedToolId(null);
                 }}
-                className="w-full rounded-full border border-white/15 bg-[#18202C] text-white placeholder-gray-400 pl-10 pr-9 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#8B1A24] focus:ring-2 focus:ring-[#8B1A24]/30 transition-all"
+                className="w-full rounded-full border border-white/15 bg-[#18202C] text-white placeholder-gray-400 pl-10 pr-9 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#7B1824] focus:ring-2 focus:ring-[#7B1824]/30 transition-all"
               />
               {searchTerm && (
                 <button
@@ -397,33 +397,33 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                       transition={{ duration: 0.25, delay: Math.min(index * 0.02, 0.2) }}
                       whileHover={{ y: -3 }}
                       onClick={() => handleSelectTool(tool.id)}
-                      className="group relative flex flex-col justify-between rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-xs hover:shadow-xl hover:border-[#8B1A24]/40 transition-all duration-300 cursor-pointer"
+                      className="group relative flex flex-col justify-between rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:shadow-xl hover:border-[#7B1824]/40 transition-all duration-300 cursor-pointer"
                     >
                       <div>
                         {/* Top Row: Title + Category Pill */}
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-base sm:text-[1.08rem] font-black text-[#111827] group-hover:text-[#8B1A24] transition-colors leading-snug">
+                          <h3 className="text-base sm:text-[1.08rem] font-black text-gray-900 group-hover:text-[#7B1824] transition-colors leading-snug">
                             {tool.name}
                           </h3>
-                          <span className="inline-flex items-center gap-1 rounded-md border border-[#8B1A24]/20 bg-[#8B1A24]/5 px-2.5 py-0.5 text-xs font-bold text-[#8B1A24] shrink-0 lowercase">
-                            <Bookmark className="w-3 h-3 text-[#8B1A24]" />
+                          <span className="inline-flex items-center gap-1 rounded-md border border-[#F0D5D8] bg-[#FDF2F4] px-2.5 py-0.5 text-xs font-bold text-[#7B1824] shrink-0 lowercase">
+                            <Bookmark className="w-3 h-3 text-[#7B1824]" />
                             <span>{tool.badge || tool.category}</span>
                           </span>
                         </div>
 
                         {/* Middle: Description */}
-                        <p className="mt-2.5 text-xs sm:text-sm text-[#4B5563] leading-relaxed line-clamp-2 min-h-[42px] font-normal">
+                        <p className="mt-2.5 text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-2 min-h-[42px] font-normal">
                           {tool.description}
                         </p>
                       </div>
 
                       {/* Bottom Row: Category Subtitle + Open Calculator Button */}
                       <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
-                        <span className="text-xs font-medium text-[#9CA3AF]">
+                        <span className="text-xs font-medium text-gray-400">
                           {tool.categoryLabel}
                         </span>
 
-                        <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#8B1A24] group-hover:text-[#60101B] transition-colors">
+                        <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#7B1824] group-hover:text-[#60101B] transition-colors">
                           <span>Open Calculator</span>
                           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                         </span>
@@ -434,7 +434,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
               ) : (
                 <div className="py-20 text-center rounded-3xl border border-dashed border-gray-200 bg-white p-8">
                   <Calculator className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                  <h3 className="text-base font-bold text-[#111827]">No calculators found</h3>
+                  <h3 className="text-base font-bold text-gray-900">No calculators found</h3>
                   <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     No results match &ldquo;{searchTerm}&rdquo;. Try clearing your search query.
                   </p>
@@ -467,7 +467,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                 {/* Back Button */}
                 <button
                   onClick={handleBackToGrid}
-                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-xs sm:text-sm font-bold text-[#374151] transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-xs sm:text-sm font-bold text-gray-700 transition-all cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>All Calculators</span>
@@ -478,13 +478,13 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                   <button
                     ref={buttonRef}
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white hover:border-[#8B1A24]/50 px-4 py-2 text-left transition-all cursor-pointer shadow-xs"
+                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white hover:border-[#7B1824]/50 px-4 py-2 text-left transition-all cursor-pointer shadow-xs"
                   >
                     <div className="flex items-center gap-2.5 truncate">
-                      <div className="w-6 h-6 rounded-lg bg-[#8B1A24]/10 text-[#8B1A24] flex items-center justify-center shrink-0">
+                      <div className="w-6 h-6 rounded-lg bg-[#FDF2F4] text-[#7B1824] flex items-center justify-center shrink-0">
                         <Calculator className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-xs sm:text-sm font-bold text-[#111827] truncate">
+                      <span className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                         {currentTool.name}
                       </span>
                     </div>
@@ -504,8 +504,8 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                             }}
                             className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl text-left transition-colors cursor-pointer ${
                               t.id === selectedToolId
-                                ? 'bg-[#8B1A24] text-white'
-                                : 'text-gray-700 hover:bg-gray-100'
+                                ? 'bg-[#7B1824] text-white'
+                                : 'text-gray-700 hover:bg-[#FDF2F4] hover:text-[#7B1824]'
                             }`}
                           >
                             <span>{t.name}</span>
@@ -521,14 +521,14 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePrevTool}
-                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#8B1A24] transition-colors cursor-pointer"
+                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#7B1824] transition-colors cursor-pointer"
                     title="Previous Calculator"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
                     onClick={handleNextTool}
-                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#8B1A24] transition-colors cursor-pointer"
+                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#7B1824] transition-colors cursor-pointer"
                     title="Next Calculator"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -536,8 +536,36 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                 </div>
               </div>
 
-              {/* Calculator Workspace Container */}
-              <div className="bg-white rounded-3xl border border-gray-200/90 shadow-sm p-4 sm:p-8">
+              {/* ── 1. CALCULATOR HEADER CARD (Matching Image 2) ── */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#7B1824] text-white flex items-center justify-center shadow-md shadow-[#7B1824]/20 shrink-0">
+                      <Calculator className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#FDF2F4] text-[#7B1824] border border-[#F0D5D8]">
+                          LINEAR ALGEBRA
+                        </span>
+                        <span className="text-xs text-gray-400 font-mono">
+                          Linear Algebra • {currentTool.categoryLabel}
+                        </span>
+                      </div>
+                      <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mt-0.5">
+                        {currentTool.name}
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-3xl">
+                  {currentTool.description}
+                </p>
+              </div>
+
+              {/* ── 2. Calculator Workspace Container ── */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 sm:p-8">
                 {currentTool.component}
               </div>
             </motion.div>
@@ -549,7 +577,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
       <footer className="mt-16 border-t border-gray-200 bg-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-xs text-gray-500 flex items-center justify-center gap-2">
-            <Layers className="w-4 h-4 text-[#8B1A24]" />
+            <Layers className="w-4 h-4 text-[#7B1824]" />
             <span>All 23 tools powered by modern linear algebra algorithms</span>
           </p>
         </div>

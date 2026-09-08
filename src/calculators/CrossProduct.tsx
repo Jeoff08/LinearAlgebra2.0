@@ -558,173 +558,203 @@ const CrossProduct: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-100">
-        <h3 className="text-lg font-semibold text-indigo-800 flex items-center gap-2">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Cross Product & 3D Vector Operations
-        </h3>
-        <p className="text-sm text-indigo-600 mt-1">Calculate cross product, dot product, angle between vectors, projection, and more for 3D vectors with step-by-step explanations</p>
+      {/* Header */}
+      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#7B1824]"></span>
+            Cross Product & 3D Vector Operations
+          </h3>
+          <p className="text-xs text-gray-500 mt-1">
+            Calculate cross product, perpendicular vectors, parallelogram area, and angles in ℝ³
+          </p>
+        </div>
+
+        {/* Quick Examples */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-semibold text-gray-400 mr-1">Presets:</span>
+          <button onClick={() => loadExample('basis')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Basis Vectors</button>
+          <button onClick={() => loadExample('parallel')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Parallel</button>
+          <button onClick={() => loadExample('opposite')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Opposite</button>
+          <button onClick={() => loadExample('orthogonal')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Orthogonal</button>
+          <button onClick={() => loadExample('arbitrary')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Arbitrary</button>
+          <button onClick={() => loadExample('unit')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Unit Vectors</button>
+          <button onClick={resetVectors} className="px-2.5 py-1 text-xs font-semibold border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg transition cursor-pointer">Reset</button>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-sm font-medium text-slate-700">Operation:</span>
-        <select value={operation} onChange={(e) => { setOperation(e.target.value as Operation); setResult(''); setSteps([]); setError(''); }} className="px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-          <option value="cross">Cross Product</option>
-          <option value="dot">Dot Product</option>
-          <option value="angle">Angle Between</option>
-          <option value="projection">Projection</option>
-          <option value="norm">Norm (Magnitude)</option>
-        </select>
-        <span className="text-xs text-slate-400 ml-2">{getOperationDescription(operation)}</span>
+      {/* Operation Selection */}
+      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-xs sm:text-sm font-bold text-gray-700">Operation:</label>
+          <select
+            value={operation}
+            onChange={(e) => { setOperation(e.target.value as Operation); setResult(''); setSteps([]); setError(''); }}
+            className="px-3.5 py-2 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-xs sm:text-sm font-semibold text-gray-800 shadow-2xs"
+          >
+            <option value="cross">Cross Product</option>
+            <option value="dot">Dot Product</option>
+            <option value="angle">Angle Between</option>
+            <option value="projection">Projection</option>
+            <option value="norm">Norm (Magnitude)</option>
+          </select>
+          <span className="text-xs text-gray-500 font-medium italic">{getOperationDescription(operation)}</span>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-slate-500">Load example:</span>
-        <button onClick={() => loadExample('basis')} className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded transition">Basis Vectors</button>
-        <button onClick={() => loadExample('parallel')} className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded transition">Parallel</button>
-        <button onClick={() => loadExample('opposite')} className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded transition">Opposite</button>
-        <button onClick={() => loadExample('orthogonal')} className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded transition">Orthogonal</button>
-        <button onClick={() => loadExample('arbitrary')} className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded transition">Arbitrary</button>
-        <button onClick={() => loadExample('unit')} className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded transition">Unit Vectors</button>
-        <button onClick={resetVectors} className="px-3 py-1 text-xs border border-slate-300 hover:bg-slate-50 rounded transition">Reset</button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-slate-700">Vector A (3D)</h4>
-          <div className="flex gap-2 flex-wrap items-center">
+      {/* Vector Inputs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+          <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+            Vector A (3D)
+          </h4>
+          <div className="flex gap-2 flex-wrap items-center p-3 bg-gray-50/70 rounded-xl border border-gray-100">
             {vectorA.map((val, i) => (
               <div key={i} className="relative">
-                <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs text-slate-400">{['x', 'y', 'z'][i]}</span>
-                <input type="number" value={getDisplayValue(val)} onChange={(e) => updateVector(1, i, e.target.value)} onBlur={(e) => { if (e.target.value === '') updateVector(1, i, ''); }} className="w-20 pl-4 pr-2 py-1 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-center text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" step="any" placeholder="0" />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#7B1824]">{['x', 'y', 'z'][i]}</span>
+                <input
+                  type="number"
+                  value={getDisplayValue(val)}
+                  onChange={(e) => updateVector(1, i, e.target.value)}
+                  onBlur={(e) => { if (e.target.value === '') updateVector(1, i, ''); }}
+                  className="w-20 pl-6 pr-2 py-1.5 border border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-center font-mono font-bold text-sm shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  step="any"
+                  placeholder="0"
+                />
               </div>
             ))}
-            <span className="text-xs text-slate-400 self-center">A = {formatVector(vectorA)}</span>
+            <span className="text-xs font-mono text-gray-500 ml-auto">A = {formatVector(vectorA)}</span>
           </div>
         </div>
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-slate-700">Vector B (3D)</h4>
-          <div className="flex gap-2 flex-wrap items-center">
+
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+          <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+            Vector B (3D)
+          </h4>
+          <div className="flex gap-2 flex-wrap items-center p-3 bg-gray-50/70 rounded-xl border border-gray-100">
             {vectorB.map((val, i) => (
               <div key={i} className="relative">
-                <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs text-slate-400">{['x', 'y', 'z'][i]}</span>
-                <input type="number" value={getDisplayValue(val)} onChange={(e) => updateVector(2, i, e.target.value)} onBlur={(e) => { if (e.target.value === '') updateVector(2, i, ''); }} className="w-20 pl-4 pr-2 py-1 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-center text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" step="any" placeholder="0" />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#7B1824]">{['x', 'y', 'z'][i]}</span>
+                <input
+                  type="number"
+                  value={getDisplayValue(val)}
+                  onChange={(e) => updateVector(2, i, e.target.value)}
+                  onBlur={(e) => { if (e.target.value === '') updateVector(2, i, ''); }}
+                  className="w-20 pl-6 pr-2 py-1.5 border border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-center font-mono font-bold text-sm shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  step="any"
+                  placeholder="0"
+                />
               </div>
             ))}
-            <span className="text-xs text-slate-400 self-center">B = {formatVector(vectorB)}</span>
+            <span className="text-xs font-mono text-gray-500 ml-auto">B = {formatVector(vectorB)}</span>
           </div>
         </div>
       </div>
 
-      <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 text-xs text-blue-700">
-        <p className="flex items-center gap-1 font-medium">Cross Product Properties:</p>
-        <ul className="mt-1 space-y-0.5">
-          <li>• Result is perpendicular to both vectors</li>
-          <li>• Magnitude = area of parallelogram formed by the vectors</li>
-          <li>• A × B = 0 if vectors are parallel</li>
-          <li>• A × B = -B × A (anti-commutative)</li>
-        </ul>
-      </div>
-
-      <div className="flex gap-3">
-        <button onClick={performOperation} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Calculate Button */}
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={performOperation}
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           Calculate
         </button>
         {steps.length > 0 && (
-          <button onClick={() => setShowSteps(!showSteps)} className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            onClick={() => setShowSteps(!showSteps)}
+            className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer inline-flex items-center gap-2"
+          >
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {showSteps ? 'Hide' : 'Show'} Steps
+            {showSteps ? 'Hide' : 'Show'} Step Breakdown
           </button>
         )}
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 rounded-lg border border-red-100">
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-red-800">{error}</p>
-          </div>
+        <div className="p-4 bg-[#FDF2F4] rounded-xl border border-[#7B1824]/20 text-xs sm:text-sm font-semibold text-[#7B1824]">
+          {error}
         </div>
       )}
 
       {result && (
-        <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="flex-1">
-              <p className="font-medium text-green-800">✅ Result:</p>
-              <pre className="mt-2 font-mono text-sm text-green-700 whitespace-pre-wrap">{result}</pre>
-            </div>
-            <div className="flex-shrink-0">
-              <PDFExport
-                title={`3D Vector Operations - ${operation.toUpperCase()}`}
-                data={result}
-                steps={steps}
-                inputs={`Vector A = (${vectorA.join(', ')})\nVector B = (${vectorB.join(', ')})\nOperation = ${operation}`}
-                fileName={`crossproduct_${operation}`}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showSteps && steps.length > 0 && (
-        <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-          <div className="flex items-center gap-2 mb-3">
-            <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            <h4 className="font-medium text-blue-800">Step-by-Step Solution</h4>
-            <span className="text-xs text-blue-600 ml-auto">{operation.toUpperCase()}</span>
-          </div>
-          <div className="space-y-3 max-h-[500px] overflow-y-auto">
-            {steps.map((item, idx) => (
-              <div key={idx} className="flex items-start gap-4 border-b border-blue-200 last:border-0 pb-3 last:pb-0">
-                <div className="flex-1 font-mono text-sm text-blue-900 whitespace-pre-wrap">{item.step}</div>
-                {item.explanation && (
-                  <div className="flex-shrink-0">
-                    <details className="group">
-                      <summary className="text-xs text-blue-600 cursor-pointer hover:text-blue-800 font-medium px-3 py-1 rounded border border-blue-200 hover:bg-blue-100 transition">
-                        <span className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Explanation
-                        </span>
-                      </summary>
-                      <div className="mt-2 p-3 bg-white rounded border border-blue-200 text-sm text-blue-800 max-w-xs">
-                        {item.explanation}
-                      </div>
-                    </details>
-                  </div>
-                )}
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <span className="w-3 h-3 rounded-full bg-[#7B1824]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Computed Result</h3>
               </div>
-            ))}
+              <div className="flex-shrink-0">
+                <PDFExport
+                  title={`3D Vector Operations - ${operation.toUpperCase()}`}
+                  data={result}
+                  steps={steps.map(s => `${s.step}${s.explanation ? ` - ${s.explanation}` : ''}`)}
+                  inputs={`Vector A = (${vectorA.join(', ')})\nVector B = (${vectorB.join(', ')})\nOperation = ${operation}`}
+                  fileName={`crossproduct_${operation}`}
+                />
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-xl bg-white border border-[#F0D5D8] shadow-inner font-mono text-base sm:text-lg font-bold text-gray-900 whitespace-pre-wrap">
+              {result}
+            </div>
           </div>
+
+          {/* Steps with explanation beside */}
+          {showSteps && steps.length > 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Detailed Step Breakdown</h3>
+              </div>
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                {steps.filter(item => item.step.trim() !== '').map((item, idx) => (
+                  <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
+                    <div className="flex items-start gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {idx + 1}
+                      </span>
+                      <div className="flex-1 font-mono text-xs sm:text-sm text-gray-800 whitespace-pre-wrap">
+                        {item.step}
+                      </div>
+                    </div>
+                    {item.explanation && (
+                      <div className="pt-2 pl-8 border-t border-gray-200/60">
+                        <p className="text-xs text-gray-500 italic">
+                          <span className="font-semibold text-[#7B1824] not-italic">Note: </span>
+                          {item.explanation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      <div className="text-sm text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-        <p className="flex items-center gap-1 font-medium text-slate-700">Supported Operations (3D Vectors):</p>
-        <div className="mt-1 grid grid-cols-2 md:grid-cols-3 gap-1">
-          <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Cross Product</span>
-          <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Dot Product</span>
-          <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Angle Between</span>
-          <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Vector Projection</span>
-          <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200">Norm (Magnitude)</span>
-        </div>
-        <p className="mt-2 text-xs text-slate-500">All operations require 3D vectors. Use the examples to see different vector relationships.</p>
+      {/* Help */}
+      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+        <p className="font-bold text-gray-800 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+          <svg className="w-4 h-4 text-[#7B1824]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Cross Product Properties & Guide
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-gray-500 text-xs">
+          <li>Result vector is orthogonal to both input vectors (A · (A × B) = 0)</li>
+          <li>Magnitude ||A × B|| equals the area of the parallelogram formed by A and B</li>
+          <li>Anti-commutative property: A × B = -(B × A)</li>
+          <li>Parallel vectors yield zero cross product: A × B = 0 if A || B</li>
+        </ul>
       </div>
     </div>
   );

@@ -6,12 +6,14 @@ import {
   LogIn,
   UserPlus,
   LogOut,
+  Home,
   Calculator,
   BookOpen,
   LayoutDashboard,
   Menu,
   X,
 } from "lucide-react";
+import { playNavButtonAnimation } from "../utils/buttonAnimation";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -79,8 +81,11 @@ export default function Navbar() {
     return () => window.removeEventListener("navtabchange", handleTabChange);
   }, []);
 
-  const handleHomeClick = (e: React.MouseEvent) => {
+  const handleHomeClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
+    playNavButtonAnimation(e, {
+      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(139, 26, 36, 0.35)",
+    });
     setActiveTab("home");
     setMobileMenuOpen(false);
     sessionStorage.setItem("currentActiveNavTab", "home");
@@ -89,8 +94,11 @@ export default function Navbar() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleCalculatorsClick = (e: React.MouseEvent) => {
+  const handleCalculatorsClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
+    playNavButtonAnimation(e, {
+      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(139, 26, 36, 0.35)",
+    });
     setActiveTab("calculators");
     setMobileMenuOpen(false);
     sessionStorage.setItem("currentActiveNavTab", "calculators");
@@ -101,8 +109,11 @@ export default function Navbar() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleTopicsClick = (e: React.MouseEvent) => {
+  const handleTopicsClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
+    playNavButtonAnimation(e, {
+      color: isHeroPage ? "rgba(224, 82, 96, 0.45)" : "rgba(139, 26, 36, 0.35)",
+    });
     setActiveTab("topics");
     setMobileMenuOpen(false);
     sessionStorage.setItem("currentActiveNavTab", "topics");
@@ -111,8 +122,11 @@ export default function Navbar() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDashboardClick = (e: React.MouseEvent) => {
+  const handleDashboardClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
+    playNavButtonAnimation(e, {
+      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(139, 26, 36, 0.35)",
+    });
     setActiveTab("dashboard");
     setMobileMenuOpen(false);
     sessionStorage.setItem("currentActiveNavTab", "dashboard");
@@ -159,7 +173,12 @@ export default function Navbar() {
           : "text-[#4B5563] hover:text-[#111827]"
     }`;
 
-  if (location.pathname.startsWith("/admin") || location.pathname === "/dashboard") {
+  if (
+    location.pathname.startsWith("/admin") ||
+    location.pathname === "/dashboard" ||
+    location.pathname === "/login" ||
+    location.pathname === "/register"
+  ) {
     return null;
   }
 
@@ -212,7 +231,7 @@ export default function Navbar() {
               onClick={handleHomeClick}
               className={navLinkClass("home")}
             >
-              <Calculator className="w-4 h-4" />
+              <Home className="w-4 h-4" />
               <span>Home</span>
               {activeTab === "home" && (
                 <motion.span
@@ -280,33 +299,33 @@ export default function Navbar() {
         </nav>
 
         {/* Right Nav Actions */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {!isAuthenticated ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link
                 to="/login"
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all duration-200 ${
+                className={`hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   isHeroPage
                     ? "border-white/40 bg-transparent text-white hover:bg-white/10 hover:border-white/60"
                     : "border-[#D1D5DB] bg-white text-[#1F2937] hover:bg-[#F9FAFB] hover:border-[#9CA3AF]"
                 }`}
               >
                 <LogIn
-                  className={`w-4 h-4 ${isHeroPage ? "text-white" : "text-[#6B7280]"}`}
+                  className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isHeroPage ? "text-white" : "text-[#6B7280]"}`}
                 />
                 <span>Login</span>
               </Link>
 
               <Link
                 to="/register"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-4 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 active:scale-95"
+                className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 active:scale-95"
               >
-                <UserPlus className="w-4 h-4" />
+                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Register</span>
               </Link>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden sm:flex flex-col text-right">
                 <span
                   className={`text-xs font-medium ${
@@ -325,11 +344,11 @@ export default function Navbar() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  navigate("/");
-                  void logout();
+                onClick={async () => {
+                  await logout();
+                  navigate("/login", { replace: true });
                 }}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 sm:px-3.5 sm:py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   isHeroPage
                     ? "border-[#E05260]/60 bg-[#7B1824]/20 text-[#E05260] hover:bg-[#7B1824]/40 hover:border-[#E05260]"
                     : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
@@ -341,9 +360,10 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Menu Toggle Button */}
           <button
-            className={`md:hidden flex items-center justify-center w-9 h-9 rounded-lg border transition-colors ${
+            aria-label="Toggle mobile menu"
+            className={`md:hidden flex items-center justify-center w-9 h-9 rounded-xl border transition-colors cursor-pointer ${
               isHeroPage
                 ? "border-white/30 text-white hover:bg-white/10"
                 : "border-[#E5E7EB] text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB]"
@@ -359,61 +379,103 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Drawer Backdrop & Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-[#E5E7EB] bg-white px-4 py-3 space-y-1">
+        <div className="md:hidden border-t border-[#E5E7EB] bg-white px-4 py-3 space-y-1 shadow-lg animate-in slide-in-from-top-2 duration-200">
           {!isAuthenticated && (
             <Link
               to="/?tab=home"
               onClick={handleHomeClick}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 activeTab === "home"
-                  ? "bg-[#EFF6FF] text-[#2563EB]"
-                  : "text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]"
+                  ? "bg-[#FDF2F4] text-[#7B1824] font-bold border border-[#7B1824]/20"
+                  : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827]"
               }`}
             >
-              <Calculator className="w-4 h-4" />
-              Home
+              <Home className="w-4 h-4 text-[#7B1824]" />
+              <span>Home</span>
             </Link>
           )}
+
           {isAuthenticated && (
             <Link
               to="/dashboard"
               onClick={handleDashboardClick}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 activeTab === "dashboard"
-                  ? "bg-[#EFF6FF] text-[#2563EB]"
-                  : "text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]"
+                  ? "bg-[#FDF2F4] text-[#7B1824] font-bold border border-[#7B1824]/20"
+                  : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827]"
               }`}
             >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
+              <LayoutDashboard className="w-4 h-4 text-[#7B1824]" />
+              <span>Dashboard</span>
             </Link>
           )}
+
           <Link
             to="/calculator-hub"
             onClick={handleCalculatorsClick}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
               activeTab === "calculators"
-                ? "bg-[#EFF6FF] text-[#2563EB]"
-                : "text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]"
+                ? "bg-[#FDF2F4] text-[#7B1824] font-bold border border-[#7B1824]/20"
+                : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827]"
             }`}
           >
-            <Calculator className="w-4 h-4" />
-            Calculators
+            <Calculator className="w-4 h-4 text-[#7B1824]" />
+            <span>Calculators</span>
           </Link>
+
           <Link
             to="/?tab=topics"
             onClick={handleTopicsClick}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
               activeTab === "topics"
-                ? "bg-[#EFF6FF] text-[#2563EB]"
-                : "text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]"
+                ? "bg-[#FDF2F4] text-[#7B1824] font-bold border border-[#7B1824]/20"
+                : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827]"
             }`}
           >
-            <BookOpen className="w-4 h-4" />
-            Topics
+            <BookOpen className="w-4 h-4 text-[#7B1824]" />
+            <span>Topics</span>
           </Link>
+
+          {/* Unauthenticated Mobile Auth Actions */}
+          {!isAuthenticated && (
+            <div className="pt-3 mt-2 border-t border-gray-100 flex flex-col gap-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-800 hover:bg-gray-50 transition"
+              >
+                <LogIn className="w-4 h-4 text-gray-500" />
+                <span>Login</span>
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] text-white text-sm font-bold shadow-sm transition active:scale-95"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Register</span>
+              </Link>
+            </div>
+          )}
+
+          {isAuthenticated && (
+            <div className="pt-2 mt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={async () => {
+                  setMobileMenuOpen(false);
+                  await logout();
+                  navigate("/login", { replace: true });
+                }}
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </header>

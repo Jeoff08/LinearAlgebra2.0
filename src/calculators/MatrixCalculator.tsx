@@ -666,9 +666,9 @@ const MatrixCalculator: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* Operation Selection Bar */}
-      <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--panel)]">
+      <div className="p-4 sm:p-5 rounded-2xl border border-gray-200 bg-white shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+          <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
             Select Operation:
           </label>
           <div className="relative flex-1 sm:max-w-xs">
@@ -679,54 +679,54 @@ const MatrixCalculator: React.FC = () => {
                 setUseSecondMatrix(getOperationRequiresSecondMatrix(e.target.value));
                 setResult(null);
               }}
-              className="w-full px-3.5 py-2 text-sm font-semibold rounded-lg border border-[var(--line)] bg-slate-100 dark:bg-[#14171B] text-[var(--heading)] focus:ring-2 focus:ring-[#B6FF2E] focus:border-[#B6FF2E] outline-none cursor-pointer transition-all"
+              className="w-full px-3.5 py-2 text-sm font-semibold rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none cursor-pointer transition-all shadow-2xs"
             >
               {Object.entries(operations).map(([key, op]) => (
-                <option key={key} value={key} className="bg-white dark:bg-[#1F2329] text-[var(--heading)]">
+                <option key={key} value={key} className="bg-white text-gray-900">
                   {op.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
-        <p className="mt-2.5 text-xs text-[var(--muted)] font-medium">
+        <p className="mt-2.5 text-xs text-gray-500 font-medium">
           {getOperationDescription(operation)}
         </p>
       </div>
 
       {/* Matrix Dimension & Controls */}
-      <div className="flex flex-wrap items-center gap-3 p-3.5 rounded-xl border border-[var(--line)] bg-[var(--panel)]">
+      <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border border-gray-200 bg-white shadow-xs">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-bold text-[var(--muted)]">Rows:</label>
+          <label className="text-xs font-bold text-gray-700">Rows:</label>
           <input
             type="number"
             value={rows}
             onChange={(e) => setRows(Math.max(1, Math.min(5, parseInt(e.target.value) || 1)))}
-            className="w-14 px-2 py-1.5 text-center text-sm font-bold border border-[var(--line)] rounded-lg bg-slate-100 dark:bg-[#14171B] text-[var(--heading)] focus:ring-2 focus:ring-[#B6FF2E] outline-none"
+            className="w-14 px-2 py-1.5 text-center text-sm font-bold border border-gray-200 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none"
             min="1"
             max="5"
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-bold text-[var(--muted)]">Cols:</label>
+          <label className="text-xs font-bold text-gray-700">Cols:</label>
           <input
             type="number"
             value={cols}
             onChange={(e) => setCols(Math.max(1, Math.min(5, parseInt(e.target.value) || 1)))}
-            className="w-14 px-2 py-1.5 text-center text-sm font-bold border border-[var(--line)] rounded-lg bg-slate-100 dark:bg-[#14171B] text-[var(--heading)] focus:ring-2 focus:ring-[#B6FF2E] outline-none"
+            className="w-14 px-2 py-1.5 text-center text-sm font-bold border border-gray-200 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none"
             min="1"
             max="5"
           />
         </div>
         <button
           onClick={handleResize}
-          className="px-3.5 py-1.5 bg-[#B6FF2E] text-[#1F2329] font-bold rounded-lg hover:brightness-105 transition text-xs shadow-sm"
+          className="px-4 py-2 bg-[#7B1824] text-white font-bold rounded-xl hover:bg-[#60101B] transition text-xs shadow-xs cursor-pointer active:scale-95"
         >
           Resize
         </button>
         <button
           onClick={resetMatrix}
-          className="px-3.5 py-1.5 border border-[var(--line)] bg-slate-100 dark:bg-[#14171B] text-[var(--heading)] font-semibold rounded-lg hover:border-[#B6FF2E] transition text-xs"
+          className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer"
         >
           Reset Matrices
         </button>
@@ -734,10 +734,10 @@ const MatrixCalculator: React.FC = () => {
 
       {/* Matrix 1 */}
       <div className="space-y-2">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--heading)]">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">
           Matrix A ({rows}×{cols}):
         </h4>
-        <div className="overflow-x-auto p-3 rounded-xl border border-[var(--line)] bg-[var(--panel)] inline-block min-w-full sm:min-w-0">
+        <div className="overflow-x-auto p-4 rounded-2xl border border-gray-200 bg-white shadow-xs inline-block min-w-full sm:min-w-0">
           <table className="border-collapse mx-auto">
             <tbody>
               {matrix.map((row, i) => (
@@ -749,7 +749,7 @@ const MatrixCalculator: React.FC = () => {
                         value={getDisplayValue(val)}
                         onChange={(e) => updateMatrix(1, i, j, e.target.value)}
                         onBlur={() => handleInputBlur(1, i, j)}
-                        className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-slate-100 dark:bg-[#14171B] text-[var(--heading)] border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-[#B6FF2E] focus:border-[#B6FF2E] outline-none transition"
+                        className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
                         placeholder="0"
                       />
                     </td>
@@ -764,10 +764,10 @@ const MatrixCalculator: React.FC = () => {
       {/* Matrix 2 (if needed) */}
       {useSecondMatrix && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--heading)]">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">
             Matrix B ({rows}×{cols}):
           </h4>
-          <div className="overflow-x-auto p-3 rounded-xl border border-[var(--line)] bg-[var(--panel)] inline-block min-w-full sm:min-w-0">
+          <div className="overflow-x-auto p-4 rounded-2xl border border-gray-200 bg-white shadow-xs inline-block min-w-full sm:min-w-0">
             <table className="border-collapse mx-auto">
               <tbody>
                 {matrix2.map((row, i) => (
@@ -779,7 +779,7 @@ const MatrixCalculator: React.FC = () => {
                           value={getDisplayValue(val)}
                           onChange={(e) => updateMatrix(2, i, j, e.target.value)}
                           onBlur={() => handleInputBlur(2, i, j)}
-                          className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-slate-100 dark:bg-[#14171B] text-[var(--heading)] border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-[#B6FF2E] focus:border-[#B6FF2E] outline-none transition"
+                          className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
                           placeholder="0"
                         />
                       </td>
@@ -793,43 +793,36 @@ const MatrixCalculator: React.FC = () => {
       )}
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 pt-1">
         <button
           onClick={performOperation}
-          className="px-5 py-2.5 bg-[#B6FF2E] text-[#1F2329] font-extrabold rounded-xl hover:brightness-105 transition shadow-lg shadow-[#B6FF2E]/20 flex items-center gap-2 text-sm"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
           </svg>
-          Calculate
+          <span>Calculate</span>
         </button>
+
         {result && result.steps.length > 0 && (
           <button
             onClick={() => setShowSteps(!showSteps)}
-            className="px-4 py-2.5 border border-[var(--line)] bg-[var(--panel)] text-[var(--heading)] font-bold rounded-xl hover:border-[#B6FF2E] transition flex items-center gap-2 text-sm"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-xl transition text-xs sm:text-sm shadow-2xs cursor-pointer ml-auto"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {showSteps ? 'Hide' : 'Show'} Steps
+            <span>{showSteps ? 'Hide' : 'Show'} Steps</span>
           </button>
         )}
       </div>
 
       {/* Results Section */}
       {result && (
-        <div className="space-y-4 animate-in fade-in duration-300">
-          {/* Result Box */}
-          <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--panel)]">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-              <div className="flex-1">
-                <p className="text-xs font-extrabold uppercase tracking-wider text-[#B6FF2E]">
-                  Result:
-                </p>
-                <pre className="mt-2 font-mono text-sm text-[var(--heading)] whitespace-pre-wrap leading-relaxed">
-                  {result.data}
-                </pre>
-              </div>
+        <div className="space-y-5 animate-in fade-in duration-300">
+          {/* Result Hero Box */}
+          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#7B1824] inline-flex items-center gap-1.5">
+                <span>Final Result</span>
+              </span>
               <div className="flex-shrink-0">
                 <PDFExport
                   title={`Matrix Calculator - ${operations[operation]?.name || 'Operation'}`}
@@ -840,41 +833,33 @@ const MatrixCalculator: React.FC = () => {
                 />
               </div>
             </div>
+            <div className="p-4 rounded-xl bg-white border border-[#F0D5D8] shadow-inner font-mono text-sm sm:text-base font-bold text-gray-900 whitespace-pre-wrap leading-relaxed">
+              {result.data}
+            </div>
           </div>
 
           {/* Steps with explanation */}
           {showSteps && result.steps.length > 0 && (
-            <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--panel)]">
-              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--line)]">
-                <svg className="w-4 h-4 text-[#B6FF2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--heading)]">
-                  Step-by-Step Solution
-                </h4>
-                <span className="text-xs text-[var(--muted)] ml-auto">{operations[operation]?.name}</span>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#7B1824]" />
+                  <h4 className="text-base font-black text-gray-900 tracking-tight">
+                    Step-by-Step Solution
+                  </h4>
+                </div>
+                <span className="text-xs text-gray-400 font-mono">{operations[operation]?.name}</span>
               </div>
               <div className="space-y-3">
                 {result.steps.map((step, idx) => (
-                  <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-3 border-b border-[var(--line)] last:border-0 pb-3 last:pb-0">
-                    <div className="flex-1 font-mono text-xs sm:text-sm text-[var(--heading)] whitespace-pre-wrap leading-relaxed">
+                  <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
+                    <div className="font-mono text-xs sm:text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
                       {step}
                     </div>
                     {result.stepExplanations && result.stepExplanations[idx] && (
-                      <div className="flex-shrink-0">
-                        <details className="group">
-                          <summary className="text-xs text-[var(--muted)] hover:text-[#B6FF2E] cursor-pointer font-bold px-2.5 py-1 rounded-lg border border-[var(--line)] bg-slate-100 dark:bg-[#14171B] transition">
-                            <span className="flex items-center gap-1">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              Explanation
-                            </span>
-                          </summary>
-                          <div className="mt-2 p-3 bg-slate-100 dark:bg-[#14171B] rounded-lg border border-[var(--line)] text-xs text-[var(--muted)] max-w-xs leading-relaxed">
-                            {result.stepExplanations[idx]}
-                          </div>
-                        </details>
+                      <div className="pt-2 border-t border-gray-200/60 text-xs text-gray-600 leading-relaxed">
+                        <span className="font-bold text-[#7B1824]">Note: </span>
+                        {result.stepExplanations[idx]}
                       </div>
                     )}
                   </div>
@@ -886,21 +871,16 @@ const MatrixCalculator: React.FC = () => {
       )}
 
       {/* Footer Info Box */}
-      <div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--panel)] text-xs text-[var(--muted)]">
-        <p className="flex items-center gap-1.5 font-bold text-[var(--heading)]">
-          <svg className="w-4 h-4 text-[#B6FF2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Supported operations:
-        </p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/70 text-xs text-gray-600 space-y-2">
+        <p className="font-bold text-gray-900">Supported operations:</p>
+        <div className="flex flex-wrap gap-1.5">
           {Object.values(operations).map(op => (
-            <span key={op.name} className="text-[0.7rem] font-medium bg-slate-100 dark:bg-[#14171B] px-2 py-0.5 rounded-md border border-[var(--line)] text-[var(--heading)]">
+            <span key={op.name} className="text-[11px] font-medium bg-white px-2.5 py-1 rounded-lg border border-gray-200 text-gray-800 shadow-2xs">
               {op.name}
             </span>
           ))}
         </div>
-        <p className="mt-2 text-[0.7rem] text-[var(--muted)]">Max matrix size: 5×5 for most operations, 3×3 for eigenvalues</p>
+        <p className="text-[11px] text-gray-400">Max matrix size: 5×5 for most operations, 3×3 for eigenvalues</p>
       </div>
     </div>
   );

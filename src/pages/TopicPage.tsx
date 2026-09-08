@@ -1,6 +1,7 @@
 // TopicPage.tsx
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { playNavButtonAnimation } from "../utils/buttonAnimation";
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -37,6 +38,7 @@ import {
   type CalculatorDefinition,
 } from "../Calculus_One_Calculator/CalculatorData";
 import CalculusCalculator from "../Calculus_One_Calculator/Calculator";
+import { getLinearAlgebraDefinitionForTopic } from "../data/linearAlgebraCalculators";
 
 // Import all calculators (Linear Algebra)
 import SystemOfEquations from "../calculators/SystemOfEquations";
@@ -477,6 +479,11 @@ export default function TopicPage() {
     return getCalculusDefinitionForTopic(topic);
   }, [topic]);
 
+  const linearAlgebraDef = useMemo(() => {
+    if (!topic || topic.category !== "linear-algebra") return null;
+    return getLinearAlgebraDefinitionForTopic(topic);
+  }, [topic]);
+
   const calculatorInfo = useMemo(() => {
     if (topic?.category === "calculus" && calculusDef) {
       return {
@@ -485,9 +492,16 @@ export default function TopicPage() {
         component: <CalculusCalculator key={calculusDef.id} definition={calculusDef} />,
       };
     }
+    if (topic?.category === "linear-algebra" && linearAlgebraDef) {
+      return {
+        name: linearAlgebraDef.name,
+        description: linearAlgebraDef.description,
+        component: linearAlgebraDef.component,
+      };
+    }
     const calcId = topic ? getRecommendedCalculatorId(topic.id, topic.category) : "matrixops";
     return CALCULATORS[calcId] || CALCULATORS["matrixops"];
-  }, [topic, calculusDef]);
+  }, [topic, calculusDef, linearAlgebraDef]);
 
   const chapterTag = useMemo(() => !topic ? "C1" : topic.category === "linear-algebra" ? "LA" : `C${topic.chapterNumber || 1}`, [topic]);
 
@@ -594,21 +608,6 @@ export default function TopicPage() {
           {/* Top Breadcrumbs & Action Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
             <div className="flex flex-wrap items-center gap-3">
-              {/* Back to All Topics Button on Top Black Side */}
-              <button
-                onClick={() => {
-                  const returnView = topic.category === "calculus" 
-                    ? ((topic.chapterNumber || 1) >= 9 ? "topics-calculus-2" : "topics-calculus") 
-                    : "topics-linear";
-                  sessionStorage.setItem("returningTopicView", returnView);
-                  navigate("/?tab=topics");
-                }}
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-1.5 text-xs font-bold text-white backdrop-blur-md transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to All Topics</span>
-              </button>
-
               <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-4 py-1.5 text-xs text-white/90 shadow-sm max-w-full overflow-hidden truncate">
                 <BookOpen className="w-3.5 h-3.5 text-[#E05260] shrink-0" />
                 <span className="truncate">{topic.subCategoryLabel ? topic.subCategoryLabel.split(":")[0] : `Chapter ${topic.chapterNumber || 1}`}</span>
@@ -645,42 +644,77 @@ export default function TopicPage() {
 
           {/* Main Hero Header */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-8 flex items-start gap-4 sm:gap-6">
-              <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-[#7B1824] text-white font-black text-xl sm:text-2xl tracking-tight shadow-xl shadow-[#7B1824]/40 shrink-0 border border-white/10">
-                {chapterTag}
-              </div>
-              <div className="space-y-3 flex-1">
-                {/* Title styled explicitly with style={{ color: '#FFFFFF' }} to guarantee pure white */}
-                <h1
-                  style={{ color: "#FFFFFF" }}
-                  className="text-2xl sm:text-4xl lg:text-[2.65rem] font-black !text-white tracking-tight leading-[1.15] drop-shadow-sm"
-                >
-                  {topic.title}
-                </h1>
-                <p className="text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed font-normal max-w-2xl">
-                  {topic.summary || "A comprehensive study on foundations, mathematical theorems, step-by-step verified explanations, and practical problem solving."}
-                </p>
-                <div className="flex flex-wrap items-center gap-2.5 pt-2">
-                  <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-white/90">
-                    <BookOpen className="w-3.5 h-3.5 text-[#E05260]" />
-                    <span>{sections.length} Sections &amp; Lessons</span>
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-white/90">
-                    <Clock className="w-3.5 h-3.5 text-[#E05260]" />
-                    <span>2h 45m Estimated</span>
-                  </div>
-                  {/* TV Presentation Quick Link */}
-                  <button
-                    onClick={() => {
-                      setCurrentSlideIndex(0);
-                      setIsSlideshowOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-1 text-xs font-semibold text-white transition-all cursor-pointer"
-                  >
-                    <Tv className="w-3.5 h-3.5 text-[#FF7A8A]" />
-                    <span>Start Presentation</span>
-                  </button>
+            <div className="lg:col-span-8 flex flex-col gap-6">
+              <div className="flex items-start gap-4 sm:gap-6">
+                <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-[#7B1824] text-white font-black text-xl sm:text-2xl tracking-tight shadow-xl shadow-[#7B1824]/40 shrink-0 border border-white/10">
+                  {chapterTag}
                 </div>
+                <div className="space-y-3 flex-1">
+                  {/* Title styled explicitly with style={{ color: '#FFFFFF' }} to guarantee pure white */}
+                  <h1
+                    style={{ color: "#FFFFFF" }}
+                    className="text-2xl sm:text-4xl lg:text-[2.65rem] font-black !text-white tracking-tight leading-[1.15] drop-shadow-sm"
+                  >
+                    {topic.title}
+                  </h1>
+                  <p className="text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed font-normal max-w-2xl">
+                    {topic.summary || "A comprehensive study on foundations, mathematical theorems, step-by-step verified explanations, and practical problem solving."}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2.5 pt-2">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-white/90">
+                      <BookOpen className="w-3.5 h-3.5 text-[#E05260]" />
+                      <span>{sections.length} Sections &amp; Lessons</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-white/90">
+                      <Clock className="w-3.5 h-3.5 text-[#E05260]" />
+                      <span>2h 45m Estimated</span>
+                    </div>
+                    {/* TV Presentation Quick Link */}
+                    <button
+                      onClick={() => {
+                        setCurrentSlideIndex(0);
+                        setIsSlideshowOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-1 text-xs font-semibold text-white transition-all cursor-pointer"
+                    >
+                      <Tv className="w-3.5 h-3.5 text-[#FF7A8A]" />
+                      <span>Start Presentation</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Back to Topics Button aligned with LA icon under the pill badges */}
+              <div className="pt-1">
+                <button
+                  onClick={(e) => {
+                    playNavButtonAnimation(e, { color: "rgba(224, 82, 96, 0.45)" });
+                    const returnView = topic.category === "calculus" 
+                      ? ((topic.chapterNumber || 1) >= 9 ? "topics-calculus-2" : "topics-calculus") 
+                      : "topics-linear";
+                    
+                    let ch = topic.chapterNumber || 1;
+                    if (topic.category === "linear-algebra") {
+                      const id = (topic.id || "").toLowerCase();
+                      if (id === "foundations" || id === "systems" || id === "vectors") ch = 1;
+                      else if (id === "matrices" || id === "inverses" || id === "advanced-matrix-topics") ch = 2;
+                      else if (id === "determinants") ch = 3;
+                      else if (id === "independence-span" || id === "fundamental-subspaces" || id === "change-of-basis" || id === "complex-vector-spaces") ch = 4;
+                      else if (id === "linear-transformations" || id === "rank") ch = 5;
+                      else if (id === "eigen" || id === "diagonalization") ch = 6;
+                      else if (id === "orthogonality" || id === "inner-product" || id === "least-squares") ch = 7;
+                      else ch = 8;
+                    }
+
+                    sessionStorage.setItem("returningTopicView", returnView);
+                    sessionStorage.setItem("returningChapter", String(ch));
+                    navigate("/?tab=topics");
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-2 text-xs font-bold text-white backdrop-blur-md transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Topics</span>
+                </button>
               </div>
             </div>
 
@@ -1061,22 +1095,22 @@ export default function TopicPage() {
       <div className="sticky top-16 z-20 bg-white border-b border-[#E5E7EB] shadow-xs">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10">
           <nav className="flex items-center gap-6 sm:gap-10 overflow-x-auto py-3 sm:py-3.5">
-            <button onClick={() => setActiveTab("toc")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "toc" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("toc")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "toc" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
               <List className="w-4 h-4" />
               <span>Table of Contents</span>
               {activeTab === "toc" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#7B1824] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("overview")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "overview" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("overview")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "overview" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
               <Info className="w-4 h-4" />
               <span>Overview</span>
               {activeTab === "overview" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#7B1824] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("problems")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "problems" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("problems")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "problems" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
               <PenTool className="w-4 h-4" />
               <span>Practice Problems</span>
               {activeTab === "problems" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#7B1824] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("summary")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "summary" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("summary")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "summary" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
               <FileText className="w-4 h-4" />
               <span>Summary</span>
               {activeTab === "summary" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#7B1824] rounded-full" />}
@@ -1171,11 +1205,20 @@ export default function TopicPage() {
           <div className="space-y-6">
             {/* Interactive Calculator Section */}
             <div id="interactive-calculator-section" className="rounded-2xl border border-[#EAE2E4] bg-white p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-[#EAE2E4] pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAE2E4] pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm"><Calculator className="w-5 h-5" /></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm shrink-0"><Calculator className="w-5 h-5" /></div>
                   <div>
-                    <h3 className="text-base font-bold text-[#111827]">{calculatorInfo.name}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-bold text-[#111827]">{calculatorInfo.name}</h3>
+                      {topic.category === "linear-algebra" && (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#801424] bg-[#FFF0F3] border border-[#FFCCD5] px-2.5 py-0.5 rounded-full">
+                          <span>{topic.title}</span>
+                          <span>→</span>
+                          <span>{calculatorInfo.name}</span>
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-[#6B7280]">Solve step by step with verified numerical and algebraic analysis.</p>
                   </div>
                 </div>

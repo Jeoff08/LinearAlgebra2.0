@@ -269,14 +269,14 @@ const TransposeCalculator: React.FC = () => {
     if (!matrix || matrix.length === 0) return null;
     return (
       <div className="mt-2">
-        {label && <span className="font-mono text-blue-700">{label}</span>}
-        <div className="inline-block mt-1 border border-blue-200 rounded overflow-hidden">
+        {label && <span className="font-mono text-xs font-bold text-[#7B1824]">{label}</span>}
+        <div className="inline-block mt-1 border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
           {matrix.map((row, i) => (
-            <div key={i} className="flex">
+            <div key={i} className="flex border-b border-gray-100 last:border-0">
               {row.map((val, j) => (
                 <div
                   key={j}
-                  className="w-20 px-3 py-1.5 text-center font-mono text-sm border-r border-blue-200 last:border-0 bg-white"
+                  className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 text-center font-mono text-xs sm:text-sm font-bold border-r border-gray-100 last:border-0 bg-white text-gray-900"
                 >
                   {val.toFixed(2)}
                 </div>
@@ -290,23 +290,77 @@ const TransposeCalculator: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-medium text-slate-700">
-            Enter your matrix:
+      {/* Header */}
+      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#7B1824]"></span>
+            Matrix Transpose Calculator
           </h3>
-          <span className="text-xs text-slate-500">
-            {matrix.length}×{matrix[0]?.length || 0} matrix
-          </span>
+          <p className="text-xs text-gray-500 mt-1">
+            Compute the transpose (Aᵀ) and detect symmetry / skew-symmetry
+          </p>
+        </div>
+      </div>
+
+      {/* Input Matrix Card */}
+      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+            Matrix A ({matrix.length}×{matrix[0]?.length || 0})
+          </h4>
+          <div className="flex gap-1.5">
+            <button
+              onClick={addRow}
+              className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+            >
+              +Row
+            </button>
+            <button
+              onClick={removeRow}
+              className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
+                matrix.length > 1
+                  ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                  : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+              }`}
+              disabled={matrix.length <= 1}
+            >
+              -Row
+            </button>
+            <button
+              onClick={addColumn}
+              className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+            >
+              +Col
+            </button>
+            <button
+              onClick={removeColumn}
+              className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
+                (matrix[0]?.length || 0) > 1
+                  ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                  : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+              }`}
+              disabled={(matrix[0]?.length || 0) <= 1}
+            >
+              -Col
+            </button>
+            <button
+              onClick={clearMatrix}
+              className="text-xs px-2.5 py-1 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg font-semibold transition cursor-pointer ml-1"
+            >
+              Clear
+            </button>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="border-collapse border border-slate-300">
+        <div className="overflow-x-auto p-3 bg-gray-50/70 rounded-xl border border-gray-100">
+          <table className="border-separate border-spacing-1.5 mx-auto">
             <tbody>
               {matrix.map((row, i) => (
                 <tr key={i}>
                   {row.map((val, j) => (
-                    <td key={j} className="border border-slate-300 p-1">
+                    <td key={j} className="p-0">
                       <input
                         type="text"
                         value={val === 0 ? "" : val}
@@ -320,7 +374,7 @@ const TransposeCalculator: React.FC = () => {
                             handleMatrixChange(i, j, inputValue);
                           }
                         }}
-                        className="w-14 px-2 py-1 text-center focus:ring-2 focus:ring-indigo-500 outline-none rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
                         placeholder="0"
                       />
                     </td>
@@ -332,301 +386,109 @@ const TransposeCalculator: React.FC = () => {
         </div>
       </div>
 
+      {/* Calculate Button */}
       <div className="flex flex-wrap gap-3">
         <button
           onClick={calculateTranspose}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm flex items-center gap-2"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           Calculate Transpose
         </button>
-        <button
-          onClick={clearMatrix}
-          className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-          Clear All
-        </button>
-        <button
-          onClick={addRow}
-          className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Add Row
-        </button>
-        <button
-          onClick={addColumn}
-          className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Add Column
-        </button>
-        {matrix.length > 1 && (
-          <button
-            onClick={removeRow}
-            className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2 text-red-600 hover:text-red-700"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Remove Row
-          </button>
-        )}
-        {(matrix[0]?.length || 0) > 1 && (
-          <button
-            onClick={removeColumn}
-            className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2 text-red-600 hover:text-red-700"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Remove Column
-          </button>
-        )}
         {steps.length > 0 && (
           <button
             onClick={() => setShowExplanation(!showExplanation)}
-            className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
+            className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer inline-flex items-center gap-2"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {showExplanation ? "Hide" : "Show"} Steps
+            {showExplanation ? "Hide" : "Show"} Step Breakdown
           </button>
         )}
       </div>
 
       {steps.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Result Summary */}
-          <div className="p-4 bg-green-50 rounded-lg border border-green-100 animate-in fade-in duration-300">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5">
-                <svg
-                  className="w-5 h-5 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <span className="w-3 h-3 rounded-full bg-[#7B1824]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Transposed Matrix (Aᵀ)</h3>
               </div>
-              <div>
-                <p className="font-medium text-green-800">
-                  Transpose Calculation Complete
-                </p>
-                <div className="mt-2 text-sm text-green-700">
-                  The matrix has been transposed successfully.
-                </div>
-                <div className="mt-3 flex flex-wrap gap-4">
-                  <div className="bg-white px-3 py-2 rounded border border-green-200">
-                    <span className="text-xs text-green-600 block">
-                      Original Size
-                    </span>
-                    <span className="font-mono text-sm">
-                      {matrix.length}×{matrix[0]?.length || 0}
-                    </span>
-                  </div>
-                  <div className="bg-white px-3 py-2 rounded border border-green-200">
-                    <span className="text-xs text-green-600 block">
-                      Transposed Size
-                    </span>
-                    <span className="font-mono text-sm">
-                      {matrix[0]?.length || 0}×{matrix.length}
-                    </span>
-                  </div>
-                  {matrix.length === matrix[0]?.length && (
-                    <div className="bg-white px-3 py-2 rounded border border-green-200">
-                      <span className="text-xs text-green-600 block">
-                        Matrix Type
-                      </span>
-                      <span className="font-mono text-sm">
-                        {steps.some(
-                          (step) =>
-                            step.title.includes("Symmetric") &&
-                            step.description.includes("✅"),
-                        )
-                          ? "Symmetric"
-                          : "Non-Symmetric"}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex-shrink-0 ml-auto">
+              <div className="flex-shrink-0">
                 <PDFExport
                   title="Transpose Calculator (Aᵀ)"
                   data={`Original Size: ${matrix.length}×${matrix[0]?.length || 0}\nTransposed Size: ${matrix[0]?.length || 0}×${matrix.length}\n${result}`}
-                  steps={steps.map(s => ({
-                    step: `${s.title}\n${s.description}${s.matrix ? '\n' + s.matrix.map(r => `[${r.map(v => v.toFixed(4)).join(', ')}]`).join('\n') : ''}`,
-                    explanation: s.explanation
-                  }))}
+                  steps={steps.map(s => `${s.title}\n${s.description}${s.matrix ? '\n' + s.matrix.map(r => `[${r.map(v => v.toFixed(4)).join(', ')}]`).join('\n') : ''}${s.explanation ? ` - ${s.explanation}` : ''}`)}
                   inputs={`Matrix A (${matrix.length}×${matrix[0]?.length || 0}):\n${matrix.map(r => `[${r.join(', ')}]`).join('\n')}`}
                   fileName="matrix_transpose"
                 />
               </div>
             </div>
+
+            <div className="flex flex-wrap gap-3">
+              <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Original Size</span>
+                <span className="font-mono text-xs font-bold text-gray-800">{matrix.length} × {matrix[0]?.length || 0}</span>
+              </div>
+              <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Transposed Size</span>
+                <span className="font-mono text-xs font-bold text-gray-800">{matrix[0]?.length || 0} × {matrix.length}</span>
+              </div>
+              {matrix.length === matrix[0]?.length && (
+                <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 block">Matrix Type</span>
+                  <span className="font-mono text-xs font-bold text-[#7B1824]">
+                    {steps.some(step => step.title.includes("Symmetric") && step.description.includes("✅")) ? "Symmetric" : "Non-Symmetric"}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {result && (
+              <div className="p-4 sm:p-5 rounded-xl bg-white border border-[#F0D5D8] shadow-inner font-mono text-sm sm:text-base font-bold text-gray-900 whitespace-pre-wrap">
+                {result}
+              </div>
+            )}
           </div>
 
           {/* Step-by-Step Explanation */}
           {showExplanation && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in duration-300">
-              <div className="flex items-center gap-2 mb-4">
-                <svg
-                  className="w-5 h-5 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                  />
-                </svg>
-                <h4 className="font-medium text-blue-800">
-                  Step-by-Step Solution
-                </h4>
-                <span className="text-xs text-blue-600 ml-auto">
-                  Transpose Operation
-                </span>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Detailed Step Breakdown</h3>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                 {steps.map((step, idx) => (
-                  <div
-                    key={idx}
-                    className="border-b border-blue-200 last:border-0 pb-4 last:pb-0"
-                  >
-                    <div className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold text-sm mt-0.5">
-                        {idx + 1}.
+                  <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
+                    <div className="flex items-start gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {idx + 1}
                       </span>
-                      <div className="flex-1">
-                        <p className="font-semibold text-blue-900 text-sm">
-                          {step.title}
-                        </p>
-                        <div className="mt-1 text-sm text-blue-800 whitespace-pre-wrap">
-                          {step.description}
-                        </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="font-bold text-xs sm:text-sm text-gray-900">{step.title}</p>
+                        <div className="font-mono text-xs text-gray-700 whitespace-pre-wrap">{step.description}</div>
                         {step.matrix && step.matrix.length > 0 && (
                           <div className="mt-2">
                             {renderMatrix(step.matrix, step.label)}
                           </div>
                         )}
                       </div>
-                      {step.explanation && (
-                        <div className="ml-4 flex-shrink-0">
-                          <details className="group">
-                            <summary className="text-xs text-blue-600 cursor-pointer hover:text-blue-800 font-medium px-3 py-1 rounded border border-blue-200 hover:bg-blue-100 transition">
-                              <span className="flex items-center gap-1">
-                                <svg
-                                  className="w-3 h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                                Explanation
-                              </span>
-                            </summary>
-                            <div className="mt-2 p-3 bg-white rounded border border-blue-200 text-sm text-blue-800 max-w-xs">
-                              {step.explanation}
-                            </div>
-                          </details>
-                        </div>
-                      )}
                     </div>
+                    {step.explanation && (
+                      <div className="pt-2 pl-8 border-t border-gray-200/60">
+                        <p className="text-xs text-gray-500 italic">
+                          <span className="font-semibold text-[#7B1824] not-italic">Note: </span>
+                          {step.explanation}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -635,27 +497,20 @@ const TransposeCalculator: React.FC = () => {
         </div>
       )}
 
-      <div className="text-sm text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-        <p className="flex items-center gap-1">
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
+      {/* Help */}
+      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-2 text-xs text-gray-600">
+        <p className="font-bold text-gray-800 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+          <svg className="w-4 h-4 text-[#7B1824]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          The transpose of a matrix is obtained by swapping rows with columns.
+          Transpose Rules & Properties
         </p>
-        <p className="mt-1 text-xs">
-          For square matrices, special properties like symmetry are
-          automatically detected.
-        </p>
+        <ul className="list-disc list-inside space-y-1 text-gray-500">
+          <li>Rows and columns are swapped: (Aᵀ)ᵢⱼ = Aⱼᵢ</li>
+          <li>Double transpose property: (Aᵀ)ᵀ = A</li>
+          <li>For square matrices, symmetric if A = Aᵀ, skew-symmetric if A = -Aᵀ</li>
+          <li>Sum property: (A + B)ᵀ = Aᵀ + Bᵀ; Product property: (AB)ᵀ = BᵀAᵀ</li>
+        </ul>
       </div>
     </div>
   );

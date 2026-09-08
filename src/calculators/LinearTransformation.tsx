@@ -294,12 +294,12 @@ const LinearTransformation: React.FC = () => {
     if (!matrix || matrix.length === 0) return null;
     return (
       <div className="mt-2">
-        {label && <span className="font-mono text-blue-700">{label}</span>}
-        <div className="inline-block mt-1 border border-blue-200 rounded overflow-hidden">
+        {label && <span className="font-mono text-xs font-bold text-[#7B1824]">{label}</span>}
+        <div className="inline-block mt-1 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-2xs">
           {matrix.map((row, i) => (
-            <div key={i} className="flex">
+            <div key={i} className="flex border-b border-gray-100 last:border-0">
               {row.map((val, j) => (
-                <div key={j} className="w-20 px-3 py-1.5 text-center font-mono text-sm border-r border-blue-200 last:border-0 bg-white">
+                <div key={j} className="w-16 sm:w-20 px-2 py-1.5 text-center font-mono text-xs sm:text-sm border-r border-gray-100 last:border-0 text-gray-900">
                   {val.toFixed(2)}
                 </div>
               ))}
@@ -314,13 +314,11 @@ const LinearTransformation: React.FC = () => {
     if (!vector || vector.length === 0) return null;
     return (
       <div className="mt-2">
-        {label && <span className="font-mono text-blue-700">{label}</span>}
-        <div className="inline-block mt-1 border border-blue-200 rounded overflow-hidden">
+        {label && <span className="font-mono text-xs font-bold text-[#7B1824]">{label}</span>}
+        <div className="inline-block mt-1 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-2xs">
           {vector.map((val, i) => (
-            <div key={i} className="flex">
-              <div className="w-20 px-3 py-1.5 text-center font-mono text-sm border-r border-blue-200 last:border-0 bg-white">
-                {val.toFixed(2)}
-              </div>
+            <div key={i} className="px-3 py-1.5 text-center font-mono text-xs sm:text-sm border-b border-gray-100 last:border-0 text-gray-900">
+              {val.toFixed(2)}
             </div>
           ))}
         </div>
@@ -330,96 +328,101 @@ const LinearTransformation: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-medium text-slate-700">Transformation matrix and vector:</h3>
-          <span className="text-xs text-slate-500">{matrix.length}×{matrix[0]?.length || 0} matrix</span>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center mb-1">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Transformation Matrix and Vector</h3>
+          <span className="text-xs text-gray-400 font-mono">{matrix.length}×{matrix[0]?.length || 0} matrix</span>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm font-medium text-slate-600 mb-2">Matrix T</p>
-            <table className="border-collapse border border-slate-300">
-              <tbody>
-                {matrix.map((row, i) => (
-                  <tr key={i}>
-                    {row.map((val, j) => (
-                      <td key={j} className="border border-slate-300 p-1">
-                        <input
-                          type="text"
-                          value={val === 0 ? '' : val}
-                          onChange={(e) => {
-                            const inputValue = e.target.value;
-                            if (inputValue === '' || inputValue === '-' || /^-?\d*\.?\d*$/.test(inputValue)) {
-                              handleMatrixChange(i, j, inputValue);
-                            }
-                          }}
-                          className="w-14 px-2 py-1 text-center focus:ring-2 focus:ring-indigo-500 outline-none rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          placeholder="0"
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="p-4 rounded-2xl border border-gray-200 bg-white shadow-xs">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-3">Matrix T ({matrix.length}×{matrix[0]?.length || 0})</p>
+            <div className="overflow-x-auto">
+              <table className="border-collapse mx-auto">
+                <tbody>
+                  {matrix.map((row, i) => (
+                    <tr key={i}>
+                      {row.map((val, j) => (
+                        <td key={j} className="p-1">
+                          <input
+                            type="text"
+                            value={val === 0 ? '' : val}
+                            onChange={(e) => {
+                              const inputValue = e.target.value;
+                              if (inputValue === '' || inputValue === '-' || /^-?\d*\.?\d*$/.test(inputValue)) {
+                                handleMatrixChange(i, j, inputValue);
+                              }
+                            }}
+                            className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                            placeholder="0"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-slate-600 mb-2">Vector v</p>
-            <div className="flex flex-col gap-1">
+
+          <div className="p-4 rounded-2xl border border-gray-200 bg-white shadow-xs">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-3">Vector v ({vector.length}×1)</p>
+            <div className="flex flex-col gap-1 items-center">
               {vector.map((val, i) => (
-                <input
-                  key={i}
-                  type="text"
-                  value={val === 0 ? '' : val}
-                  onChange={(e) => {
-                    const inputValue = e.target.value;
-                    if (inputValue === '' || inputValue === '-' || /^-?\d*\.?\d*$/.test(inputValue)) {
-                      handleVectorChange(i, inputValue);
-                    }
-                  }}
-                  className="w-14 px-2 py-1 text-center focus:ring-2 focus:ring-indigo-500 outline-none rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  placeholder="0"
-                />
+                <div key={i} className="p-1">
+                  <input
+                    key={i}
+                    type="text"
+                    value={val === 0 ? '' : val}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      if (inputValue === '' || inputValue === '-' || /^-?\d*\.?\d*$/.test(inputValue)) {
+                        handleVectorChange(i, inputValue);
+                      }
+                    }}
+                    className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                    placeholder="0"
+                  />
+                </div>
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2.5">
         <button
           onClick={calculateTransform}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm flex items-center gap-2"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
           </svg>
-          Apply Transformation
+          <span>Apply Transformation</span>
         </button>
         <button
           onClick={clearAll}
-          className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
+          className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
           Clear All
         </button>
         <button
           onClick={addRow}
-          className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
+          className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           Add Row
         </button>
         <button
           onClick={addColumn}
-          className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
+          className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           Add Column
@@ -427,9 +430,9 @@ const LinearTransformation: React.FC = () => {
         {matrix.length > 1 && (
           <button
             onClick={removeRow}
-            className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2 text-red-600 hover:text-red-700"
+            className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
             Remove Row
@@ -438,9 +441,9 @@ const LinearTransformation: React.FC = () => {
         {(matrix[0]?.length || 0) > 1 && (
           <button
             onClick={removeColumn}
-            className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2 text-red-600 hover:text-red-700"
+            className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
             Remove Column
@@ -449,51 +452,45 @@ const LinearTransformation: React.FC = () => {
         {steps.length > 0 && (
           <button
             onClick={() => setShowExplanation(!showExplanation)}
-            className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
+            className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5 ml-auto"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {showExplanation ? 'Hide' : 'Show'} Steps
+            <span>{showExplanation ? 'Hide' : 'Show'} Steps</span>
           </button>
         )}
       </div>
 
       {steps.length > 0 && (
-        <div className="space-y-4">
-          {/* Result Summary */}
-          <div className="p-4 bg-green-50 rounded-lg border border-green-100 animate-in fade-in duration-300">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-medium text-green-800">Transformation Applied Successfully</p>
-                <div className="mt-2 text-sm text-green-700">
+        <div className="space-y-5 animate-in fade-in duration-300">
+          {/* Result Summary Hero Box */}
+          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div className="flex-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#7B1824] inline-flex items-center gap-1.5">
+                  <span>Transformation Applied Successfully</span>
+                </span>
+                <div className="mt-1 text-xs text-gray-600">
                   The linear transformation T(v) = T·v has been computed.
                 </div>
-                <div className="mt-3 flex flex-wrap gap-4">
-                  <div className="bg-white px-3 py-2 rounded border border-green-200">
-                    <span className="text-xs text-green-600 block">Input Vector</span>
-                    <span className="font-mono text-sm">[{vector.map(v => v.toFixed(2)).join(', ')}]</span>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Input Vector</span>
+                    <span className="font-mono text-xs font-bold text-gray-900">[{vector.map(v => v.toFixed(2)).join(', ')}]</span>
                   </div>
-                  <div className="bg-white px-3 py-2 rounded border border-green-200">
-                    <span className="text-xs text-green-600 block">Output Vector</span>
-                    <span className="font-mono text-sm font-bold text-indigo-600">
+                  <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Output Vector</span>
+                    <span className="font-mono text-xs font-bold text-[#7B1824]">
                       {resultVector.length > 0 ? 
                         `[${resultVector.map(v => v.toFixed(4)).join(', ')}]` : 
                         'N/A'}
                     </span>
                   </div>
-                  <div className="bg-white px-3 py-2 rounded border border-green-200">
-                    <span className="text-xs text-green-600 block">Map</span>
-                    <span className="font-mono text-sm">R^{matrix[0]?.length || 0} → R^{matrix.length}</span>
+                  <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Map</span>
+                    <span className="font-mono text-xs font-bold text-gray-900">ℝ^{matrix[0]?.length || 0} → ℝ^{matrix.length}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex-shrink-0 ml-auto">
+              <div className="flex-shrink-0">
                 <PDFExport
                   title="Linear Transformation (T(v) = Av)"
                   data={`Result Vector T(v) = [${resultVector.map(v => v.toFixed(4)).join(', ')}]\nMapping: R^${matrix[0]?.length || 0} → R^${matrix.length}\n${result}`}
@@ -508,56 +505,50 @@ const LinearTransformation: React.FC = () => {
             </div>
           </div>
 
-          {/* Step-by-Step Explanation with explanation beside */}
+          {/* Step-by-Step Explanation */}
           {showExplanation && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in duration-300">
-              <div className="flex items-center gap-2 mb-4">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <h4 className="font-medium text-blue-800">Step-by-Step Solution</h4>
-                <span className="text-xs text-blue-600 ml-auto">Matrix-Vector Multiplication</span>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#7B1824]" />
+                  <h4 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+                    Step-by-Step Solution
+                  </h4>
+                </div>
+                <span className="text-xs text-gray-400 font-mono">Matrix-Vector Multiplication</span>
               </div>
               
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {steps.map((step, idx) => (
-                  <div key={idx} className="border-b border-blue-200 last:border-0 pb-4 last:pb-0">
-                    <div className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold text-sm mt-0.5">{idx + 1}.</span>
-                      <div className="flex-1">
-                        <p className="font-semibold text-blue-900 text-sm">{step.title}</p>
-                        <div className="mt-1 text-sm text-blue-800 whitespace-pre-wrap">
-                          {step.description}
-                        </div>
-                        {step.matrix && step.matrix.length > 0 && (
-                          <div className="mt-2">
-                            {renderMatrix(step.matrix, step.label)}
-                          </div>
-                        )}
-                        {step.vector && step.vector.length > 0 && (
-                          <div className="mt-2">
-                            {renderVector(step.vector, step.label)}
-                          </div>
-                        )}
-                      </div>
-                      {step.explanation && (
-                        <div className="flex-shrink-0">
-                          <details className="group">
-                            <summary className="text-xs text-blue-600 cursor-pointer hover:text-blue-800 font-medium px-3 py-1 rounded border border-blue-200 hover:bg-blue-100 transition">
-                              <span className="flex items-center gap-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Explanation
-                              </span>
-                            </summary>
-                            <div className="mt-2 p-3 bg-white rounded border border-blue-200 text-sm text-blue-800 max-w-xs">
-                              {step.explanation}
-                            </div>
-                          </details>
-                        </div>
-                      )}
+                  <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <p className="font-bold text-gray-900 text-sm">{step.title}</p>
                     </div>
+
+                    <div className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed pl-7">
+                      {step.description}
+                    </div>
+
+                    {step.matrix && step.matrix.length > 0 && (
+                      <div className="pl-7">
+                        {renderMatrix(step.matrix, step.label)}
+                      </div>
+                    )}
+                    {step.vector && step.vector.length > 0 && (
+                      <div className="pl-7">
+                        {renderVector(step.vector, step.label)}
+                      </div>
+                    )}
+
+                    {step.explanation && (
+                      <div className="mt-2 pt-2 border-t border-gray-200/60 pl-7 text-xs text-gray-600 leading-relaxed">
+                        <span className="font-bold text-[#7B1824]">Concept: </span>
+                        {step.explanation}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -566,14 +557,13 @@ const LinearTransformation: React.FC = () => {
         </div>
       )}
 
-      <div className="text-sm text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-        <p className="flex items-center gap-1">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          A linear transformation maps vectors from one space to another using matrix multiplication.
+      <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/70 text-xs text-gray-600 space-y-2">
+        <p className="font-bold text-gray-900">
+          Linear transformation properties:
         </p>
-        <p className="mt-1 text-xs">The transformation T: R^n → R^m is defined by T(v) = T·v.</p>
+        <p className="leading-relaxed">
+          A linear transformation maps vectors from one vector space to another using matrix multiplication: T(v) = A·v.
+        </p>
       </div>
     </div>
   );

@@ -362,12 +362,12 @@ const Diagonalization: React.FC = () => {
     if (!matrix || matrix.length === 0) return null;
     return (
       <div className="mt-2">
-        {label && <span className="font-mono text-xs font-bold text-[#B6FF2E]">{label}</span>}
-        <div className="inline-block mt-1 border border-[var(--line)] rounded-xl overflow-hidden bg-slate-100 dark:bg-[#14171B]">
+        {label && <span className="font-mono text-xs font-bold text-[#7B1824]">{label}</span>}
+        <div className="inline-block mt-1 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-2xs">
           {matrix.map((row, i) => (
-            <div key={i} className="flex">
+            <div key={i} className="flex border-b border-gray-100 last:border-0">
               {row.map((val, j) => (
-                <div key={j} className="w-20 px-3 py-1.5 text-center font-mono text-sm border-r border-[var(--line)] last:border-0 text-[var(--heading)]">
+                <div key={j} className="w-20 px-3 py-1.5 text-center font-mono text-xs sm:text-sm border-r border-gray-100 last:border-0 text-gray-900">
                   {val.toFixed(4)}
                 </div>
               ))}
@@ -382,11 +382,11 @@ const Diagonalization: React.FC = () => {
     <div className="space-y-6">
       <div className="space-y-2">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--heading)]">Enter your square matrix:</h3>
-          <span className="text-xs text-[var(--muted)] font-mono">{matrix.length}×{matrix[0]?.length || 0} matrix</span>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Enter your square matrix:</h3>
+          <span className="text-xs text-gray-400 font-mono">{matrix.length}×{matrix[0]?.length || 0} matrix</span>
         </div>
         
-        <div className="overflow-x-auto p-3 rounded-xl border border-[var(--line)] bg-[var(--panel)] inline-block min-w-full sm:min-w-0">
+        <div className="overflow-x-auto p-4 rounded-2xl border border-gray-200 bg-white shadow-xs inline-block min-w-full sm:min-w-0">
           <table className="border-collapse mx-auto">
             <tbody>
               {matrix.map((row, i) => (
@@ -402,7 +402,7 @@ const Diagonalization: React.FC = () => {
                             handleMatrixChange(i, j, inputValue);
                           }
                         }}
-                        className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-slate-100 dark:bg-[#14171B] text-[var(--heading)] border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-[#B6FF2E] focus:border-[#B6FF2E] outline-none transition"
+                        className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
                         placeholder="0"
                       />
                     </td>
@@ -417,16 +417,16 @@ const Diagonalization: React.FC = () => {
       <div className="flex flex-wrap gap-2.5">
         <button
           onClick={calculateDiagonalization}
-          className="px-5 py-2 bg-[#B6FF2E] text-[#1F2329] font-extrabold rounded-xl hover:brightness-105 transition shadow-lg shadow-[#B6FF2E]/20 flex items-center gap-2 text-sm"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
           </svg>
-          Diagonalize
+          <span>Diagonalize</span>
         </button>
         <button
           onClick={clearMatrix}
-          className="px-3.5 py-2 border border-[var(--line)] bg-[var(--panel)] text-[var(--heading)] font-semibold rounded-xl hover:border-[#B6FF2E] transition text-xs flex items-center gap-1.5"
+          className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -435,7 +435,7 @@ const Diagonalization: React.FC = () => {
         </button>
         <button
           onClick={addRow}
-          className="px-3.5 py-2 border border-[var(--line)] bg-[var(--panel)] text-[var(--heading)] font-semibold rounded-xl hover:border-[#B6FF2E] transition text-xs flex items-center gap-1.5"
+          className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -444,7 +444,7 @@ const Diagonalization: React.FC = () => {
         </button>
         <button
           onClick={addColumn}
-          className="px-3.5 py-2 border border-[var(--line)] bg-[var(--panel)] text-[var(--heading)] font-semibold rounded-xl hover:border-[#B6FF2E] transition text-xs flex items-center gap-1.5"
+          className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -454,7 +454,7 @@ const Diagonalization: React.FC = () => {
         {matrix.length > 1 && (
           <button
             onClick={removeRow}
-            className="px-3.5 py-2 border border-red-500/30 bg-[var(--panel)] text-red-500 font-semibold rounded-xl hover:border-red-500 transition text-xs flex items-center gap-1.5"
+            className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -465,7 +465,7 @@ const Diagonalization: React.FC = () => {
         {(matrix[0]?.length || 0) > 1 && (
           <button
             onClick={removeColumn}
-            className="px-3.5 py-2 border border-red-500/30 bg-[var(--panel)] text-red-500 font-semibold rounded-xl hover:border-red-500 transition text-xs flex items-center gap-1.5"
+            className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -476,41 +476,40 @@ const Diagonalization: React.FC = () => {
         {steps.length > 0 && (
           <button
             onClick={() => setShowExplanation(!showExplanation)}
-            className="px-3.5 py-2 border border-[var(--line)] bg-[var(--panel)] text-[var(--heading)] font-semibold rounded-xl hover:border-[#B6FF2E] transition text-xs flex items-center gap-1.5"
+            className="px-4 py-2 border border-gray-200 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5 ml-auto"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {showExplanation ? 'Hide' : 'Show'} Steps
+            <span>{showExplanation ? 'Hide' : 'Show'} Steps</span>
           </button>
         )}
       </div>
 
       {steps.length > 0 && (
-        <div className="space-y-4">
-          {/* Result Summary */}
-          <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--panel)] animate-in fade-in duration-300">
+        <div className="space-y-5 animate-in fade-in duration-300">
+          {/* Result Summary Hero Box */}
+          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
               <div className="flex-1">
-                <p className="text-xs font-extrabold uppercase tracking-wider text-[#B6FF2E]">Diagonalization Complete</p>
-                <div className="mt-1 text-xs text-[var(--muted)]">
-                  The matrix has been diagonalized (if possible).
-                </div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#7B1824] inline-flex items-center gap-1.5">
+                  <span>Diagonalization Analysis</span>
+                </span>
+                <p className="mt-1 text-xs text-gray-600">
+                  Matrix factorization into A = PDP⁻¹ form.
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2.5">
-                  <div className="bg-slate-100 dark:bg-[#14171B] px-3 py-2 rounded-xl border border-[var(--line)]">
-                    <span className="text-[0.65rem] uppercase font-bold text-[var(--muted)] block">Matrix Size</span>
-                    <span className="font-mono text-xs font-bold text-[var(--heading)]">{matrix.length}×{matrix[0]?.length || 0}</span>
+                  <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Matrix Size</span>
+                    <span className="font-mono text-xs font-bold text-gray-900">{matrix.length}×{matrix[0]?.length || 0}</span>
                   </div>
-                  <div className="bg-slate-100 dark:bg-[#14171B] px-3 py-2 rounded-xl border border-[var(--line)]">
-                    <span className="text-[0.65rem] uppercase font-bold text-[var(--muted)] block">Diagonalizable</span>
-                    <span className="font-mono text-xs font-bold text-[var(--heading)]">
+                  <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Diagonalizable</span>
+                    <span className="font-mono text-xs font-bold text-gray-900">
                       {steps.some(step => step.title.includes('✅ Matrix is Diagonalizable')) ? 'Yes ✅' : 'No ❌'}
                     </span>
                   </div>
                   {steps.some(step => step.title.includes('Eigenvalues')) && (
-                    <div className="bg-slate-100 dark:bg-[#14171B] px-3 py-2 rounded-xl border border-[var(--line)]">
-                      <span className="text-[0.65rem] uppercase font-bold text-[var(--muted)] block">Eigenvalues</span>
-                      <span className="font-mono text-xs font-bold text-[var(--heading)]">
+                    <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
+                      <span className="text-[10px] uppercase font-bold text-gray-400 block">Eigenvalues</span>
+                      <span className="font-mono text-xs font-bold text-[#7B1824]">
                         {steps.find(step => step.title.includes('Eigenvalues'))?.description
                           ?.split('\n')
                           .filter(line => line.includes('λ'))
@@ -536,55 +535,45 @@ const Diagonalization: React.FC = () => {
             </div>
           </div>
 
-          {/* Step-by-Step Explanation with explanation beside */}
+          {/* Step-by-Step Explanation */}
           {showExplanation && (
-            <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--panel)] animate-in fade-in duration-300">
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--line)]">
-                <svg className="w-4 h-4 text-[#B6FF2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--heading)]">Step-by-Step Solution</h4>
-                <span className="text-xs text-[var(--muted)] ml-auto">Diagonalization Algorithm</span>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#7B1824]" />
+                  <h4 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+                    Step-by-Step Solution
+                  </h4>
+                </div>
+                <span className="text-xs text-gray-400 font-mono">Diagonalization Algorithm</span>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {steps.map((step, idx) => (
-                  <div key={idx} className="border-b border-[var(--line)] last:border-0 pb-4 last:pb-0">
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#B6FF2E]/20 text-[#B6FF2E] font-mono text-xs font-bold">
-                          {idx + 1}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-[var(--heading)] text-sm">{step.title}</p>
-                        <div className="mt-1 text-xs text-[var(--muted)] whitespace-pre-wrap leading-relaxed">
-                          {step.description}
-                        </div>
-                        {step.matrix && step.matrix.length > 0 && (
-                          <div className="mt-2">
-                            {renderMatrix(step.matrix, step.label)}
-                          </div>
-                        )}
-                      </div>
-                      {step.explanation && (
-                        <div className="flex-shrink-0 mt-2 sm:mt-0">
-                          <details className="group">
-                            <summary className="text-xs text-[var(--muted)] hover:text-[#B6FF2E] cursor-pointer font-bold px-2.5 py-1 rounded-lg border border-[var(--line)] bg-slate-100 dark:bg-[#14171B] transition">
-                              <span className="flex items-center gap-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Explanation
-                              </span>
-                            </summary>
-                            <div className="mt-2 p-3 bg-slate-100 dark:bg-[#14171B] rounded-lg border border-[var(--line)] text-xs text-[var(--muted)] max-w-xs leading-relaxed">
-                              {step.explanation}
-                            </div>
-                          </details>
-                        </div>
-                      )}
+                  <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <p className="font-bold text-gray-900 text-sm">{step.title}</p>
                     </div>
+
+                    <div className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed pl-7">
+                      {step.description}
+                    </div>
+
+                    {step.matrix && step.matrix.length > 0 && (
+                      <div className="pl-7">
+                        {renderMatrix(step.matrix, step.label)}
+                      </div>
+                    )}
+
+                    {step.explanation && (
+                      <div className="mt-2 pt-2 border-t border-gray-200/60 pl-7 text-xs text-gray-600 leading-relaxed">
+                        <span className="font-bold text-[#7B1824]">Concept: </span>
+                        {step.explanation}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -593,14 +582,11 @@ const Diagonalization: React.FC = () => {
         </div>
       )}
 
-      <div className="text-xs text-[var(--muted)] p-3.5 rounded-xl border border-[var(--line)] bg-[var(--panel)]">
-        <p className="flex items-center gap-1.5 font-bold text-[var(--heading)]">
-          <svg className="w-4 h-4 text-[#B6FF2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+      <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/70 text-xs text-gray-600 space-y-2">
+        <p className="font-bold text-gray-900">
           Diagonalization requirements:
         </p>
-        <ul className="list-disc list-inside mt-2 space-y-1 text-[0.7rem]">
+        <ul className="list-disc list-inside space-y-1 text-xs">
           <li>Matrix must be square (n×n)</li>
           <li>Matrix must have n linearly independent eigenvectors</li>
           <li>If all eigenvalues are distinct, matrix is guaranteed diagonalizable</li>

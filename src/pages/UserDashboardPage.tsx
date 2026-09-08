@@ -76,6 +76,7 @@ import {
   getCalculusDefinitionForTopic,
   type CalculatorDefinition,
 } from "../Calculus_One_Calculator/CalculatorData";
+import { getLinearAlgebraDefinitionForTopic } from "../data/linearAlgebraCalculators";
 
 // Real Complete Topic Data from Codebase
 import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
@@ -1512,19 +1513,6 @@ export default function UserDashboardPage() {
               <History className="w-4 h-4 shrink-0" />
               <span>Quizzes History</span>
             </button>
-
-            {/* Quiz Results */}
-            <button
-              onClick={() => handleNavClick("quiz-results")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
-                activeNav === "quiz-results"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
-              }`}
-            >
-              <Trophy className="w-4 h-4 shrink-0" />
-              <span>Quiz Results</span>
-            </button>
           </nav>
         </div>
 
@@ -1677,18 +1665,6 @@ export default function UserDashboardPage() {
                   <History className="w-4 h-4" />
                   <span>Quizzes History</span>
                 </button>
-
-                <button
-                  onClick={() => handleNavClick("quiz-results")}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
-                    activeNav === "quiz-results"
-                      ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                      : "text-[#4B5565] hover:bg-[#F4F5F7]"
-                  }`}
-                >
-                  <Trophy className="w-4 h-4" />
-                  <span>Quiz Results</span>
-                </button>
               </nav>
 
               {/* Mobile Keep Learning Card */}
@@ -1711,11 +1687,11 @@ export default function UserDashboardPage() {
 
             <div className="pt-4 border-t border-[#EAEBED]">
               <button
-                onClick={() => {
-                  logout();
-                  navigate("/login");
+                onClick={async () => {
+                  await logout();
+                  navigate("/login", { replace: true });
                 }}
-                className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-red-600 hover:bg-red-50 text-sm font-medium"
+                className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-red-600 hover:bg-red-50 text-sm font-medium cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Log Out</span>
@@ -1731,40 +1707,17 @@ export default function UserDashboardPage() {
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FA]">
         {/* Top Header Bar */}
         <header className="h-16 bg-white border-b border-[#EAEBED] px-4 sm:px-8 flex items-center justify-between shrink-0 z-20">
-          {/* Mobile Hamburger & Search Bar */}
-          <div className="flex items-center gap-3 flex-1 max-w-[560px]">
-            <button
-              onClick={() => setMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100"
-              aria-label="Open sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            {/* Search Input Box */}
-            <div className="relative w-full">
-              <Search className="w-4 h-4 text-[#8C93A0] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                id="student-search-input"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search calculators, topics, formulas..."
-                className="w-full bg-[#F5F6F8] hover:bg-[#EFF0F3] focus:bg-white text-xs sm:text-sm text-[#1F242D] placeholder-[#8C93A0] pl-10 pr-16 py-2.5 rounded-xl border border-transparent focus:border-[#801424]/30 focus:ring-2 focus:ring-[#801424]/10 outline-none transition-all duration-200"
-              />
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 pointer-events-none">
-                <span className="text-[10px] font-semibold text-[#8C93A0] bg-white border border-[#E0E2E6] px-1.5 py-0.5 rounded shadow-2xs">
-                  Ctrl
-                </span>
-                <span className="text-[10px] font-semibold text-[#8C93A0] bg-white border border-[#E0E2E6] px-1.5 py-0.5 rounded shadow-2xs">
-                  K
-                </span>
-              </div>
-            </div>
-          </div>
+          {/* Mobile Hamburger Button */}
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
+            className="lg:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100"
+            aria-label="Open sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
           {/* Right Header Controls: Notifications & User Profile */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 ml-auto">
             {/* Notification Bell Button & Dropdown */}
             <div className="relative">
               <button
@@ -1993,10 +1946,10 @@ export default function UserDashboardPage() {
                     <div className="h-[1px] bg-gray-100 my-0.5" />
 
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsUserDropdownOpen(false);
-                        logout();
-                        navigate("/login");
+                        await logout();
+                        navigate("/login", { replace: true });
                       }}
                       className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-50 text-left cursor-pointer"
                     >
@@ -2281,24 +2234,6 @@ export default function UserDashboardPage() {
                   </div>
                 </div>
 
-                {/* 3. Average Score */}
-                <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4 transition hover:shadow-md">
-                  <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] flex items-center justify-center shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10">
-                    <Trophy className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-[#8C93A0]">
-                      Average Score
-                    </span>
-                    <span className="text-2xl font-bold text-[#1F242D] leading-tight my-0.5">
-                      {studentAverageScore} pts
-                    </span>
-                    <span className="text-[11px] font-medium text-[#9AA1B0]">
-                      Best: {studentHighestScore} pts
-                    </span>
-                  </div>
-                </div>
-
                 {/* 4. Time Studied */}
                 <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4 transition hover:shadow-md">
                   <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] flex items-center justify-center shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10">
@@ -2490,53 +2425,11 @@ export default function UserDashboardPage() {
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* BOTTOM FULL-WIDTH CARD: QUIZ RESULTS SUMMARY */}
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between mb-6">
-                <div>
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm sm:text-base font-bold text-[#1F242D]">
-                      Quiz Results Summary
-                    </h3>
-                    <button
-                      onClick={() => handleNavClick("quiz-results")}
-                      className="bg-white border border-[#E0E2E6] hover:bg-[#F8F9FA] text-[#4B5565] text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer"
-                    >
-                      View All
-                    </button>
-                  </div>
-
-                  {/* Table Headers */}
-                  <div className="grid grid-cols-5 text-[11px] font-semibold text-[#8C93A0] py-2.5 border-b border-[#F0F1F3] px-1">
-                    <span>Quiz Title</span>
-                    <span className="text-center">Total Students</span>
-                    <span className="text-center">Average Score</span>
-                    <span className="text-center">Highest Score</span>
-                    <span className="text-right">Lowest Score</span>
-                  </div>
-                </div>
-
-                {/* Empty State */}
-                <div className="py-10 flex flex-col items-center justify-center text-center">
-                  <div className="w-14 h-14 rounded-full bg-[#FCE8EB] flex items-center justify-center mb-3 text-[#801424]">
-                    <Trophy className="w-6 h-6" />
-                  </div>
-                  <h4 className="text-sm font-bold text-[#1F242D] mb-1">
-                    No results available
-                  </h4>
-                  <p className="text-xs text-[#8C93A0]">
-                    Results will appear here once students attempt quizzes.
-                  </p>
-                </div>
-              </div>
+              </div>                              
             </>
           )}
 
-          {/* ===================================================================== */}
-          {/* VIEW B: CALCULATORS DIRECT INTERACTIVE SUITE (ALL 52+ SOLVERS)        */}
-          {/* ===================================================================== */}
+          
           {activeNav === "calculators" && (
             <div className="flex flex-col gap-6">
               {activeCalculator ? (
@@ -2726,7 +2619,7 @@ export default function UserDashboardPage() {
                         className="p-2 rounded-xl bg-[#F8F9FA] hover:bg-gray-200 text-gray-700 transition flex items-center gap-1 text-xs font-semibold cursor-pointer"
                       >
                         <ArrowLeft className="w-4 h-4" />
-                        <span>Back to Topics</span>
+                        <span>{selectedChapterFilter !== "all" ? "Back to Chapters" : "Back to Topics"}</span>
                       </button>
                       <div className="h-6 w-[1px] bg-gray-200 hidden sm:block" />
                       <div>
@@ -2741,7 +2634,8 @@ export default function UserDashboardPage() {
 
                     {/* Top Aligned Interactive Calculator Button with Hover Tooltip */}
                     {(() => {
-                      const calcDef = getCalculusDefinitionForTopic(activeTopic);
+                      const isLinear = activeTopic.category === "linear-algebra";
+                      const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
                       return (
                         <div className="relative group/topcalc flex items-center">
                           <button
@@ -2796,11 +2690,23 @@ export default function UserDashboardPage() {
                     {/* Step-by-Step Practice Problems */}
                     {activeTopic.examples && activeTopic.examples.length > 0 && (
                       <div className="pt-4 border-t border-gray-100">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-base sm:text-lg font-bold text-[#1F242D] flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-[#801424]" />
-                            <span>Step-by-Step Practice Problems ({activeTopic.examples.length})</span>
-                          </h3>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-base sm:text-lg font-bold text-[#1F242D] flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-[#801424]" />
+                              <span>Step-by-Step Practice Problems ({activeTopic.examples.length})</span>
+                            </h3>
+                            {activeTopic.category === "linear-algebra" && (() => {
+                              const laCalc = getLinearAlgebraDefinitionForTopic(activeTopic);
+                              return (
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#801424] bg-[#FFF0F3] border border-[#FFCCD5] px-2.5 py-0.5 rounded-md">
+                                  <span>{activeTopic.title}</span>
+                                  <span>→</span>
+                                  <span>{laCalc.name}</span>
+                                </span>
+                              );
+                            })()}
+                          </div>
                           <span className="text-xs text-[#6B7280]">
                             Click &ldquo;Try to Solve&rdquo; to open calculator
                           </span>
@@ -2872,7 +2778,8 @@ export default function UserDashboardPage() {
                   {/* Slide-out Calculator Drawer from Right */}
                   <AnimatePresence>
                     {isTopicCalculatorOpen && activeTopic && (() => {
-                      const calcDef = getCalculusDefinitionForTopic(activeTopic);
+                      const isLinear = activeTopic.category === "linear-algebra";
+                      const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
                       return (
                         <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
                           {/* Backdrop */}
@@ -2899,7 +2806,7 @@ export default function UserDashboardPage() {
                                   <Calculator className="w-5 h-5" />
                                 </div>
                                 <div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <h3 className="text-base sm:text-lg font-black text-[#1F242D]">
                                       {calcDef.name}
                                     </h3>
@@ -2907,8 +2814,10 @@ export default function UserDashboardPage() {
                                       {calcDef.badge}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-[#6B7280]">
-                                    {activeTopic.title} • {activeTopic.chapter}
+                                  <p className="text-xs text-[#6B7280] flex items-center gap-1.5 flex-wrap">
+                                    <span>{activeTopic.title}</span>
+                                    <span>→</span>
+                                    <span className="font-semibold text-[#801424]">{calcDef.name}</span>
                                   </p>
                                 </div>
                               </div>
@@ -2929,7 +2838,7 @@ export default function UserDashboardPage() {
                                 <div className="flex items-center gap-2">
                                   <Sparkles className="w-4 h-4 text-[#801424] shrink-0" />
                                   <span>
-                                    <strong>Loaded Problem #{loadedTopicExample.index + 1}:</strong> &ldquo;{loadedTopicExample.text}&rdquo;
+                                    <strong>Loaded Problem #{loadedTopicExample.index + 1}:</strong> &ldquo;{loadedTopicExample.text}&rdquo; (Copied to clipboard)
                                   </span>
                                 </div>
                                 <button
@@ -2946,14 +2855,18 @@ export default function UserDashboardPage() {
                             {/* Scrollable Calculator Body */}
                             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                               <div className="bg-white rounded-2xl border border-[#EAEBED] p-4 sm:p-6 shadow-xs">
-                                <CalculusCalculator
-                                  key={`${calcDef.id}-${topicCalcKey}`}
-                                  definition={
-                                    loadedTopicExample
-                                      ? { ...calcDef, example: loadedTopicExample.text }
-                                      : calcDef
-                                  }
-                                />
+                                {isLinear ? (
+                                  <div>{(calcDef as any).component}</div>
+                                ) : (
+                                  <CalculusCalculator
+                                    key={`${(calcDef as any).id}-${topicCalcKey}`}
+                                    definition={
+                                      loadedTopicExample
+                                        ? { ...calcDef, example: loadedTopicExample.text } as any
+                                        : calcDef as any
+                                    }
+                                  />
+                                )}
                               </div>
                             </div>
                           </motion.div>
@@ -3061,6 +2974,25 @@ export default function UserDashboardPage() {
                     </div>
                   </div>
 
+                  {/* Active Chapter Filter Alert & Back Button */}
+                  {selectedChapterFilter !== "all" && (
+                    <div className="flex items-center justify-between bg-white border border-[#EAEBED] rounded-2xl px-5 py-3 shadow-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#6B7280]">Filtered by Chapter:</span>
+                        <span className="text-xs font-bold text-[#801424] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
+                          {selectedChapterFilter}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setSelectedChapterFilter("all")}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#801424] hover:bg-[#FCE8EB] px-3 py-1.5 rounded-xl transition cursor-pointer"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Back to All Chapters</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Topics Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                     {filteredTopics.map((top) => (
@@ -3071,7 +3003,14 @@ export default function UserDashboardPage() {
                       >
                         <div>
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-[11px] font-bold text-[#801424] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
+                            <span 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedChapterFilter(top.chapter);
+                              }}
+                              title="Click to filter by this chapter"
+                              className="text-[11px] font-bold text-[#801424] bg-[#FCE8EB] hover:bg-[#801424] hover:text-white transition-colors px-2.5 py-0.5 rounded-full cursor-pointer"
+                            >
                               {top.chapter}
                             </span>
                             <span className="text-[11px] font-medium text-[#8C93A0]">
@@ -4004,192 +3943,6 @@ export default function UserDashboardPage() {
               </div>
             )}
 
-          {/* ===================================================================== */}
-          {/* VIEW D5: QUIZ RESULTS & ANALYTICS                                      */}
-          {/* ===================================================================== */}
-          {!activeTakingQuiz &&
-            !submittedResult &&
-            activeNav === "quiz-results" && (
-              <div className="flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
-                {/* Header Banner */}
-                <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-11 h-11 rounded-2xl bg-[#801424] flex items-center justify-center text-white shrink-0 shadow-xs">
-                        <Trophy className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
-                          Quiz Performance & Analytics
-                        </h2>
-                        <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
-                          Comprehensive breakdown of your scores, topic mastery, and improvement statistics.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4 Analytics Metric Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#FCE8EB] text-[#801424] flex items-center justify-center shrink-0">
-                      <TrendingUp className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-[#8C93A0]">
-                        Overall Average
-                      </p>
-                      <p className="text-2xl font-black text-[#111827]">
-                        {studentAverageScore} pts
-                      </p>
-                      <p className="text-[11px] text-[#801424] font-semibold">
-                        Across all quizzes
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
-                      <Award className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-[#8C93A0]">
-                        Highest Score
-                      </p>
-                      <p className="text-2xl font-black text-green-700">
-                        {studentHighestScore}%
-                      </p>
-                      <p className="text-[11px] text-green-600 font-semibold">
-                        Personal Best
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-[#8C93A0]">
-                        Passed Rate
-                      </p>
-                      <p className="text-2xl font-black text-[#111827]">
-                        {totalQuizzesTaken > 0
-                          ? Math.round(
-                              (passedQuizzesCount / totalQuizzesTaken) * 100,
-                            )
-                          : 0}
-                        %
-                      </p>
-                      <p className="text-[11px] text-gray-500 font-semibold">
-                        {passedQuizzesCount} of {totalQuizzesTaken} passed
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-xs flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                      <Clock className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-[#8C93A0]">
-                        Total Practice Time
-                      </p>
-                      <p className="text-2xl font-black text-[#111827]">
-                        {formatSeconds(totalTimeSpentSeconds)}
-                      </p>
-                      <p className="text-[11px] text-gray-500 font-semibold">
-                        Time invested
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Per-Quiz Performance Breakdown */}
-                <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-xs">
-                  <h3 className="text-base font-bold text-[#111827] mb-4">
-                    Performance by Quiz
-                  </h3>
-
-                  {completedQuizzes.length === 0 ? (
-                    <div className="py-12 text-center flex flex-col items-center justify-center">
-                      <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
-                        <Trophy className="w-6 h-6" />
-                      </div>
-                      <p className="text-sm font-bold text-gray-700">No answered quizzes yet</p>
-                      <p className="text-xs text-gray-500 mt-1 max-w-xs">
-                        Complete a quiz from the Quizzes section to view your detailed performance and scores here.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {completedQuizzes.map((quiz) => {
-                        const attemptsOnThis = myAttempts.filter(
-                          (a) => a.quizId === quiz.id,
-                        );
-                        const hasAttempted = attemptsOnThis.length > 0;
-                        const best = hasAttempted
-                          ? Math.max(...attemptsOnThis.map((a) => a.percentage))
-                          : 0;
-
-                        return (
-                          <div
-                            key={quiz.id}
-                            className="p-4 rounded-2xl border border-gray-200 bg-[#F9FAFB] flex flex-col justify-between"
-                          >
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#801424] bg-[#801424]/10 px-2 py-0.5 rounded-md">
-                                  {quiz.topic}
-                                </span>
-                                <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1 font-bold">
-                                  <CheckCircle2 className="w-3 h-3" /> Completed
-                                </span>
-                              </div>
-                              <h4 className="text-sm font-bold text-[#111827]">
-                                {quiz.title}
-                              </h4>
-                            </div>
-
-                            <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
-                              <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase">
-                                  Score
-                                </p>
-                                <p
-                                  className={`text-sm font-black ${
-                                    best >= 60
-                                      ? "text-emerald-700"
-                                      : "text-red-700"
-                                  }`}
-                                >
-                                  {best}%
-                                </p>
-                              </div>
-
-                              <button
-                                onClick={() => {
-                                  const past = myAttempts.find(
-                                    (a) => a.quizId === quiz.id,
-                                  );
-                                  if (past) setReviewingAttempt(past);
-                                }}
-                                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                                <span>View Result</span>
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
           {/* ========================================================================= */}
           {/* CUSTOM INTERACTIVE EXIT QUIZ CONFIRMATION MODAL                            */}
           {/* ========================================================================= */}
@@ -4242,19 +3995,19 @@ export default function UserDashboardPage() {
           {/* ========================================================================= */}
           <AnimatePresence>
             {reviewingAttempt && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/50 backdrop-blur-xs">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95, y: 15 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                  className="w-full max-w-3xl bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#EAEBED] max-h-[85vh] flex flex-col"
+                  className="w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl border border-[#EAEBED] max-h-[92vh] sm:max-h-[85vh] flex flex-col"
                 >
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
-                    <div>
-                      <h3 className="text-lg font-bold text-[#111827]">
+                  <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 shrink-0">
+                    <div className="min-w-0 pr-2">
+                      <h3 className="text-base sm:text-lg font-bold text-[#111827] truncate">
                         {reviewingAttempt.quizTitle}
                       </h3>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         Score: {reviewingAttempt.score} /{" "}
                         {reviewingAttempt.totalQuestions} pts • Submitted:{" "}
                         {reviewingAttempt.submittedAt}
@@ -4263,13 +4016,13 @@ export default function UserDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setReviewingAttempt(null)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer shrink-0"
                     >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
 
-                  <div className="overflow-y-auto py-4 flex-1 space-y-4">
+                  <div className="overflow-y-auto py-3 sm:py-4 flex-1 space-y-3 sm:space-y-4">
                     {reviewingAttempt.answers.length === 0 ? (
                       <p className="text-xs text-gray-500 text-center py-6">
                         No question breakdown recorded for this attempt.
@@ -4278,7 +4031,7 @@ export default function UserDashboardPage() {
                       reviewingAttempt.answers.map((ans, idx) => (
                         <div
                           key={ans.questionId || idx}
-                          className={`p-4 rounded-2xl border ${
+                          className={`p-3.5 sm:p-4 rounded-2xl border ${
                             ans.isCorrect
                               ? "border-green-200 bg-green-50/40"
                               : "border-red-200 bg-red-50/40"
@@ -4302,7 +4055,7 @@ export default function UserDashboardPage() {
                             )}
                           </div>
 
-                          <h4 className="text-sm font-bold text-[#111827] mb-2.5">
+                          <h4 className="text-xs sm:text-sm font-bold text-[#111827] mb-2.5 leading-snug">
                             {ans.prompt}
                           </h4>
 
@@ -4316,7 +4069,7 @@ export default function UserDashboardPage() {
                                   : "bg-red-100 border-red-400 text-red-900"
                               }`}>
                                 <span className="shrink-0 mt-0.5">{ans.isCorrect ? "✓" : "✗"}</span>
-                                <div>
+                                <div className="break-all">
                                   <span className="uppercase tracking-wide text-[10px] opacity-70 block mb-0.5">Your Answer</span>
                                   {ans.selected && ans.selected !== "" ? ans.selected : <em className="opacity-60">No answer given</em>}
                                 </div>
@@ -4326,7 +4079,7 @@ export default function UserDashboardPage() {
                               {!ans.isCorrect && (
                                 <div className="flex items-start gap-2 p-3 rounded-xl border border-green-300 bg-green-50 text-xs text-green-900 font-semibold">
                                   <span className="shrink-0 mt-0.5">✓</span>
-                                  <div>
+                                  <div className="break-all">
                                     <span className="uppercase tracking-wide text-[10px] opacity-70 block mb-0.5">Correct Answer</span>
                                     {ans.correctAnswerText || ans.correct}
                                   </div>
@@ -4341,28 +4094,28 @@ export default function UserDashboardPage() {
                                 const allDone = revealed >= steps.length;
 
                                 return (
-                                  <div className="rounded-2xl border border-indigo-200 bg-gradient-to-b from-indigo-50/70 to-white overflow-hidden">
+                                  <div className="rounded-2xl border border-[#7B1824]/20 bg-gradient-to-b from-[#FFF8F9] to-white overflow-hidden shadow-xs">
                                     {/* Header */}
-                                    <div className="flex items-center justify-between px-4 py-2.5 bg-indigo-600 text-white">
+                                    <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 bg-[#7B1824] text-white">
                                       <span className="text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5">
                                         <span>📘</span> Step-by-Step Solution
                                       </span>
-                                      <span className="text-[10px] font-semibold opacity-80">
+                                      <span className="text-[10px] font-semibold opacity-90">
                                         {Math.min(revealed, steps.length)}/{steps.length} steps
                                       </span>
                                     </div>
 
                                     {/* Progress bar */}
-                                    <div className="h-1 bg-indigo-100">
+                                    <div className="h-1 bg-[#FDF2F4]">
                                       <motion.div
-                                        className="h-full bg-indigo-500 origin-left"
+                                        className="h-full bg-[#7B1824] origin-left"
                                         animate={{ scaleX: steps.length > 0 ? Math.min(revealed, steps.length) / steps.length : 0 }}
                                         transition={{ type: "spring", stiffness: 200, damping: 22 }}
                                         style={{ transformOrigin: "left" }}
                                       />
                                     </div>
 
-                                    <div className="p-4 space-y-2">
+                                    <div className="p-3.5 sm:p-4 space-y-2">
                                       {/* Revealed steps */}
                                       <AnimatePresence initial={false}>
                                         {steps.slice(0, revealed).map((step, si) => (
@@ -4371,17 +4124,17 @@ export default function UserDashboardPage() {
                                             initial={{ opacity: 0, y: -8, scale: 0.97 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             transition={{ type: "spring", stiffness: 300, damping: 24, delay: 0.04 }}
-                                            className="flex items-start gap-3"
+                                            className="flex items-start gap-2.5 sm:gap-3"
                                           >
-                                            <span className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shadow-sm ${
+                                            <span className={`shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shadow-xs ${
                                               si === revealed - 1
-                                                ? "bg-indigo-600 text-white ring-2 ring-indigo-300"
-                                                : "bg-indigo-100 text-indigo-700"
+                                                ? "bg-[#7B1824] text-white ring-2 ring-[#7B1824]/30"
+                                                : "bg-[#FDF2F4] text-[#7B1824]"
                                             }`}>
                                               {si + 1}
                                             </span>
                                             <span className={`text-xs leading-relaxed pt-0.5 ${
-                                              si === revealed - 1 ? "text-indigo-900 font-semibold" : "text-gray-700"
+                                              si === revealed - 1 ? "text-[#111827] font-semibold" : "text-gray-700"
                                             }`}>
                                               {step}
                                             </span>
@@ -4391,13 +4144,13 @@ export default function UserDashboardPage() {
 
                                       {/* Placeholder while no steps revealed */}
                                       {revealed === 0 && (
-                                        <p className="text-xs text-indigo-400 italic text-center py-2">
+                                        <p className="text-xs text-[#7B1824]/70 italic text-center py-2">
                                           Press "Show Next Step" to start the walkthrough →
                                         </p>
                                       )}
 
                                       {/* Action buttons */}
-                                      <div className="flex items-center gap-2 pt-2">
+                                      <div className="flex flex-wrap items-center gap-2 pt-2">
                                         {!allDone ? (
                                           <>
                                             <button
@@ -4408,18 +4161,18 @@ export default function UserDashboardPage() {
                                                   [stepKey]: Math.min((prev[stepKey] ?? 0) + 1, steps.length),
                                                 }))
                                               }
-                                              className="flex-1 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold shadow transition cursor-pointer flex items-center justify-center gap-1.5"
+                                              className="flex-1 py-2 px-3.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] active:scale-95 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                                             >
                                               <span>▶</span>
                                               Show Next Step
-                                              <span className="ml-1 opacity-70 text-[10px]">({revealed + 1}/{steps.length})</span>
+                                              <span className="ml-1 opacity-80 text-[10px]">({revealed + 1}/{steps.length})</span>
                                             </button>
                                             <button
                                               type="button"
                                               onClick={() =>
                                                 setRevealedSteps((prev) => ({ ...prev, [stepKey]: steps.length }))
                                               }
-                                              className="py-2 px-3 rounded-xl border border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-semibold transition cursor-pointer"
+                                              className="py-2 px-3 rounded-xl border border-[#7B1824]/30 text-[#7B1824] hover:bg-[#FDF2F4] text-xs font-semibold transition cursor-pointer"
                                             >
                                               Show All
                                             </button>

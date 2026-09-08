@@ -1,5 +1,6 @@
 // components/SystemOfEquations.tsx
 import React, { useState } from 'react';
+import { Sparkles, Trash2, Plus, Play, Info, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import PDFExport from './PDFExport';
 
 interface EquationResult {
@@ -89,8 +90,9 @@ const SystemOfEquations: React.FC = () => {
     if (parsed.some(p => p === null)) {
       setResult({
         variables: {},
-        steps: ['❌ Please enter valid equations in the format: ax + by + cz = d'],
-        uniqueSolution: false
+        steps: ['Please enter valid equations in the format: ax + by + cz = d'],
+        uniqueSolution: false,
+        error: 'Please enter valid equations in the format: ax + by + cz = d'
       });
       return;
     }
@@ -106,13 +108,14 @@ const SystemOfEquations: React.FC = () => {
     if (parsed.length !== variableList.length) {
       setResult({
         variables: {},
-        steps: [`❌ Number of equations (${parsed.length}) must equal number of variables (${variableList.length})`],
-        uniqueSolution: false
+        steps: [`Number of equations (${parsed.length}) must equal number of variables (${variableList.length})`],
+        uniqueSolution: false,
+        error: `Number of equations (${parsed.length}) must equal number of variables (${variableList.length})`
       });
       return;
     }
 
-    const matrix: number[][] = parsed.map((eq, idx) => {
+    const matrix: number[][] = parsed.map((eq) => {
       const row: number[] = [];
       variableList.forEach(varName => {
         row.push(eq?.coefficients[varName] || 0);
@@ -127,12 +130,12 @@ const SystemOfEquations: React.FC = () => {
 
     const augMatrix = matrix.map(row => [...row]);
     
-    steps.push(`📝 System of Equations:`);
+    steps.push(`System of Equations:`);
     equations.forEach((eq, idx) => {
       steps.push(`   ${idx + 1}) ${eq}`);
     });
     steps.push(``);
-    steps.push(`📊 Augmented Matrix:`);
+    steps.push(`Augmented Matrix [A|b]:`);
     steps.push(formatMatrix(augMatrix, variableList));
     steps.push(``);
 
@@ -148,93 +151,101 @@ const SystemOfEquations: React.FC = () => {
       }
 
       if (Math.abs(augMatrix[pivotRow][i]) < 1e-10) {
-        steps.push(`⚠️ No unique solution: The system has either no solution or infinitely many solutions.`);
         setResult({
           variables: {},
-          steps,
-          uniqueSolution: false
+          steps: ['System has no unique solution (matrix is singular).'],
+          uniqueSolution: false,
+          error: 'System has no unique solution (matrix is singular).'
         });
         return;
       }
 
       if (pivotRow !== i) {
-        [augMatrix[i], augMatrix[pivotRow]] = [augMatrix[pivotRow], augMatrix[i]];
-        steps.push(`🔄 Swap Row ${i + 1} with Row ${pivotRow + 1}:`);
+        const temp = augMatrix[i];
+        augMatrix[i] = augMatrix[pivotRow];
+        augMatrix[pivotRow] = temp;
+        steps.push(`Swap Row ${i + 1} with Row ${pivotRow + 1}`);
         steps.push(formatMatrix(augMatrix, variableList));
         steps.push(``);
       }
 
       const pivot = augMatrix[i][i];
-      for (let j = i + 1; j < n; j++) {
-        const factor = augMatrix[j][i] / pivot;
-        if (Math.abs(factor) < 1e-10) continue;
-        
-        for (let k = i; k < m; k++) {
-          augMatrix[j][k] -= factor * augMatrix[i][k];
+      if (Math.abs(pivot - 1) > 1e-10) {
+        for (let j = i; j < m; j++) {
+          augMatrix[i][j] /= pivot;
         }
-        steps.push(`➖ Row ${j + 1} = Row ${j + 1} - ${factor.toFixed(4)} × Row ${i + 1}:`);
+        steps.push(`Normalize Row ${i + 1} (divide by ${formatNumber(pivot)})`);
         steps.push(formatMatrix(augMatrix, variableList));
         steps.push(``);
+      }
+
+      for (let j = i + 1; j < n; j++) {
+        const factor = augMatrix[j][i];
+        if (Math.abs(factor) > 1e-10) {
+          for (let k = i; k < m; k++) {
+            augMatrix[j][k] -= factor * augMatrix[i][k];
+          }
+          steps.push(`Row ${j + 1} = Row ${j + 1} - (${formatNumber(factor)}) × Row ${i + 1}`);
+          steps.push(formatMatrix(augMatrix, variableList));
+          steps.push(``);
+        }
       }
     }
 
     const solution: Record<string, number> = {};
-    const varNames = variableList;
-    
-    steps.push(`🔄 Back Substitution:`);
-    
     for (let i = n - 1; i >= 0; i--) {
-      let sum = augMatrix[i][n];
+      let sum = augMatrix[i][m - 1];
       for (let j = i + 1; j < n; j++) {
-        sum -= augMatrix[i][j] * solution[varNames[j]];
+        sum -= augMatrix[i][j] * (solution[variableList[j]] || 0);
       }
-      const value = sum / augMatrix[i][i];
-      solution[varNames[i]] = value;
-      
-      const varName = varNames[i];
-      steps.push(`   ${varName} = (${augMatrix[i][n].toFixed(4)} - ${augMatrix[i].slice(i+1, n).map((coeff, idx) => 
-        `${coeff.toFixed(4)}×${varNames[i+1+idx]}`).join(' - ') || '0'}) / ${augMatrix[i][i].toFixed(4)}`);
-      steps.push(`   ${varName} = ${value.toFixed(4)}`);
-      steps.push(``);
+      solution[variableList[i]] = Math.round(sum * 1e6) / 1e6;
     }
 
-    steps.push(`✅ Verification:`);
-    equations.forEach((eq, idx) => {
-      const parsedEq = parseEquation(eq);
-      if (!parsedEq) return;
-      
-      let leftSide = 0;
-      Object.entries(parsedEq.coefficients).forEach(([varName, coeff]) => {
-        leftSide += coeff * (solution[varName] || 0);
-      });
-      
-      const rightSide = parsedEq.constant;
-      const diff = Math.abs(leftSide - rightSide);
-      const valid = diff < 1e-6;
-      
-      steps.push(`   ${eq} → ${leftSide.toFixed(4)} = ${rightSide.toFixed(4)} ${valid ? '✅ Correct' : '❌ Incorrect'}`);
-    });
-
-    const formattedSolution: Record<string, number> = {};
-    Object.entries(solution).forEach(([varName, value]) => {
-      formattedSolution[varName] = Number.isInteger(value) ? value : parseFloat(value.toFixed(4));
-    });
+    steps.push(`Back Substitution:`);
+    for (let i = n - 1; i >= 0; i--) {
+      const varName = variableList[i];
+      steps.push(`   ${varName} = ${formatNumber(solution[varName])}`);
+    }
 
     setResult({
-      variables: formattedSolution,
+      variables: solution,
       steps,
       uniqueSolution: true
     });
   };
 
-  const formatMatrix = (matrix: number[][], variables: string[]): string => {
-    return matrix.map((row, idx) => {
-      const coeffs = row.slice(0, -1).map((val, i) => 
-        `${val >= 0 ? ' ' : ''}${val.toFixed(2)}${variables[i] || ''}`
-      );
-      const constVal = row[row.length - 1];
-      return `   Row ${idx + 1}: [${coeffs.join(', ')} | ${constVal.toFixed(2)}]`;
-    }).join('\n');
+  const formatNumber = (num: number): string => {
+    if (Math.abs(num) < 1e-10) return '0';
+    if (Math.abs(num - Math.round(num)) < 1e-6) return Math.round(num).toString();
+    return num.toFixed(3).replace(/\.?0+$/, '');
+  };
+
+  const formatMatrix = (mat: number[][], vars: string[]): string => {
+    const colWidths: number[] = [];
+    for (let j = 0; j < mat[0].length; j++) {
+      let maxW = j < vars.length ? vars[j].length : 4;
+      for (let i = 0; i < mat.length; i++) {
+        const str = formatNumber(mat[i][j]);
+        if (str.length > maxW) maxW = str.length;
+      }
+      colWidths.push(maxW + 2);
+    }
+
+    let result = '   ';
+    for (let j = 0; j < vars.length; j++) {
+      result += vars[j].padStart(colWidths[j]);
+    }
+    result += ' |' + 'Const'.padStart(colWidths[vars.length]) + '\n';
+    result += '   ' + '-'.repeat(colWidths.reduce((a, b) => a + b, 0) + 2) + '\n';
+
+    for (let i = 0; i < mat.length; i++) {
+      result += '   ';
+      for (let j = 0; j < vars.length; j++) {
+        result += formatNumber(mat[i][j]).padStart(colWidths[j]);
+      }
+      result += ' |' + formatNumber(mat[i][vars.length]).padStart(colWidths[vars.length]) + '\n';
+    }
+    return result;
   };
 
   const addEquation = () => {
@@ -244,8 +255,7 @@ const SystemOfEquations: React.FC = () => {
 
   const removeEquation = (index: number) => {
     if (equations.length > 1) {
-      const newEqs = equations.filter((_, i) => i !== index);
-      setEquations(newEqs);
+      setEquations(equations.filter((_, idx) => idx !== index));
       setResult(null);
     }
   };
@@ -257,17 +267,16 @@ const SystemOfEquations: React.FC = () => {
 
   // Explanation content
   const explanationContent = (
-    <div className="space-y-2 text-xs text-[var(--muted)]">
-      <p><span className="font-semibold text-[var(--heading)]">How Gaussian Elimination Works:</span> This method solves systems of linear equations by transforming the augmented matrix into row echelon form through row operations, then solving for variables using back substitution.</p>
+    <div className="space-y-2 text-xs text-gray-600">
+      <p><span className="font-bold text-gray-900">How Gaussian Elimination Works:</span> This method transforms the augmented matrix into row echelon form through elementary row operations, then resolves variables via backward substitution.</p>
       <ul className="list-disc pl-5 space-y-1">
-        <li><span className="font-medium text-[var(--heading)]">Forward Elimination:</span> Transform the matrix into row echelon form using row operations (swapping rows, multiplying rows, adding multiples of rows).</li>
-        <li><span className="font-medium text-[var(--heading)]">Back Substitution:</span> Solve for variables starting from the last row and working backwards, substituting known values into previous equations.</li>
-        <li><span className="font-medium text-[var(--heading)]">Verification:</span> Check the solution by plugging the values back into the original equations.</li>
+        <li><span className="font-semibold text-gray-800">Forward Elimination:</span> Transform into upper-triangular echelon form using row swapping, scaling, and row-replacement.</li>
+        <li><span className="font-semibold text-gray-800">Back Substitution:</span> Solve for variables bottom-up, substituting calculated values into higher equations.</li>
+        <li><span className="font-semibold text-gray-800">Verification:</span> Plug calculated values back into original equations to guarantee exact satisfaction.</li>
       </ul>
     </div>
   );
 
-  // Plain text explanation for PDF
   const explanationText = `How Gaussian Elimination Works: This method solves systems of linear equations by transforming the augmented matrix into row echelon form through row operations, then solving for variables using back substitution.
 
 Forward Elimination: Transform the matrix into row echelon form using row operations (swapping rows, multiplying rows, adding multiples of rows).
@@ -276,173 +285,164 @@ Verification: Check the solution by plugging the values back into the original e
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-medium text-slate-700">Enter your equations:</h3>
-          <span className="text-xs text-slate-500">{equations.length} equation{equations.length > 1 ? 's' : ''}</span>
+      {/* Input Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
+            System of Equations ({equations.length} Equations)
+          </label>
+          <span className="text-xs text-gray-400 font-mono">Format: ax + by + cz = d</span>
         </div>
-        {equations.map((eq, idx) => (
-          <div key={idx} className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={eq}
-                onChange={(e) => {
-                  const newEqs = [...equations];
-                  newEqs[idx] = e.target.value;
-                  setEquations(newEqs);
-                  setResult(null);
-                }}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-mono text-sm"
-                placeholder={`Equation ${idx + 1}: e.g., 2x + y - z = 8`}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
-                {idx + 1}
-              </span>
+
+        <div className="space-y-2.5">
+          {equations.map((eq, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <div className="relative flex-1 rounded-xl border border-gray-200 bg-white p-1 focus-within:border-[#7B1824] transition shadow-2xs">
+                <input
+                  type="text"
+                  value={eq}
+                  onChange={(e) => {
+                    const newEqs = [...equations];
+                    newEqs[idx] = e.target.value;
+                    setEquations(newEqs);
+                    setResult(null);
+                  }}
+                  className="w-full px-3.5 py-2 text-sm text-gray-900 placeholder-gray-400 font-mono outline-none bg-transparent"
+                  placeholder={`Equation ${idx + 1}: e.g., 2x + y - z = 8`}
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-mono">
+                  #{idx + 1}
+                </span>
+              </div>
+              {equations.length > 1 && (
+                <button
+                  onClick={() => removeEquation(idx)}
+                  className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition cursor-pointer"
+                  title="Remove equation"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            {equations.length > 1 && (
-              <button
-                onClick={() => removeEquation(idx)}
-                className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                aria-label="Remove equation"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      {/* Action Buttons */}
+      <div className="flex flex-wrap items-center gap-3 pt-1">
         <button
           onClick={solveSystem}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm flex items-center gap-2"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          Solve
+          <Play className="w-4 h-4 fill-white" />
+          <span>Solve System</span>
         </button>
-        <button
-          onClick={clearAll}
-          className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          Clear All
-        </button>
+
         <button
           onClick={addEquation}
-          className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl shadow-2xs transition cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Equation
+          <Plus className="w-4 h-4 text-gray-500" />
+          <span>Add Equation</span>
         </button>
+
+        <button
+          onClick={clearAll}
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl shadow-2xs transition cursor-pointer"
+        >
+          <Trash2 className="w-4 h-4 text-gray-500" />
+          <span>Clear All</span>
+        </button>
+
         {result && result.uniqueSolution && (
           <>
             <button
-              onClick={() => setShowExplanation(!showExplanation)}
-              className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
+              onClick={() => setShowSteps(!showSteps)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl shadow-2xs transition cursor-pointer ml-auto"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {showExplanation ? 'Hide' : 'Show'} Explanation
+              {showSteps ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
+              <span>{showSteps ? 'Hide' : 'Show'} Steps</span>
             </button>
             <button
-              onClick={() => setShowSteps(!showSteps)}
-              className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition flex items-center gap-2"
+              onClick={() => setShowExplanation(!showExplanation)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl shadow-2xs transition cursor-pointer"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              {showSteps ? 'Hide' : 'Show'} Steps
+              <Info className="w-4 h-4 text-gray-500" />
+              <span>{showExplanation ? 'Hide' : 'Show'} Concept</span>
             </button>
           </>
         )}
       </div>
 
+      {/* Result Display */}
       {result && (
-        <div className="space-y-4">
-          {/* Result */}
-          <div className={`p-4 rounded-lg border ${result.uniqueSolution ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'} animate-in fade-in duration-300`}>
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5">
-                {result.uniqueSolution ? (
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
+        <div className="space-y-5">
+          {/* Error Message */}
+          {!result.uniqueSolution && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-5 flex items-start gap-3 text-red-900">
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-red-900">Calculation Error</h4>
+                <p className="text-xs text-red-700 leading-relaxed">{result.steps[0]}</p>
               </div>
-              <div className="flex-1">
-                {result.uniqueSolution ? (
-                  <>
-                    <p className="font-bold text-xs uppercase tracking-wider text-[#B6FF2E]">Solution Found:</p>
-                    <div className="flex flex-wrap gap-2.5 mt-2">
-                      {Object.entries(result.variables).map(([varName, value]) => (
-                        <span key={varName} className="font-mono text-xs font-bold text-[#B6FF2E] bg-slate-100 dark:bg-[#14171B] border border-[var(--line)] px-3 py-1.5 rounded-xl shadow-sm">
-                          {varName} = {value}
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-red-500 font-bold text-sm">{result.steps[0]}</p>
-                )}
-              </div>
-              {result.uniqueSolution && (
-                <div className="flex-shrink-0">
-                  <PDFExport
-                    title="System of Linear Equations - Solution"
-                    data={Object.entries(result.variables).map(([k, v]) => `${k} = ${v}`).join('\n')}
-                    steps={result.steps}
-                    inputs={`Equations:\n${equations.filter(e => e.trim()).join('\n')}`}
-                    explanation={explanationText}
-                    fileName="system_of_equations_solution"
-                  />
-                </div>
-              )}
             </div>
-          </div>
+          )}
 
-          {/* Steps with explanation beside */}
-          {result.uniqueSolution && showSteps && (
-            <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--panel)] animate-in fade-in duration-300">
-              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--line)]">
-                <svg className="w-4 h-4 text-[#B6FF2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--heading)]">Step-by-Step Solution</h4>
-                <span className="text-xs text-[var(--muted)] ml-auto">Gaussian Elimination</span>
+          {/* Solution Hero Card */}
+          {result.uniqueSolution && (
+            <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#7B1824]">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Unique Solution Found</span>
+                </div>
+                <PDFExport
+                  title="System of Linear Equations - Solution"
+                  data={Object.entries(result.variables).map(([k, v]) => `${k} = ${v}`).join('\n')}
+                  steps={result.steps}
+                  inputs={`Equations:\n${equations.filter(e => e.trim()).join('\n')}`}
+                  explanation={explanationText}
+                  fileName="system_of_equations_solution"
+                />
               </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Steps content - pure white font on dark graphite */}
-                <div className="lg:col-span-2 space-y-1 font-mono text-xs sm:text-sm text-[var(--heading)] whitespace-pre-wrap max-h-[400px] overflow-y-auto leading-relaxed">
+
+              <div className="flex flex-wrap gap-3">
+                {Object.entries(result.variables).map(([varName, value]) => (
+                  <div key={varName} className="p-3.5 px-4 rounded-xl bg-white border border-[#F0D5D8] shadow-inner font-mono text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <span className="text-[#7B1824] font-black">{varName}</span>
+                    <span className="text-gray-400">=</span>
+                    <span>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Steps and Concept Card */}
+          {result.uniqueSolution && showSteps && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#7B1824]" />
+                  <h4 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+                    Step-by-Step Solution
+                  </h4>
+                </div>
+                <span className="text-xs text-gray-400 font-mono">Gaussian Elimination</span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div className="lg:col-span-2 p-4 rounded-xl bg-[#0C1017] text-white font-mono text-xs sm:text-sm whitespace-pre-wrap max-h-[420px] overflow-y-auto leading-relaxed border border-gray-800">
                   {result.steps.map((step, idx) => (
-                    <div key={idx} className="py-1">
-                      {step}
-                    </div>
+                    <div key={idx} className="py-0.5">{step}</div>
                   ))}
                 </div>
-                
-                {/* Explanation - takes 1/3 of the space */}
+
                 {showExplanation && (
-                  <div className="lg:col-span-1 p-3.5 bg-slate-100 dark:bg-[#14171B] rounded-xl border border-[var(--line)] max-h-[400px] overflow-y-auto text-xs text-[var(--muted)] leading-relaxed">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-4 h-4 text-[#B6FF2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <h5 className="font-bold text-[var(--heading)] text-xs uppercase tracking-wider">Explanation</h5>
+                  <div className="lg:col-span-1 p-4 bg-gray-50/70 rounded-xl border border-gray-200 max-h-[420px] overflow-y-auto space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                      <Info className="w-3.5 h-3.5 text-[#7B1824]" />
+                      <span>Method Concept</span>
                     </div>
                     {explanationContent}
                   </div>
@@ -453,14 +453,12 @@ Verification: Check the solution by plugging the values back into the original e
         </div>
       )}
 
-      <div className="text-sm text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-        <p className="flex items-center gap-1">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Enter equations in the format: <span className="font-mono text-slate-700">ax + by + cz = d</span>
+      {/* Info footer */}
+      <div className="text-xs text-gray-500 bg-gray-50/70 p-3.5 rounded-xl border border-gray-200 flex items-start gap-2">
+        <Info className="w-4 h-4 text-[#7B1824] shrink-0 mt-0.5" />
+        <p>
+          Enter equations with standard variable names (e.g. <span className="font-mono text-gray-800 font-bold">2x + y - z = 8</span>). The system must have the same number of equations as variables for a unique solution.
         </p>
-        <p className="mt-1 text-xs">The system must have the same number of equations as variables for a unique solution.</p>
       </div>
     </div>
   );

@@ -1,0 +1,27 @@
+{
+  "short_name": "Math",
+  "name": "MathWorkspace - Interactive Math & Linear Algebra",
+  "description": "Interactive Linear Algebra and Calculus Workspace with 25+ calculators, step-by-step problem solvers, quizzes, and learning materials.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FFFFFF",
+  "theme_color": "#7B1824",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}

@@ -74,6 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await api.logout()
     setToken(null)
     setUser(null)
+    if (window.location.hash !== '#/login') {
+      window.location.hash = '#/login'
+    }
   }, [])
 
   const value = useMemo<AuthContextValue>(
