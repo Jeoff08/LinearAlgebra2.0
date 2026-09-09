@@ -4,13 +4,7 @@ const topic = {
   summary:
     "Row rank, column rank, rank-nullity relationship and interpretations.",
   details: `
-Rank is one of the most important concepts in Linear Algebra because it tells us how much independent information is contained in a matrix.
-
-The rank of a matrix is the maximum number of linearly independent rows or columns in that matrix.
-
-In simpler terms:
-
-  The rank of a matrix tells us how many independent directions or pieces of information the matrix contains.
+Rank is one of the most important concepts in Linear Algebra because it tells us how much independent information is contained in a matrix. The rank of a matrix is the maximum number of linearly independent rows or columns in that matrix. In simpler terms, the rank of a matrix tells us how many independent directions or pieces of information the matrix contains. This seemingly simple number has profound implications: it determines whether a system of equations has a solution, whether a matrix is invertible, and how much a linear transformation reduces the dimension of its input space. Rank is also a key concept in data science, where it indicates the true dimensionality of a dataset, and in machine learning, where it underlies matrix factorization techniques. The rank of a matrix A is written as rank(A). Understanding rank is essential for grasping the structure of linear systems, the behaviour of transformations, and the relationships between the fundamental subspaces.
 
 Rank is closely connected to:
   • Linear independence
@@ -28,6 +22,8 @@ The rank of a matrix A is written as rank(A).
 
 1. BASIC DEFINITION OF RANK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rank is the number of linearly independent rows or columns in a matrix. This number measures the "information content" of the matrix: if the rank is high, the matrix captures many independent directions; if it is low, there is redundancy among the rows or columns. For a square matrix, full rank means the matrix is invertible and its determinant is nonzero. For rectangular matrices, the rank is at most the smaller of the number of rows and columns. The rank also determines the dimension of the column space and the row space, and it is a key parameter in the Rank‑Nullity Theorem. In applications, rank helps identify redundant features in datasets, assess the solvability of linear systems, and enable low‑rank approximations for compression and denoising. It is one of the most fundamental invariants of a matrix.
 
 Suppose we have a matrix:
 
@@ -53,7 +49,7 @@ The matrix contains two independent directions.
 2. RANK AND LINEAR INDEPENDENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Rank is directly related to linear independence.
+Rank is directly related to linear independence. If the columns of a matrix are linearly independent, then the matrix has full column rank, which equals the number of columns. Similarly, if the rows are independent, the matrix has full row rank. In fact, the column rank and the row rank are always equal, a theorem that is central to the definition of rank. This means we can compute rank by finding the number of independent columns or rows; whichever is easier. For a square matrix, full rank is equivalent to the columns forming a basis for the space, which in turn implies invertibility. In data analysis, the rank of a data matrix tells us how many independent features are present, and a low rank suggests that the data can be compressed or reduced in dimensionality without significant loss of information.
 
 If the columns of a matrix are linearly independent, then the matrix has full column rank.
 
@@ -79,6 +75,8 @@ Thus:
 
 3. RANK USING ROW REDUCTION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+One of the most common methods for finding the rank of a matrix is Gaussian Elimination or Row Reduction. The rank is equal to the number of pivot positions in the row-reduced matrix. Row reduction transforms the matrix to row echelon form, where each pivot indicates a linearly independent row. This method is efficient and works for any matrix, regardless of its size or shape. It also provides a way to find a basis for the row space, the column space, and the null space. Because elementary row operations do not change the rank, we can apply them freely without affecting the result. This makes row reduction the standard technique for computing rank in both theoretical and practical settings, and it is the foundation of many numerical algorithms in linear algebra.
 
 One of the most common methods for finding the rank of a matrix is Gaussian Elimination or Row Reduction.
 
@@ -121,6 +119,8 @@ Therefore:
 4. RANK AND PIVOT POSITIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A pivot is the first nonzero entry in a nonzero row after row reduction. Each pivot corresponds to a leading variable, and the number of pivots is exactly the rank of the matrix. Pivot positions are important because they identify the linearly independent rows and columns. In Gaussian elimination, the pivots are used to eliminate entries below them, and the count of pivots directly gives the rank. If a row has no pivot, it is a row of zeros, indicating that the row is a linear combination of other rows. Thus, the rank is the number of rows that contain a pivot. This interpretation is particularly useful when solving systems of equations: the number of pivots tells us how many equations are independent and how many free variables exist in the solution.
+
 A pivot is the first nonzero entry in a nonzero row after row reduction.
 
 Example:
@@ -141,6 +141,8 @@ The number of pivots is equal to the rank.
 
 5. RANK AND NONZERO ROWS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After reducing a matrix to row-echelon form, the rank is equal to the number of nonzero rows. This follows from the fact that each nonzero row corresponds to a linearly independent equation, while rows of zeros represent dependencies. The row-echelon form makes it easy to count the nonzero rows, which is often quicker than counting pivots explicitly. This method is particularly useful when we want to find the rank without performing full Gauss‑Jordan elimination, as it only requires forward elimination. In many textbooks, the rank is defined as the number of nonzero rows in the row echelon form of the matrix, which is a practical and intuitive definition. It also reinforces the connection between rank and the row space dimension.
 
 After reducing a matrix to row-echelon form, the rank is equal to the number of nonzero rows.
 
@@ -212,6 +214,8 @@ The identity matrix has full rank.
 8. FULL RANK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A matrix has full rank when its rank is as large as possible. For an m×n matrix, the rank is at most the smaller of the number of rows and columns. When the rank equals min(m, n), the matrix is said to have full rank. For a square matrix, full rank means the matrix is invertible, which implies that its determinant is nonzero and its columns form a basis. For rectangular matrices, full row rank (rank = m) means the rows are independent, and full column rank (rank = n) means the columns are independent. Full rank matrices are important because they represent transformations that are injective (full column rank) or surjective (full row rank). In data science, a full rank data matrix means all features are independent, which simplifies many analyses.
+
 A matrix has full rank when its rank is as large as possible.
 
 For an m×n matrix:
@@ -232,6 +236,8 @@ Therefore, its full rank is 3.
 
 9. ROW RANK AND COLUMN RANK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+There are two ways to describe rank: row rank, which is the number of linearly independent rows, and column rank, which is the number of linearly independent columns. A fundamental theorem of Linear Algebra states that the row rank and column rank are always equal, so we simply call this common value the rank of the matrix. This theorem is surprising but highly useful: it means we can compute rank by examining either the rows or the columns, whichever is easier. It also implies that the dimension of the row space equals the dimension of the column space, which is a key insight into the structure of matrices. This equality is the basis for many results, such as the fact that the rank is invariant under transposition and that the number of pivots in the row echelon form equals the number of pivot columns.
 
 There are two ways to describe rank:
 
@@ -283,6 +289,8 @@ Hence:
 10. RANK AND THE NULL SPACE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Rank is closely connected to the null space. For an m×n matrix, the equation A x = 0 defines the null space, which consists of all vectors that are mapped to zero. The Rank-Nullity Theorem states that the rank plus the nullity (the dimension of the null space) equals the number of columns of the matrix. This theorem is fundamental because it reveals a trade‑off: the more independent directions the matrix has in its column space (higher rank), the fewer directions it "crushes" to zero (lower nullity). Conversely, a low rank means the nullity is high, indicating many redundant dimensions. This theorem is essential for understanding the solution set of linear systems, as the nullity gives the number of free variables, and it is also used in many proofs and applications, from differential equations to data analysis.
+
 Rank is closely connected to the null space.
 
 For an m×n matrix:
@@ -321,6 +329,8 @@ So the matrix has three independent directions in its column space and two dimen
 
 11. RANK AND SYSTEMS OF EQUATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rank can be used to determine whether a system of equations has a solution. Consider A x = b. A system is consistent if the rank of the coefficient matrix A equals the rank of the augmented matrix [A | b]. If these ranks are equal, the system has at least one solution; if they are not equal, the system is inconsistent and has no solution. Moreover, if the rank equals the number of unknowns, the solution is unique; if the rank is less than the number of unknowns, there are infinitely many solutions (assuming consistency). This criterion is one of the most practical uses of rank, as it provides a clear, algebraic test for the solvability of linear systems. It is used in engineering, economics, and science to check whether a model's equations are consistent and to determine the degrees of freedom.
 
 Rank can be used to determine whether a system of equations has a solution.
 
@@ -402,6 +412,8 @@ because the coefficient matrix and augmented matrix have different ranks.
 12. RANK AND MATRIX INVERSE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+For a square matrix A ∈ ℝ^(n×n), the matrix is invertible if and only if it has full rank, i.e., rank(A) = n. This means that the columns are linearly independent, the rows are linearly independent, and the determinant is nonzero. Conversely, if the rank is less than n, the matrix is singular and does not have an inverse. This connection is fundamental because it provides a way to test invertibility using row reduction: if the reduced row echelon form of A is the identity matrix, then the rank is n and the inverse exists. In practice, computing the rank is often more efficient than computing the determinant for large matrices, especially in numerical linear algebra where rank tests are used to detect ill‑conditioned systems.
+
 For a square matrix A ∈ ℝ^(n×n):
 
   A is invertible if and only if:
@@ -420,6 +432,8 @@ If the rank is less than 3, the matrix is singular and does not have an inverse.
 
 13. RANK AND DETERMINANT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For a square matrix A ∈ ℝ^(n×n), the determinant is nonzero if and only if the matrix has full rank. This follows directly from the fact that the determinant is a product of the pivots, and a zero determinant indicates that at least one pivot is missing, reducing the rank. This relationship is useful for quickly checking invertibility for small matrices, but for large matrices, rank via row reduction is preferred due to numerical stability. The determinant also appears in the characteristic equation for eigenvalues, where the rank helps determine the multiplicity of the eigenvalue zero. In geometric terms, the determinant measures the volume scaling factor of the transformation; a zero determinant means the transformation collapses space, and the rank gives the dimension of the image.
 
 For a square matrix A ∈ ℝ^(n×n):
 
@@ -448,6 +462,8 @@ In fact:
 
 14. RANK AND LINEAR TRANSFORMATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A matrix can represent a linear transformation T: ℝⁿ → ℝᵐ. The rank of A tells us the dimension of the range or image of the transformation, i.e., the number of independent output directions that the transformation can produce. This is a key geometric interpretation: the rank is the dimension of the subspace that the transformation maps onto. If the rank is small, the transformation collapses many directions; if the rank is large, it preserves many directions. The rank‑nullity theorem then tells us that the dimension of the kernel (the directions collapsed) plus the rank equals the dimension of the domain. Understanding rank as the dimension of the image helps in visualising transformations and in applications like robotics, where the rank of the Jacobian matrix determines the degrees of freedom of a manipulator.
 
 A matrix can represent a linear transformation:
 
@@ -495,6 +511,8 @@ The transformation reduces the two-dimensional input into a one-dimensional outp
 15. RANK AND FUNDAMENTAL SUBSPACES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Rank is connected to the four fundamental subspaces. The rank gives the dimension of the column space and the row space. It also determines the dimension of the null space via the Rank‑Nullity Theorem. For a matrix with n columns, the dimension of the null space is n - rank(A), and the dimension of the left null space is m - rank(A). These relationships form a complete description of the matrix's action: the column space and the left null space are orthogonal complements in the codomain, and the row space and the null space are orthogonal complements in the domain. This orthogonal decomposition is a cornerstone of linear algebra and is used in many applications, including least‑squares problems and the SVD.
+
 Rank is connected to the four fundamental subspaces:
 
   • Column Space
@@ -519,6 +537,8 @@ If A has n columns:
 16. RANK OF A PRODUCT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+For matrices A and B where the product AB is defined, the rank of the product is at most the minimum of the ranks of the individual matrices. This means that multiplying matrices cannot create new independent directions; the rank of the product is limited by the rank of each factor. This property is important in numerical linear algebra, where it is used to bound the rank of products and to analyse the stability of algorithms. It also has implications in control theory and signal processing, where the rank of a product determines the number of independent signals that can be transmitted through a cascade of systems. Equality can occur if the matrices have certain properties, but in general the rank of a product is often smaller than the minimum of the ranks.
+
 For matrices A and B where the product AB is defined:
 
   rank(AB) ≤ min(rank(A), rank(B))
@@ -534,6 +554,8 @@ Example: If rank(A) = 2 and rank(B) = 3, then:
 17. RANK AND TRANSPOSE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The rank of a matrix is unchanged when it is transposed. This follows from the equality of row rank and column rank: transposing swaps rows and columns, so the row rank of A becomes the column rank of Aᵀ, and vice versa. Since the two are equal, the rank remains the same. This property is extremely useful because it allows us to work with either the rows or the columns, whichever is more convenient. It also explains why the singular values of a matrix and its transpose are the same, and why the SVD can be applied to either. In many algorithms, transposing a matrix is used to transform a problem into a more convenient form without changing the rank.
+
 The rank of a matrix is unchanged when it is transposed:
 
   rank(Aᵀ) = rank(A)
@@ -544,6 +566,8 @@ This makes sense because the row rank and column rank are equal.
 
 18. RANK AND ELEMENTARY ROW OPERATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Elementary row operations do not change the rank of a matrix. The three basic row operations are swapping two rows, multiplying a row by a nonzero scalar, and adding a multiple of one row to another row. Each of these operations corresponds to multiplying the matrix on the left by an elementary matrix, which is invertible. Since multiplying by an invertible matrix does not change the rank, the rank is preserved under row operations. This is why row reduction is such a useful method for finding rank: we can simplify the matrix as much as we like without changing its rank, making it easy to count the independent rows or columns. This invariance is the foundation of Gaussian elimination and many other numerical algorithms.
 
 Elementary row operations do not change the rank of a matrix.
 
@@ -597,6 +621,8 @@ Therefore:
 20. RANK AND DATA SCIENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Rank is important in Data Science because datasets are often represented as matrices. Suppose a dataset contains 100 features, but many of those features are dependent on one another. The matrix might have 100 columns but a rank of only 60. This means that although there are 100 recorded features, only 60 independent directions of information exist. The rank tells us the true dimensionality of the data, which can be much lower than the number of measured variables. This insight is used in principal component analysis (PCA) and other dimensionality reduction techniques to reduce the number of features while preserving most of the variation. Low rank also indicates redundancy, which can be exploited for compression, noise reduction, and speed in machine learning algorithms. Understanding the rank of a data matrix is therefore essential for efficient and effective data analysis.
+
 Rank is important in Data Science because datasets are often represented as matrices.
 
 Suppose a dataset contains 100 features, but many of those features are dependent on one another.
@@ -616,6 +642,8 @@ Therefore, rank can help identify:
 21. RANK AND MACHINE LEARNING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Rank appears in Machine Learning through linear regression, dimensionality reduction, matrix factorization, neural networks, recommendation systems, and Principal Component Analysis. In linear regression, the rank of the design matrix determines whether the normal equations have a unique solution. In recommendation systems, low-rank matrix factorization is used to predict user preferences by finding a low-rank approximation of the user‑item matrix. In neural networks, the rank of weight matrices can indicate the effective capacity of the network. Understanding rank helps in diagnosing issues like multicollinearity, overfitting, and underfitting. Moreover, many optimisation problems in machine learning involve rank constraints, and low‑rank regularisation is a common technique for improving generalisation.
+
 Rank appears in Machine Learning through:
   • Linear regression
   • Dimensionality reduction
@@ -631,6 +659,8 @@ For example, recommendation systems often use low-rank matrix factorization to r
 
 22. RANK AND IMAGE COMPRESSION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Images can be represented as matrices of pixel values. A large image matrix may contain redundant information. Instead of storing every value exactly, a low-rank approximation can be used. If A ≈ Aₖ, where Aₖ has a much smaller rank, the image can sometimes be represented using less storage while maintaining much of its visual information. This idea is closely connected to Singular Value Decomposition (SVD). By keeping only the largest singular values, we obtain a low-rank approximation that preserves the most important features of the image. This technique is used in image compression, denoising, and feature extraction. It demonstrates how the concept of rank directly applies to practical problems, reducing storage and transmission costs while preserving visual quality.
 
 Images can be represented as matrices of pixel values.
 
@@ -650,6 +680,8 @@ This idea is closely connected to Singular Value Decomposition (SVD).
 
 23. RANK AND SVD
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The Singular Value Decomposition of a matrix is A = U Σ Vᵀ. The rank of A is equal to the number of nonzero singular values in Σ. This is a powerful characterisation of rank because the singular values are ordered and nonnegative, and they give a precise measure of how much each direction contributes to the matrix. The rank is the number of directions that have a nonzero contribution. This viewpoint is used in many algorithms: by truncating the small singular values, we obtain a low‑rank approximation that is optimal in the least‑squares sense. The SVD thus provides both the rank and a way to reduce the rank while minimising the loss of information. It is one of the most important tools in numerical linear algebra.
 
 The Singular Value Decomposition of a matrix is:
 
@@ -673,6 +705,8 @@ Therefore:
 
 24. RANK AND LOW-RANK APPROXIMATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A matrix is called low rank when its rank is significantly smaller than its dimensions. For example, a 1000×1000 matrix could theoretically have rank 1000, but if its rank is only 20, then it has a strong low-dimensional structure. Low-rank matrices arise in many applications because real-world data often has hidden structure or dependencies. Low-rank approximation is used to reduce storage, speed up computations, and remove noise. The Eckart‑Young theorem states that the best rank‑k approximation in the Frobenius norm is given by the SVD, keeping the first k singular values. This theorem is the foundation of many algorithms in signal processing, image compression, and recommendation systems. Understanding low rank helps in recognising that many high‑dimensional datasets can be represented efficiently with much fewer parameters.
 
 A matrix is called low rank when its rank is significantly smaller than its dimensions.
 

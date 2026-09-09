@@ -4,12 +4,14 @@ const topic = {
   summary:
     "Diagonalizable matrices, eigenbasis, similarity transforms and applications to matrix powers.",
   details: `
-Diagonalization is an important concept in Linear Algebra that involves rewriting a square matrix as a product of three matrices, where the middle matrix is a diagonal matrix. The main purpose of diagonalization is to transform a complicated matrix into a simpler form that is much easier to analyze and calculate with.
+Diagonalization is an important concept in Linear Algebra that involves rewriting a square matrix as a product of three matrices, where the middle matrix is a diagonal matrix. The main purpose of diagonalization is to transform a complicated matrix into a simpler form that is much easier to analyze and calculate with. This simplification is achieved by changing the coordinate system to one that aligns with the matrix's natural directions its eigenvectors. In this new coordinate system, the matrix acts independently on each coordinate direction, scaling each one by its corresponding eigenvalue. This decoupling makes many computations, such as raising the matrix to high powers or computing exponentials, drastically simpler. Diagonalization is not just a theoretical tool; it has profound practical applications in differential equations, dynamical systems, quantum mechanics, and data science, where it enables efficient analysis and computation. Understanding diagonalization is therefore essential for anyone working with linear transformations and their applications.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. DEFINITION OF DIAGONALIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A matrix A is said to be diagonalizable if it can be written as A = P D P⁻¹, where P is an invertible matrix whose columns are linearly independent eigenvectors of A, and D is a diagonal matrix containing the corresponding eigenvalues. This decomposition is a special case of a similarity transformation, meaning that A and D represent the same linear transformation but in different bases. The matrix P serves as a change-of-basis matrix, and D is the representation of the same transformation in the eigenvector basis. The existence of such a decomposition is not guaranteed for every matrix; it requires that the matrix has a full set of linearly independent eigenvectors, which is equivalent to the geometric multiplicity of each eigenvalue equalling its algebraic multiplicity. When a matrix is diagonalizable, its behaviour becomes transparent: it simply scales each eigenvector direction independently. This is why diagonalization is such a powerful tool in linear algebra.
 
 A matrix A is said to be diagonalizable if it can be written as:
 
@@ -27,6 +29,8 @@ The important idea is that diagonalization changes the representation of a matri
 
 2. WHAT IS A DIAGONAL MATRIX?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A diagonal matrix is a square matrix in which all entries outside the main diagonal are zero. This simple structure makes diagonal matrices exceptionally easy to work with. Multiplication of two diagonal matrices is performed element-wise on the diagonal, and powers of a diagonal matrix are obtained by raising each diagonal entry to the desired power independently. This means that functions of diagonal matrices, such as exponentials or polynomials, can be computed by applying the function to each diagonal entry individually. The determinant of a diagonal matrix is simply the product of its diagonal entries, and it is invertible if and only if all diagonal entries are nonzero. Because of these properties, diagonal matrices serve as the "gold standard" of simplicity in matrix analysis. The goal of diagonalization is to transform a general matrix into this simpler form, where all computations become straightforward.
 
 A diagonal matrix is a square matrix in which all entries outside the main diagonal are zero.
 
@@ -58,6 +62,8 @@ This simplicity is one of the main reasons diagonalization is useful.
 3. CONNECTION BETWEEN DIAGONALIZATION AND EIGENVALUES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Diagonalization is closely connected to eigenvalues and eigenvectors. The eigenvalues of A appear on the diagonal of D, and the eigenvectors of A form the columns of P. This is because the equation A v = λ v, which defines eigenvalues and eigenvectors, is precisely what allows us to diagonalize the matrix. When we apply A to an eigenvector, the result is simply a scalar multiple of that vector, meaning that the transformation acts independently on each eigenvector direction. If we have enough linearly independent eigenvectors to form a basis, we can express any vector as a combination of eigenvectors, and the transformation becomes diagonal in that basis. Thus, the process of diagonalization is essentially a way of reorganizing the information of A into its eigenvalues and eigenvectors. This connection is the key to understanding why diagonalization works and why it is so useful.
+
 Diagonalization is closely connected to eigenvalues and eigenvectors.
 
 An eigenvector v of a matrix A satisfies:
@@ -77,6 +83,8 @@ The basic process is:
 
 4. EXAMPLE OF DIAGONALIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The process of diagonalization involves several systematic steps: finding the characteristic polynomial, solving for eigenvalues, determining the corresponding eigenvectors, assembling the eigenvector matrix P, and constructing the diagonal matrix D. This example demonstrates each step in detail. By working through a concrete case, we can see how the abstract theory translates into actual computation. The matrix chosen has distinct eigenvalues, which guarantees diagonalizability. The eigenvectors found form a basis, and the resulting diagonal matrix D contains the eigenvalues. Verifying the diagonalization by multiplying P D P⁻¹ confirms that the decomposition is correct. This example also illustrates why diagonalization is so powerful: it transforms the original matrix into a form where its action is represented by simple scaling along independent directions.
 
 Consider the matrix:
 
@@ -194,6 +202,8 @@ The original matrix A = [4 1; 2 3] has been represented using the simpler diagon
 5. WHY IS DIAGONALIZATION USEFUL?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+One of the biggest advantages of diagonalization is that it makes matrix powers much easier to calculate. Without diagonalization, computing Aⁿ for large n involves repeated multiplication, which is computationally expensive and error‑prone. With diagonalization, we simply compute Dⁿ by raising the diagonal entries to the n-th power, then multiply P Dⁿ P⁻¹. This method is not only faster but also provides insight into the long‑term behaviour of the matrix: the largest eigenvalue dominates as n grows. Similarly, matrix exponentials and other functions can be computed efficiently using diagonalization. This makes diagonalization an essential tool in solving linear ordinary differential equations, where the solution involves the matrix exponential. It also appears in Markov chains, where powers of the transition matrix give the state distribution after many steps. Thus, diagonalization transforms difficult problems into simple ones.
+
 One of the biggest advantages of diagonalization is that it makes matrix powers much easier to calculate.
 
 Suppose we need to calculate A¹⁰. Directly multiplying A by itself ten times would be tedious.
@@ -217,6 +227,8 @@ This is one of the most important benefits of diagonalization.
 
 6. WHEN IS A MATRIX DIAGONALIZABLE?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A matrix is diagonalizable when it has enough linearly independent eigenvectors to form a basis for the vector space. For an n×n matrix, we need n linearly independent eigenvectors. A sufficient condition for diagonalizability is that the matrix has n distinct eigenvalues, because distinct eigenvalues always yield linearly independent eigenvectors. However, having repeated eigenvalues does not necessarily preclude diagonalizability; it depends on whether the geometric multiplicity (the dimension of the eigenspace) equals the algebraic multiplicity (the multiplicity of the eigenvalue as a root of the characteristic polynomial). If for every eigenvalue these multiplicities match, the matrix is diagonalizable. If not, the matrix is defective and cannot be diagonalized. This distinction is crucial in many applications, as it determines whether we can simplify the matrix using eigenvectors.
 
 A matrix is diagonalizable when it has enough linearly independent eigenvectors to form a basis for the vector space.
 
@@ -246,6 +258,8 @@ Example - Not Diagonalizable (Repeated Eigenvalue, Insufficient Eigenvectors):
 7. GEOMETRIC MEANING OF DIAGONALIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Diagonalization can also be understood geometrically. A matrix represents a linear transformation on a vector space. In the standard basis, this transformation may mix the coordinate directions in a complicated way, rotating, shearing, and scaling vectors simultaneously. However, if we use the eigenvectors as our basis, the transformation becomes much simpler. In this eigenbasis, each direction is scaled independently by its corresponding eigenvalue, with no mixing between directions. This means that the transformation acts as a pure scaling along each eigenvector direction. The diagonal matrix D represents these scaling factors. Thus, diagonalization reveals the intrinsic, basis‑independent structure of the transformation: it decomposes the transformation into independent one‑dimensional scalings. This geometric insight is valuable in understanding the behaviour of dynamical systems, where eigenvectors represent the modes of the system.
+
 Diagonalization can also be understood geometrically.
 
 A matrix represents a linear transformation. Normally, this transformation may change vectors in a complicated way. However, if we use the eigenvectors as our basis, the transformation becomes much simpler.
@@ -263,6 +277,8 @@ This is essentially what the diagonal matrix D represents.
 
 8. DIAGONALIZATION AND CHANGE OF BASIS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Diagonalization is closely related to Change of Basis. When we diagonalize a matrix, we are essentially choosing a new basis made up of the matrix's eigenvectors. In the original coordinate system, the transformation is represented by A. After changing to the eigenvector basis, the same transformation is represented by D. This is exactly what the formula A = P D P⁻¹ expresses: P is the change‑of‑basis matrix from the eigenvector basis to the standard basis, and P⁻¹ is the inverse change of basis. The diagonal matrix D is the representation of the transformation in the eigenvector basis. Thus, diagonalization is a change of basis that simplifies the matrix as much as possible. This connection is why diagonalization is often studied alongside change of basis: they are two sides of the same coin, both dealing with how the same object appears in different coordinate systems.
 
 Diagonalization is closely related to Change of Basis.
 

@@ -22,7 +22,7 @@ The first two are subspaces of the appropriate input/output spaces, while the nu
 1. COLUMN SPACE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The Column Space of a matrix is the set of all possible linear combinations of its columns. It is usually written as Col(A).
+The Column Space of a matrix is the set of all possible linear combinations of its columns. It is usually written as Col(A). This subspace resides in the codomain (output space) of the linear transformation represented by A. The column space answers a fundamental question: which vectors b can be written as A x for some x? In other words, the column space is exactly the set of all possible outputs of the transformation. If b is in the column space, the system A x = b is consistent and has at least one solution. The dimension of the column space is the rank of the matrix. Geometrically, the column space is the image of the transformation, and its dimension tells us how much of the output space is actually "covered" by the transformation. Understanding the column space is essential for determining solvability and for characterising the range of linear maps.
 
 Example:
 
@@ -71,7 +71,7 @@ Therefore, the column space helps answer an important question: Can the system A
 2. ROW SPACE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The Row Space is the set of all linear combinations of the rows of a matrix. It is written as Row(A).
+The Row Space is the set of all linear combinations of the rows of a matrix. It is written as Row(A). This subspace resides in the domain (input space) of the linear transformation, just like the null space, but it captures a different aspect: the independent linear combinations of the rows represent the constraints or equations embodied by the matrix. The dimension of the row space is always equal to the rank of the matrix, which is the same as the dimension of the column space a remarkable fact known as the equality of row and column ranks. The row space is also the orthogonal complement of the null space, meaning that every vector in the row space is perpendicular to every vector in the null space. This relationship is crucial for understanding the structure of solutions to A x = b, as the row space provides the "independent information" that the matrix encodes.
 
 Using the same matrix:
 
@@ -115,7 +115,7 @@ The nonzero row [1  2] forms a basis for the row space.
 3. NULL SPACE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The Null Space is one of the most important fundamental subspaces.
+The Null Space is one of the most important fundamental subspaces. The null space of A is the set of all vectors x that satisfy A x = 0. It is written as Null(A). In simple terms, the null space contains all input vectors that the matrix transforms into the zero vector. Geometrically, these are the directions that are "crushed" or "collapsed" by the transformation. The null space is a subspace of the domain (ℝⁿ), and its dimension is the nullity of the matrix. The null space is crucial for understanding the uniqueness of solutions: if the null space contains only the zero vector, then the transformation is one‑to‑one, and A x = b has at most one solution. If the null space has dimension greater than zero, then there are infinitely many solutions (if any exist) because adding any null‑space vector to a particular solution yields another solution.
 
 The null space of A is the set of all vectors x that satisfy:
 
@@ -164,6 +164,8 @@ This means that every multiple of [-2, 1]ᵀ is mapped to zero by A.
 
 4. LEFT NULL SPACE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The fourth fundamental subspace is the Left Null Space. The left null space consists of all vectors y satisfying Aᵀ y = 0. It is therefore the null space of the transpose: Null(Aᵀ). This subspace resides in the codomain (output space) and is the orthogonal complement of the column space. Just as the null space tells us which inputs are sent to zero, the left null space tells us which outputs are orthogonal to the column space. Equivalently, it contains the vectors that are "ignored" by the transformation in the sense that they have zero inner product with every column of A. The dimension of the left null space is m - rank(A), where m is the number of rows. The left null space is essential in understanding the consistency of linear systems and in deriving constraints on the rows. It also appears in the fundamental theorem of linear algebra, which states that the column space and the left null space are orthogonal complements.
 
 The fourth fundamental subspace is the Left Null Space.
 
@@ -226,7 +228,7 @@ These four spaces are deeply connected.
 6. RANK AND NULLITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Fundamental Subspaces are closely related to rank and nullity.
+Fundamental Subspaces are closely related to rank and nullity. The rank of a matrix is the dimension of its column space, which also equals the dimension of its row space. This equality is one of the central results of linear algebra: the maximum number of linearly independent columns equals the maximum number of linearly independent rows. The nullity is the dimension of the null space, which measures the "degree of freedom" or the number of independent directions that are mapped to zero. The rank and nullity are linked by the Rank-Nullity Theorem, which states that for an m×n matrix A, rank(A) + nullity(A) = n. This theorem tells us that the rank and nullity together account for the entire dimension of the domain. In applications, the rank reveals the amount of independent information, while the nullity reveals the redundancy or the number of free parameters in the solution.
 
 The rank of a matrix is the dimension of its column space:
 
@@ -266,6 +268,8 @@ Since A has 2 columns, the Rank-Nullity Theorem is satisfied.
 7. FUNDAMENTAL SUBSPACES AND ORTHOGONALITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An important property of the four fundamental subspaces is that they are related through orthogonality. The null space and the row space are orthogonal complements within the domain (ℝⁿ). This means that every vector in the null space is perpendicular to every vector in the row space, and together they span the entire domain. Similarly, the left null space and the column space are orthogonal complements within the codomain (ℝᵐ). These orthogonality relationships are geometrically significant: they show that the transformation splits the domain into two orthogonal parts the row space (which is mapped onto the column space) and the null space (which is mapped to zero). This decomposition is known as the fundamental theorem of linear algebra. It provides a complete picture of how the transformation acts and is essential for understanding projections, least‑squares solutions, and the singular value decomposition.
+
 An important property of the four fundamental subspaces is that they are related through orthogonality.
 
   Null(A) ⟂ Row(A)
@@ -299,6 +303,8 @@ Therefore, the vectors are orthogonal.
 
 8. GEOMETRIC INTERPRETATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fundamental Subspaces can also be understood geometrically. The column space represents the possible outputs of a matrix transformation it is the image of the map. The null space represents the directions that disappear when the transformation is applied these are the vectors that are mapped to the origin. The row space represents the independent information contained in the equations; it is the set of all linear combinations of the rows, which are the normal vectors to the hyperplanes defined by the equations. The left null space represents vectors that are orthogonal to every vector in the column space, capturing the constraints that must be satisfied for a system to be consistent. Thinking of a matrix as a machine that takes inputs and produces outputs, the null space tells us which inputs produce zero output, and the column space tells us which outputs are possible. This geometric perspective makes the abstract algebra tangible and helps in visualizing the action of linear transformations.
 
 Fundamental Subspaces can also be understood geometrically.
 
@@ -436,7 +442,7 @@ And through orthogonality:
 
 The key idea to remember:
 
-  The four fundamental subspaces reveal the complete structure of a matrix—what it can produce, what information it contains, what inputs disappear, and what relationships exist among its rows and columns.
+  The four fundamental subspaces reveal the complete structure of a matrix what it can produce, what information it contains, what inputs disappear, and what relationships exist among its rows and columns.
   `,
   examples: [
     "Column Space: Find Col(A) for A = [[1,2],[2,4],[3,6]] → span{[1,2,3]ᵀ}",

@@ -4,9 +4,7 @@ const topic = {
   summary:
     "Overdetermined systems, normal equations, projections, and regression basics.",
   details: `
-Least Squares is a method in Linear Algebra used to find the best approximate solution to a system of equations when an exact solution does not exist or when the data contains errors or inconsistencies.
-
-In many real-world situations, we have more equations than unknowns, or the data points do not perfectly fit a single equation. Instead of trying to find an exact solution that may not exist, the Least Squares method finds the solution that makes the overall error as small as possible.
+Least Squares is a method in Linear Algebra used to find the best approximate solution to a system of equations when an exact solution does not exist or when the data contains errors or inconsistencies. In many real-world situations, we have more equations than unknowns, or the data points do not perfectly fit a single equation. Instead of trying to find an exact solution that may not exist, the Least Squares method finds the solution that makes the overall error as small as possible. This approach is fundamental in statistics, data science, machine learning, engineering, economics, and scientific research. By minimizing the sum of the squared differences between the observed and predicted values, Least Squares provides a principled way to handle noise, uncertainty, and overdetermined systems.
 
 The basic idea is:
 
@@ -18,6 +16,8 @@ This makes Least Squares extremely important in statistics, data science, machin
 
 1. WHY DO WE NEED LEAST SQUARES?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In many practical problems, we encounter systems of linear equations where the number of equations exceeds the number of unknowns. Such overdetermined systems usually have no exact solution because the equations are inconsistent due to measurement errors, noise, or inherent variability in the data. Rather than discarding the extra equations or arbitrarily choosing a subset, we need a systematic way to find a solution that best fits all the available information. Least Squares provides this by finding the parameter values that minimize the sum of the squared residuals the differences between the observed values and those predicted by the model. This approach is robust and widely applicable, as it yields a unique solution under mild conditions and has a clear geometric interpretation in terms of orthogonal projections onto the column space of the coefficient matrix.
 
 Consider the system:
 
@@ -43,6 +43,8 @@ This is where Least Squares becomes useful.
 2. THE BASIC IDEA OF ERROR
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The core of the Least Squares method is the concept of error or residual. Given a model A x that predicts a vector b, the residual r = b - A x measures how far the prediction is from the actual observation. The goal is to make these residuals as small as possible in some sense. However, simply minimizing the sum of the residuals can lead to cancellation because positive and negative errors can offset each other, giving a misleadingly small total error. To avoid this, Least Squares minimizes the sum of the squares of the residuals, which treats all errors positively and penalizes large errors more heavily. This squared error is differentiable, making it amenable to calculus-based optimization, and it leads to the elegant normal equations. The square also ensures that the error is a convex function, guaranteeing a global minimum.
+
 Suppose we want to predict a value b using a model A x.
 
 The error or residual is:
@@ -67,6 +69,8 @@ This is the central idea of the Least Squares method.
 
 3. A SIMPLE EXAMPLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A classic example of Least Squares is fitting a straight line to a set of data points. Suppose we have observed points (x₁, y₁), (x₂, y₂), ..., (xₙ, yₙ) and we hypothesize that the relationship is linear: y = mx + b. However, due to measurement errors or natural variation, the points do not lie exactly on a single line. We need to choose the slope m and intercept b that best represent the data. Least Squares provides a way to do this by minimizing the sum of the squared vertical distances between the observed y-values and the values predicted by the line. This line is called the least‑squares regression line. This example is the foundation of linear regression, one of the most widely used statistical techniques. It illustrates how the abstract linear algebra formulation translates into a concrete data-fitting problem with broad applicability.
 
 Suppose we have the following data points:
 
@@ -101,6 +105,8 @@ Therefore, Least Squares finds the values of m and b that make the total squared
 4. MATRIX FORM OF LEAST SQUARES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The Least Squares problem can be expressed concisely in matrix form, which is convenient for analysis and computation. We have a matrix A of size m×n (with m ≥ n, typically), a vector of unknowns x of size n, and an observed vector b of size m. We seek x such that A x ≈ b. The discrepancy is the residual vector r = b − A x. The goal is to find x that minimizes the squared Euclidean norm ||r||² = rᵀ r. This formulation is general: it covers linear regression, curve fitting, and many other inverse problems. The matrix A encodes the model structure, x contains the parameters to be determined, and b holds the measured data. The method works even when A is not square, and the solution is unique if the columns of A are linearly independent. This matrix formulation is the starting point for deriving the normal equations and for implementing computational algorithms.
+
 A Least Squares problem can be written in matrix form as:
 
   A x ≈ b
@@ -125,6 +131,8 @@ Thus:
 5. THE NORMAL EQUATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The normal equations provide a direct algebraic method for solving the Least Squares problem. They are derived by taking the derivative of the squared error ||b − A x||² with respect to x and setting it to zero. This yields the linear system Aᵀ A x = Aᵀ b, known as the normal equations. If Aᵀ A is invertible (which is true when the columns of A are linearly independent), the solution is x̂ = (Aᵀ A)⁻¹ Aᵀ b. This formula is elegant and provides a closed-form expression for the Least Squares solution. The normal equations are widely used in statistics and engineering, especially when the number of unknowns is moderate. However, for large or ill‑conditioned problems, alternative methods like QR decomposition or SVD are preferred for numerical stability. The normal equations also reveal the connection to projections: Aᵀ A is the Gram matrix of the columns of A, and Aᵀ b is the vector of inner products.
+
 One of the most common methods for solving a Least Squares problem is the Normal Equations.
 
 The normal equations are obtained by setting the derivative of the squared error to zero.
@@ -143,6 +151,8 @@ This formula provides the Least Squares solution.
 
 6. STEP-BY-STEP EXAMPLE USING NORMAL EQUATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A concrete example helps clarify the mechanics of the normal equations. Consider the overdetermined system with three equations and two unknowns. We assemble the coefficient matrix A, the unknown vector x, and the observation vector b. We then compute Aᵀ A and Aᵀ b, forming the normal equations. Solving this 2×2 system yields the Least Squares solution. This step-by-step procedure demonstrates how the abstract matrix formulas are applied in practice. The computed solution does not satisfy any of the original equations exactly, but it minimizes the sum of squared residuals. This example also shows that the normal equations can be solved using standard techniques for linear systems, making Least Squares accessible to anyone comfortable with basic linear algebra.
 
 Consider the system:
 
@@ -199,6 +209,8 @@ This solution does not satisfy every original equation exactly, but it gives the
 7. RESIDUALS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+After obtaining the Least Squares solution, we can compute the residual vector r = b − A x̂. The residuals are the differences between the observed values and the values predicted by the model. They provide crucial diagnostic information: large residuals indicate poor fit or outliers, and their distribution can reveal systematic errors or model misspecification. In statistics, residuals are used to assess the assumptions of linear regression, such as homoscedasticity and normality. The sum of squares of the residuals is the minimized objective function, and it measures the overall goodness-of-fit. Furthermore, the normal equations guarantee that the residual vector is orthogonal to the column space of A, meaning that the residuals are uncorrelated with the fitted values. This property is key to understanding the geometric interpretation of Least Squares and is used in deriving statistical properties of the estimators.
+
 After finding a Least Squares solution, we can calculate the residual vector:
 
   r = b - A x̂
@@ -235,6 +247,8 @@ The residuals represent the prediction errors.
 8. GEOMETRIC INTERPRETATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Least Squares has a beautiful geometric interpretation that connects linear algebra to geometry. The vector b may not lie in the column space of A, which is the subspace of all possible outputs A x. Therefore, there is no exact solution. Instead, we look for the point in the column space that is closest to b. This closest point is the orthogonal projection of b onto the column space. Thus, A x̂ = proj_Col(A) b. The residual r = b − A x̂ is perpendicular to every vector in the column space, meaning it is orthogonal to each column of A. This orthogonality condition is exactly the normal equations. This geometric viewpoint not only makes the method intuitive but also provides a way to visualize the solution in terms of projections. It also generalises to more abstract inner product spaces, making Least Squares a fundamental tool in functional analysis and approximation theory.
+
 Least Squares has an important geometric interpretation.
 
 The vector b may not belong to the column space of A.
@@ -263,6 +277,8 @@ This relationship is exactly what produces the Normal Equations.
 
 9. LEAST SQUARES AND LINEAR REGRESSION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Linear regression is the most common application of Least Squares. In simple linear regression, we have a single predictor variable x and a response y, and we model the relationship as y ≈ mx + b. The unknowns are the slope m and intercept b. We collect n data points and set up the overdetermined system. The Least Squares solution gives the line that minimizes the sum of squared vertical distances from the points to the line. This is exactly the ordinary least squares (OLS) regression line. The method extends naturally to multiple linear regression, where there are several predictors, and the model is y ≈ x₁β₁ + x₂β₂ + ... + xₚβₚ + β₀. In that case, the matrix A contains the predictor values, and x is the vector of coefficients. Linear regression is used in virtually every field to model relationships, make predictions, and test hypotheses. Its foundation in Least Squares makes it one of the most important tools in data analysis.
 
 One of the most common applications of Least Squares is Linear Regression.
 
@@ -296,6 +312,8 @@ This is the mathematical foundation of ordinary least-squares linear regression.
 10. LEAST SQUARES AND ORTHOGONALITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The Least Squares solution is intimately tied to the concept of orthogonality. The residual vector r = b − A x̂ is orthogonal to every column of A, which means r lies in the orthogonal complement of the column space. This orthogonality is a necessary and sufficient condition for A x̂ to be the best approximation. It reflects the fact that the error cannot be reduced further by adjusting x within the column space; any change would introduce a component that is not perpendicular to the residual, increasing the squared norm. This property is derived directly from the normal equations, since Aᵀ r = 0. Orthogonality also ensures that the residual is uncorrelated with the fitted values, which is a key assumption in linear regression for unbiased estimation. This connection to inner products underscores the deep relationship between Least Squares and the geometry of inner product spaces.
+
 Least Squares is closely connected to orthogonality.
 
 The residual:
@@ -319,6 +337,8 @@ This is why Least Squares is closely connected to Inner Product Spaces, orthogon
 11. OVERDETERMINED SYSTEMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Overdetermined systems, which have more equations than unknowns, are a prime application of Least Squares. Such systems arise naturally in data fitting, where we have many observations and a few parameters to estimate. Because the equations are usually inconsistent, an exact solution is impossible. Least Squares provides a principled way to find a parameter vector that best reconciles all the equations. The method handles the redundancy gracefully: if some equations are contradictory, the solution balances the errors among them. This is particularly useful in fields like geodesy, where many measurements are taken to determine a few coordinates; in sensor networks, where readings from multiple sensors are fused; and in control systems, where a model is identified from noisy data. The overdetermined nature also improves robustness: with more data, the effect of individual noise is averaged out, leading to more reliable parameter estimates.
+
 Least Squares is particularly useful for overdetermined systems.
 
 An overdetermined system has more equations than unknowns.
@@ -340,6 +360,8 @@ Instead, Least Squares finds the values of x and y that produce the smallest ove
 
 12. UNDERLYING IDEA OF ERROR MINIMIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The choice to minimize the sum of squared errors, rather than the sum of absolute errors or some other criterion, has several advantages. Squaring the errors ensures that the objective function is differentiable and convex, which simplifies optimization and guarantees a unique global minimum under mild conditions. It also penalizes large errors more heavily, which is appropriate in many applications where outliers are not too frequent. Moreover, the squared error is closely related to the Euclidean norm, linking the method to geometric concepts like projection and distance. In statistics, the Least Squares estimator is the best linear unbiased estimator (BLUE) under the Gauss-Markov assumptions, providing a strong justification. This error criterion is also computationally efficient because it leads to linear normal equations, making it feasible to solve large problems using standard linear algebra techniques.
 
 Suppose we have errors e₁, e₂, e₃.
 
@@ -370,6 +392,8 @@ The Least Squares method minimizes this total squared error.
 13. LEAST SQUARES AND THE PSEUDOINVERSE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+For general matrices A that may be rectangular or singular, the Moore-Penrose pseudoinverse provides a unified framework for solving Least Squares problems. The pseudoinverse, denoted A⁺, is a generalization of the ordinary inverse. For any matrix A, the vector x̂ = A⁺ b is the unique solution of the Least Squares problem that has minimum norm among all minimizers. This is particularly useful when A does not have full column rank, where the normal equations have infinitely many solutions. The pseudoinverse can be computed via the singular value decomposition (SVD) and is numerically stable. It is a cornerstone of many algorithms in signal processing, control theory, and statistics. The pseudoinverse also connects Least Squares to other areas, such as the solution of linear systems with constraints and the generalised inverse used in regression.
+
 When A is not square or does not have a regular inverse, the Moore-Penrose pseudoinverse can be used.
 
 It is commonly written as A⁺.
@@ -386,6 +410,8 @@ The pseudoinverse generalizes the idea of an inverse to matrices that are not ne
 
 14. WHY NOT ALWAYS USE THE NORMAL EQUATIONS?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Although the normal equations are elegant and easy to derive, they are not always the best computational approach. Forming Aᵀ A and then solving the system can be numerically unstable when A is ill‑conditioned that is, when its columns are nearly linearly dependent. In such cases, the condition number of Aᵀ A is the square of that of A, which amplifies errors and can lead to large inaccuracies in the solution. For large datasets, forming Aᵀ A may also be memory intensive. Instead, orthogonalization methods like QR decomposition or the singular value decomposition (SVD) are preferred. These methods are more robust and provide a direct, stable way to solve the Least Squares problem without explicitly forming the normal equations. They are the methods of choice in modern numerical linear algebra libraries and are used in high-performance computing applications.
 
 Although the normal equations are mathematically convenient, computing:
 

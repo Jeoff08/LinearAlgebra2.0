@@ -24,6 +24,8 @@ The solution is the ordered pair (x, y) = (4, 3) because 4 + 3 = 7 and 4 - 3 = 1
 1. GENERAL FORM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A system of linear equations can be written in a compact algebraic form that clearly shows the structure. The general form consists of m equations in n unknowns, with coefficients aᵢⱼ, variables xⱼ, and constants bᵢ. This representation is essential because it allows us to apply matrix methods. The system is linear because each term is either a constant or a constant multiplied by a variable, and there are no products or powers of variables. This linearity ensures that the system can be studied using the powerful tools of linear algebra, such as superposition and matrix operations. Writing the system as A x = b abstracts away the individual equations and focuses on the matrix A and the vectors x and b, which is the foundation for many algorithms.
+
 A system of linear equations can be written as:
 
   a₁₁x₁ + a₁₂x₂ + ... + a₁ₙxₙ = b₁
@@ -76,7 +78,7 @@ Therefore:
 2. WHAT IS A SOLUTION?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A solution to a system is a set of values for the variables that satisfies every equation in the system.
+A solution to a system is an assignment of values to all variables that makes every equation true simultaneously. The concept of a solution is the central object of study when solving systems. Finding solutions is equivalent to finding the intersection of all constraints represented by the equations. In geometric terms, for two variables, each equation is a line; the solution is the point where they meet. For more variables, it is the intersection of hyperplanes. A solution can be unique, meaning there is exactly one point satisfying all equations; infinitely many, forming a line, plane, or higher-dimensional subspace; or none at all when the constraints are contradictory. Understanding what constitutes a solution is the first step toward solving systems and interpreting the results in applications.
 
 Example:
 
@@ -101,6 +103,8 @@ Since both equations are satisfied, (x, y) = (4, 3) is the solution.
 
 3. THREE POSSIBLE TYPES OF SOLUTIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A system of linear equations can have one of three possible outcomes: a unique solution, infinitely many solutions, or no solution. This trichotomy is a fundamental result of linear algebra, often called the existence and uniqueness theorem. The type of solution is determined by the structure of the coefficient matrix and the augmented matrix. A unique solution occurs when the equations are independent and consistent, meaning they describe a single point of intersection. Infinitely many solutions arise when the equations are dependent, so they describe the same geometric object (e.g., coincident lines or planes). No solution occurs when the equations are inconsistent, meaning they describe parallel objects that never meet. These three cases are not just academic; they appear in real-world problems, such as determining whether a system of forces has a unique equilibrium, whether an electrical circuit has multiple valid current distributions, or whether a set of measured data can be perfectly fitted.
 
 A system of linear equations can have:
 
@@ -172,7 +176,7 @@ Geometrically, the two lines are parallel and never intersect.
 4. GRAPHICAL INTERPRETATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-For two variables, each linear equation represents a line.
+For two variables, each linear equation represents a straight line in the Cartesian plane. The solution to the system is the point (or set of points) where the lines intersect. This geometric perspective makes the three types of solutions intuitive: intersecting lines give a unique solution, coincident lines give infinitely many solutions, and parallel lines give no solution. For three variables, each equation represents a plane, and the solution is the intersection of these planes. This visualization helps in understanding more abstract concepts like linear dependence and independence. Moreover, it shows that solving a system is equivalent to finding the common points of geometric objects, which is a powerful bridge between algebra and geometry. Graphical methods are limited to low dimensions, but they provide a strong foundation for understanding the behaviour of larger systems.
 
 Example:
 
@@ -194,7 +198,7 @@ This geometric interpretation makes the three types of solutions easier to under
 5. METHOD 1: SUBSTITUTION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The Substitution Method involves solving one equation for one variable and substituting that expression into the other equation.
+The substitution method is one of the most straightforward techniques for solving systems of linear equations. It involves solving one equation for one variable in terms of the others, then substituting that expression into the remaining equations. This reduces the number of variables and equations, eventually leading to a single equation in one unknown. Substitution is particularly useful when one equation is already solved for a variable, or when the coefficients make isolation easy. While it can become cumbersome for systems with more than two or three variables, it is an essential technique to understand because it illustrates the concept of eliminating variables. Moreover, substitution provides a clear algebraic justification for the equivalence of different equations, and it connects to the idea of using one equation to express another variable, which is the basis for more advanced methods like Gaussian elimination.
 
 Consider:
 
@@ -236,7 +240,7 @@ The solution is (x, y) = (4, 3).
 6. METHOD 2: ELIMINATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The Elimination Method removes one variable by adding or subtracting equations.
+The elimination method, also known as the addition method, works by combining equations to eliminate one variable, resulting in a simpler system. This is typically done by adding or subtracting multiples of equations so that the coefficients of one variable cancel. Elimination is often more efficient than substitution for systems with two or three variables, especially when the coefficients are not conveniently isolated. It also scales better to larger systems because it can be performed systematically using row operations, which is the core of Gaussian elimination. The elimination method illustrates the key idea that adding a multiple of one equation to another does not change the solution set, a principle that is fundamental to all matrix-based solution techniques. Mastering elimination builds intuition for matrix row reduction and helps in understanding the concept of linear combinations.
 
 Consider:
 
@@ -272,9 +276,7 @@ Thus:
 7. METHOD 3: GAUSSIAN ELIMINATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Gaussian Elimination is one of the most important methods in Linear Algebra.
-
-Instead of manipulating equations directly, we represent the system as an augmented matrix.
+Gaussian elimination is one of the most important algorithms in linear algebra. It systematically transforms a system of linear equations into an equivalent system in row echelon form using elementary row operations. These operations—swapping rows, multiplying a row by a nonzero scalar, and adding a multiple of one row to another—preserve the solution set. The process works by creating zeros below each pivot, making it easy to solve the system by back-substitution. Gaussian elimination is the foundation for many numerical methods, including LU decomposition and matrix inversion. It is also the standard method for determining the rank of a matrix, detecting whether a system is consistent, and finding all solutions (unique or infinite). Its efficiency and generality make it the tool of choice for both theoretical proofs and practical computations, especially when implemented on computers.
 
 Consider:
 
@@ -312,7 +314,7 @@ Thus:
 8. ROW ECHELON FORM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Gaussian Elimination transforms a matrix into Row Echelon Form (REF).
+Row echelon form (REF) is a rectangular matrix form achieved by Gaussian elimination. In REF, each nonzero row has a leading entry (the first nonzero entry from the left) that is to the right of the leading entry in the row above, and all entries below a leading entry are zero. Rows consisting entirely of zeros are at the bottom. REF does not require the leading entries to be 1, nor does it require zeros above the leading entries. The significance of REF is that it immediately reveals the rank of the matrix (the number of nonzero rows) and the structure of the solution set. From REF, one can determine whether the system is consistent and identify free variables. Moreover, REF simplifies back-substitution, making it easy to express the solution. It is the first major step towards solving a system and is essential for understanding concepts like pivot positions and column space.
 
 Example:
 
@@ -335,7 +337,7 @@ Row echelon form makes it easier to determine:
 9. REDUCED ROW ECHELON FORM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A stronger form is the Reduced Row Echelon Form (RREF).
+Reduced row echelon form (RREF) is a refinement of REF. In RREF, every leading entry is 1 (called a pivot), and each pivot is the only nonzero entry in its column. This means all entries above and below a pivot are zero. RREF is obtained by continuing the elimination process after reaching REF, using Gauss-Jordan elimination. The advantage of RREF is that it makes the solution immediately readable: each pivot corresponds to a basic variable, and the remaining variables are free. The RREF of a matrix is unique, which makes it a canonical form. This uniqueness is valuable for theoretical purposes, such as determining whether two matrices are row-equivalent. In practice, RREF is used to solve systems completely, find bases for null spaces, and perform many other linear algebra computations.
 
 Example:
 
@@ -353,9 +355,7 @@ RREF is especially useful because it can directly reveal the solution of a syste
 10. MATRIX FORM OF A SYSTEM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A system can be represented as:
-
-  A x = b
+Representing a system of linear equations as a matrix equation A x = b is a cornerstone of linear algebra. This compact notation not only saves space but also reveals the abstract structure: the coefficient matrix A acts as a linear transformation on the vector x to produce b. This viewpoint allows us to leverage all the machinery of matrix theory—such as inverses, determinants, eigenvalues, and decompositions—to analyze and solve systems. The matrix form also connects to geometry, as A defines a mapping between vector spaces. In computational contexts, storing the matrix A and vector b is much more efficient than writing out all equations. Furthermore, the matrix form is essential for understanding concepts like the column space (the set of all possible b for which the system is consistent) and the null space (the set of solutions to A x = 0). This representation is the bridge between elementary algebra and advanced linear algebra.
 
 Example:
 
@@ -373,6 +373,8 @@ This matrix representation is one of the major reasons systems of equations are 
 
 11. HOMOGENEOUS SYSTEMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A homogeneous system is a special case where the constant vector b is zero: A x = 0. Such a system always has at least the trivial solution x = 0. The existence of nontrivial solutions (x ≠ 0) depends on whether the columns of A are linearly dependent; this occurs when the rank of A is less than the number of variables. Homogeneous systems are fundamental because their solution space forms a vector subspace—the null space of A—which is central to understanding linear transformations. The null space reveals the degrees of freedom in a system: if A has a nontrivial null space, then any particular solution to a non-homogeneous system can be added to any vector in the null space to produce another solution, giving infinitely many solutions. Homogeneous systems also arise in eigenvalue problems, differential equations, and many other areas of mathematics and engineering.
 
 A homogeneous system is a system where all constants are zero.
 
@@ -417,7 +419,7 @@ A homogeneous system has nontrivial solutions when the coefficient matrix does n
 12. RANK AND SYSTEMS OF EQUATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Rank provides a powerful way to determine whether a system has a solution.
+The rank of a matrix is a powerful tool for analyzing systems of linear equations. Rank, defined as the maximum number of linearly independent rows or columns, indicates the dimension of the column space. For a system A x = b, the comparison between rank(A) and rank([A | b]) determines consistency: the system has a solution if and only if these ranks are equal. When they are equal, the number of solutions depends on whether rank(A) equals the number of unknowns n. If rank(A) = n, the solution is unique; if rank(A) < n, there are infinitely many solutions, with n - rank(A) free variables. The rank-nullity theorem connects rank with the dimension of the null space: nullity = n - rank(A). This classification is not only theoretical; it is used in numerical algorithms to detect ill-conditioned systems and to choose appropriate solution strategies.
 
 For A x = b, compare:
 
@@ -452,6 +454,8 @@ These conditions are extremely useful when analyzing large systems.
 13. SYSTEMS AND MATRIX INVERSE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+If the coefficient matrix A is square and invertible (non-singular), the system A x = b has the unique solution x = A⁻¹ b. This is the matrix analogue of solving a simple linear equation a x = b by multiplying by a⁻¹. The inverse matrix method is elegant and provides a closed-form solution, but it is rarely used in practice for large systems because computing the inverse is computationally expensive and numerically unstable. Instead, Gaussian elimination or LU decomposition are preferred. However, the inverse method is important conceptually because it demonstrates that solving a system is equivalent to applying the inverse transformation. It also highlights the condition for a unique solution: the matrix must be square and have full rank (determinant nonzero). The inverse also appears in theoretical derivations, such as the matrix form of least squares and in sensitivity analysis (condition numbers).
+
 If A is a square and invertible matrix, then:
 
   A x = b
@@ -480,7 +484,7 @@ However, for larger systems, Gaussian Elimination, LU decomposition, or other nu
 14. CRAMER'S RULE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-For small square systems, Cramer's Rule can be used.
+Cramer's Rule provides an explicit formula for the solution of a system of n linear equations in n unknowns using determinants. For each variable xᵢ, the solution is given by the ratio of the determinant of the matrix obtained by replacing the i-th column of A with b, to the determinant of A. This rule is elegant and useful for small systems (2×2 or 3×3) and for theoretical purposes, but it is computationally inefficient for large n because determinant calculation is O(n!). Moreover, Cramer's Rule is numerically unstable for nearly singular matrices. Nonetheless, it illustrates the deep connection between determinants and solutions of linear systems. It also serves as a tool for deriving properties of matrices, such as the fact that a system has a unique solution iff det(A) ≠ 0. In practice, it is mostly used in teaching to demonstrate the role of determinants.
 
 For A x = b, the solution can be calculated using determinants.
 
@@ -506,6 +510,8 @@ Cramer's Rule is useful for understanding the relationship between determinants 
 
 15. LU DECOMPOSITION AND SYSTEMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LU decomposition factors a square matrix A into the product of a lower triangular matrix L and an upper triangular matrix U (A = L U). This factorization is widely used in numerical linear algebra because it allows efficient solving of multiple systems with the same coefficient matrix A, but different right-hand side vectors b. The process involves two triangular solves: first solving L y = b (forward substitution) and then U x = y (backward substitution). Triangular systems are very cheap to solve. LU decomposition is the workhorse behind many linear algebra libraries, such as LAPACK. It also provides a way to compute the determinant (det(A) = product of diagonal entries of U) and the inverse if needed. The decomposition can be computed with partial pivoting to improve numerical stability, making it robust for practical computations.
 
 A system:
 
@@ -544,6 +550,8 @@ This method is particularly useful when solving multiple systems with the same c
 16. SYSTEMS AND LINEAR TRANSFORMATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Viewing a system A x = b as a linear transformation T(x) = A x gives a powerful conceptual framework. The system asks: for a given output b, what input x produces it under the transformation A? The existence of a solution corresponds to b being in the range (column space) of A. The uniqueness corresponds to the transformation being injective, which is equivalent to A having trivial null space (only the zero vector maps to zero). This perspective unifies systems of equations with geometry and functional analysis. It also makes it clear that the solution set is either empty, a single point, or an affine subspace (a translate of the null space). This viewpoint is essential when studying linear maps in abstract vector spaces, and it is the basis for many applications, such as control theory, signal processing, and machine learning, where we often want to find inputs that yield desired outputs.
+
 A system:
 
   A x = b
@@ -564,6 +572,8 @@ If b belongs to the column space of A, then the system has at least one solution
 
 17. SYSTEMS AND GEOMETRY IN THREE DIMENSIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In three-dimensional space, each linear equation in three variables corresponds to a plane. The solution of a system of three equations is the intersection of three planes. This geometric interpretation is a natural extension of the two-dimensional line case. The intersection can be a single point (if the planes are independent), a line (if they share a common line), a plane (if all three equations describe the same plane), or empty (if the planes do not meet). Visualizing these possibilities helps in understanding the algebraic conditions, such as rank and consistency. It also provides insight into the concept of linear dependence: three planes may be parallel, intersect pairwise, or coincide. This geometric understanding is valuable in fields like computer graphics, where planes represent surfaces, and in physics, where constraints can be interpreted geometrically.
 
 For three variables:
 
@@ -586,6 +596,8 @@ Thus, systems of equations connect algebraic calculations with geometry.
 
 18. EXAMPLE: THREE EQUATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Here we work through a three-equation system step by step. This example illustrates the elimination method extended to three variables. The system is constructed so that subtraction of equations directly isolates variables, making it easy to solve. In general, larger systems require systematic elimination (Gaussian elimination), but this example shows the basic idea: by eliminating one variable at a time, we reduce the system to a triangular form. This process is the foundation for solving any system, and it is important to practice it with concrete numbers to build intuition. The solution (1,1,4) is unique because the three equations are independent, meaning the corresponding planes intersect at a single point.
 
 Consider:
 
@@ -617,6 +629,8 @@ Thus:
 
 19. REAL-WORLD APPLICATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Systems of linear equations are ubiquitous in real-world applications. In engineering, they model electrical circuits (Kirchhoff's laws), structural frameworks (force balance), and fluid flow (network equations). In computer science, they are used in computer graphics (transformation matrices), robotics (inverse kinematics), machine learning (linear regression, support vector machines), and optimization (linear programming). In economics, they represent supply and demand, input-output models, and resource allocation. In physics, they describe equilibrium states, quantum mechanics (eigenvalue problems), and general relativity. The ability to set up and solve systems of linear equations is therefore a core skill across disciplines. Moreover, many nonlinear problems are approximated by linear systems, making linear algebra an essential tool for scientific computing. Understanding these applications motivates the study of solution methods and emphasizes the practical importance of linear systems.
 
 Systems of linear equations are used throughout science, engineering, technology, economics, and computing.
 
@@ -656,6 +670,8 @@ Data Science
 
 20. EXAMPLE: REAL-WORLD APPLICATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This detailed example shows how to translate a word problem into a system of linear equations and solve it. The store problem is a classic mixture or inventory problem. We define variables for the quantities, write equations based on total items and total revenue, and solve by substitution. This demonstrates the process of modeling real situations with linear equations, which is the first step in applying linear algebra to practical problems. The solution is straightforward because the system is 2×2, but the same approach extends to larger problems with more variables and constraints. This example also reinforces the concept of consistency: the system has a unique solution because the two equations are independent, corresponding to a unique combination of sales that meets both conditions.
 
 Suppose a store sells notebooks and pens.
 
@@ -705,6 +721,8 @@ This demonstrates how systems of linear equations can model real-world situation
 
 21. IMPORTANT METHODS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Mastering systems of linear equations requires familiarity with several key methods and concepts. Each method has its strengths and appropriate contexts. Substitution and elimination are fundamental for small systems and provide the basis for understanding larger methods. Gaussian elimination and Gauss-Jordan elimination are systematic algorithms that work for any size and are the standard in numerical computation. The matrix inverse and Cramer's Rule offer theoretical insights but are limited in practice. LU decomposition is the preferred method for multiple right-hand sides. Rank and the augmented matrix are essential for analyzing solution structure. Homogeneous systems and null spaces are crucial for understanding the underlying geometry. A solid grasp of all these techniques ensures that you can choose the most efficient and appropriate approach for any given problem, whether in a classroom, research, or industrial setting.
 
 When studying Systems of Linear Equations, make sure you understand:
 

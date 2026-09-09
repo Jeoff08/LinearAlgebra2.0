@@ -11,7 +11,7 @@ Determinants are numerical values that can be calculated from square matrices. A
 1. DETERMINANT OF A 2×2 MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A determinant can only be calculated for a square matrix (same number of rows and columns).
+The determinant of a 2×2 matrix is the simplest non‑trivial determinant and serves as the building block for larger matrices. For a matrix [[a, b], [c, d]], the determinant is defined as ad − bc. This single number captures the essence of the linear transformation: it tells us whether the transformation is invertible (non‑zero determinant) and how it scales areas. Geometrically, if you take the two column vectors of the matrix, the absolute value of the determinant equals the area of the parallelogram they span; the sign indicates orientation (positive if the vectors are counter‑clockwise, negative if clockwise). This formula is easy to remember and is the basis for cofactor expansions used in higher dimensions. Mastering the 2×2 determinant is essential because it appears repeatedly in eigenvalue problems, Cramer's rule, and in the computation of cross products in 2D.
 
 For a 2×2 matrix:
 
@@ -37,6 +37,8 @@ The determinant is not another matrix. It is a single number, also called a scal
 
 2. DETERMINANT OF A 3×3 MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For 3×3 matrices, the determinant is computed using cofactor expansion, which breaks the problem into smaller 2×2 determinants. The expansion can be done along any row or column; choosing a row with many zeros simplifies the calculation. The determinant of a 3×3 matrix has a geometric meaning: its absolute value equals the volume of the parallelepiped spanned by its three column vectors. The sign indicates whether the three vectors form a right‑handed or left‑handed coordinate system. This determinant is fundamental in 3D geometry, computer graphics (for calculating volumes and normals), and physics (for computing scalar triple products). Learning the 3×3 determinant also prepares you for larger matrices, as the same cofactor expansion principle applies recursively. It is also the first step toward understanding the characteristic polynomial used to find eigenvalues.
 
 For a 3×3 matrix:
 
@@ -86,6 +88,8 @@ Therefore:
 3. DETERMINANT & INVERTIBILITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The most immediate use of the determinant is as a criterion for invertibility. A square matrix is invertible (non‑singular) if and only if its determinant is non‑zero. This is because the determinant measures the scaling factor of the linear transformation; if it is zero, the transformation collapses at least one dimension, so it cannot be reversed uniquely. Conversely, a non‑zero determinant means the transformation is one‑to‑one and onto, so an inverse exists. This connection is central to solving systems of equations, as a system A x = b has a unique solution exactly when det(A) ≠ 0. The determinant also appears in the formula for the inverse: A⁻¹ = (1/det(A)) · adj(A), where adj(A) is the adjugate matrix. Thus, the determinant not only tells us whether an inverse exists but also appears in its construction.
+
 One of the most important uses of a determinant is determining whether a matrix has an inverse.
 
   det(A) ≠ 0  →  A is invertible (non-singular)
@@ -114,6 +118,8 @@ Since det(B) = 0, the matrix does NOT have an inverse.
 4. DETERMINANT & SYSTEMS OF EQUATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The determinant provides a direct way to analyse the solution set of a linear system A x = b. If det(A) ≠ 0, the system has exactly one solution, which can be found via Cramer's rule or by matrix inversion. If det(A) = 0, the system either has no solution or infinitely many solutions, depending on whether b lies in the column space of A. This classification is crucial in engineering and physics, where we often need to know if a system is uniquely solvable. Cramer's rule expresses each variable as a ratio of determinants, offering a closed‑form solution for small systems. However, for large systems, Gaussian elimination is more efficient. Nevertheless, the determinant remains a powerful theoretical tool for proving existence and uniqueness theorems. It also appears in the characteristic equation for eigenvalues, which are used to analyse stability and oscillations.
+
 Determinants can help determine whether a system of linear equations has a unique solution.
 
 Consider the system:
@@ -136,6 +142,8 @@ This connection between determinants and systems of equations is also used in Cr
 
 5. GEOMETRIC MEANING OF A DETERMINANT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The determinant has a vivid geometric interpretation: it measures the scaling factor of area (in 2D) or volume (in 3D) induced by the linear transformation represented by the matrix. For example, if a 2×2 matrix has determinant 3, any shape's area is multiplied by 3 under the transformation. The sign of the determinant indicates whether the orientation is preserved (positive) or reversed (negative). This interpretation is fundamental in computer graphics, where scaling, rotation, and reflection are represented by matrices whose determinants tell us how objects are distorted. It also appears in calculus when changing variables in multiple integrals; the determinant of the Jacobian matrix is the factor that adjusts the infinitesimal area or volume element. Understanding this geometric meaning helps bridge the gap between abstract matrix algebra and spatial intuition.
 
 The determinant has an important geometric interpretation:
 
@@ -160,6 +168,8 @@ If a shape originally has an area of 5, after applying this transformation its a
 
 6. IMPORTANT PROPERTIES OF DETERMINANTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Determinants obey a set of algebraic rules that make them predictable and powerful. These properties are essential for simplifying computations and for proving theoretical results. For instance, the determinant of a product equals the product of determinants, which reflects the composition of linear transformations. The determinant of an inverse is the reciprocal of the original determinant, provided it is non‑zero. The determinant is invariant under transposition, which means we can work with rows or columns interchangeably. Swapping two rows changes the sign, while multiplying a row by a scalar multiplies the determinant by that scalar. Adding a multiple of one row to another leaves the determinant unchanged, which is the basis for row reduction. These properties are not mere curiosities; they underpin algorithms like Gaussian elimination and are used to derive the characteristic polynomial and to compute areas and volumes efficiently.
 
 Below is a summary table of the key properties of determinants, followed by detailed explanations with examples for each property.
 
@@ -299,6 +309,8 @@ Example:
 7. DETERMINANTS & LINEAR DEPENDENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The determinant is a direct indicator of linear dependence among the columns (or rows) of a square matrix. If the determinant is zero, the columns are linearly dependent, meaning at least one column can be expressed as a linear combination of the others. This condition is equivalent to the matrix having a non‑trivial null space. Conversely, a non‑zero determinant guarantees that the columns are independent and thus form a basis for the space. This connection is crucial in many areas: in data science, it helps detect multicollinearity among features; in differential equations, it determines whether a set of solutions is linearly independent (via the Wronskian). The determinant also underpins the concept of rank: for an n×n matrix, rank n ⇔ det ≠ 0. Thus, the determinant serves as a quick test for full rank and for the existence of a unique solution to A x = b.
+
 Determinants can tell us whether the columns or rows of a square matrix are linearly independent.
 
   det(A) ≠ 0  →  Columns are linearly independent
@@ -320,6 +332,8 @@ Therefore, the columns are linearly dependent, and det(A) = 0.
 
 8. APPLICATIONS OF DETERMINANTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Determinants are not just theoretical constructs; they have widespread practical applications. In linear algebra, they are used in Cramer's rule for solving small systems, in the adjugate method for computing inverses, and in the characteristic equation for finding eigenvalues. In geometry, they compute areas, volumes, and cross products. In calculus, the Jacobian determinant is essential for change of variables in multiple integrals. In engineering, determinants are used to check the stability of control systems (via the Routh–Hurwitz criterion) and to analyse electrical networks. In computer graphics, they are used to detect whether a transformation is orientation‑preserving. Moreover, determinants appear in the definition of the Wronskian for solving differential equations and in statistical tests for covariance matrices. Their versatility makes them an indispensable tool across mathematics, science, and engineering.
 
 Determinants are used in many areas:
 

@@ -6,11 +6,9 @@ const topic = {
   summary:
     "Fundamental concepts in mathematics including sets, the real number system (natural numbers, whole numbers, integers, rational numbers, irrational numbers), and inequalities with their notation and applications.",
   details: `
-Sets, real numbers, and inequalities are fundamental topics in mathematics. They provide the basic language used to describe numbers, mathematical objects, and relationships between quantities. Before studying more advanced topics such as functions, limits, derivatives, and integrals in Calculus, it is important to understand these concepts because they appear throughout mathematics.
+Sets, real numbers, and inequalities are fundamental topics in mathematics. They provide the basic language used to describe numbers, mathematical objects, and relationships between quantities. Before studying more advanced topics such as functions, limits, derivatives, and integrals in Calculus, it is important to understand these concepts because they appear throughout mathematics. A set helps us organise objects or numbers into groups. The real number system classifies the different types of numbers that we use in mathematics. Inequalities allow us to compare quantities and describe ranges of possible values instead of only exact values. These three concepts are closely connected. For example, an inequality such as x > 3 describes a set of real numbers that are greater than 3.
 
-A set helps us organize objects or numbers into groups. The real number system classifies the different types of numbers that we use in mathematics. Inequalities allow us to compare quantities and describe ranges of possible values instead of only exact values.
-
-These three concepts are closely connected. For example, an inequality such as:
+For example, an inequality such as:
   x > 3
 
 describes a set of real numbers that are greater than 3.
@@ -20,9 +18,7 @@ describes a set of real numbers that are greater than 3.
 1. SETS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-What is a Set?
-
-A set is a well-defined collection of distinct objects. These objects are called the elements or members of the set.
+A set is a well‑defined collection of distinct objects. These objects are called the elements or members of the set. Sets are the building blocks of modern mathematics because they allow us to group objects together and study their properties as a whole. For example, A = {1, 2, 3, 4, 5} is a set containing the numbers 1 through 5. Sets are usually written using curly braces {}, and the order in which elements are listed does not matter {1, 2, 3} is the same as {3, 2, 1}. Also, repeated elements are only counted once, so {1, 1, 2, 2, 3} = {1, 2, 3}. This is because a set focuses only on membership, not on multiplicity. Understanding sets is essential because they provide the language for describing domains, ranges, solutions to equations, and many other mathematical concepts. We will use sets throughout algebra and calculus.
 
 For example:
   A = {1, 2, 3, 4, 5}
@@ -103,6 +99,8 @@ Subsets:
 2. REAL NUMBERS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Real numbers are all the numbers that can be represented on a number line. They include every number we commonly use in arithmetic, from negative numbers to fractions to irrational numbers like π. The set of real numbers is denoted by ℝ. It is the union of rational numbers (those that can be expressed as a fraction a/b, with b ≠ 0) and irrational numbers (those that cannot be written as a simple fraction). The real number system is hierarchical: natural numbers (1, 2, 3, ...) are a subset of whole numbers (which add 0), which are a subset of integers (which include negatives), which are a subset of rational numbers, and finally all of these are contained in the real numbers. This classification is important because it tells us what kinds of numbers we are working with and what operations are allowed. For example, we can take square roots of non‑negative real numbers, but we cannot take the square root of a negative number within the real number system (that would lead to complex numbers). Understanding this hierarchy helps us identify the domain of functions and the types of solutions we can expect.
+
 What Are Real Numbers?
 
 The real numbers are all the numbers that can be represented on a number line.
@@ -174,6 +172,8 @@ The Real Number System:
 3. INEQUALITIES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An inequality compares two quantities and shows whether one is greater than, less than, greater than or equal to, or less than or equal to another. Unlike an equation, which states exact equality, an inequality describes a range of possible values. For example, x > 5 means that x can be any number greater than 5 such as 6, 10, or 5.1 but not 5 itself. Inequalities are used to model real‑world constraints, such as budgets (cost ≤ budget), temperature ranges, or speed limits (speed ≤ limit). They also appear frequently in calculus when describing intervals of increase or decrease, domains, and convergence. The symbols >, <, ≥, and ≤ are essential, and we must be careful when solving inequalities: if we multiply or divide both sides by a negative number, we must reverse the inequality sign. This rule is a common source of errors, so it is crucial to remember it.
+
 What is an Inequality?
 
 An inequality compares two quantities and shows whether one quantity is greater than, less than, greater than or equal to, or less than or equal to another quantity.
@@ -241,7 +241,7 @@ This rule is extremely important because failing to reverse the symbol will prod
 4. COMPOUND INEQUALITIES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A compound inequality contains two inequalities.
+A compound inequality combines two separate inequalities into one statement, often representing a bounded interval of values. For example, 2 < x < 7 means that x must be greater than 2 and simultaneously less than 7. This type of inequality is common when describing domains that are restricted to a certain range, such as "the temperature must be between 0°C and 30°C." Compound inequalities can also be written as two separate inequalities joined by "and" or "or." The "and" case corresponds to an intersection of sets, while the "or" case corresponds to a union. In interval notation, 2 < x < 7 is written as (2, 7) when the endpoints are not included, or [2, 7] if they are. Understanding compound inequalities is essential for working with piecewise functions, absolute value inequalities, and many applied problems.
 
 For example:
   2 < x < 7
@@ -268,7 +268,7 @@ Therefore, x can be any value between -3 and 5, including both endpoints.
 5. INTERVAL NOTATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Interval notation is another way to represent sets of real numbers.
+Interval notation is a concise way to describe sets of real numbers that form intervals on the number line. It uses parentheses and brackets to indicate whether endpoints are included. An open interval (a, b) means all numbers between a and b, but not including a and b themselves. A closed interval [a, b] includes both endpoints. Half‑open intervals [a, b) and (a, b] include one endpoint but not the other. For infinite intervals, we use ∞ and -∞ with parentheses, because infinity is not a number that can be included. For example, (3, ∞) represents all numbers greater than 3, and (-∞, 5] represents all numbers less than or equal to 5. Interval notation is widely used in calculus when stating domains, ranges, and solution sets of inequalities because it is compact and unambiguous. It also helps visualise intervals on the number line, making it easier to understand the behaviour of functions over specific ranges.
 
 Open Interval:
   (a, b)
@@ -301,13 +301,7 @@ Infinite Intervals:
 6. CONNECTION BETWEEN SETS, REAL NUMBERS, AND INEQUALITIES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-These three concepts are strongly connected.
-
-A set is a collection of objects or numbers.
-
-The real numbers represent the complete collection of numbers that can be placed on the number line.
-
-An inequality describes a specific set of real numbers that satisfies a condition.
+These three concepts are strongly interconnected. A set is a collection of objects or numbers, and we often describe sets using set‑builder notation, which employs inequalities to specify membership. The real numbers form the universal set for most of our work in algebra and calculus, and inequalities help us define subsets of the real numbers. For example, the inequality x ≥ 2 describes the set of all real numbers that are greater than or equal to 2. This can be written in set notation as {x ∈ ℝ | x ≥ 2}, which is read as "the set of all real numbers x such that x is greater than or equal to 2." In interval notation, this same set is written as [2, ∞). Thus, the three perspectives set notation, inequalities, and interval notation are simply different languages for describing the same mathematical objects. Being fluent in all three is essential for clear communication and problem‑solving in mathematics.
 
 For example:
   x ≥ 2
@@ -328,7 +322,7 @@ All three expressions describe the same group of numbers.
 7. IMPORTANCE IN CALCULUS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Sets, real numbers, and inequalities are essential in Calculus because Calculus studies functions and how they behave over particular domains.
+Sets, real numbers, and inequalities are essential in Calculus because Calculus studies functions and how they behave over particular domains. A function's domain is the set of real numbers for which the function is defined, and it is often expressed using inequalities and interval notation. For instance, the function f(x) = √(x - 2) is defined only when the radicand is non‑negative, so we require x - 2 ≥ 0, which gives x ≥ 2. The domain is then the interval [2, ∞). Similarly, limits and continuity involve inequalities (e.g., epsilon‑delta definitions), and derivatives and integrals often require us to consider intervals of increase, decrease, or concavity, which are described using inequalities. Without a solid grasp of these foundational concepts, understanding calculus would be much more difficult. They provide the language and tools needed to precisely describe the behaviour of functions and the relationships between quantities.
 
 For example, a function may only be defined for certain real numbers:
   f(x) = √(x - 2)
@@ -349,31 +343,17 @@ This example shows how real numbers, inequalities, sets, and interval notation w
 8. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Number System        Set Notation                Examples
-  ─────────────────────────────────────────────────────────────────────────
-  Natural Numbers      ℕ = {1, 2, 3, ...}          1, 2, 3, 4, 5
-  Whole Numbers        {0, 1, 2, 3, ...}           0, 1, 2, 3, 4
-  Integers             ℤ = {..., -1, 0, 1, ...}    -2, -1, 0, 1, 2
-  Rational Numbers     ℚ = {a/b | b ≠ 0}           1/2, 3/4, -2/3
-  Irrational Numbers   Not expressible as a/b      √2, π, e
-  Real Numbers         ℝ                           All of the above
+"image": "src/assets/47.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 9. THE BIG IDEA
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Sets, real numbers, and inequalities form an important foundation for studying mathematics and Calculus.
-
-• Sets are collections of distinct objects or numbers.
-• Real numbers include rational and irrational numbers that can be represented on a number line.
-• Inequalities compare quantities and describe ranges of possible values.
-• Interval notation provides a compact way to represent sets of real numbers.
-
-These concepts are important for understanding domains, functions, limits, derivatives, and many other Calculus topics.
+Sets, real numbers, and inequalities form an important foundation for studying mathematics and Calculus. Sets organise objects or numbers into groups, providing a way to talk about collections. The real number system classifies all numbers we typically use, from counting numbers to irrationals, and is the universe in which most of our work takes place. Inequalities compare quantities and describe ranges of possible values, and they are expressed in various forms: symbolic (>, <, ≥, ≤), set‑builder notation, and interval notation. These three concepts are deeply connected: an inequality defines a set of real numbers, and interval notation gives a compact way to write that set. Together, they provide the language for describing domains, ranges, and many other properties of functions. Mastering them is a prerequisite for success in calculus and beyond.
 
 The key idea to remember is:
-  Sets organize numbers, Real Numbers describe the number system, 
+  Sets organise numbers, Real Numbers describe the number system, 
   and Inequalities describe relationships and ranges.
   `,
   examples: [

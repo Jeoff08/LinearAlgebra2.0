@@ -26,6 +26,8 @@ Quadratic forms are important in Linear Algebra because they connect matrices, e
 1. BASIC QUADRATIC FORM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A quadratic form is a homogeneous polynomial of degree two in several variables. It consists of squared terms (like x², y²) and cross‑product terms (like xy, xz). In Linear Algebra, we represent such expressions compactly using a symmetric matrix A, so that Q(x) = xᵀ A x. This representation is not only concise but also reveals the algebraic structure and geometric properties of the quadratic expression. The matrix A encodes the coefficients of the quadratic form: the diagonal entries correspond to the coefficients of the squared terms, while the off‑diagonal entries are half of the coefficients of the cross‑product terms. This matrix formulation is the foundation for analysing quadratic forms using tools from Linear Algebra, such as eigenvalues, determinant, and orthogonal diagonalisation. It also connects quadratic forms to geometry, optimisation, and statistics, making it a versatile concept.
+
 Consider the expression:
 
   Q(x, y) = x² + 2xy + y²
@@ -66,6 +68,8 @@ Thus:
 
 2. GENERAL TWO-VARIABLE QUADRATIC FORM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The most general quadratic form in two variables x and y is Q(x, y) = ax² + 2bxy + cy², where a, b, c are real constants. The factor of 2 in the cross‑product term is conventional and ensures that the corresponding symmetric matrix has the simple form [[a, b], [b, c]]. This matrix is symmetric because the cross‑term coefficient is equally distributed between the (1,2) and (2,1) entries. This representation is unique: given any symmetric 2×2 matrix, we can recover the quadratic form by expanding xᵀ A x. The matrix encodes all the essential information about the quadratic form, including its curvature and definiteness. Understanding this general form is the first step toward generalising to more variables and toward applying tests for positive definiteness, such as Sylvester's criterion and eigenvalue analysis.
 
 A general quadratic form involving two variables can be written as:
 
@@ -124,6 +128,8 @@ Thus:
 3. QUADRATIC FORMS IN THREE VARIABLES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Extending to three variables, a quadratic form includes squared terms x², y², z² and cross‑product terms xy, xz, yz. The associated symmetric matrix A is 3×3, with diagonal entries equal to the coefficients of the squared terms and off‑diagonal entries equal to half the coefficients of the corresponding cross‑product terms. This structure ensures that xᵀ A x reproduces the original polynomial exactly. The matrix representation is particularly useful because it allows us to apply eigenvalue decomposition: any symmetric matrix can be diagonalised by an orthogonal matrix, which transforms the quadratic form into a sum of squares. This simplifies the analysis of definiteness and reveals the geometric shape of the level sets (ellipsoids, hyperboloids, etc.). Quadratic forms in three variables are common in physics (moment of inertia) and machine learning (regularisation).
+
 Quadratic forms can also involve three or more variables.
 
 Example:
@@ -153,6 +159,8 @@ The off-diagonal entries are divided by 2 when constructing the matrix because e
 4. WHY IS THE MATRIX SYMMETRIC?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A quadratic form can always be represented by a symmetric matrix. This is because any square matrix A can be decomposed into its symmetric part (A + Aᵀ)/2 and its skew‑symmetric part (A − Aᵀ)/2. When we compute xᵀ A x, the skew‑symmetric part contributes zero because xᵀ (A − Aᵀ) x = 0 for all x. Thus, only the symmetric part matters. This is a crucial observation: it guarantees that we can always assume the matrix in a quadratic form is symmetric, which simplifies analysis and avoids ambiguity. Symmetric matrices have real eigenvalues and orthogonal eigenvectors, making them diagonalisable by orthogonal matrices. This property is essential for classifying quadratic forms, as the eigenvalues directly determine definiteness. Therefore, in practice, we always take A to be symmetric when studying quadratic forms.
+
 A quadratic form can always be represented using a symmetric matrix.
 
 Suppose A is not symmetric.
@@ -179,6 +187,8 @@ Therefore, we generally study quadratic forms using:
 
 5. QUADRATIC FORMS AND GEOMETRY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Quadratic forms have a strong geometric interpretation. For two variables, the equation Q(x, y) = 1 defines a conic section in the plane. The symmetric matrix A determines the shape: if A is positive definite, the conic is an ellipse (or circle if the eigenvalues are equal); if A is indefinite, it is a hyperbola; if A is positive semidefinite, the conic degenerates into a pair of parallel lines or a point. This geometric perspective bridges Linear Algebra with analytic geometry. In higher dimensions, the level sets of a quadratic form are quadric surfaces (ellipsoids, hyperboloids, paraboloids), whose shapes are determined by the eigenvalues and eigenvectors of A. This connection is useful in optimisation, where positive definite quadratic forms correspond to convex functions with elliptical contours, and in statistics, where covariance matrices define ellipsoidal confidence regions. Understanding the geometry of quadratic forms helps in visualising high‑dimensional data and transformation effects.
 
 Quadratic forms have a strong geometric interpretation.
 
@@ -208,6 +218,8 @@ Thus, quadratic forms connect Linear Algebra with analytic geometry.
 
 6. POSITIVE DEFINITE QUADRATIC FORMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Positive definiteness is a key property of a quadratic form. A quadratic form is positive definite if Q(x) > 0 for every nonzero vector x. Geometrically, this means the surface Q(x) = 1 is an ellipsoid and the function has a strict minimum at the origin. Positive definite matrices are essential in optimisation because they guarantee that the corresponding quadratic function is strictly convex and has a unique global minimiser. They also appear in many applications, such as in covariance matrices (which are positive semidefinite) and in the Hessian of convex functions. Testing for positive definiteness can be done using eigenvalues (all positive), Sylvester's criterion (all leading principal minors positive), or by checking that the matrix is symmetric and the Cholesky decomposition exists. Positive definite quadratic forms provide a foundation for many algorithms in numerical linear algebra and machine learning.
 
 One of the most important classifications is positive definiteness.
 
@@ -256,6 +268,8 @@ Therefore:
 7. NEGATIVE DEFINITE QUADRATIC FORMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A quadratic form is negative definite if Q(x) < 0 for every nonzero vector x. Geometrically, this means the surface Q(x) = 1 is empty or the function has a strict maximum at the origin. Negative definite matrices are less common in optimisation because they correspond to concave functions with a unique maximum. They can be tested by checking that all eigenvalues are negative, or equivalently, that the negative of the matrix is positive definite. In many applications, such as in stability analysis of dynamical systems, negative definite quadratic forms indicate that energy is dissipated. For a symmetric matrix A, negative definiteness is equivalent to -A being positive definite, so the same tests apply with signs reversed. Understanding both positive and negative definiteness is important for classifying stationary points in optimisation.
+
 A quadratic form is negative definite if:
 
   xᵀ A x < 0
@@ -283,6 +297,8 @@ Therefore:
 
 8. POSITIVE SEMIDEFINITE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A quadratic form is positive semidefinite if Q(x) ≥ 0 for all x, with equality allowed for some nonzero x. This means the matrix has non‑negative eigenvalues and may have a nontrivial null space. Geometrically, the level set Q(x) = 1 may be a cylinder or a degenerate ellipsoid, and the function is convex but not strictly convex. Positive semidefinite matrices are common in statistics (covariance matrices) and in optimisation with inequality constraints. They also appear in the second‑order conditions for convex functions where the Hessian may be positive semidefinite at a minimum. Testing for positive semidefiniteness can be done by checking that all eigenvalues are non‑negative, or by checking that all leading principal minors are non‑negative (for some definitions). These matrices are also used in quadratic programming and in the definition of inner products in semi‑definite programming.
 
 A quadratic form is positive semidefinite if:
 
@@ -314,6 +330,8 @@ Therefore, it is positive semidefinite rather than positive definite.
 9. NEGATIVE SEMIDEFINITE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A quadratic form is negative semidefinite if Q(x) ≤ 0 for all x. This is the counterpart of positive semidefinite, with all eigenvalues non‑positive. Such matrices appear in contexts like energy dissipation or when a function is concave but not strictly. In optimisation, a negative semidefinite Hessian at a stationary point indicates a local maximum (or a saddle if indefinite). Testing for negative semidefiniteness can be done by checking that all eigenvalues are non‑positive, or equivalently, that -A is positive semidefinite. These forms are less common in typical optimisation problems but are important in stability analysis and in some economic models.
+
 A quadratic form is negative semidefinite if:
 
   xᵀ A x ≤ 0
@@ -332,6 +350,8 @@ Therefore, the corresponding matrix is negative semidefinite.
 
 10. INDEFINITE QUADRATIC FORM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A quadratic form is indefinite if it takes both positive and negative values. This occurs when the symmetric matrix A has both positive and negative eigenvalues. Geometrically, the level set Q(x) = 1 is a hyperbola (in 2D) or a hyperboloid (in higher dimensions). Indefinite quadratic forms are associated with saddle points in optimisation, where the function increases in some directions and decreases in others. They are also common in physics, such as in the kinetic energy minus potential energy of a system. Indefinite matrices are not positive or negative definite or semidefinite; they are the most general case. Recognising an indefinite quadratic form is important because it indicates that the optimisation problem may have multiple local extrema or saddle points, requiring more sophisticated algorithms.
 
 A quadratic form is indefinite if it can be both positive and negative.
 
@@ -358,6 +378,8 @@ Thus:
 11. THE FOUR MAIN TYPES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Quadratic forms are commonly classified into five categories based on the sign of Q(x) for nonzero vectors. The classification is essential in optimisation, where the definiteness of the Hessian determines the nature of critical points. Positive definite forms correspond to strict minima, negative definite to strict maxima, positive semidefinite to minima with flat directions, negative semidefinite to maxima with flat directions, and indefinite to saddle points. The classification can be determined by the eigenvalues of the associated symmetric matrix: all positive ⇒ positive definite; all non‑negative ⇒ positive semidefinite; all negative ⇒ negative definite; all non‑positive ⇒ negative semidefinite; mixed signs ⇒ indefinite. This eigenvalue criterion is powerful and directly connects Linear Algebra to optimisation and geometry.
+
 Quadratic forms are commonly classified as:
 
 Type                      Condition
@@ -374,6 +396,8 @@ This classification is extremely important in optimization.
 
 12. QUADRATIC FORMS AND EIGENVALUES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Eigenvalues provide the most elegant way to classify quadratic forms. For a symmetric matrix A, the eigenvalues λ₁, ..., λₙ determine the sign of the quadratic form. This is because A can be diagonalised by an orthogonal matrix Q such that Qᵀ A Q = D, where D is diagonal with the eigenvalues. Under the change of variables y = Qᵀ x, the quadratic form becomes a weighted sum of squares: Q(x) = λ₁ y₁² + ... + λₙ yₙ². From this form, it is clear that if all λᵢ > 0, the form is positive definite; if all λᵢ < 0, it is negative definite; if all λᵢ ≥ 0, it is positive semidefinite; if all λᵢ ≤ 0, it is negative semidefinite; and if there are both positive and negative λᵢ, it is indefinite. This diagonalisation also reveals the principal axes of the quadratic form, which are the eigenvectors. The eigenvalue test is straightforward and is the basis for many numerical algorithms.
 
 For a symmetric matrix A, the eigenvalues can be used to determine the definiteness of a quadratic form.
 
@@ -416,6 +440,8 @@ It is always positive for any nonzero vector.
 13. DETERMINANT TEST FOR A 2×2 MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+For a 2×2 symmetric matrix, positive definiteness can be checked using simple conditions on the diagonal entry and the determinant. Specifically, for A = [[a, b], [b, c]], the matrix is positive definite if and only if a > 0 and det(A) = ac − b² > 0. This is a special case of Sylvester's criterion. The condition a > 0 ensures that the quadratic form is positive along the x‑axis, and det(A) > 0 ensures that it does not become negative in other directions. Similarly, negative definiteness requires a < 0 and det(A) > 0. For semidefinite cases, the conditions are with non‑strict inequalities. This 2×2 test is quick and often used in practice, especially when analysing the Hessian of a two‑variable function for local extrema.
+
 For a symmetric matrix:
 
   A = [a  b]
@@ -447,6 +473,8 @@ Since 5 > 0, the matrix is positive definite.
 14. SYLVESTER'S CRITERION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Sylvester's criterion is a general method for testing positive definiteness of a symmetric matrix of any size. It states that a symmetric matrix A is positive definite if and only if all its leading principal minors are positive. The k‑th leading principal minor is the determinant of the upper‑left k×k submatrix. This criterion is algebraic and does not require computing eigenvalues. It is particularly useful for small to medium‑sized matrices and in theoretical proofs. For negative definiteness, one can apply Sylvester's criterion to −A. For semidefinite cases, the minors must be non‑negative, but the converse is not always true without additional conditions (for semidefinite, all principal minors must be non‑negative). In practice, Sylvester's criterion is a standard tool for checking definiteness in optimisation and matrix theory.
+
 For larger symmetric matrices, Sylvester's Criterion can be used to test positive definiteness.
 
 A symmetric matrix A is positive definite if all its leading principal minors are positive.
@@ -465,6 +493,8 @@ This provides an algebraic way to determine whether a symmetric matrix is positi
 
 15. QUADRATIC FORMS AND OPTIMIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Quadratic forms are fundamental in optimisation because they appear in the quadratic approximation of any smooth function near a point via its Taylor expansion. The Hessian matrix, which is the matrix of second partial derivatives, defines a quadratic form that determines the local curvature of the function. If the Hessian is positive definite at a critical point, the function has a local minimum; if negative definite, a local maximum; if indefinite, a saddle point. This is the basis of the second‑order condition in unconstrained optimisation. Furthermore, many optimisation problems are themselves quadratic, such as linear regression and quadratic programming, where the objective is a quadratic form. In such cases, the definiteness of the associated matrix determines whether the problem is convex and has a unique solution. Thus, understanding quadratic forms is essential for both theoretical and practical optimisation.
 
 Quadratic forms are extremely important in Optimization.
 
@@ -516,6 +546,8 @@ This demonstrates how positive definite quadratic forms naturally appear in opti
 16. QUADRATIC FORMS AND HESSIAN MATRICES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The Hessian matrix, denoted ∇²f(x), contains the second partial derivatives of a scalar function f. For a quadratic function of the form f(x) = ½ xᵀ A x − bᵀ x + c with symmetric A, the Hessian is constant and equal to A. This observation is central to optimisation: the Hessian defines the quadratic form that characterises the local curvature of f. At a critical point where the gradient is zero, the quadratic form xᵀ A x determines whether the point is a local minimum (positive definite), local maximum (negative definite), or saddle (indefinite). Therefore, analysing the quadratic form associated with the Hessian is the standard way to classify stationary points. This connection is why quadratic forms are extensively studied in multivariable calculus and numerical optimisation.
+
 Quadratic forms are also closely connected to the Hessian matrix.
 
 For a function f(x), the Hessian contains its second derivatives.
@@ -536,6 +568,8 @@ Therefore, analyzing the quadratic form xᵀ A x is equivalent to analyzing the 
 
 17. COMPLETING THE SQUARE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Completing the square is a technique that rewrites a quadratic form as a sum of squares, often revealing its definiteness and making it easier to analyse. This algebraic transformation is useful for quadratic forms in two or more variables, although it becomes more complex in higher dimensions. In matrix terms, completing the square is equivalent to diagonalising the symmetric matrix A via an orthogonal change of variables, which transforms the quadratic form into a diagonal form Σ λᵢ yᵢ². This representation immediately shows the sign of the quadratic form and the directions of the principal axes. Completing the square is often used in statistics to derive the distribution of quadratic forms and in optimisation to simplify the objective function. It is a valuable skill for understanding the structure of quadratic forms.
 
 Quadratic forms can sometimes be simplified through a change of variables or completing the square.
 
@@ -559,6 +593,8 @@ This is another way to analyze the behavior of a quadratic form.
 
 18. DIAGONALIZATION OF QUADRATIC FORMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every symmetric matrix A can be diagonalised by an orthogonal matrix Q, meaning A = Q D Qᵀ, where D is a diagonal matrix of eigenvalues. Substituting this into the quadratic form gives Q(x) = xᵀ Q D Qᵀ x = (Qᵀ x)ᵀ D (Qᵀ x) = yᵀ D y, where y = Qᵀ x. This is a sum of squares: λ₁ y₁² + λ₂ y₂² + ... + λₙ yₙ². This diagonalisation is the essence of principal component analysis (PCA) in statistics and is used to identify the principal directions of a quadratic form. The eigenvalues are the squared lengths of the axes of the ellipsoid Q(x) = 1, and the eigenvectors give the orientations. This decomposition simplifies many problems, including testing for definiteness, finding extrema, and understanding the geometry of the form.
 
 A symmetric matrix can be diagonalized using an orthogonal matrix.
 
@@ -619,6 +655,8 @@ Since both are positive, the quadratic form is positive definite.
 19. QUADRATIC FORMS AND CONIC SECTIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+In two dimensions, the general quadratic equation Ax² + Bxy + Cy² + Dx + Ey + F = 0 defines a conic section. The quadratic part, Ax² + Bxy + Cy², is a quadratic form whose matrix [[A, B/2], [B/2, C]] determines the type of conic. The eigenvalues and determinant of this matrix classify the conic: if both eigenvalues have the same sign (matrix definite), the conic is an ellipse (or circle); if the eigenvalues have opposite signs (indefinite), it is a hyperbola; if one eigenvalue is zero (semidefinite), it is a parabola or degenerate conic. This classification is a classic example of how Linear Algebra can simplify analytic geometry. The quadratic form provides a unified framework for studying all conic sections, and the matrix representation makes it easy to apply transformations (rotations, translations) to simplify the equation.
+
 In two dimensions, a quadratic equation can have the general form:
 
   Ax² + Bxy + Cy² + Dx + Ey + F = 0
@@ -649,6 +687,8 @@ Thus, quadratic forms provide a bridge between Linear Algebra and geometry.
 20. QUADRATIC FORMS IN MACHINE LEARNING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+In machine learning, quadratic forms appear in many contexts, particularly in regularisation, kernel methods, and optimisation. The standard L2 regularisation term is wᵀ w, a simple quadratic form that penalises large weights and improves generalisation. In support vector machines (SVMs), the dual problem involves a quadratic form Q(α) = ½ αᵀ K α − αᵀ 1, where K is the kernel matrix, which must be positive semidefinite. In Gaussian processes, the covariance matrix defines a quadratic form that measures the squared Mahalanobis distance. Quadratic forms also appear in the objective functions of many optimisation algorithms, where the Hessian must be positive definite for convexity. Understanding the definiteness of quadratic forms is thus essential for designing stable and efficient machine learning algorithms, as well as for interpreting the geometry of data representations.
+
 Quadratic forms appear in many Machine Learning methods.
 
 For example, optimization objectives can contain:
@@ -675,6 +715,8 @@ This is a simple quadratic form.
 21. QUADRATIC FORMS IN STATISTICS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+In statistics, quadratic forms are ubiquitous. The covariance matrix Σ of a random vector is symmetric and positive semidefinite, and the quadratic form (x − μ)ᵀ Σ⁻¹ (x − μ) defines the squared Mahalanobis distance, which measures how many standard deviations a point is from the mean, taking into account correlations. This quadratic form is used in multivariate normal distributions to define the probability density function. Additionally, the sum of squares of residuals in linear regression is a quadratic form in the data. The distribution of quadratic forms of normal random variables is studied via chi‑squared distributions. Quadratic forms also appear in ANOVA and in the analysis of variance. The ability to represent statistical quantities as quadratic forms allows the application of Linear Algebra tools, such as eigenvalue decomposition, to simplify and interpret statistical models.
+
 Quadratic forms are also important in statistics.
 
 For example, the squared distance between a data point x and a mean vector can be measured using a quadratic form.
@@ -695,6 +737,8 @@ It accounts for the relationships and scales between variables.
 
 22. QUADRATIC FORMS IN PHYSICS AND ENGINEERING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In physics and engineering, quadratic forms arise naturally from energy expressions. The kinetic energy of a system is often a quadratic form in velocities, with the mass matrix as the symmetric matrix. The potential energy of a linear elastic system is a quadratic form in displacements, with the stiffness matrix being symmetric and positive definite. In electrical engineering, the power dissipated in a network is a quadratic form in currents. These quadratic forms are central to the analysis of stability, vibrations, and control systems. For example, Lyapunov stability analysis uses positive definite quadratic forms as Lyapunov functions to prove stability of dynamical systems. The definiteness of these matrices determines whether the system is stable, oscillatory, or unstable. Thus, quadratic forms provide a mathematical language for describing energy and stability in physical systems.
 
 Quadratic forms are used to represent:
   • Energy

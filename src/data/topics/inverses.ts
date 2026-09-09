@@ -21,7 +21,7 @@ Not every matrix has an inverse. A matrix must satisfy certain conditions before
 1. IDENTITY MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Before understanding matrix inverses, we need to understand the identity matrix.
+Before understanding matrix inverses, we need to understand the identity matrix. The identity matrix is the matrix equivalent of the number 1 in scalar arithmetic. Just as multiplying any number by 1 leaves it unchanged, multiplying any matrix by the identity matrix leaves it unchanged. The identity matrix is a square matrix with ones on the main diagonal and zeros elsewhere. It acts as the multiplicative identity for matrix multiplication. The size of the identity matrix must match the dimensions of the matrix it is multiplied with. For example, a 2×2 identity matrix has ones on the diagonal and zeros off-diagonal. The identity matrix is denoted by I, and it satisfies A I = I A = A for any conformable matrix A. This property is what makes the identity matrix so useful in defining inverses: we say a matrix A has an inverse A⁻¹ if A A⁻¹ = A⁻¹ A = I.
 
 The identity matrix is the matrix equivalent of the number 1.
 
@@ -49,6 +49,8 @@ Therefore, the inverse is defined using the identity matrix:
 2. WHAT DOES A MATRIX INVERSE DO?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The primary purpose of a matrix inverse is to "undo" the effect of a matrix transformation. In the context of solving systems of linear equations, the inverse provides a direct way to find the solution. Given a system A x = b, if we can multiply both sides by A⁻¹, we isolate x. This is analogous to solving 5x = 10 by multiplying both sides by 1/5. The inverse effectively "cancels" the matrix A, leaving the identity matrix times x, which simplifies to x. This algebraic simplicity is why inverses are so valuable theoretically. However, in practice, computing the inverse of large matrices is computationally expensive and can be numerically unstable, so alternative methods like Gaussian elimination or LU decomposition are often preferred. Nevertheless, the conceptual power of the inverse is immense: it shows that if a matrix is invertible, the linear transformation it represents is bijective and can be reversed uniquely.
+
 Suppose we have:
 
   A x = b
@@ -71,6 +73,8 @@ This makes matrix inverses extremely useful for solving systems of linear equati
 
 3. INVERSE OF A 2×2 MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For a 2×2 matrix, there is a simple closed-form formula for its inverse, provided the determinant is nonzero. The formula is easy to remember: swap the diagonal entries, negate the off-diagonal entries, and divide by the determinant. This formula is a direct consequence of solving the equation A A⁻¹ = I for the four unknown entries of A⁻¹. It is one of the few cases where an explicit inverse formula is practical. The determinant ad - bc appears in the denominator, which explains why the inverse fails when the determinant is zero. This formula is often taught early in linear algebra courses and serves as a concrete illustration of the connection between determinants and invertibility. For larger matrices, no such simple formula exists; instead, we use algorithms like Gauss-Jordan elimination or adjugate methods.
 
 For a matrix:
 
@@ -125,6 +129,8 @@ Therefore, A A⁻¹ = I.
 4. WHEN DOES AN INVERSE EXIST?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Not every square matrix has an inverse. The fundamental criterion for invertibility is that the determinant of the matrix must be nonzero. This is a necessary and sufficient condition for a square matrix. The determinant encapsulates information about the volume scaling of the linear transformation and whether the transformation is one-to-one. If the determinant is zero, the transformation collapses space in at least one direction, making it impossible to invert uniquely. Such matrices are called singular or non-invertible. On the other hand, if the determinant is nonzero, the transformation preserves dimension and is bijective, so an inverse exists. In practice, checking the determinant is the first test for invertibility. For matrices larger than 2×2, computing the determinant can be cumbersome, so we often use Gaussian elimination to check if the matrix can be reduced to an identity matrix (i.e., has full rank).
+
 A square matrix has an inverse if and only if its determinant is nonzero.
 
   det(A) ≠ 0  ⟺  A⁻¹ exists
@@ -153,6 +159,8 @@ Therefore:
 5. WHY DOES A ZERO DETERMINANT PREVENT AN INVERSE?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A determinant of zero indicates that the matrix has linearly dependent rows or columns. Geometrically, this means that the transformation associated with the matrix maps space into a lower-dimensional subspace. For example, a 2×2 matrix with determinant zero maps the entire plane onto a line or a single point. When this happens, multiple input vectors can produce the same output vector, so there is no unique way to reverse the transformation. In other words, the mapping is not one-to-one, and thus an inverse cannot exist. Algebraically, the system A x = b may have either no solution or infinitely many solutions when det(A) = 0, because the columns of A do not span the whole space. This loss of information is irreversible; you cannot recover the original input from the output. Hence, the determinant being zero is a definitive sign that the matrix is singular.
+
 A determinant of zero means that the matrix transformation loses some information.
 
 Example:
@@ -178,6 +186,8 @@ Therefore:
 
 6. FINDING AN INVERSE USING GAUSS-JORDAN ELIMINATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Gauss-Jordan elimination is a systematic algorithm for finding the inverse of any invertible matrix. The idea is to augment the matrix A with the identity matrix I, forming [A | I], and then perform elementary row operations to reduce the left side to the identity matrix. The right side then becomes the inverse A⁻¹. This method works for any size and is the standard approach in numerical linear algebra. It is based on the fact that row operations correspond to multiplying on the left by elementary matrices, and applying the same operations to both sides of [A | I] effectively multiplies A by a sequence of matrices that transform A into I, so the product of those matrices is A⁻¹. This method is more reliable than the adjugate formula for larger matrices because it is computationally stable and straightforward to implement. It also gives direct feedback if the matrix is singular: if at some point a row of zeros appears on the left, the matrix is not invertible.
 
 Another important method for finding a matrix inverse is Gauss-Jordan elimination.
 
@@ -213,6 +223,8 @@ This method is especially useful for larger matrices because the 2×2 shortcut f
 
 7. USING THE INVERSE TO SOLVE A SYSTEM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Once we have the inverse of a matrix, we can immediately solve any system of linear equations with that coefficient matrix. For a system A x = b, the solution is x = A⁻¹ b. This is particularly efficient when we need to solve many systems with the same A but different b vectors, because we can compute A⁻¹ once and then simply multiply it by each b. However, in practice, for a single system, Gaussian elimination is often faster and more stable than computing the inverse. Nonetheless, the inverse method provides a clean theoretical solution and is useful for small systems or when the inverse is already known. It also illustrates the direct connection between matrix algebra and equation solving. When using the inverse, we must ensure that A is indeed invertible; otherwise, the formula does not apply.
 
 Consider the system:
 
@@ -254,6 +266,8 @@ So the solution is correct.
 8. PROPERTIES OF MATRIX INVERSES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Matrix inverses obey several algebraic rules that are analogous to those for reciprocals of numbers, but with some important differences due to non‑commutativity. For instance, the inverse of a product reverses the order: (AB)⁻¹ = B⁻¹ A⁻¹. This is because when we multiply AB by its inverse, we need to cancel B first and then A, which is achieved by applying A⁻¹ after B⁻¹. Similarly, the inverse of a transpose is the transpose of the inverse, and the inverse of a scalar multiple scales the inverse appropriately. These properties are useful for simplifying matrix expressions and for proving theorems. They also show that the set of invertible matrices forms a group under multiplication, which is a fundamental structure in mathematics. Understanding these properties allows us to manipulate equations involving inverses with confidence, provided we respect the order of multiplication.
+
 Matrix inverses have several important properties.
 
 Property 1: Inverse of an inverse
@@ -287,6 +301,8 @@ These properties are useful when simplifying complicated matrix expressions.
 9. INVERSE AND LINEAR TRANSFORMATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+In linear algebra, a matrix can be viewed as the representation of a linear transformation. When the matrix is invertible, the corresponding linear transformation is bijective—it is both one‑to‑one (injective) and onto (surjective). This means that for every output vector there is exactly one input vector that maps to it. The inverse matrix then represents the inverse transformation, which undoes the original mapping. This perspective is central to many applications: in computer graphics, an invertible transformation can be reversed to return an object to its original state; in robotics, inverse kinematics uses the inverse of a Jacobian matrix to compute joint angles from a desired end‑effector position. The existence of an inverse ensures that no information is lost and that the transformation can be perfectly reversed, which is a crucial property in many physical and computational systems.
+
 A matrix can represent a linear transformation:
 
   T(x) = A x
@@ -310,6 +326,8 @@ This is why matrix inverses are extremely important in computer graphics, roboti
 10. INVERSE MATRIX AND LINEAR INDEPENDENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+There is a deep connection between invertibility and linear independence. A square matrix is invertible if and only if its columns are linearly independent, which is also equivalent to its rows being linearly independent. This means that the vectors that form the columns of an invertible matrix span the entire space and do not have any redundancy. If the columns were dependent, the determinant would be zero and the matrix would be singular. This equivalence is powerful because it allows us to test invertibility by checking linear independence, which can often be done by row reduction. It also ties together the concepts of rank, null space, and invertibility: an invertible matrix has full rank (equal to its dimension) and a null space consisting only of the zero vector.
+
 There is also a strong relationship between matrix inverses and linear independence.
 
 For a square matrix A, the following statements are equivalent:
@@ -327,6 +345,8 @@ These are different ways of describing the same fundamental property of a square
 
 11. INVERSE AND THE NULL SPACE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The null space (or kernel) of a matrix is the set of all vectors that are mapped to the zero vector. For an invertible matrix, the only vector that maps to zero is the zero vector itself. This is a direct consequence of the fact that the columns are linearly independent. If A x = 0, multiplying both sides by A⁻¹ gives x = 0. Therefore, the null space of an invertible matrix is trivial—it contains only the zero vector. This property is central to the uniqueness of solutions: if the null space is trivial, then the system A x = b has at most one solution. Conversely, if a matrix has a nontrivial null space, it is not invertible, and there are infinitely many solutions (or none) for some b. The null space therefore provides a direct test for invertibility.
 
 An invertible matrix has a very important property concerning its null space.
 
@@ -353,6 +373,8 @@ This is another way of understanding why invertible matrices do not lose informa
 12. GEOMETRIC INTERPRETATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Geometrically, an invertible matrix corresponds to a transformation that is a bijection on the space. For example, in two dimensions, such a transformation can stretch, rotate, shear, or reflect the plane, but it never collapses the plane onto a line or a point. The inverse transformation restores the original configuration. If you imagine a grid of points being transformed, an invertible matrix will map the grid to another grid with the same number of points (no points coalesce). A singular matrix, on the other hand, will map the grid into a lower-dimensional shape—for example, all points may be projected onto a single line. When this happens, multiple original points map to the same image point, so the transformation cannot be inverted uniquely. This visual interpretation reinforces the algebraic condition det(A) ≠ 0 and explains why invertible matrices are essential in applications where precise reversibility is required.
+
 A matrix with an inverse represents a transformation that can be completely reversed.
 
 For example, imagine a square or grid being transformed by a matrix.
@@ -374,6 +396,8 @@ Therefore:
 
 13. APPLICATIONS OF MATRIX INVERSES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Matrix inverses are not just abstract mathematical objects; they have a wide range of practical applications across many fields. In solving systems of equations, the inverse provides a direct solution. In computer graphics, it is used to undo transformations such as rotations, translations, and scaling. In robotics, inverse matrices are used in coordinate transformations and in calculating inverse kinematics. Engineers use them to solve circuit problems, structural analysis, and control systems. In statistics and machine learning, inverses appear in regression (e.g., normal equations), covariance matrices, and optimization algorithms. In cryptography, invertible matrices are used for encoding and decoding messages. In physics, they appear in coordinate transformations and in the study of symmetries. The ability to compute and use inverses is therefore a fundamental skill for anyone working in quantitative fields.
 
 Matrix inverses have many applications in mathematics, science, and technology.
 

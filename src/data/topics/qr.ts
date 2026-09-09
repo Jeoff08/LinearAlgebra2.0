@@ -26,6 +26,8 @@ The main idea is:
 1. WHAT DOES QR MEAN?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The name "QR" directly refers to the two matrices produced by the factorization: Q for an orthogonal (or unitary) matrix and R for an upper triangular matrix. The letter Q is often used for orthogonal matrices because of historical convention, and R stands for "right" or "rechts" (German for "right") as in upper triangular, which is also called right triangular. In the decomposition A = Q R, the columns of Q form an orthonormal basis for the column space of A, and R encodes the coefficients needed to express the original columns as linear combinations of these orthonormal vectors. This separation is powerful because orthogonal matrices preserve norms and inner products, which leads to numerical stability, while upper triangular matrices are easy to solve via back substitution. Understanding the meaning behind the names helps to remember the structure and purpose of this fundamental factorization.
+
 The name comes directly from the two matrices involved:
 
   Q = Orthogonal Matrix
@@ -50,7 +52,7 @@ The matrix R has zeros below its main diagonal:
 2. WHY IS QR FACTORIZATION IMPORTANT?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-QR Factorization is useful because it transforms a general matrix into a form that is easier and more stable to work with.
+QR Factorization is important because it transforms a general matrix into a form that is easier and more stable to work with. The orthogonal factor Q preserves the Euclidean norm, which means that multiplying a vector by Q does not change its length. This property makes QR factorization particularly valuable in numerical computations because it avoids amplifying errors that would otherwise occur when forming products like AᵀA in least‑squares problems. Moreover, the upper triangular factor R allows us to solve linear systems and least‑squares problems efficiently by back substitution. QR decomposition is also the backbone of the QR algorithm for computing eigenvalues, one of the most important algorithms in numerical linear algebra. Its widespread use in scientific computing, data analysis, and machine learning stems from its excellent numerical stability and versatility.
 
 It is commonly used for:
   • Solving Least-Squares problems
@@ -68,7 +70,7 @@ One of its biggest advantages is that it can be numerically more stable than dir
 3. RELATIONSHIP TO ORTHOGONALITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-QR Factorization is closely connected to the concept of orthogonality.
+QR Factorization is intimately linked to the concept of orthogonality. The columns of Q are orthonormal, meaning they are mutually perpendicular and each has unit length. This orthonormality is achieved by applying the Gram–Schmidt process to the columns of A, which successively removes the components of each column that lie in the span of the previous ones, leaving a set of independent directions that are perpendicular. In the factorization, the matrix Q provides an orthonormal basis for the column space of A, while R contains the coefficients that reconstruct the original columns from that basis. This connection to orthogonality is what makes QR so useful: orthonormal bases simplify many computations, preserve geometric properties, and contribute to numerical stability.
 
 Suppose the columns of A are:
 
@@ -92,6 +94,8 @@ Because the columns are orthonormal:
 
 4. EXAMPLE OF QR FACTORIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Let's work through a concrete example to see how QR factorization is computed using the Gram–Schmidt process. We start with a 2×2 matrix A whose columns are linearly independent. The first step is to set the first orthogonal vector u₁ equal to the first column of A and normalize it to obtain q₁. The second orthogonal vector u₂ is obtained by subtracting from the second column its projection onto q₁, ensuring that u₂ is perpendicular to q₁. Normalising u₂ yields q₂. The columns of Q are the orthonormal vectors q₁ and q₂, and the entries of R are the inner products that record the coefficients used in the reconstruction. This example illustrates the core idea: QR decomposes A into an orthonormal basis for its column space and the corresponding coefficients.
 
 Consider:
 
@@ -210,6 +214,8 @@ The first matrix is Q, and the second matrix is R.
 5. VERIFYING QR FACTORIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+After computing the QR factors, it is essential to verify that the product Q R indeed returns the original matrix A. This verification not only confirms the correctness of the calculations but also reinforces the relationship between the orthonormal basis and the coefficients. In the example, multiplying Q and R yields the original matrix exactly, demonstrating that the decomposition is valid. In practice, due to floating‑point arithmetic, the product may be close to A but not identical; we check that the residual is small. This step is crucial for building confidence in the implementation and for detecting any numerical issues that may have arisen during the orthogonalization process. The verification also illustrates how the orthonormal basis and the upper triangular coefficients work together to represent the original data.
+
 We can verify the result by multiplying Q and R:
 
   Q R = [1/√2   1/√2] [√2     1/√2]
@@ -231,6 +237,8 @@ The factorization is correct.
 6. QR FACTORIZATION USING GRAM-SCHMIDT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The Gram–Schmidt process is the classical method for computing QR factorization. It takes the columns of A one by one and orthogonalises each against all previously processed columns, producing an orthogonal set. Normalising each orthogonal vector yields the orthonormal columns of Q. The coefficients used in the orthogonalisation the inner products that are subtracted are stored in the corresponding entries of R. This method is conceptually simple and directly reflects the geometric idea of constructing an orthonormal basis. However, the classical Gram–Schmidt algorithm can suffer from numerical instability because small rounding errors accumulate as the process proceeds. Despite this, it is often used in educational settings and for small matrices. Understanding the Gram–Schmidt process is essential for grasping the foundation of QR factorization.
+
 One common way of computing QR Factorization is the Gram-Schmidt Process.
 
 The general idea is:
@@ -246,6 +254,8 @@ The resulting orthonormal vectors form Q, while the coefficients used during the
 7. MODIFIED GRAM-SCHMIDT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The standard Gram–Schmidt process is simple but can lose orthogonality in finite precision arithmetic, especially when the columns of A are nearly linearly dependent. Modified Gram–Schmidt addresses this by re‑orthogonalising each new vector against all previously computed orthogonal vectors in a sequential manner. Instead of computing the projection of the current column onto the previous orthonormal vectors in one step, it updates the vector after each orthogonalisation, reducing the accumulation of rounding errors. This small algorithmic change significantly improves numerical stability, making Modified Gram–Schmidt the method of choice in many practical implementations. It is often used in combination with Householder reflections or Givens rotations for more robust QR factorization in numerical libraries.
+
 The standard Gram-Schmidt process can sometimes suffer from numerical errors when implemented on a computer.
 
 A variation called Modified Gram-Schmidt improves numerical behavior.
@@ -258,6 +268,8 @@ This makes it more suitable for numerical computation.
 
 8. HOUSEHOLDER REFLECTIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Householder transformations are another powerful method for computing QR factorization. A Householder reflection is an orthogonal matrix that mirrors a vector across a hyperplane, and it can be designed to zero out all entries below the diagonal of a column in one go. By applying a sequence of Householder reflections to A, we gradually introduce zeros below the diagonal, transforming the matrix into an upper triangular form R. The product of these reflections gives Q. This method is numerically stable and is the standard approach in many high‑performance libraries, such as LAPACK. Householder QR is particularly efficient for dense matrices because it performs operations in a block‑wise manner, making good use of cache and modern CPU architectures. It is also less prone to the loss of orthogonality than classical Gram–Schmidt.
 
 Another important way to calculate QR Factorization is through Householder transformations.
 
@@ -286,6 +298,8 @@ Householder QR is often preferred in numerical software because it is generally 
 9. GIVENS ROTATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Givens rotations provide a flexible and selective way to perform QR factorization. A Givens rotation is an orthogonal matrix that rotates a vector in a plane spanned by two coordinate axes, and it can be used to zero out a specific entry in a matrix. By applying a sequence of such rotations, we can systematically eliminate entries below the diagonal without affecting the zeros already introduced. This method is particularly useful for sparse matrices, where we want to avoid introducing fill‑in, and for incremental QR updates, where the matrix changes only slightly. Givens rotations are also employed in adaptive algorithms and in applications where fine‑grained control over the orthogonalisation is needed. They are less efficient for dense matrices than Householder reflections, but their flexibility makes them invaluable in certain contexts.
+
 Another technique is the Givens Rotation.
 
 A Givens rotation is an orthogonal transformation that can eliminate an individual matrix element.
@@ -313,7 +327,7 @@ Givens rotations are particularly useful for:
 10. QR FACTORIZATION FOR LEAST SQUARES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-One of the most important applications of QR Factorization is solving Least-Squares Problems.
+One of the most important applications of QR Factorization is solving Least-Squares Problems. In a least‑squares problem, we seek the vector x that minimises the residual norm ||A x − b||². By substituting A = Q R and using the orthogonality of Q, we can transform the problem into solving the upper triangular system R x = Qᵀ b. This is numerically stable because it avoids forming the potentially ill‑conditioned matrix Aᵀ A. Moreover, the QR approach works even when A is rank‑deficient (with some modifications). It is the standard method for linear regression and many other data‑fitting tasks. The efficiency and stability of QR‑based least squares have made it a cornerstone of computational statistics and machine learning.
 
 Suppose we have:
 
@@ -376,6 +390,8 @@ This gives the coefficients a and b for the best-fitting line.
 11. WHY QR IS BETTER FOR LEAST SQUARES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The normal equations Aᵀ A x = Aᵀ b are the classical approach to least squares. However, forming Aᵀ A squares the condition number of A, making the problem much more sensitive to rounding errors. In contrast, QR factorization works directly with A and avoids this squaring. By solving R x = Qᵀ b, we retain the numerical conditioning of the original matrix, leading to more reliable results, especially when A is ill‑conditioned. This stability advantage is the primary reason why QR is preferred over the normal equations in modern numerical software. The QR approach also provides additional information, such as the rank of A and the orthogonal basis for the column space, which can be useful in diagnostics and model selection.
+
 The normal equations are:
 
   Aᵀ A x = Aᵀ b
@@ -394,6 +410,8 @@ This is often numerically more stable.
 
 12. QR ALGORITHM FOR EIGENVALUES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The QR Algorithm is one of the most important numerical methods for computing all eigenvalues of a matrix. It iteratively applies QR factorization to the matrix and then multiplies the factors in reverse order to produce a new matrix that is similar to the original (hence preserving eigenvalues). Under mild conditions, the sequence of matrices converges to an upper triangular (or quasi‑triangular) form, from which the eigenvalues can be read directly from the diagonal entries. This algorithm is the standard tool for dense eigenvalue problems and is implemented in libraries like LAPACK. Its efficiency and robustness stem from the use of QR factorization, which maintains orthogonality throughout the iterations, preventing the accumulation of errors. The QR algorithm is a testament to the power of QR factorization in numerical linear algebra.
 
 QR Factorization is also used in one of the most important algorithms for finding eigenvalues: the QR Algorithm.
 
@@ -422,6 +440,8 @@ This is one reason QR Factorization is fundamental to numerical Linear Algebra.
 13. QR FACTORIZATION AND MACHINE LEARNING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+In machine learning, QR factorization finds use in linear regression, especially when the design matrix is large or ill‑conditioned. It provides a stable way to compute the least‑squares solution without forming the normal equations, which is important when features are nearly collinear. QR is also used in online learning and recursive least squares, where updates to the solution can be computed efficiently using Givens rotations or Householder updates. Moreover, the orthogonal basis Q can be used for dimensionality reduction and for constructing feature spaces in kernel methods. The numerical stability and flexibility of QR make it a valuable tool in the machine learning practitioner's toolkit, particularly when working with large‑scale data and robust optimisation.
+
 QR Factorization can also be used in Machine Learning and Data Science.
 
 It can help with:
@@ -439,6 +459,8 @@ For example, when fitting a regression model, QR Factorization can provide a sta
 14. QR FACTORIZATION AND COMPUTER GRAPHICS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+In computer graphics, orthogonal matrices are essential for representing rotations and reflections because they preserve lengths and angles. The QR factorization produces an orthogonal matrix Q, which can be interpreted as a rotation or reflection that aligns the basis vectors with the original columns. This decomposition is useful in geometric algorithms, such as shape matching, pose estimation, and camera calibration, where we need to extract the rotational component of a transformation. Additionally, QR can be used to orthogonalise vectors in physics simulations and to solve systems of equations that arise in rendering and animation. The geometric insight provided by QR separating a transformation into a rotation and an upper‑triangular scaling is valuable for understanding and manipulating 3D data.
+
 Orthogonal matrices are important in computer graphics because they preserve lengths and angles.
 
 Since QR Factorization produces an orthogonal matrix Q, it is connected to geometric transformations.
@@ -454,6 +476,8 @@ This makes QR-related methods useful in computational geometry and graphics.
 
 15. FULL QR VS. REDUCED QR
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+There are two common variants of QR factorization: the full QR and the reduced (or economy‑size) QR. For an m×n matrix (with m ≥ n), the full QR factorization computes Q as an m×m orthogonal matrix and R as an m×n upper triangular matrix, with the bottom m−n rows of R being zero. This form is sometimes needed for theoretical purposes but uses extra storage and computation. In contrast, the reduced QR factorization computes Q as an m×n matrix with orthonormal columns and R as an n×n upper triangular matrix. The reduced form is sufficient for solving least‑squares problems and for most applications, as it contains all the necessary information about the column space. It saves both memory and time, making it the preferred choice in practice.
 
 There are two commonly discussed forms of QR Factorization.
 
@@ -482,6 +506,8 @@ The reduced form saves memory and computation when m > n.
 16. QR FACTORIZATION OF A SQUARE MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+For a square matrix A ∈ ℝ^(n×n), QR factorization yields Q and R both of size n×n. In this case, Q is a full orthogonal matrix, and its inverse is simply its transpose. The decomposition can be used to solve linear systems A x = b by first solving R x = Qᵀ b, which is efficient because R is upper triangular. Moreover, the determinant of A is the product of the diagonal entries of R (up to a sign), and the eigenvalues can be computed via the QR algorithm. For square matrices, QR factorization provides a stable alternative to LU decomposition, especially when A is not well‑conditioned. It is also used in computing the matrix exponential and other matrix functions.
+
 If A ∈ ℝ^(n×n), then QR Factorization gives:
 
   A = Q R
@@ -500,6 +526,8 @@ The matrix R is upper triangular.
 
 17. QR FACTORIZATION OF A RECTANGULAR MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QR factorization is not limited to square matrices; it works equally well for rectangular matrices. The most common case is m > n, which corresponds to an overdetermined system more equations than unknowns as encountered in least‑squares regression. In the reduced form, Q is m×n with orthonormal columns, and R is n×n upper triangular. This is all that is needed to solve the least‑squares problem. The full form would add an additional m−n columns to Q (which are not needed) and a zero block in R. The ability to factor rectangular matrices makes QR a versatile tool for data analysis, where datasets are typically tall and skinny.
 
 QR Factorization also works for rectangular matrices.
 
@@ -520,6 +548,8 @@ with:
 18. IMPORTANT PROPERTIES OF QR FACTORIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+QR factorization comes with several useful properties that make it attractive for computational work. The columns of Q are orthonormal, so Qᵀ Q = I; for square Q, this implies Q⁻¹ = Qᵀ, which is cheap to apply. Q preserves the Euclidean norm of any vector, so ||Q x|| = ||x||, a property called isometry. This norm preservation is the basis for the stability of QR‑based algorithms. Additionally, the upper triangular structure of R makes it easy to solve systems, compute determinants (as the product of the diagonal entries), and check for singularity. The decomposition also reveals the rank of A: the number of non‑zero diagonal entries of R (assuming no pivoting) equals the rank. These properties make QR a fundamental tool in both theory and practice.
+
 The main properties to remember are:
 
   1. Factorization:       A = Q R
@@ -533,6 +563,8 @@ The main properties to remember are:
 
 19. QR FACTORIZATION VS. LU DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QR and LU are both matrix factorizations, but they serve different purposes and have different properties. LU factors A into a lower triangular L and an upper triangular U, typically using Gaussian elimination with pivoting. It is efficient for solving linear systems and computing determinants, but it can be unstable for ill‑conditioned matrices. QR, on the other hand, factors A into an orthogonal Q and an upper triangular R. The orthogonal factor provides numerical stability, making QR preferable for least‑squares and eigenvalue problems. However, QR is generally more computationally expensive than LU for solving square systems. The choice between them depends on the problem: LU is faster and memory‑efficient, while QR offers stability and orthogonality. In practice, LU is used for general linear systems, and QR is chosen when accuracy and stability are paramount.
 
 QR Factorization and LU Decomposition are both matrix factorization techniques, but they have different structures.
 
@@ -553,6 +585,8 @@ QR is especially valuable when orthogonality and numerical stability are importa
 20. QR FACTORIZATION VS. SVD
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+QR and SVD are both widely used factorizations, but they provide different levels of information. SVD gives a complete spectral decomposition A = U Σ Vᵀ, where the singular values reveal the rank, the condition number, and the best low‑rank approximations. It is more expensive to compute than QR but offers deeper insight into the matrix's structure. QR is less expensive and is the method of choice for solving least‑squares problems and for orthogonalizing bases. In practice, QR is often used when only the solution is needed, while SVD is used when the full structure, including the null space and rank, is required. Both are essential tools in numerical linear algebra, and many algorithms combine them for robust results.
+
 QR Factorization and Singular Value Decomposition are both important matrix factorizations.
 
 SVD has the form:
@@ -572,6 +606,8 @@ QR is generally less expensive and is very useful for solving least-squares prob
 21. COMPUTATIONAL COMPLEXITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+QR factorization is computationally more expensive than LU but often worth the extra cost for its stability. For an m×n matrix with m ≥ n, the cost of Householder QR is approximately 2 n² (m − n/3) floating‑point operations. For square matrices, this is about 4/3 n³ operations, which is about twice the cost of LU (2/3 n³). However, the improved numerical stability often justifies the extra work, especially when the matrix is ill‑conditioned. In modern computers, the cost of QR is acceptable for matrices up to several thousand in size, and many libraries implement it in a highly optimized manner, using cache‑efficient block algorithms. Understanding these complexities helps in choosing the right algorithm for a given problem size and accuracy requirement.
+
 For a dense m×n matrix, computing QR Factorization generally requires more computational work than a basic LU factorization.
 
 For a square n×n matrix, the standard Householder QR process requires approximately:
@@ -586,6 +622,8 @@ Although this may seem expensive, QR's numerical stability makes it extremely va
 
 22. IMPORTANT QR FACTORIZATION METHODS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Several methods exist for computing QR factorization, each with its own trade‑offs. The Gram–Schmidt process is conceptually simple but can be unstable. The Modified Gram–Schmidt improves stability by updating vectors in place. Householder reflections are the standard for dense matrices, offering excellent stability and efficiency. Givens rotations are more selective and are ideal for sparse matrices or when we need to update the factorization incrementally. Choosing the right method depends on the matrix size, sparsity, and the specific application. In practice, high‑quality libraries often use Householder reflections for general matrices, while specialised routines may use Givens for particular tasks. Familiarity with all these approaches is valuable for understanding the versatility of QR factorization.
 
 When studying QR Factorization, it is useful to know the main methods:
 
@@ -602,6 +640,8 @@ These methods all produce the same basic goal:
 
 23. REAL-WORLD EXAMPLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Consider a company that has collected thousands of data points on product sales, along with features such as advertising spend, price, customer traffic, season, and promotions. They want to build a predictive model that relates these features to sales. This is a linear regression problem, which can be formulated as A x ≈ b, where A is the design matrix (one row per observation, columns for each feature), x is the vector of coefficients, and b is the vector of observed sales. Because there are many more observations than features, the system is overdetermined. Solving the normal equations directly may be unstable if the features are correlated. QR factorization provides a stable way to compute the coefficients x by solving R x = Qᵀ b. The resulting model can then be used to predict future sales, helping the company make informed decisions about marketing and pricing.
 
 Suppose a company collects thousands of data points about product sales.
 
@@ -626,6 +666,8 @@ The resulting model can then be used to predict future sales.
 
 24. QR FACTORIZATION IN SCIENTIFIC COMPUTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In scientific computing, QR factorization is a workhorse for many tasks. It is used in data fitting, where we need to find the best parameters for a model given noisy measurements. It is employed in numerical modelling, where large systems of equations arise from discretising partial differential equations. It is also central to the QR algorithm for computing eigenvalues, which is used in stability analysis and vibration studies. The factorization's orthogonality ensures that the algorithms are robust and produce reliable results even when the matrices are ill‑conditioned. Many scientific software packages, such as MATLAB, NumPy, and SciPy, provide built‑in QR routines, making it accessible to researchers and engineers. The widespread adoption of QR in scientific computing underscores its importance as a fundamental numerical tool.
 
 Scientists often need to solve large systems generated from experiments or simulations.
 

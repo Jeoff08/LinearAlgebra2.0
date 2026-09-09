@@ -23,6 +23,8 @@ These applications are especially important in optimization because we often wan
 1. WHAT IS AN ABSOLUTE MAXIMUM?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An absolute maximum is the highest value that a function attains over its entire domain or over a specified interval. In practical terms, if you are measuring something like profit, area, or height, the absolute maximum represents the best possible outcome the largest profit, the largest area, or the greatest height. Mathematically, for a function f defined on a set D, the absolute maximum occurs at a point c in D if f(c) is greater than or equal to every other value f(x) for all x in D. This means no other point in the domain produces a larger output. The absolute maximum is a global property; it is not just about being larger than nearby points (which would be a local maximum), but about being the largest of all. In optimization problems, finding the absolute maximum is often the primary goal, whether it is to maximize revenue, yield, or efficiency.
+
 Suppose a function is defined on an interval [a, b].
 
 The function f(x) has an absolute maximum at x = c if:
@@ -46,6 +48,8 @@ For example:
 2. WHAT IS AN ABSOLUTE MINIMUM?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An absolute minimum is the lowest value that a function attains over its entire domain or interval. It corresponds to the worst-case scenario in many applications the smallest profit, the least cost, or the minimum distance. For a function f on a set D, the absolute minimum occurs at a point c if f(c) is less than or equal to every other value f(x) for all x in D. Like the absolute maximum, it is a global property: no point in the domain produces a smaller output. In optimization problems, we often seek to minimize costs, materials, or time, so finding the absolute minimum is crucial. The absolute minimum can occur at interior critical points or at the endpoints of a closed interval, so a thorough search is necessary.
+
 A function f(x) has an absolute minimum at x = c if:
   f(c) ≤ f(x)
 
@@ -65,6 +69,8 @@ Therefore, the absolute minimum is -5.
 3. WHY ABSOLUTE EXTREMA ARE IMPORTANT IN APPLICATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+In real-world problems, we rarely study functions for their own sake; we use them to make decisions. The power of calculus lies in its ability to find optimal solutions the best or worst outcomes under given constraints. For instance, a business wants to maximize profit, a farmer wants to maximize crop yield, an engineer wants to minimize material usage, and a logistics company wants to minimize delivery time. All these problems can be modeled mathematically: we define a function that represents the quantity we care about (profit, cost, area, etc.) and then find its absolute maximum or minimum over a feasible domain. This process from a real-world situation to a mathematical function and then to an optimal value is the essence of optimization. Absolute extrema provide the answers that guide practical decisions. Without this method, we would have to rely on guesswork or trial and error, which is inefficient and often impossible.
+
 In real-world problems, we usually aren't simply interested in the function itself.
 
 Instead, we want to answer questions such as:
@@ -81,6 +87,8 @@ The general idea is:
 
 4. THE CLOSED INTERVAL METHOD
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The closed interval method is the standard technique for finding absolute extrema when the function is continuous on a closed interval [a, b]. The Extreme Value Theorem guarantees that such a function will attain both an absolute maximum and an absolute minimum somewhere in that interval. The method is systematic: first, find all critical numbers inside the interval points where the derivative is zero or does not exist. Second, evaluate the function at each of these critical numbers and at the endpoints a and b. Third, compare these values. The largest value is the absolute maximum, and the smallest is the absolute minimum. This method works because absolute extrema can only occur at critical points or at the endpoints; there is no other possibility. It is reliable and relatively simple, making it the go-to approach for optimization problems with a closed and bounded domain.
 
 When a continuous function is defined on a closed interval [a, b], the Extreme Value Theorem tells us that the function must have both an absolute maximum and an absolute minimum.
 
@@ -106,6 +114,8 @@ Step 5: Compare the values
 
 5. APPLICATION EXAMPLE: MAXIMUM AREA
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+One of the classic applications of absolute extrema is maximizing the area of a rectangle given a fixed perimeter. This problem illustrates how to use calculus to find the optimal dimensions. Suppose you have 40 meters of fencing to enclose a rectangular field. You want to know the width and length that give the largest possible area. We set up variables, use the perimeter constraint to express one variable in terms of the other, and then form the area function. The domain is constrained by the fact that dimensions cannot be negative and the perimeter is fixed. Applying the closed interval method differentiating, finding the critical number, and checking endpoints reveals that a square gives the maximum area. This result is intuitive but also mathematically proven. Such problems appear in many fields, from agriculture to architecture, where efficient use of materials is essential.
 
 Suppose you have 40 meters of fencing and want to build a rectangular enclosure.
 
@@ -174,6 +184,8 @@ Conclusion:
 6. APPLICATION EXAMPLE: MINIMUM COST
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Cost minimization is a frequent objective in business and manufacturing. Given a cost function that depends on the number of units produced, we want to find the production level that yields the lowest total cost. For example, if C(x) = x² - 20x + 150, where x is the number of units produced, and production is constrained to the interval [0, 20], we can find the minimum cost by applying the closed interval method. Differentiating gives C'(x) = 2x - 20, so the critical number is x = 10. Evaluating the endpoints and the critical point, we find that the minimum cost is 50, occurring at x = 10. This type of analysis helps companies set production targets to minimize expenses, which is vital for profitability. It also illustrates that the minimum cost may occur at an interior point, not just at the boundaries.
+
 Suppose a company wants to produce x units of a product.
 
 The cost function is:
@@ -208,6 +220,8 @@ Therefore, the minimum cost occurs when:
 
 7. APPLICATION EXAMPLE: MAXIMUM PROFIT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Profit maximization is a fundamental goal in economics. Profit is defined as revenue minus cost, and we often want to find the production level that maximizes profit. For instance, if revenue is R(x) = 100x - x² and cost is C(x) = 20x + 100, then profit P(x) = R(x) - C(x) = -x² + 80x - 100. With a domain of [0, 80] (since revenue becomes negative beyond 80), we differentiate: P'(x) = -2x + 80, so the critical point is x = 40. Evaluating P(0), P(40), and P(80) shows that the maximum profit is 1500 at x = 40. This analysis is crucial for businesses to determine optimal output levels. It also demonstrates that the maximum profit can occur at a critical point, not necessarily at an endpoint, but we still need to check endpoints to be sure. This example is a classic application of absolute extrema in economics.
 
 Absolute extrema are also commonly used in business.
 
@@ -256,6 +270,8 @@ The company achieves its maximum profit when it produces:
 8. APPLICATION EXAMPLE: MAXIMUM HEIGHT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The motion of projectiles is a common application of absolute extrema in physics. When an object is thrown upward, its height as a function of time is a quadratic function with a maximum at the vertex. For example, h(t) = -16t² + 64t + 5 models the height (in feet) of a ball thrown from an initial height of 5 feet with initial velocity 64 ft/s. The coefficient of t² is negative, so the parabola opens downward, and the maximum occurs at the vertex. By differentiating, we get h'(t) = -32t + 64, which yields t = 2 seconds. Substituting back gives h(2) = 69 feet. This maximum height is the absolute maximum of the function over the time interval until the ball hits the ground (t ≥ 0). Such problems are essential in sports, engineering, and any field involving projectile motion.
+
 Suppose the height of a ball is modeled by:
   h(t) = -16t² + 64t + 5
 
@@ -294,6 +310,8 @@ Notice the distinction:
 9. IMPORTANT DISTINCTION: MAXIMUM POINT VS. MAXIMUM VALUE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+It is crucial to distinguish between the input where the extremum occurs and the extremum value itself. In many optimization problems, we need to report both: the value of the variable that produces the optimal outcome and the optimal outcome itself. For example, if f(3) = 10 is the absolute maximum, then the absolute maximum value is 10, and it occurs at x = 3. The point on the graph is (3, 10). Confusing these can lead to incorrect conclusions, especially when interpreting the result in context. When you solve a problem, always state clearly what the variable represents and what the function value represents. For instance, "The maximum area is 100 square meters, achieved when the width and length are both 10 meters." This clarity ensures that the answer is meaningful and actionable.
+
 This is one of the most important concepts.
 
 Suppose f(3) = 10 is the largest value of the function.
@@ -312,6 +330,8 @@ with:
 
 10. WHY ENDPOINTS MUST BE CHECKED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A common mistake in optimization is to find the critical points where the derivative is zero and assume those are the only candidates for extrema. However, on a closed interval, the endpoints are always candidates and must be evaluated. For instance, consider f(x) = x³ - 3x on [-2, 2]. The derivative is f'(x) = 3x² - 3, which gives critical numbers x = ±1. But evaluating the function at the endpoints gives f(-2) = -2 and f(2) = 2, while f(-1) = 2 and f(1) = -2. Thus the absolute maximum is 2, occurring at both x = -1 and x = 2, and the absolute minimum is -2, occurring at x = 1 and x = -2. Notice that the maximum at x = 2 is an endpoint, not a critical point. If we had ignored endpoints, we would have missed the maximum at x = 2. Therefore, the closed interval method always includes endpoints as part of the candidate set. This is not optional; it is mandatory for correct results.
 
 A common mistake is to find f'(x) = 0 and stop.
 
@@ -343,6 +363,8 @@ This is why the absolute extrema procedure always includes the endpoints.
 
 11. GENERAL STRATEGY FOR APPLICATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Solving optimization problems involves a systematic approach that translates a real-world scenario into a mathematical framework. The first step is to identify the quantity to be optimized (maximized or minimized). Then, assign a variable to represent a key unknown. Use any given constraints to express other quantities in terms of that variable, and write the objective function the function whose extrema we seek. It is essential to determine the domain of the objective function, which is often a closed interval based on physical limits. Then, apply the closed interval method: differentiate, find critical numbers, evaluate the function at those numbers and at the endpoints, and compare. Finally, interpret the results in the context of the original problem. This strategy works for a wide variety of applications, from geometry to economics to physics. With practice, it becomes a reliable routine for solving optimization problems.
 
 When solving an application involving absolute extrema, you can follow this structure:
 
@@ -390,7 +412,7 @@ When solving an application involving absolute extrema, you can follow this stru
 12. COMMON APPLICATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Absolute extrema can be used in many different situations.
+Absolute extrema are not limited to abstract functions; they appear in nearly every field that uses quantitative analysis. In geometry, we maximize area or volume given fixed perimeters or surface areas. In business, we maximize profit or revenue and minimize cost. In physics, we maximize height or range of projectiles. In engineering, we minimize material usage or energy consumption. In economics, we find optimal production levels. In logistics, we minimize distance or time. In agriculture, we maximize crop yield. In packaging, we minimize surface area for a given volume. The list is extensive. Each application follows the same pattern: define a function, find its absolute extrema on a feasible domain, and interpret the result. Mastering this skill equips you to solve practical problems across many disciplines. The examples provided in this topic are a small sample of the vast array of possible applications.
 
   Application         What we might maximize/minimize
   ────────────────────────────────────────────────────────────────────
@@ -411,6 +433,8 @@ Absolute extrema can be used in many different situations.
 
 13. KEY IDEA TO REMEMBER
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The overarching concept is that applications involving absolute extrema are optimization problems. We take a real-world situation, represent it mathematically with a function, and then use calculus to find the function's absolute maximum or minimum. The process is a bridge between abstract derivatives and concrete decisions. The key steps are: define variables, establish a constraint, write the objective function, determine its domain, find critical numbers, evaluate endpoints, compare, and interpret. The most common mistake is forgetting to check endpoints, so always include them. Also, remember the distinction between the location of the extremum and the extremum value. With practice, you will be able to recognize optimization problems and solve them confidently. This skill is one of the most practical and rewarding applications of calculus.
 
 The most important idea is:
 

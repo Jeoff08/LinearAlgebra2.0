@@ -105,6 +105,7 @@ import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
 import { ALL_CALCULUS_TOPICS } from "../data/calculus-topics";
 import { ALL_CALCULUS_2_TOPICS } from "../data/calculus-2-topics";
 import studentLogoSigma from "../assets/Logo Student.png";
+import TopicContentRenderer from "../components/TopicContentRenderer";
 
 export interface QuizQuestionDraft {
   id: string;
@@ -3401,8 +3402,8 @@ export default function AdminDashboardPage() {
                             Theoretical Overview & Fundamentals
                           </h3>
                         </div>
-                        <div className="text-sm text-[#374151] leading-relaxed whitespace-pre-line space-y-3">
-                          {activeTopic.details}
+                        <div className="text-sm text-[#374151] leading-relaxed space-y-3">
+                          <TopicContentRenderer content={activeTopic.details} />
                         </div>
                       </div>
 

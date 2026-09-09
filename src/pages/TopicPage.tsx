@@ -31,6 +31,8 @@ import LINEAR_TOPICS from "../data/topics/index";
 import ALL_CALCULUS_TOPICS from "../data/calculus-topics";
 import ALL_CALCULUS_2_TOPICS from "../data/calculus-2-topics";
 import mathBg from "../assets/math.jpeg";
+import presentationIllustration from "../assets/new logo student.png";
+import TopicContentRenderer, { extractFirstImage } from "../components/TopicContentRenderer";
 
 import {
   CALCULATOR_DEFINITIONS,
@@ -90,6 +92,7 @@ export interface UniversalTopic {
   title: string;
   summary: string;
   details: string;
+  image?: string;
   examples: string[];
   category: "linear-algebra" | "calculus";
   categoryLabel: string;
@@ -120,6 +123,7 @@ const TOPICS: UniversalTopic[] = [
         title: t.title,
         summary: t.summary || "",
         details: t.details || "",
+        image: (t as any).image || undefined,
         examples: t.examples || [],
         category: "linear-algebra" as const,
         categoryLabel: "Linear Algebra",
@@ -135,6 +139,7 @@ const TOPICS: UniversalTopic[] = [
       title: t.title,
       summary: t.summary || "",
       details: t.details || "",
+      image: t.image || undefined,
       examples: t.examples || [],
       category: "calculus" as const,
       categoryLabel: "Calculus I",
@@ -149,6 +154,7 @@ const TOPICS: UniversalTopic[] = [
       title: t.title,
       summary: t.summary || "",
       details: t.details || "",
+      image: t.image || undefined,
       examples: t.examples || [],
       category: "calculus" as const,
       categoryLabel: "Calculus II",
@@ -252,7 +258,8 @@ export default function TopicPage() {
         if (match) {
           if (currentSection) {
             const rawContent = currentSection.contentLines.join("\n").trim();
-            const firstPara = rawContent.split("\n\n")[0] || "";
+            const cleanText = rawContent.replace(/(?:\{?\s*["']?image["']?\s*:\s*["'][^"'\r\n]+["']\s*,?\s*\}?|!\[[^\]]*\]\([^)]+\)|<img[^>]*>|\[image:[^\]]+\])/gi, "").trim();
+            const firstPara = cleanText.split("\n\n")[0] || "";
             result.push({
               number: currentSection.number,
               title: currentSection.title,
@@ -272,7 +279,8 @@ export default function TopicPage() {
 
       if (currentSection) {
         const rawContent = currentSection.contentLines.join("\n").trim();
-        const firstPara = rawContent.split("\n\n")[0] || "";
+        const cleanText = rawContent.replace(/(?:\{?\s*["']?image["']?\s*:\s*["'][^"'\r\n]+["']\s*,?\s*\}?|!\[[^\]]*\]\([^)]+\)|<img[^>]*>|\[image:[^\]]+\])/gi, "").trim();
+        const firstPara = cleanText.split("\n\n")[0] || "";
         result.push({
           number: currentSection.number,
           title: currentSection.title,
@@ -505,6 +513,12 @@ export default function TopicPage() {
 
   const chapterTag = useMemo(() => !topic ? "C1" : topic.category === "linear-algebra" ? "LA" : `C${topic.chapterNumber || 1}`, [topic]);
 
+  const overviewDetails = useMemo(
+    () => topic?.details.replace(/^\s*[━─=_-]{8,}\s*$/gm, "").replace(/\n{3,}/g, "\n\n") ?? "",
+    [topic],
+  );
+  const overviewLines = overviewDetails.split("\n");
+
 
   if (!topic) {
     return (
@@ -517,6 +531,17 @@ export default function TopicPage() {
   }
 
   const renderTopicIllustration = () => {
+    const topicImg = topic.image || extractFirstImage(topic.details);
+    if (topicImg) {
+      return (
+        <img
+          src={topicImg}
+          alt={topic.title}
+          className="w-full h-36 sm:h-40 object-contain rounded-xl"
+        />
+      );
+    }
+
     const titleLower = topic.title.toLowerCase();
     const idLower = topic.id.toLowerCase();
     if (idLower.includes("derivative") || titleLower.includes("derivative") || titleLower.includes("tangent")) {
@@ -684,38 +709,6 @@ export default function TopicPage() {
                 </div>
               </div>
 
-              {/* Back to Topics Button aligned with LA icon under the pill badges */}
-              <div className="pt-1">
-                <button
-                  onClick={(e) => {
-                    playNavButtonAnimation(e, { color: "rgba(224, 82, 96, 0.45)" });
-                    const returnView = topic.category === "calculus" 
-                      ? ((topic.chapterNumber || 1) >= 9 ? "topics-calculus-2" : "topics-calculus") 
-                      : "topics-linear";
-                    
-                    let ch = topic.chapterNumber || 1;
-                    if (topic.category === "linear-algebra") {
-                      const id = (topic.id || "").toLowerCase();
-                      if (id === "foundations" || id === "systems" || id === "vectors") ch = 1;
-                      else if (id === "matrices" || id === "inverses" || id === "advanced-matrix-topics") ch = 2;
-                      else if (id === "determinants") ch = 3;
-                      else if (id === "independence-span" || id === "fundamental-subspaces" || id === "change-of-basis" || id === "complex-vector-spaces") ch = 4;
-                      else if (id === "linear-transformations" || id === "rank") ch = 5;
-                      else if (id === "eigen" || id === "diagonalization") ch = 6;
-                      else if (id === "orthogonality" || id === "inner-product" || id === "least-squares") ch = 7;
-                      else ch = 8;
-                    }
-
-                    sessionStorage.setItem("returningTopicView", returnView);
-                    sessionStorage.setItem("returningChapter", String(ch));
-                    navigate("/?tab=topics");
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-2 text-xs font-bold text-white backdrop-blur-md transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Topics</span>
-                </button>
-              </div>
             </div>
 
             {/* Right Graphic Card */}
@@ -747,15 +740,13 @@ export default function TopicPage() {
       {/* 2. FULLSCREEN TOPIC LESSON & EXAMPLES SLIDESHOW OVERLAY                   */}
       {/* ========================================================================= */}
       {isSlideshowOpen && currentSlide && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-[#080B10] text-white select-none animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#020316] text-white select-none animate-in fade-in duration-200">
           
           {/* Blackboard Ambient Background */}
-          <div className="absolute inset-0 z-0 pointer-events-none opacity-25">
-            <img src={mathBg} alt="Chalkboard" className="w-full h-full object-cover" />
-          </div>
+          <div className="absolute inset-0 z-0 bg-[#020316]" />
 
           {/* Top Slideshow Control Header */}
-          <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40 backdrop-blur-md">
+          <header className="hidden">
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-[#7B1824] flex items-center justify-center font-bold text-sm text-white">
                 {chapterTag}
@@ -813,14 +804,17 @@ export default function TopicPage() {
           </header>
 
           {/* Center Presentation Stage */}
-          <main className="relative z-10 flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 flex items-center justify-center">
-            <div className="w-full max-w-[95vw] xl:max-w-[1420px] 2xl:max-w-[1580px] h-full flex flex-col justify-center">
+          <main className="relative z-10 flex-1 min-h-0 overflow-hidden grid grid-cols-1 sm:grid-cols-[minmax(250px,36.7vw)_minmax(0,1fr)]">
+            <aside className="relative hidden sm:flex items-center justify-center overflow-hidden bg-[#202d70]">
+              <img src={presentationIllustration} alt="Student learning linear algebra" className="h-[72%] w-[94%] object-contain object-center drop-shadow-2xl" />
+            </aside>
+            <div className="min-w-0 h-full flex flex-col justify-center px-6 py-8 sm:px-[7vw] lg:px-[5.5vw]">
               
               {/* Topic Slide Container */}
-              <div className="relative rounded-3xl border border-white/15 bg-gradient-to-b from-[#111827]/95 via-[#0F172A]/95 to-[#0B0F19]/98 p-5 sm:p-8 lg:p-10 shadow-2xl backdrop-blur-xl transition-all duration-300 max-h-[calc(100vh-160px)] flex flex-col">
+              <div className="relative w-full max-h-[calc(100vh-96px)] flex flex-col transition-all duration-300">
                 
                 {/* Slide Badge & Index */}
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10 shrink-0">
+                <div className="hidden">
                   <div className="flex items-center gap-2">
                     <div className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-bold ${
                       currentSlide.type === "example"
@@ -899,7 +893,7 @@ export default function TopicPage() {
                   <div className="space-y-4 flex-1 overflow-y-auto pr-1">
                     <div className="flex items-center justify-between pb-2 border-b border-white/10">
                       <div>
-                        <h2 style={{ color: "#FFFFFF" }} className="text-xl sm:text-2xl lg:text-3xl font-black !text-white tracking-tight">
+                        <h2 style={{ color: "#FFFFFF" }} className="text-3xl sm:text-4xl lg:text-5xl font-black !text-white tracking-tight leading-tight">
                           {currentSlide.title}
                         </h2>
                         {currentSlide.subtitle && (
@@ -917,7 +911,7 @@ export default function TopicPage() {
                       </button>
                     </div>
 
-                    <div className="p-6 sm:p-8 rounded-2xl bg-white/5 border border-white/10 text-sm sm:text-base font-mono text-gray-200 leading-relaxed whitespace-pre-wrap shadow-inner">
+                    <div className="p-0 text-sm sm:text-base font-mono text-gray-200 leading-relaxed whitespace-pre-wrap">
                       {currentSlide.content}
                     </div>
 
@@ -941,7 +935,7 @@ export default function TopicPage() {
                   /* Standard Lesson Slide (e.g. Lesson 1: Understanding Absolute Value) */
                   <div className="space-y-4 flex-1 overflow-y-auto pr-1">
                     <div className="space-y-1 pb-2 border-b border-white/10">
-                      <h2 style={{ color: "#FFFFFF" }} className="text-xl sm:text-2xl lg:text-3xl font-black !text-white tracking-tight leading-snug">
+                      <h2 style={{ color: "#FFFFFF" }} className="text-3xl sm:text-4xl lg:text-5xl font-black !text-white tracking-tight leading-tight">
                         {currentSlide.title}
                       </h2>
                       {currentSlide.subtitle && currentSlide.subtitle !== currentSlide.content && (
@@ -954,24 +948,24 @@ export default function TopicPage() {
                     {/* Wide Display Body: Auto-splits into 2 spacious columns if content is long */}
                     {currentSlide.content.length > 380 && currentSlide.content.includes("\n\n") ? (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-1">
-                        <div className="prose prose-invert max-w-none text-sm sm:text-base text-gray-200 leading-relaxed whitespace-pre-line bg-white/5 p-5 sm:p-6 rounded-2xl border border-white/10 shadow-inner">
+                        <div className="prose prose-invert max-w-none text-sm sm:text-base text-gray-200 leading-relaxed">
                           {(() => {
                             const paragraphs = currentSlide.content.split("\n\n");
                             const mid = Math.ceil(paragraphs.length / 2);
-                            return paragraphs.slice(0, mid).join("\n\n");
+                            return <TopicContentRenderer content={paragraphs.slice(0, mid).join("\n\n")} isDark={true} />;
                           })()}
                         </div>
-                        <div className="prose prose-invert max-w-none text-sm sm:text-base text-gray-200 leading-relaxed whitespace-pre-line bg-white/5 p-5 sm:p-6 rounded-2xl border border-white/10 shadow-inner">
+                        <div className="prose prose-invert max-w-none text-sm sm:text-base text-gray-200 leading-relaxed">
                           {(() => {
                             const paragraphs = currentSlide.content.split("\n\n");
                             const mid = Math.ceil(paragraphs.length / 2);
-                            return paragraphs.slice(mid).join("\n\n");
+                            return <TopicContentRenderer content={paragraphs.slice(mid).join("\n\n")} isDark={true} />;
                           })()}
                         </div>
                       </div>
                     ) : (
-                      <div className="prose prose-invert max-w-none text-sm sm:text-base lg:text-[1.05rem] text-gray-200 leading-relaxed whitespace-pre-line bg-white/5 p-6 sm:p-8 rounded-2xl border border-white/10 shadow-inner">
-                        {currentSlide.content}
+                      <div className="prose prose-invert max-w-none text-sm sm:text-base lg:text-[1.05rem] text-gray-200 leading-relaxed pt-2">
+                        <TopicContentRenderer content={currentSlide.content} isDark={true} />
                       </div>
                     )}
 
@@ -1017,7 +1011,7 @@ export default function TopicPage() {
           </main>
 
           {/* Bottom Slideshow Navigation & Keyboard Helpers Bar */}
-          <footer className="relative z-10 px-6 py-4 border-t border-white/10 bg-black/50 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4">
+          <footer className="relative z-10 px-4 sm:px-7 py-3 border-t border-white/10 bg-[#14172d]/90 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4">
             
             {/* Left: Keyboard shortcuts hint */}
             <div className="hidden lg:flex items-center gap-4 text-xs text-gray-400">
@@ -1092,6 +1086,39 @@ export default function TopicPage() {
       {/* ========================================================================= */}
       {/* 3. HORIZONTAL NAVIGATION TABS BAR                                         */}
       {/* ========================================================================= */}
+      <div className="bg-white">
+        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 pt-4">
+          <button
+            onClick={(e) => {
+              playNavButtonAnimation(e, { color: "rgba(224, 82, 96, 0.45)" });
+              const returnView = topic.category === "calculus"
+                ? ((topic.chapterNumber || 1) >= 9 ? "topics-calculus-2" : "topics-calculus")
+                : "topics-linear";
+
+              let ch = topic.chapterNumber || 1;
+              if (topic.category === "linear-algebra") {
+                const id = (topic.id || "").toLowerCase();
+                if (id === "foundations" || id === "systems" || id === "vectors") ch = 1;
+                else if (id === "matrices" || id === "inverses" || id === "advanced-matrix-topics") ch = 2;
+                else if (id === "determinants") ch = 3;
+                else if (id === "independence-span" || id === "fundamental-subspaces" || id === "change-of-basis" || id === "complex-vector-spaces") ch = 4;
+                else if (id === "linear-transformations" || id === "rank") ch = 5;
+                else if (id === "eigen" || id === "diagonalization") ch = 6;
+                else if (id === "orthogonality" || id === "inner-product" || id === "least-squares") ch = 7;
+                else ch = 8;
+              }
+
+              sessionStorage.setItem("returningTopicView", returnView);
+              sessionStorage.setItem("returningChapter", String(ch));
+              navigate("/?tab=topics");
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white hover:bg-[#FFF8F9] px-4 py-2 text-xs font-bold text-[#374151] transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Topics</span>
+          </button>
+        </div>
+      </div>
       <div className="sticky top-16 z-20 bg-white border-b border-[#E5E7EB] shadow-xs">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10">
           <nav className="flex items-center gap-6 sm:gap-10 overflow-x-auto py-3 sm:py-3.5">
@@ -1164,7 +1191,9 @@ export default function TopicPage() {
                   </div>
                   {isExpanded && (
                     <div className="border-t border-[#FFD0D8] p-5 sm:p-6 bg-white/70 space-y-4">
-                      <div className="prose max-w-none text-sm text-[#374151] leading-relaxed whitespace-pre-line">{lesson.content || topic.details}</div>
+                      <div className="prose max-w-none min-w-0 text-sm text-[#374151] leading-relaxed text-justify [overflow-wrap:anywhere]">
+                        <TopicContentRenderer content={lesson.content || topic.details} />
+                      </div>
                       <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#F3F4F6]">
                         <div className="flex items-center gap-2 text-xs text-[#6B7280]"><Sparkles className="w-4 h-4 text-[#7B1824]" /><span>Verified textbook content with formal rigor</span></div>
                         <div className="flex items-center gap-2">
@@ -1186,7 +1215,9 @@ export default function TopicPage() {
             <div className="rounded-2xl border border-[#EAE2E4] bg-white p-6 sm:p-8 shadow-sm space-y-4">
               <h2 className="text-xl font-bold text-[#111827]">Topic Overview &amp; Learning Objectives</h2>
               <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed">{topic.summary}</p>
-              <div className="text-sm text-[#4B5563] leading-relaxed whitespace-pre-line pt-2">{topic.details}</div>
+              <div className="min-w-0 text-sm text-[#4B5563] leading-relaxed text-justify [overflow-wrap:anywhere] pt-2">
+                <TopicContentRenderer content={overviewDetails} />
+              </div>
             </div>
             <div className="rounded-2xl border border-[#d6b1b7] bg-[#fbf3f5] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">

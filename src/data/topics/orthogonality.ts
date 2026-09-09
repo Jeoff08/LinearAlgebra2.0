@@ -21,6 +21,8 @@ Therefore, the main idea of orthogonality is:
 1. EXAMPLE OF ORTHOGONAL VECTORS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The simplest way to understand orthogonality is through the standard basis vectors in ℝ², which are clearly perpendicular. Two vectors are orthogonal if their dot product is zero, meaning they are at right angles. This concept generalizes the geometric notion of perpendicularity to any dimension and is fundamental for many applications. When vectors are orthogonal, they carry independent information and do not interfere with each other, which simplifies many computations in linear algebra, signal processing, and data analysis. Orthogonality is the basis for orthogonal projections, decompositions, and the construction of orthonormal bases that make coordinate representations particularly simple.
+
 Consider the vectors:
 
   u = [1]    v = [0]
@@ -47,7 +49,7 @@ Geometrically, one vector points horizontally and the other vertically, forming 
 2. DOT PRODUCT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The dot product is the main tool used to determine whether two vectors are orthogonal.
+The dot product is the primary algebraic tool for determining orthogonality. It takes two vectors and produces a scalar that combines their magnitudes and the cosine of the angle between them. For vectors in ℝⁿ, the dot product is the sum of the products of corresponding components. If the dot product is zero, the vectors are orthogonal, meaning they are perpendicular. This condition is independent of the lengths of the vectors  only their directions matter. The dot product is linear in each argument, symmetric, and positive definite, which makes it an inner product. In addition to testing orthogonality, the dot product is used to define lengths (norms), angles, and projections, making it one of the most important operations in linear algebra and its applications.
 
 For two vectors:
 
@@ -92,7 +94,7 @@ The two vectors are orthogonal.
 3. ORTHOGONALITY AND ANGLES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The dot product is also related to the angle between two vectors.
+The dot product is intimately related to the angle between two vectors through the formula u · v = ||u|| ||v|| cos(θ). This formula generalizes the familiar geometric definition of the dot product from physics and provides a way to compute angles in any dimension. When the angle θ is 90°, cos(90°) = 0, so the dot product becomes zero, which is exactly the condition for orthogonality. Thus, orthogonality is a special case of the angle relationship. This connection allows us to interpret orthogonality geometrically: two vectors are orthogonal if and only if they are perpendicular. This geometric insight extends to higher dimensions and is crucial for visualizing abstract vector spaces. The angle formula also enables us to define the concept of angle between arbitrary vectors in inner product spaces.
 
 The formula is:
 
@@ -118,6 +120,8 @@ This explains mathematically why the dot product of orthogonal vectors is zero.
 4. ORTHOGONAL SET
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An orthogonal set is a collection of vectors in which every pair of distinct vectors is orthogonal. Such sets are valuable because they are automatically linearly independent (provided none of the vectors is zero), which means they can form a basis for the subspace they span. Orthogonal sets simplify many computations: the coordinates of a vector in an orthogonal basis can be found by simple projections without solving a linear system. This property is exploited in the Gram-Schmidt process, which constructs orthogonal bases from arbitrary linearly independent sets. Orthogonal sets also arise in signal processing, where orthogonal signals can be transmitted simultaneously without interference. Understanding orthogonal sets is a stepping stone to orthonormal sets, where the vectors are also normalized to unit length.
+
 A collection of vectors is called an orthogonal set if every pair of distinct vectors in the set is orthogonal.
 
 Example:
@@ -141,6 +145,8 @@ Therefore:
 5. ORTHOGONAL BASIS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An orthogonal basis is a basis of a vector space (or subspace) whose vectors are mutually orthogonal. Such a basis is particularly convenient because the representation of any vector in that basis is straightforward: the coefficients are obtained by projecting the vector onto each basis direction using dot products, rather than solving a system of equations. This simplifies many linear algebra computations, including coordinate transformations and least-squares approximations. Orthogonal bases are also the starting point for constructing orthonormal bases by normalizing each vector. In applications, orthogonal bases are used in Fourier series, where sine and cosine functions form an orthogonal basis for function spaces, and in principal component analysis, where the principal components are an orthogonal basis for the data.
+
 A basis is called an orthogonal basis if all of its basis vectors are mutually orthogonal.
 
 Example:
@@ -156,6 +162,8 @@ This basis is particularly useful because vectors can be represented using simpl
 
 6. ORTHONORMAL VECTORS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Orthonormal vectors take the concept of orthogonality one step further by also requiring that each vector has unit length. A set of orthonormal vectors is both orthogonal and normalized, which means their dot products satisfy uᵢ · uⱼ = 0 for i ≠ j and ||uᵢ|| = 1 for each i. Orthonormal bases are the most convenient type of basis because the coordinates of a vector are simply the dot products with the basis vectors. This makes many operations, such as computing projections, distances, and angles, extremely simple. Orthonormal bases are used in numerical linear algebra for stability, in quantum mechanics to represent states, and in signal processing to decompose signals into orthogonal components. The Gram-Schmidt process can be used to convert any linearly independent set into an orthonormal set.
 
 Two vectors are orthonormal if they are:
   1. Orthogonal to each other
@@ -183,7 +191,7 @@ are an example of an orthonormal basis.
 7. ORTHOGONAL PROJECTION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Orthogonality is also used to find the projection of one vector onto another.
+Orthogonal projection is the process of decomposing a vector into components that are parallel and perpendicular to a given direction or subspace. The projection of u onto v gives the component of u that lies in the direction of v. The formula proj_v(u) = (u · v / v · v) · v computes this projection. The remaining component, u − proj_v(u), is orthogonal to v. Orthogonal projections are fundamental in many areas: they are used in least-squares regression to find the closest point in a subspace, in computer graphics to compute shadows and reflections, and in signal processing to decompose signals. The projection is the best approximation of u by a scalar multiple of v in the sense of minimizing the Euclidean distance. This concept generalizes to projecting onto higher-dimensional subspaces.
 
 The projection of u onto v is:
 
@@ -234,6 +242,8 @@ Therefore:
 8. ORTHOGONAL DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Orthogonal decomposition expresses any vector as the sum of two orthogonal components: one that lies in a given subspace and one that is perpendicular to it. This is a fundamental result in linear algebra and inner product spaces, known as the orthogonal decomposition theorem. It allows us to separate the part of a vector that is "explained" by a subspace from the residual that is not. This decomposition is unique and is the basis for least-squares approximation, where the residual is orthogonal to the subspace of the model. In geometry, it corresponds to breaking a vector into its components along and perpendicular to a line or plane. Orthogonal decomposition is also used in signal processing to separate signals from noise and in optimization to find the closest point in a convex set.
+
 A vector can often be separated into two perpendicular components.
 
   u = u_∥ + u_⊥
@@ -250,6 +260,8 @@ It is extremely useful in geometry, Linear Algebra, numerical computation, and l
 
 9. ORTHOGONAL COMPLEMENT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The orthogonal complement of a subspace W is the set of all vectors that are orthogonal to every vector in W. It is denoted by W⊥. This concept is crucial in the fundamental theorem of linear algebra, which states that the null space and the row space are orthogonal complements, as are the left null space and the column space. The orthogonal complement provides a way to decompose the entire vector space into two orthogonal subspaces: W and W⊥. This decomposition is used in least-squares to separate the part of the data that fits the model from the residual. The dimension of W⊥ is the dimension of the ambient space minus the dimension of W. Orthogonal complements also play a role in solving systems of equations and in defining projections.
 
 The orthogonal complement of a subspace W consists of all vectors that are orthogonal to every vector in W.
 
@@ -276,6 +288,8 @@ Therefore:
 
 10. ORTHOGONAL MATRICES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+An orthogonal matrix is a square matrix whose columns (and rows) form an orthonormal set. This property is equivalent to Qᵀ Q = I, which means the inverse of Q is its transpose. Orthogonal matrices are the linear algebra analogue of rotations and reflections: they preserve the length of vectors and the angles between them. This makes them extremely important in numerical linear algebra because they do not amplify errors during computations. They are used in QR decomposition, eigenvalue algorithms, and in solving least-squares problems. In computer graphics, orthogonal matrices are used to represent rotations and reflections of objects. The determinant of an orthogonal matrix is either +1 (rotation) or −1 (reflection), indicating whether orientation is preserved.
 
 A square matrix Q is called an orthogonal matrix if:
 
@@ -309,7 +323,7 @@ Therefore:
 11. PROPERTIES OF ORTHOGONAL MATRICES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Orthogonal matrices have several important properties.
+Orthogonal matrices have several key properties that make them highly useful. First, they preserve the Euclidean norm: ||Q x|| = ||x|| for any vector x. This means that the transformation does not stretch or shrink vectors it only rotates or reflects them. Second, they preserve inner products: (Q x) · (Q y) = x · y, so angles are also preserved. This is why orthogonal transformations are often called isometries. Third, the product of two orthogonal matrices is orthogonal, and the inverse of an orthogonal matrix is its transpose, which is easy to compute. These properties make orthogonal matrices ideal for numerical computations, where stability and accuracy are paramount. They also underlie the QR decomposition and the singular value decomposition, both of which are central to modern computational linear algebra.
 
 They preserve vector lengths:
 
@@ -328,7 +342,7 @@ This is why orthogonal matrices are extremely important in geometry and numerica
 12. ORTHOGONALITY AND QR DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Orthogonality is directly connected to QR Decomposition.
+QR decomposition is a factorization of a matrix A into the product of an orthogonal matrix Q and an upper triangular matrix R. The columns of Q form an orthonormal basis for the column space of A, and R contains the coefficients needed to express the columns of A in that basis. This decomposition is a direct application of the Gram-Schmidt process and is one of the most important tools in numerical linear algebra. It is used to solve least-squares problems stably, to compute eigenvalues, and to perform matrix inversions. The orthogonality of Q ensures that the decomposition is numerically stable, as orthogonal transformations do not amplify errors. QR decomposition is the method of choice for many linear algebra libraries (e.g., LAPACK) because of its reliability and efficiency.
 
 A matrix A can be factored as:
 
@@ -356,7 +370,7 @@ QR Decomposition is important for:
 13. GRAM-SCHMIDT PROCESS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The Gram-Schmidt Process is a method for converting a linearly independent set of vectors into an orthogonal or orthonormal set.
+The Gram-Schmidt process is a systematic algorithm for converting a linearly independent set of vectors into an orthogonal or orthonormal set that spans the same subspace. The idea is to take each vector in the original set and subtract its projections onto the previously orthogonalized vectors, removing all components that are already represented. This leaves only the new direction that is orthogonal to the span of the previous vectors. After processing all vectors, the resulting set is orthogonal. Optionally, each vector can be normalized to unit length, yielding an orthonormal basis. The Gram-Schmidt process is the foundation of QR decomposition and is widely used in numerical analysis, though for large problems a modified version is used to improve numerical stability. It demonstrates the power of orthogonal projections in constructing simple bases.
 
 Suppose we have v₁, v₂.
 
@@ -426,7 +440,7 @@ so the vectors are orthogonal.
 14. ORTHOGONALITY AND LEAST SQUARES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Orthogonality plays an important role in Least Squares.
+The connection between orthogonality and least squares is fundamental. When solving an overdetermined system A x = b, the least‑squares solution x̂ minimizes the squared error ||b − A x||². Geometrically, the vector A x̂ is the orthogonal projection of b onto the column space of A. Consequently, the residual error e = b − A x̂ is orthogonal to the column space, meaning it is perpendicular to every column of A. This orthogonality condition leads directly to the normal equations: Aᵀ A x̂ = Aᵀ b. Thus, the normal equations are a direct algebraic expression of the fact that the residual must be orthogonal to the column space. This geometric interpretation not only justifies the method but also provides a clear way to visualise and derive it. Orthogonality is therefore the core principle underlying least‑squares approximation, one of the most widely used techniques in data analysis and engineering.
 
 Suppose a system:
 
@@ -463,7 +477,7 @@ Therefore, orthogonality provides the mathematical foundation for least-squares 
 15. ORTHOGONALITY IN GEOMETRY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Orthogonality is naturally connected to geometry.
+Orthogonality is a natural extension of the geometric notion of perpendicularity to higher dimensions. In two and three dimensions, we can visualise orthogonal vectors as those meeting at right angles. In higher dimensions, the concept remains the same but is no longer directly visualisable; nevertheless, the algebraic condition of a zero dot product continues to hold. This abstraction allows us to apply geometric reasoning to spaces of arbitrary dimension, which is essential in many fields such as data science, where data often lies in high-dimensional spaces. Orthogonality in geometry also includes the idea of orthogonal lines, planes, and hyperplanes, which are used in projections, reflections, and rotations. This geometric viewpoint underpins many applications, including computer graphics, where orthogonal transformations are used to manipulate objects without distortion.
 
 Two-dimensional vectors can be perpendicular:
 
@@ -483,7 +497,7 @@ The concept extends to higher-dimensional vector spaces even though we cannot vi
 16. ORTHOGONALITY IN COMPUTER SCIENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Orthogonality has many applications in Computer Science.
+In computer science, orthogonality appears in numerous contexts. In computer graphics, orthogonal matrices are used to represent rotations and reflections, enabling efficient manipulation of 3D objects without distorting their shapes. In machine learning, orthogonal basis functions are used in feature engineering and in algorithms like principal component analysis (PCA), where the principal components form an orthonormal basis that captures the directions of maximum variance. In signal processing, orthogonal signals can be transmitted simultaneously without interference, which is the basis for frequency-division multiplexing. In numerical algorithms, orthogonal transformations are preferred for their stability properties, as they preserve norms and do not amplify errors. The concept of orthogonality also appears in database theory, coding theory, and optimisation, making it a versatile tool across the discipline.
 
 Computer Graphics
   • Rotation, reflection, coordinate transformations
@@ -508,7 +522,7 @@ Numerical Linear Algebra
 17. ORTHOGONAL SIGNALS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Orthogonality is not limited to geometric vectors.
+The concept of orthogonality extends beyond finite-dimensional vectors to functions and signals. Two functions f(x) and g(x) are said to be orthogonal over an interval [a,b] if their inner product, defined as the integral of their product, is zero. This is analogous to the dot product of vectors, with the integral playing the role of summation. Orthogonal functions are fundamental in signal processing, communications, and applied mathematics. For example, sine and cosine functions of different frequencies are orthogonal, which allows the Fourier series to decompose any periodic signal into a sum of independent frequency components. Orthogonal signals can be multiplexed and separated without interference, making them essential in modern communication systems. This generalization demonstrates the power of the inner product framework and its applicability to infinite-dimensional spaces.
 
 Functions and signals can also be orthogonal.
 
@@ -533,6 +547,8 @@ It is important in:
 18. ORTHONORMAL BASIS AND COORDINATE REPRESENTATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An orthonormal basis provides the simplest possible coordinate representation of vectors. If {e₁, e₂, ..., eₙ} is an orthonormal basis, then any vector x can be expressed as x = (x · e₁)e₁ + (x · e₂)e₂ + ... + (x · eₙ)eₙ. The coefficients are simply the dot products of x with each basis vector. This is a direct consequence of the orthonormality conditions: the dot products of different basis vectors are zero, and each basis vector has unit length. This representation is computationally efficient and numerically stable, as it avoids solving linear systems. It is used in signal processing to represent signals in terms of orthonormal basis functions (e.g., wavelets), in data science for principal component analysis, and in quantum mechanics for state expansions. The simplicity of orthonormal bases makes them the preferred choice whenever possible.
+
 If {e₁, e₂, ..., eₙ} is an orthonormal basis, then a vector x can be represented as:
 
   x = (x · e₁)e₁ + (x · e₂)e₂ + ... + (x · eₙ)eₙ
@@ -546,7 +562,7 @@ For an arbitrary basis, finding these coefficients can be more complicated.
 19. WHY ORTHOGONALITY IS USEFUL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Orthogonality makes mathematical calculations easier.
+Orthogonality simplifies mathematical calculations in many ways. When vectors are orthogonal, their contributions to a sum are independent, allowing them to be treated separately. This property is exploited in orthogonal projections, which give the best approximation in a subspace, and in orthogonal decompositions, which separate a vector into independent components. Orthonormal bases provide the simplest coordinates, making computations easy and accurate. Orthogonal matrices preserve lengths and angles, which is crucial for numerical stability. In signal processing, orthogonal signals can be transmitted without interference, enabling efficient communication. In machine learning, orthogonal features carry independent information, reducing redundancy. Overall, orthogonality is a powerful tool that reduces complexity, improves numerical stability, and provides deep geometric insight across many fields.
 
   • If vectors are orthogonal, their contributions can be separated cleanly.
   • An orthonormal basis provides particularly simple coordinates.
@@ -562,6 +578,8 @@ Therefore:
 
 20. IMPORTANT ORTHOGONALITY CONCEPTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+To master orthogonality, one must be familiar with a core set of concepts that recur throughout linear algebra and its applications. These include the dot product as the primary tool for testing orthogonality, the definitions of orthogonal and orthonormal sets and bases, the ability to compute orthogonal projections and decompositions, and the understanding of orthogonal complements and orthogonal matrices. Additionally, the Gram-Schmidt process and QR decomposition are essential algorithms that build orthonormal bases and factor matrices using orthogonality. Least squares relies on the orthogonality of residuals to the column space. These concepts form the foundation for advanced topics in inner product spaces, numerical methods, and applications such as signal processing, computer graphics, and machine learning. A solid grasp of orthogonality is indispensable for any student or practitioner of linear algebra.
 
 When studying Orthogonality, it is important to understand:
 

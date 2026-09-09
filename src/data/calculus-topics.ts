@@ -16,6 +16,7 @@ export interface CalculusTopicItem {
   title: string;
   summary: string;
   details: string;
+  image?: string;
   examples: string[];
   category: "calculus";
   categoryLabel: string;
@@ -63,6 +64,7 @@ export const ALL_CALCULUS_TOPICS: CalculusTopicItem[] = Object.keys(topicModules
       title: raw?.title || "Topic",
       summary: raw?.summary || "",
       details: raw?.details || "",
+      image: raw?.image || undefined,
       examples: Array.isArray(raw?.examples) ? raw.examples : [],
       category: "calculus" as const,
       categoryLabel: "Calculus I",

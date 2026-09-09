@@ -83,6 +83,7 @@ import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
 import { ALL_CALCULUS_TOPICS } from "../data/calculus-topics";
 import { ALL_CALCULUS_2_TOPICS } from "../data/calculus-2-topics";
 import studentLogoSigma from "../assets/Student logos.png";
+import TopicContentRenderer from "../components/TopicContentRenderer";
 import keepLearningIllustration from "../assets/new logo student.png";
 
 interface CalculatorCardMeta {
@@ -2682,8 +2683,8 @@ export default function UserDashboardPage() {
                         <BookMarked className="w-4 h-4 text-[#801424]" />
                         <span>Core Mathematical Theory & Principles</span>
                       </h3>
-                      <div className="text-sm text-gray-700 whitespace-pre-line leading-loose bg-white p-2">
-                        {activeTopic.details}
+                      <div className="text-sm text-gray-700 leading-loose bg-white p-2">
+                        <TopicContentRenderer content={activeTopic.details} />
                       </div>
                     </div>
 

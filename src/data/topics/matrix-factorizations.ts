@@ -4,7 +4,7 @@ const topic = {
   summary:
     "Overview of common factorizations: LU, QR, Cholesky, SVD and eigen decompositions.",
   details: `
-Matrix Factorization is the process of breaking a matrix into the product of two or more simpler matrices. Instead of working directly with a large or complicated matrix, we factor it into simpler components that are easier to understand, calculate, and use.
+Matrix Factorization is the process of breaking a matrix into the product of two or more simpler matrices. Instead of working directly with a large or complicated matrix, we factor it into simpler components that are easier to understand, calculate, and use. This approach is one of the most important techniques in computational Linear Algebra because many difficult matrix problems become easier after the matrix has been factorized. For example, instead of solving a system directly using A x = b, we can factor A into simpler matrices and solve several easier systems. Matrix factorizations also reveal hidden structure, such as eigenvalues, singular values, and orthonormal bases, which are essential for data analysis, machine learning, and scientific computing. By choosing the right factorization, we can significantly improve both the efficiency and numerical stability of our algorithms.
 
 The general idea is:
 
@@ -25,7 +25,7 @@ we can factor A into simpler matrices and solve several easier systems.
 1. WHY DO WE FACTOR MATRICES?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Matrix factorization is useful because complicated matrices can be difficult to work with directly.
+Matrix factorization is useful because complicated matrices can be difficult to work with directly. By decomposing a matrix into a product of simpler factors, we can break a single challenging problem into a sequence of easier subproblems. For example, if we factor A = L U, solving A x = b reduces to two triangular solves, which are much faster and less error-prone. Factorizations also reveal intrinsic properties of the matrix, such as rank, null space, eigenvalues, and singular values, which are essential for understanding its behaviour. In addition, many factorizations have built‑in numerical stability, making them ideal for practical computation. Whether we are solving systems, computing inverses, or analysing data, matrix factorization is the key to efficient and reliable algorithms.
 
 For example, suppose:
 
@@ -56,7 +56,7 @@ Therefore, matrix factorization allows us to simplify calculations, improve effi
 2. LU DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-One of the most important matrix factorizations is LU Decomposition.
+LU Decomposition is one of the most fundamental matrix factorizations. It factors a square matrix A into a lower triangular matrix L and an upper triangular matrix U such that A = L U. This factorization is essentially a record of the Gaussian elimination process: the elimination multipliers are stored in L (with ones on the diagonal), while the eliminated matrix becomes U. LU decomposition is particularly efficient when solving multiple systems with the same coefficient matrix but different right‑hand sides, as the factorization is computed once and then reused. It is also used to compute determinants (as the product of the diagonal entries of U) and to form the basis of many other algorithms. However, care must be taken with pivoting to ensure numerical stability when the matrix has small pivots.
 
 In LU Decomposition, a matrix A is factored into:
 
@@ -89,7 +89,7 @@ LU Decomposition is closely related to Gaussian Elimination because the eliminat
 3. QR DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Another important factorization is QR Decomposition.
+QR Decomposition factors an m×n matrix A into the product of an orthogonal matrix Q (with orthonormal columns) and an upper triangular matrix R: A = Q R. This factorization is particularly valuable for solving least‑squares problems because the orthogonality of Q allows us to transform the problem into a simpler triangular system without altering the norm. QR decomposition is also used in eigenvalue algorithms and as a stable alternative to the normal equations. The Gram‑Schmidt process can be used to compute QR, but in practice, more stable methods like Householder reflections or Givens rotations are employed. QR decomposition works for any matrix, and when the matrix is rank‑deficient, it provides insight into the column space and the null space. Its stability and generality make it a cornerstone of numerical linear algebra.
 
 In QR Decomposition:
 
@@ -124,6 +124,8 @@ QR Decomposition provides a numerically useful way of finding the best approxima
 
 4. CHOLESKY DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cholesky Decomposition is a specialized factorization for symmetric positive‑definite matrices, which are common in statistics, optimization, and finite element methods. It factors A as A = L Lᵀ, where L is a lower triangular matrix. This decomposition is about twice as efficient as LU decomposition and is numerically stable without pivoting. The existence of the Cholesky factor is equivalent to the positive definiteness of A, making it a useful check for this property. Cholesky is often used in linear regression, Kalman filters, and Monte Carlo simulations because it provides a fast way to solve systems and generate correlated random variables. Its square‑root form also helps in maintaining numerical stability in iterative algorithms.
 
 Cholesky Decomposition is a specialized factorization used for certain symmetric positive-definite matrices.
 
@@ -164,7 +166,7 @@ Cholesky Decomposition is computationally efficient and is widely used in numeri
 5. EIGENVALUE DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Another important factorization is Eigenvalue Decomposition.
+Eigenvalue Decomposition (also called spectral decomposition) expresses a square matrix A as A = P D P⁻¹, where the columns of P are eigenvectors and D is a diagonal matrix containing the corresponding eigenvalues. This factorization reveals the invariant directions of the linear transformation represented by A, with each eigenvector being scaled by its eigenvalue. It is central to many applications, including solving differential equations, analysing stability, and performing principal component analysis. However, it requires that A be diagonalizable (i.e., have a full set of linearly independent eigenvectors). For non‑diagonalizable matrices, the Jordan canonical form or the Schur decomposition provides similar insight. Eigenvalue decomposition is also the basis for many numerical algorithms that compute eigenvalues and eigenvectors, which are fundamental in physics, engineering, and data science.
 
 If a square matrix A has enough linearly independent eigenvectors, it can be written as:
 
@@ -197,6 +199,8 @@ Eigenvalue decomposition is important for understanding the behavior of linear t
 
 6. SINGULAR VALUE DECOMPOSITION (SVD)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Singular Value Decomposition (SVD) is arguably the most powerful matrix factorization because it applies to any matrix, rectangular or square. It factors A as A = U Σ Vᵀ, where U and V are orthogonal matrices and Σ is a diagonal matrix containing the singular values (non‑negative real numbers). The singular values reveal the intrinsic structure of A: the rank is the number of non‑zero singular values, and the rows/columns of U and V give the left and right singular vectors, which form orthonormal bases for the column and row spaces. SVD is used in data compression, principal component analysis, pseudo‑inverse computation, least‑squares, and many other applications. It is also numerically stable, making it the method of choice for ill‑conditioned problems. Its ability to provide a low‑rank approximation is the basis for many modern algorithms in machine learning and signal processing.
 
 One of the most powerful matrix factorizations is Singular Value Decomposition, commonly called SVD.
 
@@ -260,6 +264,8 @@ The singular values are 3 and 2.
 7. SCHUR DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Schur Decomposition is a factorization that applies to square matrices, especially useful in numerical linear algebra. It states that any complex square matrix A can be written as A = Q T Q*, where Q is unitary and T is upper triangular. The diagonal entries of T are the eigenvalues of A. For real matrices, a real Schur form exists with a quasi‑triangular T. This decomposition is important because it provides a numerically stable way to compute eigenvalues without explicitly forming the characteristic polynomial. It is also the foundation for many eigenvalue algorithms, such as the QR algorithm. The Schur form reveals the eigenvalues while maintaining the structure of the original matrix through the unitary transformation, making it ideal for iterative methods and stability analysis.
+
 Schur Decomposition is another important matrix factorization.
 
 For a complex square matrix A, Schur Decomposition expresses the matrix as:
@@ -280,6 +286,8 @@ Schur Decomposition is particularly useful in numerical Linear Algebra because i
 8. POLAR DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Polar Decomposition is a factorization that separates a matrix into a product of an orthogonal (or unitary) matrix and a positive semi‑definite symmetric matrix. For a square matrix A, it can be written as A = Q S, where Q is orthogonal and S is symmetric positive semi‑definite. This decomposition is conceptually analogous to the polar form of a complex number, where magnitude and phase are separated. In matrix terms, Q represents a rotation/reflection, while S represents a scaling (stretching) along orthogonal axes. This factorization is useful in continuum mechanics, where the deformation gradient is decomposed into a stretch and a rotation, and in computer graphics for separating transformations into rotation and scaling components. It also provides a way to compute the matrix square root and is related to the singular value decomposition.
+
 Polar Decomposition expresses a matrix as a product involving an orthogonal or unitary matrix and a positive semidefinite matrix.
 
 For a suitable square matrix:
@@ -298,6 +306,8 @@ This makes Polar Decomposition useful when studying the geometric behavior of ma
 
 9. LDLᵀ DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LDLᵀ Decomposition is a variant of LU decomposition for symmetric matrices. It factors a symmetric matrix A as A = L D Lᵀ, where L is lower triangular with ones on the diagonal, and D is a diagonal matrix. This form avoids the square roots required by Cholesky decomposition and can be more efficient for certain applications. It is often used in numerical linear algebra for solving symmetric systems, particularly when the matrix is not positive definite (in which case D may contain negative entries). The LDLᵀ factorization also provides a way to check for positive definiteness by examining the signs of the diagonal entries of D. It is closely related to the Cholesky decomposition and is a key component in many sparse linear solvers.
 
 For certain symmetric matrices, we can use LDLᵀ Decomposition:
 
@@ -331,6 +341,8 @@ LDLᵀ Decomposition is useful because it can avoid square roots that appear in 
 10. COMPARING THE MAJOR MATRIX FACTORIZATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Each matrix factorization has its own strengths and is suited to different problems. LU is the workhorse for solving general linear systems, particularly when multiple right‑hand sides are involved. QR excels in least‑squares and orthogonalization problems. Cholesky is the most efficient for symmetric positive‑definite matrices. Eigenvalue decomposition and Schur decomposition reveal the spectral properties of a matrix, while SVD is the most general and provides a deep understanding of the matrix's structure. Polar and LDLᵀ decompositions are more specialized but are essential in their respective domains. Choosing the right factorization can dramatically affect the speed, accuracy, and stability of an algorithm. The table below summarises the main factorizations and their typical uses.
+
 Factorization      Form              Main Purpose
 -----------------  ----------------  ------------------------------------------
 LU                 A = L U            Solving systems efficiently
@@ -346,6 +358,8 @@ LDLᵀ               A = L D Lᵀ        Symmetric matrix factorization
 
 11. MATRIX FACTORIZATION AND LINEAR SYSTEMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Matrix factorization is the key to solving linear systems efficiently. For a system A x = b, factoring A allows us to replace a single difficult problem with a sequence of easy ones. With LU, we solve two triangular systems; with Cholesky, we solve two triangular systems using the lower and upper factors; with QR, we can solve via orthogonal transformation; and with SVD, we can handle even singular or rectangular systems via the pseudo‑inverse. Each factorization exploits the properties of A to reduce the computational cost and improve numerical stability. In practice, the choice of factorization depends on the matrix's structure, the number of right‑hand sides, and the desired accuracy. For large sparse matrices, specialized factorizations are used to exploit sparsity and reduce memory usage, making linear system solving feasible for problems with millions of unknowns.
 
 Suppose we have:
 
@@ -386,6 +400,8 @@ Thus, different factorizations are chosen depending on the properties of the mat
 12. MATRIX FACTORIZATION AND LEAST SQUARES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Least‑squares problems, where we seek the best approximation A x ≈ b in the sense of minimizing the squared error, are naturally solved using matrix factorizations. The QR decomposition is the standard method because it is numerically stable and works without forming Aᵀ A, which can be ill‑conditioned. By applying QR to A, we transform the problem into R x ≈ Qᵀ b, which is easy to solve by back substitution. SVD is even more powerful: it handles rank‑deficient cases gracefully, providing the minimum‑norm solution and revealing the rank. The pseudo‑inverse computed via SVD gives a unique solution even when the system is underdetermined or inconsistent. These factorizations are essential in regression, signal processing, and any application that involves fitting models to data.
+
 Matrix factorization is particularly important in least squares.
 
 Suppose a system does not have an exact solution:
@@ -415,6 +431,8 @@ SVD can also solve least-squares problems and provides additional information ab
 13. MATRIX FACTORIZATION AND DATA COMPRESSION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+SVD is the cornerstone of modern data compression. By representing a matrix (e.g., an image) as A = U Σ Vᵀ and keeping only the largest k singular values, we obtain a low‑rank approximation A ≈ Uₖ Σₖ Vₖᵀ. This approximation captures the most significant features while discarding noise and minor details. The Eckart‑Young theorem guarantees that this is the best rank‑k approximation in the Frobenius norm. This principle is used in image compression (like JPEG), video compression, and even in reducing the storage of large datasets. The compression ratio depends on how quickly the singular values decay; many real‑world matrices have rapidly decaying singular values, making them highly compressible. SVD‑based compression is also the basis for denoising and feature extraction, as it separates the signal from the noise.
+
 SVD is especially important in data compression.
 
 Suppose a large image is represented by a matrix A.
@@ -440,6 +458,8 @@ Therefore, a large image can sometimes be represented using significantly fewer 
 14. MATRIX FACTORIZATION IN MACHINE LEARNING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Machine learning heavily relies on matrix factorizations for both efficiency and insight. SVD and PCA are used for dimensionality reduction, transforming high‑dimensional data into a lower‑dimensional representation that preserves variance. This speeds up algorithms, reduces overfitting, and improves interpretability. Matrix factorisations also appear in linear regression (via the normal equations, solved with Cholesky or QR), in kernel methods (where Gram matrices are factorised), and in neural network training (where weight matrices are factorised for compression). Moreover, factorisations like the non‑negative matrix factorization (NMF) are used for topic modelling and feature extraction. The ability to decompose large data matrices into simpler, interpretable factors is a core technique in modern data science, enabling applications from image recognition to natural language processing.
+
 Matrix factorization is widely used in machine learning and data science.
 
 For example, SVD can be used for dimensionality reduction.
@@ -460,6 +480,8 @@ SVD is also closely related to Principal Component Analysis (PCA).
 
 15. MATRIX FACTORIZATION IN RECOMMENDATION SYSTEMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Recommendation systems often use matrix factorization to predict user preferences. The user‑item rating matrix is typically huge and sparse, with many missing entries. By factorising it into two lower‑dimensional matrices (e.g., U and V) such that R ≈ U Vᵀ, we capture latent factors that represent user preferences and item characteristics. The factors are learned from the known ratings, and then used to predict the missing ones. This approach, known as collaborative filtering, is at the heart of systems like Netflix and Amazon. SVD is a natural tool for this, but specialised algorithms like alternating least squares (ALS) are often used to handle the large scale. The factorisation not only provides predictions but also reveals patterns in the data, such as genre preferences or user clusters, making it a powerful and interpretable method.
 
 Matrix factorization is also commonly used in recommendation systems.
 
@@ -487,6 +509,8 @@ This idea is widely associated with collaborative filtering.
 16. MATRIX FACTORIZATION IN COMPUTER GRAPHICS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+In computer graphics, matrix factorizations help decompose complex transformations into simpler, more intuitive components. For example, a general 3D transformation matrix can be factored into rotation, scaling, and translation parts using polar decomposition or QR decomposition. This decomposition allows animators and engineers to understand and manipulate transformations more easily, as each component affects a specific geometric property. It also enables interpolation between transformations and ensures that the final transformation is well‑behaved. In addition, factorisations like SVD are used in shape analysis and mesh processing, where they reveal the principal axes of deformation. Understanding how a transformation decomposes is essential for realistic rendering, physical simulation, and character animation, making matrix factorisations a key tool in the graphics pipeline.
+
 Matrix factorizations are also useful in computer graphics.
 
 Transformation matrices can be analyzed or decomposed into components representing:
@@ -507,6 +531,8 @@ Instead of viewing the transformation as one complicated operation, we can under
 
 17. MATRIX FACTORIZATION IN SCIENTIFIC COMPUTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Scientific computing deals with large‑scale simulations of physical phenomena, often requiring the solution of systems with millions of unknowns. Matrix factorizations are central to these computations. For example, finite element methods produce sparse matrices that are factored using LU or Cholesky for direct solvers, or used in iterative methods where preconditioners are built from incomplete factorizations. The efficiency of a simulation often hinges on the factorization algorithm and the exploitation of sparsity. In computational fluid dynamics, weather forecasting, and structural mechanics, factorizations allow engineers and scientists to simulate complex systems with acceptable accuracy and time. Moreover, the choice between direct and iterative methods depends on the size and condition of the matrix, and factorizations provide the foundation for both approaches.
 
 Large scientific problems often produce systems such as:
 
@@ -529,6 +555,8 @@ For large matrices, specialized numerical algorithms can perform factorizations 
 18. CHOOSING THE APPROPRIATE FACTORIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Selecting the right matrix factorization is critical for solving a problem efficiently and accurately. The choice depends on the properties of the matrix (size, symmetry, positive definiteness, sparsity, conditioning) and the nature of the task (solving a system, computing eigenvalues, minimising error, compressing data). For general nonsymmetric systems, LU with pivoting is robust. For symmetric positive‑definite matrices, Cholesky is twice as fast and more stable. For least‑squares, QR is preferred over the normal equations. When dealing with ill‑conditioned matrices or when rank information is needed, SVD is the best choice, albeit more expensive. In large‑scale sparse problems, iterative methods with preconditioners are often necessary. Understanding the trade‑offs between these factorizations is essential for practitioners in all fields of computational science and engineering.
+
 Different matrix problems require different factorizations.
 
   • If the goal is to solve a general system of equations → LU Decomposition
@@ -547,6 +575,8 @@ Therefore, there is no single matrix factorization that is best for every proble
 
 19. IMPORTANT RELATIONSHIP BETWEEN FACTORIZATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The various matrix factorizations are not isolated; they are interconnected and often derived from one another. For example, LU decomposition is the foundation for Gaussian elimination and can be used to compute the determinant. QR decomposition is an orthogonalisation method that can be applied to any matrix, and it is intimately related to the Gram‑Schmidt process. Cholesky is a special case of LU for symmetric positive‑definite matrices. Eigenvalue decomposition and SVD are linked, as the singular values are the square roots of the eigenvalues of AᵀA (or AAᵀ). The Schur decomposition generalises the eigenvalue decomposition to non‑diagonalisable matrices. Polar decomposition is derived from SVD by taking Q = U Vᵀ and S = V Σ Vᵀ. Understanding these relationships helps in appreciating the unity of linear algebra and in choosing the most appropriate factorization for a given task, as many algorithms can be expressed in terms of multiple factorisations.
 
 Many matrix factorizations are connected.
 

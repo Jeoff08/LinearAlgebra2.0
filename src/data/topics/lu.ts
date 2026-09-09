@@ -4,25 +4,14 @@ const topic = {
   summary:
     "LU factorization methods (Doolittle, Crout), pivoting and solving triangular systems.",
   details: `
-LU Decomposition is a method in Linear Algebra for breaking a matrix into the product of two simpler matrices: a lower triangular matrix (L) and an upper triangular matrix (U).
-
-The name LU comes from these two matrices:
-
-  L = Lower Triangular Matrix
-  U = Upper Triangular Matrix
-
-The basic idea is:
-
-  A = L U
-
-where A is the original matrix.
-
-LU Decomposition is especially useful for solving systems of linear equations efficiently, particularly when the same coefficient matrix is used with different right-hand sides.
+LU Decomposition is a method in Linear Algebra for breaking a matrix into the product of two simpler matrices: a lower triangular matrix (L) and an upper triangular matrix (U). This factorization is one of the most fundamental tools in numerical linear algebra because it transforms the problem of solving a general linear system into two much simpler problems involving triangular matrices. Triangular systems are easy to solve using forward and backward substitution, making LU decomposition highly efficient. The name LU comes from these two matrices: L for Lower triangular and U for Upper triangular. The basic idea is A = L U, where A is the original matrix. LU Decomposition is especially useful for solving systems of linear equations efficiently, particularly when the same coefficient matrix is used with different right-hand sides. It also forms the basis for many other numerical algorithms, including matrix inversion and determinant computation.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT ARE TRIANGULAR MATRICES?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Triangular matrices are square matrices where all entries on one side of the main diagonal are zero. A lower triangular matrix has zeros above the main diagonal, meaning all non-zero entries are on or below the diagonal. Conversely, an upper triangular matrix has zeros below the main diagonal, with all non-zero entries on or above the diagonal. These matrices are particularly important because they are easy to solve: lower triangular systems are solved by forward substitution (starting from the first equation), and upper triangular systems are solved by back substitution (starting from the last equation). This simplicity is what makes LU decomposition so powerful it reduces a general matrix problem to two triangular problems. Moreover, the determinant of a triangular matrix is simply the product of its diagonal entries, which makes determinant computation trivial once a matrix is factored into triangular form.
 
 A lower triangular matrix has zeros above the main diagonal.
 
@@ -50,6 +39,8 @@ These matrices are easier to work with because they can be solved using forward 
 
 2. THE BASIC IDEA OF LU DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The core idea behind LU decomposition is to factor a matrix A into a lower triangular matrix L and an upper triangular matrix U such that A = L U. This factorization allows us to solve the linear system A x = b in two stages. First, we introduce an intermediate vector y and solve L y = b using forward substitution. Since L is lower triangular, this is straightforward and yields y. Then, we solve U x = y using back substitution, which is equally simple because U is upper triangular. This two-stage process is much more efficient than solving the original system directly, especially when we need to solve multiple systems with the same A but different b vectors. Once the LU decomposition is computed, each new right-hand side requires only O(n²) operations (the two triangular solves) instead of O(n³) operations for a full Gaussian elimination.
 
 Suppose we have:
 
@@ -81,6 +72,8 @@ This is the central idea behind LU Decomposition.
 
 3. EXAMPLE OF LU DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Let's work through a complete example to illustrate the LU decomposition process. The method proceeds by applying Gaussian elimination to transform A into an upper triangular matrix U, while simultaneously recording the elimination multipliers in L. The multipliers mᵢⱼ represent the factor by which we multiply row j before subtracting it from row i to eliminate the entry below the pivot. These multipliers are stored in L below the diagonal, with the diagonal of L set to 1 (in the Doolittle variant). This process systematically reduces the matrix column by column until all entries below the diagonal are zero. The resulting U is the upper triangular matrix, and L is constructed from the multipliers. This decomposition is unique if no row swaps are required and the pivots are non-zero.
 
 Consider the matrix:
 
@@ -201,6 +194,8 @@ where:
 4. VERIFYING THE DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+After performing the LU decomposition, it is always good practice to verify that the product L U indeed equals the original matrix A. This check confirms that the multipliers were correctly recorded and that the arithmetic is correct. The verification also reinforces the relationship between the elimination steps and the factors L and U. In practice, numerical errors can accumulate, especially with large matrices, so verification helps ensure accuracy. The product L U should match A exactly (up to rounding errors in floating-point arithmetic). This verification step is especially important when implementing LU decomposition in code, as it catches mistakes in the elimination process.
+
 We can verify that L U = A.
 
 Multiply:
@@ -225,6 +220,8 @@ So the decomposition is correct.
 
 5. USING LU DECOMPOSITION TO SOLVE A SYSTEM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Once we have the LU decomposition of A, solving A x = b becomes a straightforward two-step procedure. First, we solve L y = b by forward substitution. Because L is lower triangular, we can compute y₁, then y₂, then y₃, and so on, using previously computed values. Next, we solve U x = y by back substitution. Because U is upper triangular, we start with xₙ and work backwards. This process is efficient and numerically stable. Moreover, if we need to solve multiple systems with the same A but different b vectors, we only need to perform the LU decomposition once; then, for each b, we just do the two triangular solves, which are O(n²) each, instead of O(n³) for each system.
 
 Suppose we want to solve:
 
@@ -332,6 +329,8 @@ This is the solution of the original system.
 6. LU DECOMPOSITION VS. GAUSSIAN ELIMINATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+LU Decomposition is closely related to Gaussian Elimination. In fact, Gaussian elimination is the engine that drives LU decomposition. When we perform Gaussian elimination on A, we transform it into an upper triangular matrix U. The same elimination steps, when applied to the right-hand side b, yield the solution. LU decomposition goes one step further by recording the elimination multipliers in the lower triangular matrix L. This allows us to reuse the elimination work for multiple right-hand sides. In essence, Gaussian elimination is the process of computing U and the transformation that produced it; LU decomposition explicitly stores that transformation as L. Thus, LU decomposition is not a new algorithm but rather a way of organizing and storing the results of Gaussian elimination for later use, making it more efficient for multiple systems.
+
 LU Decomposition is closely related to Gaussian Elimination.
 
 Gaussian Elimination transforms A into an upper triangular matrix U.
@@ -354,7 +353,7 @@ The U matrix contains the result of elimination, while L stores the information 
 7. LU DECOMPOSITION AND MULTIPLE SYSTEMS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-One of the biggest advantages of LU Decomposition is that it is very efficient when solving multiple systems with the same coefficient matrix.
+One of the biggest advantages of LU Decomposition is that it is very efficient when solving multiple systems with the same coefficient matrix. In many applications, such as structural analysis, circuit simulation, and scientific computing, we often encounter the same A with many different b vectors. Without LU decomposition, each system would require a full Gaussian elimination, costing O(n³) operations each time. With LU decomposition, we factor A once (O(n³) operations) and then solve each system with two triangular solves (O(n²) operations each). This can lead to enormous savings when the number of right-hand sides is large. This efficiency is why LU decomposition is a standard tool in numerical linear algebra libraries.
 
 Suppose we have:
 
@@ -381,7 +380,7 @@ This saves a significant amount of computation.
 8. LU DECOMPOSITION AND MATRIX INVERSES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-LU Decomposition can also be used to calculate a matrix inverse.
+LU Decomposition can also be used to calculate a matrix inverse. If A = L U, then A⁻¹ = (L U)⁻¹ = U⁻¹ L⁻¹. However, explicitly computing the inverse is generally not recommended for numerical reasons; it is more efficient and stable to use the LU factors directly to solve systems. In practice, if we need the inverse, we can solve A X = I column by column using LU decomposition, where each column of X is the corresponding column of the inverse. This approach avoids the expensive and often unstable process of explicitly computing the inverse matrix. In most applications, solving systems is preferred over computing inverses, and LU decomposition facilitates this.
 
 Suppose:
 
@@ -405,6 +404,8 @@ This is generally more efficient and numerically preferable.
 
 9. LU DECOMPOSITION WITH PIVOTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Sometimes Gaussian Elimination encounters a zero or very small pivot. A zero pivot means the elimination cannot proceed directly, while a very small pivot can lead to numerical instability due to large multipliers. To handle this, we use pivoting: swapping rows (or columns) to bring a larger element into the pivot position. Partial pivoting, the most common form, involves row exchanges. The decomposition then becomes P A = L U, where P is a permutation matrix that records the row swaps. Pivoting is essential for numerical stability, especially for matrices that are not strictly diagonally dominant or positive definite. In practice, most LU implementations use partial pivoting to ensure reliable results, even though it adds some complexity to the decomposition.
 
 Sometimes Gaussian Elimination encounters a zero or very small pivot.
 
@@ -434,6 +435,8 @@ It is commonly used in numerical computing because pivoting improves numerical s
 10. DOOLITTLE METHOD
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The Doolittle method is one of the most common algorithms for computing LU decomposition. In this method, the diagonal entries of L are set to 1, while the diagonal entries of U are determined by the elimination process. This choice simplifies the computation of the factors and is particularly convenient for hand calculations. The Doolittle method proceeds by eliminating entries column by column, storing the multipliers in L, and updating the remaining entries of U. It works well for matrices where the leading principal minors are non-zero (i.e., no row swaps are needed). Many textbooks use the Doolittle method as the standard introduction to LU decomposition because of its straightforward implementation.
+
 One common method for calculating LU Decomposition is the Doolittle Method.
 
 In the Doolittle method, the diagonal entries of L are set to 1:
@@ -457,6 +460,8 @@ This is one of the standard approaches for teaching and implementing LU Decompos
 11. CROUT METHOD
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The Crout method is an alternative approach to LU decomposition. In contrast to the Doolittle method, the Crout method sets the diagonal entries of U to 1, while the diagonal entries of L are determined by the elimination. This choice can be convenient in some implementations, particularly when solving systems where the right-hand side is updated frequently. The Crout method follows a similar elimination process, but the positions of the diagonal ones are swapped. Both methods produce valid LU decompositions, and the choice between them is often a matter of convention or numerical preference. The key difference is where the diagonal entries are normalized; the underlying mathematics is equivalent.
+
 Another approach is the Crout Method.
 
 Unlike the Doolittle method, Crout's method generally sets the diagonal entries of U equal to 1:
@@ -476,6 +481,8 @@ Both Doolittle and Crout methods produce an LU factorization, but they organize 
 12. LDU DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+LDU decomposition is a refinement of LU decomposition that separates the diagonal entries into a separate diagonal matrix D. In this form, A = L D U, where L is a unit lower triangular matrix (diagonal entries all 1), D is a diagonal matrix containing the pivots (or other scaling factors), and U is a unit upper triangular matrix (diagonal entries all 1). This form can be useful for theoretical analysis, as it isolates the scaling factors from the triangular factors. The LDU decomposition is unique if A is invertible, and it is often used in proofs of matrix properties. It also relates to the Cholesky decomposition for symmetric positive definite matrices, where L and U are transposes of each other, and D contains the positive square roots.
+
 LU Decomposition can sometimes be further separated into:
 
   A = L D U
@@ -493,6 +500,8 @@ It can be useful because separating the diagonal values can make certain matrix 
 
 13. GEOMETRIC INTERPRETATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LU Decomposition is not primarily a geometric transformation like rotation or reflection. Instead, it provides an efficient way to represent the algebraic process of eliminating variables. The matrix U represents the simplified system obtained after elimination, while L records the elimination information needed to reconstruct the original matrix. The decomposition can be viewed as a way of breaking a complicated matrix problem into simpler triangular problems. Instead of directly solving A x = b, we solve L y = b and then U x = y. This two-step approach is the algebraic counterpart of the geometric idea of decomposing a transformation into simpler parts. Although LU decomposition does not have a direct geometric interpretation like rotations or scalings, it is a fundamental tool that enables many other geometric and computational algorithms.
 
 LU Decomposition is not primarily a geometric transformation like rotation or reflection. Instead, it provides an efficient way to represent the algebraic process of eliminating variables.
 

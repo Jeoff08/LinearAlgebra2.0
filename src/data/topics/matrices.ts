@@ -22,7 +22,7 @@ Matrices are used to represent systems of equations, linear transformations, dat
 1. ELEMENTS OF A MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The individual numbers inside a matrix are called entries or elements.
+The individual numbers inside a matrix are called entries or elements. Each entry is identified by its position using two subscripts: the first denotes the row, the second the column. This systematic indexing is essential because it allows us to reference specific pieces of data and perform operations that depend on position, such as matrix addition and multiplication. The notation aᵢⱼ is standard in mathematics and provides a clear way to describe algorithms and proofs. For example, when we talk about the diagonal of a square matrix, we refer to entries where the row and column indices are equal. Understanding how to locate and interpret entries is the first step in working with any matrix, whether it represents a dataset, a system of equations, or a linear transformation.
 
 Consider:
 
@@ -50,7 +50,7 @@ The first subscript identifies the row, while the second identifies the column.
 2. ORDER OR DIMENSION OF A MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The order or dimension of a matrix describes the number of rows and columns it has.
+The order or dimension of a matrix describes the number of rows and columns it contains, typically written as m × n (read "m by n"). The order determines the size of the matrix and is crucial for defining whether operations like addition or multiplication are possible. For addition, two matrices must have the same order; for multiplication, the number of columns of the first must match the number of rows of the second. The order also affects the shape of the output: for example, the product of an m×n matrix and an n×p matrix is m×p. In applications, the order often reflects the structure of the data rows may correspond to observations, columns to variables. Knowing the order is therefore the first thing to check before performing any matrix operation, and it is a fundamental aspect of matrix notation.
 
 If a matrix has m rows and n columns, its order is m × n.
 
@@ -69,7 +69,7 @@ Therefore, A is a 3×2 matrix.
 3. ROW MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A matrix with only one row is called a row matrix.
+A row matrix is a matrix that consists of a single row. It is also called a row vector because it can be used to represent a vector in row form. Row matrices are often used to store a list of values, such as the coefficients of a linear equation or the features of a single data point. In linear algebra, row matrices are sometimes used in inner products and in the construction of linear combinations when we multiply a row matrix by a column matrix. Although they are less common than column vectors in some contexts, they play an important role in matrix multiplication, where the product of a row matrix and a column matrix yields a scalar (the dot product). Row matrices are also used to represent the rows of a larger matrix, and their linear independence determines the row rank.
 
 Example:
 
@@ -82,7 +82,7 @@ It has dimension 1×4.
 4. COLUMN MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A matrix with only one column is called a column matrix.
+A column matrix has only one column. In linear algebra, column matrices are the standard representation for vectors, as they align naturally with the convention of writing a linear system as A x = b, where x and b are column vectors. Column matrices are used extensively in physics and engineering to represent quantities like position, velocity, and force. They are also the building blocks of matrices: a matrix can be viewed as a collection of column vectors placed side by side. Operations like matrix-vector multiplication are defined in terms of columns, and the column space of a matrix is the set of all linear combinations of its column vectors. Understanding column matrices is therefore essential for grasping many core concepts of linear algebra.
 
 Example:
 
@@ -100,7 +100,7 @@ Column matrices are particularly important because vectors are commonly represen
 5. SQUARE MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A matrix with the same number of rows and columns is called a square matrix.
+A square matrix has the same number of rows and columns, i.e., m = n. Square matrices are especially important because they are the only type for which concepts like determinant, trace, eigenvalues, and inverses are defined. Many fundamental results in linear algebra, such as the invertible matrix theorem, apply only to square matrices. They represent linear transformations from a vector space to itself, which allows the study of properties like rotation, scaling, and eigen-decomposition. Square matrices also arise naturally in systems of linear equations where the number of equations equals the number of unknowns. Their algebraic structure is rich and includes special classes like symmetric, skew-symmetric, orthogonal, and diagonal matrices.
 
 Example:
 
@@ -116,7 +116,7 @@ Square matrices are especially important because concepts such as determinants, 
 6. ZERO MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A matrix in which every entry is zero is called a zero matrix.
+A zero matrix is a matrix in which every entry is zero. It is the additive identity for matrix addition: adding it to any compatible matrix leaves that matrix unchanged. The zero matrix is denoted by O or 0, and it can have any dimensions. In linear algebra, the zero matrix is used to represent the zero transformation, which maps every vector to the zero vector. It also plays a central role in homogeneous systems of equations (A x = 0) and in defining the null space of a matrix. In numerical computations, the zero matrix is often used as an initialisation for accumulating sums or products. Despite its simplicity, it is a fundamental object that appears in many theoretical results, such as the fact that a matrix is invertible iff its null space contains only the zero vector.
 
 Example:
 
@@ -134,7 +134,7 @@ For compatible matrices:
 7. IDENTITY MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The identity matrix is the matrix equivalent of the number 1.
+The identity matrix is the multiplicative identity for matrix multiplication. It is a square matrix with ones on the main diagonal and zeros elsewhere. Multiplying any compatible matrix by the identity matrix on the left or right leaves the matrix unchanged. The identity matrix is denoted by I, and its size is often indicated by a subscript (e.g., I₃ for a 3×3 identity matrix). It plays a central role in defining matrix inverses, as a matrix A has inverse A⁻¹ iff A A⁻¹ = I. The identity matrix also appears in the definition of linear independence, in the construction of elementary matrices, and in many proofs involving matrix equations. Its simple structure makes it a powerful tool for both theoretical and computational work.
 
 A 2×2 identity matrix is:
 
@@ -158,7 +158,7 @@ The identity matrix is especially important when studying matrix inverses.
 8. DIAGONAL MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A diagonal matrix is a square matrix in which every entry outside the main diagonal is zero.
+A diagonal matrix is a square matrix in which all entries outside the main diagonal are zero. The diagonal entries can be any scalars. Diagonal matrices are among the simplest to work with because their multiplication and powers are performed element-wise on the diagonal. They are also easy to invert (if all diagonal entries are nonzero) and their determinant is simply the product of the diagonal entries. In linear algebra, diagonal matrices are important because they represent scaling transformations along the coordinate axes. Many matrices can be diagonalised (expressed as P D P⁻¹) if they have a complete set of eigenvectors, which simplifies many computations. Diagonal matrices are also used in statistics, where covariance matrices are often diagonalised through principal component analysis.
 
 Example:
 
@@ -175,7 +175,7 @@ An identity matrix is a special type of diagonal matrix where every diagonal ent
 9. SCALAR MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A scalar matrix is a diagonal matrix in which all diagonal entries are equal.
+A scalar matrix is a diagonal matrix in which all the diagonal entries are equal to the same scalar. It can be written as c I, where c is the scalar and I is the identity matrix. Multiplying any matrix by a scalar matrix is equivalent to multiplying the matrix by the scalar c, which commutes with any matrix. Scalar matrices appear frequently in eigenvalue problems, where a scalar matrix represents uniform scaling. They are also used in defining the centre of the matrix algebra, as they commute with all matrices of the same size. In physics, scalar matrices represent isotropic scaling, which does not depend on direction. Their simplicity makes them useful for constructing examples and counterexamples in proofs.
 
 Example:
 
@@ -192,7 +192,7 @@ This can be written as:
 10. UPPER TRIANGULAR MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-An upper triangular matrix has zeros below the main diagonal.
+An upper triangular matrix is a square matrix where all entries below the main diagonal are zero. This structure arises naturally in Gaussian elimination, where the coefficient matrix is transformed into row echelon form. Upper triangular matrices are easy to solve by back-substitution, and their determinant is the product of the diagonal entries. They are also closed under multiplication and inversion (if the diagonal is nonzero). In numerical linear algebra, many algorithms rely on triangular forms for efficiency and stability. The LU decomposition factors a matrix into lower and upper triangular parts. Upper triangular matrices also appear in eigenvalue algorithms, such as the Schur decomposition, which reduces any matrix to an upper triangular form while preserving eigenvalues.
 
 Example:
 
@@ -207,7 +207,7 @@ Upper triangular matrices are important in Gaussian Elimination, LU Decompositio
 11. LOWER TRIANGULAR MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A lower triangular matrix has zeros above the main diagonal.
+A lower triangular matrix is a square matrix where all entries above the main diagonal are zero. Like upper triangular matrices, they are easy to solve (by forward substitution) and their determinant is the product of the diagonal entries. Lower triangular matrices are often used in LU decomposition, where they represent the lower part of the factorisation. They also appear in the Cholesky decomposition for symmetric positive definite matrices. Many iterative methods in numerical analysis use triangular matrices to improve convergence. The set of lower triangular matrices with nonzero diagonal forms a group under multiplication. They are also used in signal processing and control theory to represent causal systems.
 
 Example:
 
@@ -222,10 +222,7 @@ Lower triangular matrices are also important in LU Decomposition and forward sub
 12. MATRIX EQUALITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Two matrices are equal if they have:
-
-  1. The same dimensions
-  2. Corresponding entries that are equal
+Two matrices are equal if they have the same dimensions and every corresponding entry is identical. This definition is straightforward but essential because it allows us to compare matrices and to set up equations involving matrices. Matrix equality is used in solving matrix equations, such as A X = B, where we compare entries to determine X. It also underpins the concept of matrix addition and scalar multiplication, as these operations are defined entry-wise. In proofs, we often show that two matrices are equal by showing that their entries match. Equality of matrices is also the basis for defining the zero matrix and the identity matrix, which are unique given their dimensions. Understanding this definition is fundamental to manipulating matrices algebraically.
 
 Example:
 
@@ -250,7 +247,7 @@ cannot be equal because they have different dimensions.
 13. MATRIX ADDITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Two matrices can be added only if they have the same dimensions.
+Matrix addition is performed element-wise, adding corresponding entries of two matrices of the same dimensions. This operation is commutative and associative, making it similar to scalar addition but extended to arrays. Matrix addition is used to combine data sets, add linear transformations, or accumulate updates in iterative algorithms. It is also the basis for defining the zero matrix as the additive identity. In applications like image processing, adding matrices can represent combining images or applying filters. In statistics, adding covariance matrices may model the combination of independent sources of variance. Matrix addition is a simple yet powerful tool that allows us to merge information from multiple sources.
 
 Suppose:
 
@@ -272,7 +269,7 @@ Therefore:
 14. MATRIX SUBTRACTION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Matrix subtraction works in the same way as addition.
+Matrix subtraction is the element-wise difference of two matrices of the same dimensions. It follows the same rules as addition and is used to compute residuals, differences, or deviations. For example, in linear regression, subtracting predicted values from actual values yields the residual vector. In image processing, subtracting two images can highlight differences. Matrix subtraction is also used in defining the linear combination operation, where we may subtract a multiple of one vector from another during Gaussian elimination. As with addition, commutativity does not hold for subtraction, but it is anticommutative (A - B = -(B - A)). It is a fundamental operation that allows us to quantify changes and errors.
 
 Using the same matrices:
 
@@ -291,7 +288,7 @@ Again, the matrices must have the same dimensions.
 15. SCALAR MULTIPLICATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A matrix can be multiplied by a scalar by multiplying every entry by that scalar.
+Scalar multiplication involves multiplying every entry of a matrix by a single scalar. This operation scales the matrix, which corresponds to scaling a linear transformation or scaling all features in a dataset. It is distributive over matrix addition and associative with matrix multiplication. Scalar multiplication is used in normalising matrices, adjusting weights in neural networks, and in many optimisation algorithms. It also plays a role in computing the inverse of a scalar multiple of a matrix. In geometry, scalar multiplication uniformly scales objects represented by matrices. It is one of the two operations that define a vector space of matrices, together with matrix addition.
 
 Example:
 
@@ -313,7 +310,7 @@ Therefore:
 16. MATRIX MULTIPLICATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Matrix multiplication is different from ordinary multiplication.
+Matrix multiplication is a binary operation that combines two matrices to produce a third matrix. It is defined only when the number of columns of the first matrix equals the number of rows of the second. The entry in the i-th row and j-th column of the product is the dot product of the i-th row of the first matrix and the j-th column of the second. This operation represents the composition of linear transformations, making it central to linear algebra. Matrix multiplication is associative but not commutative. It is used extensively in computer graphics (composing rotations, scaling), in machine learning (forward propagation in neural networks), and in solving systems of equations. Efficient algorithms for matrix multiplication are a major topic in numerical computing.
 
 Two matrices A and B can be multiplied when the number of columns of A equals the number of rows of B.
 
@@ -352,6 +349,8 @@ Matrix multiplication follows the row-by-column rule.
 17. MATRIX MULTIPLICATION IS NOT COMMUTATIVE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Unlike scalar multiplication, matrix multiplication is not commutative: in general, AB ≠ BA. This is a fundamental difference that must be respected when manipulating matrix expressions. Even when both products are defined (which requires A and B to be square of the same size), the order matters. For example, rotations in 3D do not commute: rotating an object around the x-axis and then around the y-axis yields a different result than the reverse order. This non-commutativity reflects the composition of linear transformations, where the order of application affects the final outcome. In algorithms, care must be taken to maintain the correct order when multiplying matrices, especially when inverses are involved. This property also affects the solving of matrix equations and the derivation of many theoretical results.
+
 For ordinary numbers:
 
   ab = ba
@@ -370,6 +369,8 @@ Sometimes AB exists while BA does not even exist because of incompatible dimensi
 
 18. TRANSPOSE OF A MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The transpose of a matrix is obtained by flipping it over its main diagonal: rows become columns and columns become rows. This operation is denoted by Aᵀ. The transpose changes the dimensions of the matrix; for example, an m×n matrix becomes n×m. The transpose has several important properties: (Aᵀ)ᵀ = A, (A + B)ᵀ = Aᵀ + Bᵀ, (cA)ᵀ = cAᵀ, and (AB)ᵀ = Bᵀ Aᵀ. The transpose is used to define symmetric matrices (Aᵀ = A) and in many applications, such as solving least-squares problems (normal equations) and computing covariance matrices. In geometry, the transpose corresponds to the adjoint of a linear transformation with respect to the standard inner product. It is also the basis for the concept of orthogonal matrices.
 
 The transpose of a matrix is obtained by changing its rows into columns and its columns into rows.
 
@@ -393,6 +394,8 @@ A 2×3 matrix becomes a 3×2 matrix after transposition.
 19. SYMMETRIC MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A square matrix A is symmetric if it is equal to its own transpose: Aᵀ = A. This condition implies that the entries are symmetric about the main diagonal (aᵢⱼ = aⱼᵢ). Symmetric matrices have many desirable properties: all their eigenvalues are real, eigenvectors corresponding to distinct eigenvalues are orthogonal, and they are always diagonalisable by an orthogonal matrix. These properties make symmetric matrices central in applications like principal component analysis, quadratic forms, and optimisation. Covariance matrices in statistics are symmetric, as are Hessian matrices in calculus. The spectral theorem for symmetric matrices is one of the most important results in linear algebra, providing a foundation for many numerical methods.
+
 A square matrix is symmetric if:
 
   Aᵀ = A
@@ -415,6 +418,8 @@ Symmetric matrices appear frequently in optimization, statistics, geometry, and 
 
 20. DETERMINANT OF A MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The determinant is a scalar value that can be computed from a square matrix. It provides important information about the matrix: it is zero if and only if the matrix is singular (non‑invertible); its absolute value gives the scaling factor of the linear transformation on area or volume; its sign indicates whether the orientation is preserved or reversed. The determinant is used in Cramer's rule for solving systems of linear equations, in computing eigenvalues via the characteristic polynomial, and in checking linear independence. For 2×2 matrices, it is simple: ad - bc. For larger matrices, it can be computed by expansion (cofactor expansion) or by row reduction. The determinant is a fundamental invariant of a matrix and is essential in many theoretical proofs.
 
 The determinant is a scalar value associated with a square matrix.
 
@@ -451,6 +456,8 @@ If det(A) = 0, then A is singular and does not have an inverse.
 21. MATRIX INVERSE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The inverse of a square matrix A, denoted A⁻¹, is the matrix such that A A⁻¹ = A⁻¹ A = I. It exists only if det(A) ≠ 0. The inverse is the matrix analogue of the reciprocal of a number and is used to solve systems of linear equations (x = A⁻¹ b). It also appears in many algebraic simplifications and in theoretical work. However, computing the inverse explicitly for large matrices is often avoided in numerical practice due to stability and efficiency concerns; instead, factorisations like LU or QR are preferred. The concept of the inverse is central to the definition of invertibility and to many properties of matrices, including the characterisation of invertible matrices through rank, null space, and determinant.
+
 The inverse of a square matrix A is written as A⁻¹.
 
 It satisfies:
@@ -485,7 +492,7 @@ If A⁻¹ exists:
 22. MATRICES AND SYSTEMS OF LINEAR EQUATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-One of the most important uses of matrices is representing systems of linear equations.
+One of the most powerful uses of matrices is to represent and solve systems of linear equations. A system of m equations in n unknowns can be written compactly as A x = b, where A is the m×n coefficient matrix, x is the n×1 vector of unknowns, and b is the m×1 vector of constants. This abstraction allows us to apply matrix methods such as Gaussian elimination, LU decomposition, and matrix inversion to find solutions. The matrix form also reveals the structure of the system: the columns of A correspond to variables, and the rows correspond to equations. The solvability of the system is determined by the rank of A and the augmented matrix. This matrix representation is the foundation of linear algebra and is used in countless applications.
 
 Consider:
 
@@ -516,7 +523,7 @@ to solve systems efficiently.
 23. AUGMENTED MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A system of equations can also be represented using an augmented matrix.
+An augmented matrix is a compact representation of a system of linear equations that combines the coefficient matrix A and the constant vector b into a single matrix, separated by a vertical bar. This form is used in Gaussian elimination to apply row operations simultaneously to both sides of the equations. The augmented matrix notation makes it easy to perform row reduction without explicitly writing variables, which simplifies the process and reduces errors. The consistency of the system can be checked by comparing the rank of the coefficient matrix with the rank of the augmented matrix. The augmented matrix is a practical tool that streamlines the solution process and is used in many numerical algorithms.
 
 For:
 
@@ -537,6 +544,8 @@ Row operations can then be applied to solve the system.
 24. ROW OPERATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Elementary row operations are the three fundamental transformations that can be applied to a matrix without changing the solution set of the associated linear system. They are: (1) swapping two rows, (2) multiplying a row by a nonzero scalar, and (3) adding a multiple of one row to another row. These operations are used in Gaussian elimination to reduce a matrix to row echelon form and later to reduced row echelon form. They also form the basis for finding matrix inverses and computing determinants. Each row operation corresponds to left-multiplication by an elementary matrix, which itself is invertible. Understanding row operations is crucial for mastering the algorithmic aspects of linear algebra.
+
 There are three elementary row operations:
 
   1. Row Swap: Exchange two rows
@@ -554,6 +563,8 @@ These operations form the foundation of Gaussian Elimination and Gauss-Jordan El
 
 25. RANK OF A MATRIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The rank of a matrix is the maximum number of linearly independent rows or columns. Equivalently, it is the dimension of the column space (or row space) of the matrix. The rank reveals the amount of independent information in the matrix and determines the solution set of the system A x = b: a system is consistent iff rank(A) = rank([A|b]), and if consistent, it has a unique solution iff rank(A) equals the number of unknowns. The rank-nullity theorem states that rank(A) + nullity(A) = number of columns. Rank is also used in data analysis to determine the intrinsic dimensionality of data, and in numerical linear algebra to assess the condition of a matrix. Computing the rank is typically done via row reduction.
 
 The rank of a matrix is the maximum number of linearly independent rows or columns.
 
@@ -583,6 +594,8 @@ Rank provides important information about whether a system has unique solutions,
 26. MATRICES AS LINEAR TRANSFORMATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Matrices are not just arrays of numbers; they represent linear transformations between vector spaces. Given a matrix A, the mapping T(x) = A x is linear, meaning it preserves addition and scalar multiplication. This viewpoint connects algebra with geometry: a matrix can rotate, scale, shear, reflect, or project vectors. The columns of the matrix are the images of the standard basis vectors, and the transformation is fully determined by its action on these basis vectors. Understanding matrices as transformations allows us to interpret operations like composition (matrix multiplication) and invertibility (reversibility). This perspective is fundamental in computer graphics, robotics, and physics, where we manipulate objects in space using transformation matrices.
+
 Matrices are not only tables of numbers. They can also represent linear transformations.
 
 If:
@@ -606,6 +619,8 @@ provides a connection between matrices and geometry.
 
 27. MATRIX AND VECTOR RELATIONSHIP
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Vectors can be seen as special cases of matrices: a column vector is an n×1 matrix, and a row vector is a 1×n matrix. This unifies the concepts of vectors and matrices and allows us to use matrix multiplication to transform vectors. The product A x computes a linear combination of the columns of A, where the coefficients are the components of x. This perspective is central to many applications: in machine learning, a dataset is often a matrix where each row is a feature vector; in physics, a force vector is multiplied by a rotation matrix to change coordinates. Understanding the matrix-vector product is key to interpreting how matrices act on data and how systems of equations are solved.
 
 A vector can be represented as a column matrix:
 
@@ -636,6 +651,8 @@ Therefore:
 28. MATRICES AND EIGENVALUES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Eigenvalues and eigenvectors are fundamental properties of square matrices. An eigenvector v of a matrix A is a nonzero vector that, when transformed by A, is only scaled by a scalar λ (the eigenvalue): A v = λ v. This equation means that the direction of v is unchanged by the transformation. Eigenvalues and eigenvectors are critical in many applications: they determine the stability of dynamical systems, they are used in principal component analysis to reduce dimensionality, they appear in the solution of differential equations, and they form the basis of spectral graph theory. The set of eigenvalues is called the spectrum, and it provides deep insight into the matrix's behaviour, such as whether it is invertible (zero not in spectrum) and its rate of growth (spectral radius).
+
 Matrices also play an important role in eigenvalues and eigenvectors.
 
 An eigenvector v of a matrix A satisfies:
@@ -660,6 +677,8 @@ Eigenvalues and eigenvectors are important in:
 29. MATRICES AND DIAGONALIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+Diagonalisation is the process of expressing a square matrix A as A = P D P⁻¹, where D is a diagonal matrix and P is an invertible matrix whose columns are eigenvectors of A. This decomposition is possible only if A has a complete set of linearly independent eigenvectors. Diagonalisation simplifies many computations: powers of A become Aᵏ = P Dᵏ P⁻¹, and functions of A (like the exponential) can be computed easily. It also reveals the eigenstructure of the transformation, showing the independent scaling factors along the eigenvectors. Diagonalisation is a cornerstone of linear algebra and is used in solving systems of differential equations, in statistical analysis (e.g., PCA), and in many numerical algorithms.
+
 Some matrices can be expressed in the form:
 
   A = P D P⁻¹
@@ -674,6 +693,8 @@ Diagonal matrices are much easier to work with than general matrices, which is w
 
 30. APPLICATIONS OF MATRICES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Matrices are ubiquitous in modern science and engineering. They are used to solve systems of equations, model physical systems, compress data, and enable machine learning. In computer graphics, matrices represent rotations, translations, and perspective projections. In robotics, they describe the position and orientation of links. In image processing, an image is a matrix of pixel intensities; operations like filters and transformations are matrix operations. In statistics, covariance matrices describe relationships between variables. In machine learning, weight matrices in neural networks store learned parameters. The versatility of matrices comes from their ability to represent linear relations compactly and to enable fast computation using linear algebra libraries. Almost every field that uses quantitative data or mathematical models relies on matrices.
 
 Matrices are used in many fields.
 
@@ -712,6 +733,8 @@ Image Processing
 
 31. IMPORTANT MATRIX CONCEPTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+To become proficient in matrices, one must master a set of core concepts that are frequently used throughout linear algebra. These include the dimensions and types of matrices, the basic operations (addition, subtraction, scalar multiplication, and multiplication), the transpose, the determinant, the inverse, and the rank. Additionally, understanding how matrices relate to linear transformations, systems of equations, and eigenvalues is essential. These concepts are interconnected: for example, the determinant determines invertibility, which in turn determines whether a system has a unique solution. The rank reveals the dimension of the column space, which is related to the number of independent equations. A solid grasp of these fundamentals enables you to tackle more advanced topics like matrix decompositions, numerical methods, and applications in data science and engineering.
 
 When studying matrices, it is important to understand the following concepts:
 

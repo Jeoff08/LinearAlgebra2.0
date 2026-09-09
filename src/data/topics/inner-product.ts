@@ -4,7 +4,7 @@ const topic = {
   summary:
     "Inner products, norms, Cauchy–Schwarz, triangle inequality and orthogonality in abstract spaces.",
   details: `
-Inner Product Spaces are vector spaces equipped with a special operation called an inner product. The inner product allows us to measure relationships between vectors, such as their length, angle, and orthogonality. In ordinary Euclidean space, the familiar dot product is an example of an inner product.
+Inner Product Spaces are vector spaces equipped with a special operation called an inner product. The inner product allows us to measure relationships between vectors, such as their length, angle, and orthogonality. In ordinary Euclidean space, the familiar dot product is an example of an inner product. The concept of an inner product generalizes the geometric notions we are accustomed to in two and three dimensions to arbitrary vector spaces, including spaces of functions, polynomials, and infinite-dimensional sequences. This generalization is what makes inner product spaces so powerful: they enable us to apply geometric intuition and reasoning to problems far beyond traditional geometry. Inner products form the foundation for many areas of mathematics and its applications, including Fourier analysis, quantum mechanics, signal processing, and machine learning. By equipping a vector space with an inner product, we can define lengths, angles, distances, and orthogonality, which are essential for optimization, approximation, and data analysis.
 
 Inner Product Spaces are important because they extend the familiar ideas of geometry into more general vector spaces. They allow us to talk about concepts such as distance, angles, perpendicularity, projections, orthogonality, and orthonormal bases even when we are working with abstract vectors.
 
@@ -15,7 +15,7 @@ The inner product is commonly written as ⟨u,v⟩ and produces a scalar.
 1. THE STANDARD DOT PRODUCT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The simplest example of an inner product is the dot product in ℝⁿ.
+The simplest example of an inner product is the dot product in ℝⁿ, which is the standard inner product on Euclidean space. It is defined as the sum of the products of corresponding components of two vectors. The dot product is the most familiar inner product because it directly generalizes the geometric notion of projection from two and three dimensions. It allows us to compute lengths (via the norm), angles (via the cosine formula), and to test orthogonality. In applications like machine learning, the dot product measures similarity between feature vectors; in physics, it computes work done by a force. The dot product is linear in each argument, symmetric, and positive definite, which makes it a simple but powerful tool. Understanding the dot product in ℝⁿ is the first step toward understanding inner products in more abstract spaces, as it illustrates all the essential properties without the added complexity of general vector spaces.
 
 For two vectors:
 
@@ -46,7 +46,7 @@ Therefore:
 2. PROPERTIES OF AN INNER PRODUCT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-An inner product must satisfy several important properties. For real vector spaces, these include linearity, symmetry, and positive definiteness.
+An inner product must satisfy several important properties. For real vector spaces, these include linearity, symmetry, and positive definiteness. These axioms ensure that the inner product behaves like the familiar dot product in Euclidean space, capturing the essential geometric structure. Linearity means that the inner product distributes over addition and scales with scalar multiplication, which allows us to compute inner products by breaking vectors into components. Symmetry means that the inner product is commutative, which is natural for measuring the relationship between two vectors. Positive definiteness ensures that the inner product of a vector with itself is always non-negative, and is zero only for the zero vector, which is essential for defining lengths and distances. These properties are not arbitrary; they are precisely what is needed to make geometry work in any vector space.
 
 ────────────────────────────────────────────────────────────────────────────────
 
@@ -95,6 +95,8 @@ This property allows us to use the inner product to define the length of a vecto
 3. NORM OR LENGTH OF A VECTOR
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+The norm of a vector represents its length. The norm is defined using the inner product: ||v|| = √⟨v,v⟩. This definition is a direct generalization of the Euclidean norm in ℝⁿ. The norm satisfies several important properties: it is always non-negative, it scales with scalar multiplication (||cv|| = |c| ||v||), and it satisfies the triangle inequality. The norm allows us to quantify the size of a vector, which is essential for measuring distances, errors, and magnitudes. In data science, the norm is used to regularize models and to measure the magnitude of feature vectors. In physics, the norm corresponds to the magnitude of a force or velocity. The ability to define a norm from an inner product is one of the key reasons why inner product spaces are so useful: they come with a built-in notion of length that is compatible with the vector space structure.
+
 The norm of a vector represents its length.
 
 The norm is defined using the inner product:
@@ -125,7 +127,7 @@ This is the familiar Pythagorean theorem expressed using Linear Algebra.
 4. DISTANCE BETWEEN VECTORS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The inner product can also be used to calculate the distance between two vectors.
+The inner product can also be used to calculate the distance between two vectors. The distance between u and v is defined as the norm of their difference: d(u,v) = ||u - v||. This definition extends the usual Euclidean distance to any inner product space. Distance is a metric that measures how far apart two vectors are; it is symmetric, non-negative, and satisfies the triangle inequality. In machine learning, distance metrics are used in clustering and classification algorithms like k-nearest neighbors. In signal processing, distances measure the similarity between signals. In optimization, distances are used to measure the error between a prediction and an actual value. The ability to define distance from an inner product makes inner product spaces a natural setting for approximation and error analysis.
 
 The distance between u and v is:
 
@@ -154,7 +156,7 @@ Therefore:
 5. ORTHOGONALITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-One of the most important applications of inner products is determining whether two vectors are orthogonal, meaning perpendicular.
+One of the most important applications of inner products is determining whether two vectors are orthogonal, meaning perpendicular. Two vectors are orthogonal if their inner product is zero: u ⟂ v ⟺ ⟨u,v⟩ = 0. Orthogonality is a fundamental geometric concept that extends beyond Euclidean geometry to any inner product space. Orthogonal vectors are independent and do not share any component in each other's direction. In data analysis, orthogonal features are uncorrelated and provide independent information. In signal processing, orthogonal signals can be transmitted without interference. In linear algebra, orthogonal sets are automatically linearly independent (unless they contain the zero vector), which makes them ideal for constructing bases. The concept of orthogonality underpins the Gram-Schmidt process, QR decomposition, and many other algorithms.
 
 Two vectors are orthogonal if their inner product is zero:
 
@@ -180,7 +182,7 @@ This means that the vectors are perpendicular.
 6. ANGLE BETWEEN VECTORS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The inner product can also be used to find the angle between two nonzero vectors.
+The inner product can also be used to find the angle between two nonzero vectors. The formula cos(θ) = ⟨u,v⟩ / (||u|| ||v||) relates the inner product to the cosine of the angle. This is a direct generalization of the formula from Euclidean geometry: the dot product of two vectors equals the product of their lengths times the cosine of the angle between them. This formula allows us to define angles in any inner product space, which is crucial for understanding the geometric relationship between abstract vectors. For example, if the inner product is zero, the angle is 90° (orthogonal); if the inner product equals the product of the norms, the angle is 0° (same direction); if the inner product is negative, the angle is obtuse. This concept is used in machine learning to compute the cosine similarity between document vectors, which measures the similarity of texts.
 
 The formula is:
 
@@ -218,6 +220,8 @@ So the angle between the vectors is 45°.
 7. ORTHOGONAL SETS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+A set of vectors is called an orthogonal set if every pair of different vectors is orthogonal. Orthogonal sets are very useful because their vectors are automatically linearly independent as long as none of the vectors is the zero vector. This property makes orthogonal sets ideal for constructing bases. In an orthogonal basis, the coordinates of a vector can be computed easily using inner products, without solving a linear system. This is the basis for Fourier series and many other expansions. Orthogonal sets also appear in data compression and signal processing, where they allow efficient representation of signals. The importance of orthogonal sets lies in their simplicity and the computational advantages they provide.
+
 A set of vectors is called an orthogonal set if every pair of different vectors is orthogonal.
 
 Example:
@@ -237,6 +241,8 @@ Orthogonal sets are very useful because their vectors are automatically linearly
 
 8. ORTHONORMAL SETS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+An orthonormal set is a set of vectors that is both orthogonal (every pair is perpendicular) and normalized (every vector has length 1). Orthonormal sets are the "gold standard" for bases because they are the simplest to work with. In an orthonormal basis, the coordinates of a vector are simply the inner products with the basis vectors. This makes computations extremely efficient and numerically stable. The standard basis in ℝⁿ is orthonormal, but there are many others. Orthonormal bases are used extensively in numerical linear algebra (e.g., QR decomposition), in signal processing (e.g., wavelets), and in quantum mechanics (where they represent complete sets of states). The Gram-Schmidt process is a systematic way to construct an orthonormal set from any linearly independent set of vectors.
 
 An orthonormal set is a set of vectors that is both:
 
@@ -263,7 +269,7 @@ Therefore, they form an orthonormal basis for ℝ².
 9. PROJECTION OF ONE VECTOR ONTO ANOTHER
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Inner products are also used to find the projection of one vector onto another.
+Inner products are also used to find the projection of one vector onto another. The projection of u onto v is proj_v(u) = (⟨u,v⟩ / ⟨v,v⟩) · v. This gives the component of u that lies in the direction of v. The projection is a fundamental operation in geometry, physics, and data analysis. In linear regression, the predicted values are the projection of the observed values onto the column space of the design matrix. In signal processing, projection is used to decompose signals into components. In computer graphics, it is used to compute shadows and reflections. The projection is also the basis for the Gram-Schmidt process and for solving least-squares problems. Understanding projection is essential for grasping the geometric interpretation of linear algebra and for many practical algorithms.
 
 The projection of u onto v is:
 
@@ -299,11 +305,9 @@ The projection represents the component of u that lies in the direction of v.
 10. INNER PRODUCT SPACES AND COMPLEX VECTORS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Inner products are not limited to real vector spaces. They can also be defined on complex vector spaces.
+Inner products are not limited to real vector spaces. They can also be defined on complex vector spaces. For complex vectors, the inner product uses the complex conjugate to ensure positive definiteness. The standard complex inner product is ⟨u,v⟩ = ūᵀ v, where ū is the complex conjugate of u. This definition ensures that ⟨v,v⟩ is real and non-negative, which is essential for defining a norm. Complex inner product spaces are fundamental in quantum mechanics, where states are represented as complex vectors and the inner product gives probability amplitudes. They are also used in signal processing for analyzing complex signals and in electrical engineering for power calculations. The properties of complex inner products are similar to the real case, but with conjugate symmetry instead of symmetry. Understanding complex inner products is essential for advanced applications in physics and engineering.
 
-For complex vectors, the inner product uses the complex conjugate.
-
-For vectors u, v ∈ ℂⁿ, the standard complex inner product is:
+For complex vectors u, v ∈ ℂⁿ, the standard complex inner product is:
 
   ⟨u,v⟩ = ūᵀ v
 
@@ -342,6 +346,8 @@ This is one reason Inner Product Spaces are important when working with complex 
 11. CAUCHY-SCHWARZ INEQUALITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An important theorem involving inner products is the Cauchy-Schwarz Inequality: |⟨u,v⟩| ≤ ||u|| · ||v||. This inequality states that the absolute value of the inner product cannot be larger than the product of the lengths of the two vectors. It is one of the most important inequalities in mathematics because it has far-reaching consequences. It implies that the cosine of the angle between two vectors is always between -1 and 1, which is geometrically intuitive. It is used to prove the triangle inequality, to establish the equivalence of norms, and to derive many other results. In probability theory, it is used to prove the covariance inequality; in functional analysis, it is used to prove the continuity of linear functionals. The Cauchy-Schwarz inequality is a cornerstone of linear algebra and its applications.
+
 An important theorem involving inner products is the Cauchy-Schwarz Inequality:
 
   |⟨u,v⟩| ≤ ||u|| · ||v||
@@ -360,6 +366,8 @@ This theorem is important in many areas of mathematics and is also used in provi
 
 12. TRIANGLE INEQUALITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The Triangle Inequality is another important result derived from inner products: ||u + v|| ≤ ||u|| + ||v||. This inequality states that the length of the sum of two vectors is less than or equal to the sum of their lengths. It is a geometric statement that the shortest path between two points is a straight line, and any detour is longer. The triangle inequality is fundamental in metric spaces and is used to prove convergence, to bound errors, and to establish many inequalities. It is also used in numerical analysis to analyze the stability of algorithms. The triangle inequality is a direct consequence of the Cauchy-Schwarz inequality, and it highlights the geometric structure of inner product spaces. It is one of the defining properties of a norm.
 
 The Triangle Inequality is another important result derived from inner products:
 
@@ -380,6 +388,8 @@ This makes intuitive sense: going from one point to another directly is never lo
 13. ORTHOGONAL DECOMPOSITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+An inner product allows a vector to be separated into components that are parallel and perpendicular to another vector or subspace. This is expressed as u = proj_v(u) + u⊥, where proj_v(u) is the component parallel to v, and u⊥ is perpendicular to v. This decomposition is unique and orthogonal, meaning that the parallel and perpendicular components are orthogonal to each other. Orthogonal decomposition is the foundation of least-squares approximation, where we find the closest vector in a subspace to a given vector. It is also used in the Gram-Schmidt process to construct orthogonal bases. In physics, it is used to decompose forces into components. In data analysis, it is used in principal component analysis to separate signal from noise. The ability to decompose vectors orthogonally is one of the most powerful features of inner product spaces.
+
 An inner product allows a vector to be separated into components that are parallel and perpendicular to another vector or subspace.
 
   u = proj_v(u) + u⊥
@@ -392,6 +402,8 @@ This idea is extremely useful in least-squares approximation, where we find the 
 
 14. GRAM-SCHMIDT PROCESS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inner Product Spaces also provide the foundation for the Gram-Schmidt Process. The Gram-Schmidt Process takes a set of linearly independent vectors and converts them into an orthogonal or orthonormal set. The process works by successively projecting each vector onto the span of the previous ones and subtracting the projection, thereby removing any component that is already represented. The resulting orthogonal set has the same span as the original set, and after normalization, it becomes an orthonormal basis. The Gram-Schmidt process is essential in numerical linear algebra, where it is used to compute QR decompositions. It is also used in least-squares problems and in constructing orthonormal bases for function spaces (e.g., Legendre polynomials). Understanding the Gram-Schmidt process is key to many applications of inner product spaces.
 
 Inner Product Spaces also provide the foundation for the Gram-Schmidt Process.
 
