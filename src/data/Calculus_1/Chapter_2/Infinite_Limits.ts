@@ -8,10 +8,13 @@ const topic = {
   details: `
 An infinite limit occurs when the value of a function increases or decreases without bound as the input approaches a particular number. In other words, as x gets closer and closer to a certain value, the function does not approach an ordinary finite number such as 2, -5, or 1/3. Instead, the function grows extremely large in the positive or negative direction. We use the symbols ∞ and -∞ to describe this behavior. For example, lim(x→0⁺) 1/x = ∞ means that as x approaches 0 from the positive side, the value of 1/x increases without bound. Understanding infinite limits is essential for analysing vertical asymptotes, discontinuities, and the overall behaviour of rational and other functions.
 
+
 For example:
   lim(x→0⁺) 1/x = ∞
 
 This means that as x approaches 0 from the positive side, the value of 1/x increases without bound.
+
+"image": "src/assets/99.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -337,16 +340,7 @@ Step 5: Identify the Vertical Asymptote
 16. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Function                      Limit
-  ───────────────────────────────────────────────────────────────────
-  lim(x→0⁺) 1/x                  ∞
-  lim(x→0⁻) 1/x                  -∞
-  lim(x→0) 1/x²                  ∞
-  lim(x→0) -1/x²                 -∞
-  lim(x→2⁺) 1/(x - 2)            ∞
-  lim(x→2⁻) 1/(x - 2)            -∞
-  lim(x→2) 1/(x - 2)²            ∞
-  lim(x→2) -1/(x - 2)²           -∞
+"image": "src/assets/81.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

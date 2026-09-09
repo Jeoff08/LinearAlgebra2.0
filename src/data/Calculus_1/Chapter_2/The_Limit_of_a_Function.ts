@@ -8,6 +8,8 @@ const topic = {
   details: `
 The limit of a function is one of the most important ideas in Calculus. Before studying derivatives, continuity, and integrals, we first need to understand what a limit means. A limit describes what value a function is approaching as the input approaches a certain number. The important word is approaching. A limit does not always depend on the exact value of the function at a particular point. Instead, it focuses on what happens to the function as we get closer and closer to that point. The notation for a limit is lim(x→a) f(x) = L, which is read as "the limit of f(x), as x approaches a, is L." This means that as x gets closer and closer to a, the value of f(x) gets closer and closer to L. Limits allow us to analyse behaviour near points of interest, even when the function is not defined at those points.
 
+"image": "src/assets/82.png",
+
 The notation for a limit is:
   lim(x→a) f(x) = L
 
@@ -31,14 +33,7 @@ We want to find:
 
 As x gets closer to 3, we calculate values of the function.
 
-  x     |  f(x) = 2x + 1
-  ───────┼─────────────────
-  2.9   |  6.8
-  2.99  |  6.98
-  2.999 |  6.998
-  3.001 |  7.002
-  3.01  |  7.02
-  3.1   |  7.2
+"image": "src/assets/83.png",
 
 As x approaches 3, the function approaches 7.
 
@@ -232,6 +227,8 @@ This is an important idea:
   A limit depends on what the function approaches, not necessarily on the 
   actual value of the function at that point.
 
+"image": "src/assets/84.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 10. A LIMIT CAN EXIST EVEN IF THE FUNCTION IS UNDEFINED
@@ -390,14 +387,7 @@ Another example is speed. When calculating the instantaneous speed of a car at o
 15. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Concept                Notation
-  ───────────────────────────────────────────────────────────────────────
-  General Limit          lim(x→a) f(x) = L
-  Left-Hand Limit        lim(x→a⁻) f(x)
-  Right-Hand Limit       lim(x→a⁺) f(x)
-  Limit Exists           lim(x→a⁻) f(x) = lim(x→a⁺) f(x)
-  Infinite Limit         lim(x→a) f(x) = ∞
-  Does Not Exist         DNE
+"image": "src/assets/85.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

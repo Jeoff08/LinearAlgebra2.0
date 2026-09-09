@@ -24,6 +24,8 @@ Equations of lines are fundamental in Algebra and Calculus because they help us 
 
 Before studying more advanced Calculus concepts, it is important to understand how a line is represented mathematically.
 
+"image": "src/assets/103.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT IS A STRAIGHT LINE?

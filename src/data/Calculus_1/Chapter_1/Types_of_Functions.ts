@@ -8,6 +8,8 @@ const topic = {
   details: `
 Functions can be classified into different types based on their equations, behavior, graphs, and relationships between inputs and outputs. Understanding the different types of functions is important because functions are used throughout Algebra, Pre-Calculus, and Calculus. A function describes a relationship in which every input has exactly one output. However, different functions behave differently. Some produce straight lines, some produce curves, some grow rapidly, and others may have restrictions or special behaviors. For example, f(x) = 2x + 1 is a linear function, while f(x) = x² is a quadratic function. Their equations look different, and their graphs also have different shapes. Learning the different types of functions helps us recognize how a function behaves even before graphing it. This knowledge is essential for selecting appropriate mathematical tools and for understanding the underlying patterns in data, physics, economics, and many other fields.
 
+"image": "src/assets/110.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. CONSTANT FUNCTION
@@ -61,6 +63,8 @@ The y-intercept is:
 
 Linear functions have a constant rate of change.
 
+"image": "src/assets/66.png",
+
 For every increase of 1 in x, the output changes by the same amount.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -91,6 +95,8 @@ Quadratic functions are important because they can have:
   • x-intercepts
   • A vertex
   • An axis of symmetry
+
+"image": "src/assets/67.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -132,6 +138,8 @@ Examples include:
   Linear Polynomial: f(x) = 2x + 1
   Quadratic Polynomial: f(x) = x² + 3x + 2
   Cubic Polynomial: f(x) = x³ - 2x
+
+"image": "src/assets/68.png",
 
 Polynomial functions are very important because many mathematical models can be represented or approximated using polynomials.
 
@@ -248,6 +256,8 @@ Exponential functions are commonly used to model:
   • Radioactive decay
   • Bacterial growth
 
+"image": "src/assets/69.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 10. LOGARITHMIC FUNCTION
@@ -280,6 +290,8 @@ Logarithmic functions are important when dealing with:
   • Earthquake magnitude
   • Scientific measurements
 
+"image": "src/assets/70.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 11. TRIGONOMETRIC FUNCTIONS
@@ -305,6 +317,8 @@ Trigonometric functions are important in:
   • Waves
   • Sound
   • Circular motion
+
+"image": "src/assets/71.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -385,6 +399,8 @@ This means that every horizontal line intersects the graph at most once.
 
 One-to-one functions are important because they can have inverse functions.
 
+"image": "src/assets/72.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 15. IMPORTANT GRAPH CHARACTERISTICS
@@ -392,18 +408,7 @@ One-to-one functions are important because they can have inverse functions.
 
 Different types of functions have different graph shapes, which provide visual cues to their behaviour. For instance, constant functions are horizontal lines; linear functions are straight lines with a constant slope; quadratics produce parabolas that open up or down; cubics show an S‑shape; absolute value functions create V‑shapes; square root functions start at the origin and gradually rise; rational functions have separate branches with asymptotes; exponentials grow or decay rapidly; logarithms increase slowly; and trigonometric functions oscillate in waves. These characteristic shapes help us quickly identify the type of function from its graph and vice versa. In calculus, the shape of a graph reveals information about its derivative (slope) and integral (area), making it easier to analyse. Memorising these typical graphs is a valuable skill for problem solving and for understanding function properties.
 
-  Type of Function      Example             Typical Graph
-  ──────────────────────────────────────────────────────────────────────
-  Constant              f(x) = 5            Horizontal line
-  Linear                f(x) = 2x + 1       Straight line
-  Quadratic             f(x) = x²           Parabola
-  Cubic                 f(x) = x³           Curved S-shape
-  Absolute Value        f(x) = |x|          V-shape
-  Square Root           f(x) = √x           Curved rightward
-  Rational              f(x) = 1/x          Separate branches
-  Exponential           f(x) = 2ˣ           Rapid growth/decay
-  Logarithmic           f(x) = log(x)       Slow growth curve
-  Trigonometric         f(x) = sin(x)       Repeating wave
+"image": "src/assets/74.png",
 
 Each type of function has its own characteristics, domain, range, and behavior.
 
@@ -418,17 +423,25 @@ Polynomial Functions:
   Often use the Power Rule:
     d/dx (xⁿ) = nxⁿ⁻¹
 
+"image": "src/assets/75.png",
+
 Exponential Functions:
   For f(x) = eˣ, the derivative is:
     f'(x) = eˣ
+
+"image": "src/assets/76.png",
 
 Logarithmic Functions:
   For f(x) = ln(x), the derivative is:
     f'(x) = 1/x
 
+"image": "src/assets/77.png",
+
 Trigonometric Functions:
   For f(x) = sin(x), the derivative is:
     f'(x) = cos(x)
+
+"image": "src/assets/78.png",
 
 Understanding the type of function helps us determine its behavior and which mathematical rules can be used to analyze it.
 
@@ -437,22 +450,7 @@ Understanding the type of function helps us determine its behavior and which mat
 17. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Function Type        General Form              Key Feature
-  ───────────────────────────────────────────────────────────────────────────
-  Constant             f(x) = c              Same output for all inputs
-  Linear               f(x) = mx + b         Straight line, constant slope
-  Quadratic            f(x) = ax² + bx + c   Parabola, vertex, axis
-  Cubic                f(x) = ax³ + ...      S-shaped curve
-  Polynomial           f(x) = aₙxⁿ + ...     Sum of power terms
-  Absolute Value       f(x) = |x|            V-shape
-  Square Root          f(x) = √x             Starts at origin
-  Rational             f(x) = P(x)/Q(x)      Asymptotes, restrictions
-  Exponential          f(x) = aˣ             Rapid growth/decay
-  Logarithmic          f(x) = logₐ(x)        Inverse of exponential
-  Trigonometric        f(x) = sin(x)         Periodic, wave-like
-  Piecewise            Different rules       Changes behavior
-  Even                 f(-x) = f(x)          Symmetry about y-axis
-  Odd                  f(-x) = -f(x)         Symmetry about origin
+"image": "src/assets/79.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

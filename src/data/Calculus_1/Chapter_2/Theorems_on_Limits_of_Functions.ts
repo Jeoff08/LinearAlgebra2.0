@@ -13,6 +13,8 @@ Suppose:
 and:
   lim(x→a) g(x) = M
 
+"image": "src/assets/87.png",
+
 The theorems on limits tell us how to find the limit when functions are:
   • Added
   • Subtracted
@@ -408,18 +410,7 @@ They also prepare us for more advanced topics such as:
 16. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Theorem                Formula
-  ───────────────────────────────────────────────────────────────────────────
-  Constant               lim(x→a) c = c
-  Identity               lim(x→a) x = a
-  Constant Multiple      lim(x→a) c f(x) = c · lim(x→a) f(x)
-  Sum                    lim(x→a) [f(x) + g(x)] = lim f(x) + lim g(x)
-  Difference             lim(x→a) [f(x) - g(x)] = lim f(x) - lim g(x)
-  Product                lim(x→a) [f(x)g(x)] = lim f(x) · lim g(x)
-  Quotient               lim(x→a) f(x)/g(x) = lim f(x) / lim g(x), if lim g(x) ≠ 0
-  Power                  lim(x→a) [f(x)]ⁿ = [lim f(x)]ⁿ
-  Root                   lim(x→a) ⁿ√(f(x)) = ⁿ√(lim f(x))
-  Sandwich (Squeeze)     If g ≤ f ≤ h and lim g = lim h = L, then lim f = L
+"image": "src/assets/88.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

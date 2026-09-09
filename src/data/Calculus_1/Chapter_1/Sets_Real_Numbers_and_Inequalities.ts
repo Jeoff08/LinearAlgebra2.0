@@ -13,6 +13,8 @@ For example, an inequality such as:
 
 describes a set of real numbers that are greater than 3.
 
+"image": "src/assets/107.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. SETS

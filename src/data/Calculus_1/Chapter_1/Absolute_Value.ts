@@ -15,6 +15,8 @@ and:
 
 Although 5 and -5 are different numbers, they are both exactly 5 units away from zero. Therefore, they have the same absolute value.
 
+"image": "src/assets/101.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. UNDERSTANDING ABSOLUTE VALUE

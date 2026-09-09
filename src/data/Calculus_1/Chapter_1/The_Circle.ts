@@ -8,6 +8,8 @@ const topic = {
   details: `
 A circle is one of the most important shapes in mathematics and geometry. It is a set of all points on a plane that are the same distance from one fixed point called the center. In simple terms, imagine placing a pencil at one fixed point and keeping the distance between the pencil and the center constant while rotating it around the center. The path created by the pencil forms a circle. A circle appears in many real-life objects, such as wheels, clocks, coins, plates, gears, and circular tracks. In mathematics, circles are studied using geometry and algebra. On the coordinate plane, we can represent a circle using an equation and analyse its center, radius, position, and other properties. Understanding the circle is fundamental because it appears in numerous fields, from basic geometry to advanced calculus, physics, and engineering.
 
+"image": "src/assets/108.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. PARTS OF A CIRCLE

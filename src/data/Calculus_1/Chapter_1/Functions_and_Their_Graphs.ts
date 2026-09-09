@@ -18,6 +18,8 @@ The input is 2, and the output is 7.
 
 Functions are useful because they allow us to describe how quantities change. Their graphs allow us to visualize that change.
 
+"image": "src/assets/105.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT IS A FUNCTION?

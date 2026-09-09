@@ -23,6 +23,8 @@ We can also combine functions using composition, which means using the output of
 
 Understanding operations on functions is important because it helps us analyze more complex mathematical relationships and prepares us for topics in Algebra and Calculus.
 
+"image": "src/assets/106.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. ADDITION OF FUNCTIONS

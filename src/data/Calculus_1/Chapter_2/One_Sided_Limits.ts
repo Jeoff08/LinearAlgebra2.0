@@ -8,6 +8,8 @@ const topic = {
   details: `
 A one-sided limit is a limit where we examine what happens to a function as x approaches a particular value from only one direction. Normally, when we write lim(x→a) f(x), we are looking at what happens as x approaches a from both the left and the right. However, sometimes a function behaves differently depending on which side we approach from. In these situations, we use one-sided limits. There are two types: left-hand limits and right-hand limits. Understanding one-sided limits is very important because they help us determine whether an ordinary two-sided limit exists. They are essential for analysing piecewise functions, jump discontinuities, vertical asymptotes, and continuity, making them a fundamental concept in calculus.
 
+"image": "src/assets/89.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT IS A ONE-SIDED LIMIT?
@@ -30,6 +32,8 @@ Or we can use values greater than 3:
   3.1, 3.01, 3.001
 
 This means we are approaching 3 from the right.
+
+"image": "src/assets/90.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -55,11 +59,7 @@ Example:
 
   As x approaches 3 from the left:
 
-    x       f(x) = x + 2
-    ────────────────────────
-    2.9     4.9
-    2.99    4.99
-    2.999   4.999
+"image": "src/assets/91.png",
 
   As x gets closer to 3, the output gets closer to 5.
 
@@ -90,11 +90,7 @@ Example:
 
   As x approaches 3 from the right:
 
-    x       f(x) = x + 2
-    ────────────────────────
-    3.1     5.1
-    3.01    5.01
-    3.001   5.001
+"image": "src/assets/92.png",
 
   As x gets closer to 3, the output gets closer to 5.
 
@@ -145,6 +141,8 @@ the two-sided limit exists.
 Therefore:
   lim(x→2) x² = 4
 
+"image": "src/assets/93.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 6. EXAMPLE WHERE THE TWO-SIDED LIMIT DOES NOT EXIST
@@ -180,6 +178,8 @@ the two-sided limit does not exist.
 
 Therefore:
   lim(x→1) f(x) does not exist
+
+"image": "src/assets/94.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -222,6 +222,8 @@ Since:
 
 the two-sided limit does not exist.
 
+"image": "src/assets/95.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 8. ONE-SIDED LIMITS FROM A GRAPH
@@ -236,6 +238,8 @@ Left-Hand Limit:
 Right-Hand Limit:
   Start on the right side of the graph and move toward the target value.
   Ask: What y-value is the graph approaching?
+
+"image": "src/assets/96.png",
 
 The important thing is to focus on where the graph is heading, not necessarily the actual point on the graph.
 
@@ -366,13 +370,7 @@ This is why one-sided limits are an important step before studying continuity.
 14. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Type                Notation            Meaning
-  ────────────────────────────────────────────────────────────────────────
-  Left-Hand Limit     lim(x→a⁻) f(x)     x approaches a from the left
-  Right-Hand Limit    lim(x→a⁺) f(x)     x approaches a from the right
-  Two-Sided Limit     lim(x→a) f(x)      x approaches a from both sides
-
-  Limit exists if:  |  lim(x→a⁻) f(x) = lim(x→a⁺) f(x)
+"image": "src/assets/97.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

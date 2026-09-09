@@ -8,6 +8,8 @@ const topic = {
   details: `
 The number plane, also called the coordinate plane or Cartesian plane, is a system used to locate points and represent mathematical relationships visually. It is one of the most important foundations in mathematics because it allows us to connect numbers, equations, and graphs. In simple terms, an equation can describe a relationship between variables, while a graph allows us to see that relationship visually. For example, consider the equation y = x + 2. Instead of only looking at the equation, we can choose different values of x, calculate the corresponding values of y, and plot the resulting points on the coordinate plane. When these points are connected, they form a graph. The number plane is extremely important in Algebra and Calculus because graphs help us understand the behavior of functions, increasing and decreasing values, intercepts, maximum and minimum points, slopes, curves, rates of change, limits, and derivatives.
 
+"image": "src/assets/109.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT IS THE NUMBER PLANE?
@@ -157,6 +159,8 @@ Step 2: Look at the y-coordinate
 Step 3: Mark the Point
   The point is located at (-2, 3).
 
+"image": "src/assets/54.png",
+
 Since the x-coordinate is negative and the y-coordinate is positive, the point is located in Quadrant II.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -177,13 +181,7 @@ This equation says that the value of y is equal to the value of x.
 
 We can create a table of values:
 
-  x      y = x
-  ─────────────
-  -2     -2
-  -1     -1
-   0      0
-   1      1
-   2      2
+"image": "src/assets/55.png",
 
 The ordered pairs are:
   (-2, -2), (-1, -1), (0, 0), (1, 1), (2, 2)
@@ -206,13 +204,7 @@ For example:
 
 We can choose values for x and calculate the corresponding values of y.
 
-  x      y = x + 2
-  ──────────────────
-  -2      0
-  -1      1
-   0      2
-   1      3
-   2      4
+"image": "src/assets/56.png",
 
 The corresponding points are:
   (-2, 0), (-1, 1), (0, 2), (1, 3), (2, 4)
@@ -268,6 +260,8 @@ Zero Slope:
     y = 3
   No matter what value x has, the y-value always remains 3.
 
+"image": "src/assets/57.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 8. INTERCEPTS
@@ -302,6 +296,8 @@ Substitute x = 0:
 Therefore, the y-intercept is:
   (0, -3)
 
+"image": "src/assets/58.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 9. DIFFERENT TYPES OF GRAPHS
@@ -313,21 +309,31 @@ Linear Function:
   y = x + 2
   Produces a straight line.
 
+"image": "src/assets/59.png",
+
 Quadratic Function:
   y = x²
   Produces a curved graph called a parabola.
+
+"image": "src/assets/60.png",
 
 Absolute Value Function:
   y = |x|
   Produces a V-shaped graph.
 
+"image": "src/assets/61.png",
+
 Cubic Function:
   y = x³
   Produces a curved graph that changes direction around the origin.
 
+"image": "src/assets/62.png",
+
 Rational Function:
   y = 1/x
   Produces two separate curves and has values where the function is undefined.
+
+"image": "src/assets/63.png",
 
 Each type of equation has a different graph. Learning how to recognize these graphs helps us understand the behavior of mathematical functions.
 
@@ -343,13 +349,7 @@ Consider:
 
 Choose several values of x.
 
-  x      y = x²
-  ──────────────
-  -2     4
-  -1     1
-   0     0
-   1     1
-   2     4
+"image": "src/assets/64.png",
 
 This produces the points:
   (-2, 4), (-1, 1), (0, 0), (1, 1), (2, 4)
@@ -399,20 +399,7 @@ Therefore, understanding the coordinate plane is essential because most Calculus
 12. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Concept                Description
-  ───────────────────────────────────────────────────────────────────────
-  Origin                 (0, 0)
-  x-axis                 Horizontal axis
-  y-axis                 Vertical axis
-  Ordered pair           (x, y)
-  Quadrant I             (+, +)
-  Quadrant II            (-, +)
-  Quadrant III           (-, -)
-  Quadrant IV            (+, -)
-  Slope                  m = (y₂ - y₁)/(x₂ - x₁)
-  x-intercept            Set y = 0
-  y-intercept            Set x = 0
-  Linear equation        y = mx + b
+"image": "src/assets/65.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -19,6 +19,8 @@ Function notation is useful because it clearly identifies:
   • The rule being applied
   • The resulting output
 
+"image": "src/assets/104.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. UNDERSTANDING f(x)

@@ -15,6 +15,8 @@ This means:
   As x approaches a, the value of the function must approach the same value 
   as the actual function value at a.
 
+"image": "src/assets/98.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. DEFINITION OF CONTINUITY AT A NUMBER
@@ -371,17 +373,7 @@ Step 5: Compare with the Function Value
 14. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Condition                    Requirement
-  ─────────────────────────────────────────────────────────────────────────────
-  f(a) exists                  Function is defined at a
-  lim(x→a) f(x) exists         Left and right limits are equal
-  lim(x→a) f(x) = f(a)         Limit equals the function value
-
-  Type of Discontinuity        Cause
-  ─────────────────────────────────────────────────────────────────────────────
-  Removable                    Limit exists but f(a) undefined or different
-  Jump                         Left and right limits differ
-  Infinite                     Function approaches ±∞
+"image": "src/assets/80.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

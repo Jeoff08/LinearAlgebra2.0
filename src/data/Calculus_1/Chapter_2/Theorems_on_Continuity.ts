@@ -13,6 +13,8 @@ Recall that a function f is continuous at x = a if:
 
 The theorems on continuity allow us to use already known continuous functions to build more complicated continuous functions.
 
+"image": "src/assets/100.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. CONSTANT FUNCTION THEOREM
@@ -421,16 +423,7 @@ Therefore:
 
 Suppose f and g are continuous at x = a.
 
-  Operation            Result
-  ───────────────────────────────────────────────────────────────
-  f(x) + g(x)          Continuous
-  f(x) - g(x)          Continuous
-  c f(x)               Continuous
-  f(x)g(x)             Continuous
-  f(x)/g(x)            Continuous if g(a) ≠ 0
-  [f(x)]ⁿ              Continuous
-  ⁿ√(f(x))             Continuous where defined
-  g(f(x))              Continuous if both functions are appropriately continuous
+"image": "src/assets/86.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

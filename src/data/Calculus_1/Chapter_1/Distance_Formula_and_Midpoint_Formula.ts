@@ -21,6 +21,8 @@ We can use these two formulas to answer two different questions:
 
 These concepts are important not only in geometry but also in Algebra, Calculus, physics, engineering, computer graphics, and many other areas of mathematics.
 
+"image": "src/assets/102.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. THE DISTANCE BETWEEN TWO POINTS
