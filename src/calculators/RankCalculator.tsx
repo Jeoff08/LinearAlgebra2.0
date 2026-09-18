@@ -373,7 +373,7 @@ const RankCalculator: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#166534]"></span>
             Matrix Rank Calculator
           </h3>
           <p className="text-xs text-gray-500 mt-1">
@@ -386,37 +386,37 @@ const RankCalculator: React.FC = () => {
           <span className="text-xs font-semibold text-gray-400 mr-1">Presets:</span>
           <button
             onClick={() => loadExample('2x3')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             2×3
           </button>
           <button
             onClick={() => loadExample('3x3 full')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             3×3 Full Rank
           </button>
           <button
             onClick={() => loadExample('3x3 singular')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             3×3 Singular
           </button>
           <button
             onClick={() => loadExample('3x4')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             3×4
           </button>
           <button
             onClick={() => loadExample('identity')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             Identity
           </button>
           <button
             onClick={() => loadExample('4x4')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             4×4
           </button>
@@ -433,13 +433,13 @@ const RankCalculator: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
             Matrix A ({matrix.length}×{matrix[0]?.length || 0})
           </h4>
           <div className="flex gap-1.5">
             <button
               onClick={addRow}
-              className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+              className="text-xs px-2.5 py-1 bg-[#F0FDF4] text-[#166534] hover:bg-[#166534] hover:text-white rounded-lg font-semibold transition cursor-pointer"
             >
               +Row
             </button>
@@ -447,7 +447,7 @@ const RankCalculator: React.FC = () => {
               onClick={removeRow}
               className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
                 matrix.length > 1
-                  ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                  ? 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 cursor-pointer'
                   : 'bg-gray-50 text-gray-300 cursor-not-allowed'
               }`}
               disabled={matrix.length <= 1}
@@ -456,7 +456,7 @@ const RankCalculator: React.FC = () => {
             </button>
             <button
               onClick={addCol}
-              className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+              className="text-xs px-2.5 py-1 bg-[#F0FDF4] text-[#166534] hover:bg-[#166534] hover:text-white rounded-lg font-semibold transition cursor-pointer"
             >
               +Col
             </button>
@@ -464,7 +464,7 @@ const RankCalculator: React.FC = () => {
               onClick={removeCol}
               className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
                 matrix[0]?.length > 1
-                  ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                  ? 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 cursor-pointer'
                   : 'bg-gray-50 text-gray-300 cursor-not-allowed'
               }`}
               disabled={matrix[0]?.length <= 1}
@@ -486,7 +486,7 @@ const RankCalculator: React.FC = () => {
                         value={getDisplayValue(val)}
                         onChange={(e) => updateMatrix(i, j, e.target.value)}
                         onBlur={() => handleInputBlur(i, j)}
-                        className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                        className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                         placeholder="0"
                         step="any"
                       />
@@ -507,7 +507,7 @@ const RankCalculator: React.FC = () => {
       <div className="flex flex-wrap gap-3">
         <button
           onClick={calculateRank}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -529,7 +529,7 @@ const RankCalculator: React.FC = () => {
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-[#FDF2F4] rounded-xl border border-[#7B1824]/20 text-xs sm:text-sm font-semibold text-[#7B1824]">
+        <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#166534]/20 text-xs sm:text-sm font-semibold text-[#166534]">
           {error}
         </div>
       )}
@@ -537,11 +537,11 @@ const RankCalculator: React.FC = () => {
       {/* Result */}
       {result && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-[#7B1824]"></span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Rank & Nullity</h3>
+                <span className="w-3 h-3 rounded-full bg-[#166534]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Rank & Nullity</h3>
               </div>
               <div className="flex-shrink-0">
                 <PDFExport
@@ -563,14 +563,14 @@ const RankCalculator: React.FC = () => {
           {showSteps && steps.length > 0 && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Detailed Step Breakdown</h3>
               </div>
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                 {steps.filter(item => item.step.trim() !== '').map((item, idx) => (
                   <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
                     <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <div className="flex-1 font-mono text-xs sm:text-sm text-gray-800 whitespace-pre-wrap">
@@ -580,7 +580,7 @@ const RankCalculator: React.FC = () => {
                     {item.explanation && (
                       <div className="pt-2 pl-8 border-t border-gray-200/60">
                         <p className="text-xs text-gray-500 italic">
-                          <span className="font-semibold text-[#7B1824] not-italic">Note: </span>
+                          <span className="font-semibold text-[#166534] not-italic">Note: </span>
                           {item.explanation}
                         </p>
                       </div>
@@ -596,7 +596,7 @@ const RankCalculator: React.FC = () => {
       {/* Help */}
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-2 text-xs text-gray-600">
         <p className="font-bold text-gray-800 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-          <svg className="w-4 h-4 text-[#7B1824]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[#166534]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Rank Properties & Row Echelon Form

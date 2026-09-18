@@ -40,7 +40,7 @@ export default function CalculatorHubPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/75 px-3.5 py-1.5 text-[0.68rem] sm:text-xs font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs mb-5"
+              className="inline-flex items-center gap-2 rounded-full border border-[#166534]/60 bg-[#166534]/75 px-3.5 py-1.5 text-[0.68rem] sm:text-xs font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs mb-5"
             >
               <div className="flex h-3.5 w-3.5 items-center justify-center rounded-xs bg-white/20">
                 <Calculator className="h-2.5 w-2.5 text-white" />
@@ -57,7 +57,7 @@ export default function CalculatorHubPage() {
             >
               <span className="text-white">All the Math Tools</span>
               <br />
-              <span className="text-[#E05260]">You Need.</span>
+              <span className="text-[#22c55e]">You Need.</span>
               </motion.h1> 
 
             {/* Subtitle */}
@@ -78,15 +78,15 @@ export default function CalculatorHubPage() {
               className="mt-6 flex flex-wrap items-center gap-5 sm:gap-7 text-xs sm:text-sm font-semibold text-white/90"
             >
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-[#E05260]" />
+                <ShieldCheck className="h-4 w-4 text-[#22c55e]" />
                 <span>Provide Results</span>
               </div>
               <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-[#E05260]" />
+                <Zap className="h-4 w-4 text-[#22c55e]" />
                 <span>Step-by-Step Solutions</span>
               </div>
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-[#E05260]" />
+                <TrendingUp className="h-4 w-4 text-[#22c55e]" />
                 <span>Interactive Visuals</span>
               </div>
             </motion.div>
@@ -104,7 +104,7 @@ export default function CalculatorHubPage() {
 
         {/* Indicator line/dots */}
         <div className="mt-4 flex items-center justify-center gap-1.5">
-          <span className="h-1 w-7 rounded-full bg-[#7B1824]" />
+          <span className="h-1 w-7 rounded-full bg-[#166534]" />
           <span className="h-1 w-2 rounded-full bg-[#E5E7EB]" />
           <span className="h-1 w-7 rounded-full bg-[#E5E7EB]" />
         </div>
@@ -122,10 +122,10 @@ export default function CalculatorHubPage() {
           <motion.div
             whileHover={{ y: -4 }}
             transition={{ duration: 0.2 }}
-            className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-9 shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 overflow-hidden"
+            className="group relative flex flex-col justify-between rounded-[28px] border border-[#D1FAE5] bg-white p-7 sm:p-9 shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-xl hover:border-[#bbf7d0] transition-all duration-300 overflow-hidden"
           >
             {/* Background Dot Matrix Decoration (Bottom Right) */}
-            <div className="pointer-events-none absolute bottom-3 right-3 opacity-30 text-[#7B1824]" aria-hidden>
+            <div className="pointer-events-none absolute bottom-3 right-3 opacity-30 text-[#166534]" aria-hidden>
               <div className="grid grid-cols-6 gap-1.5">
                 {Array.from({ length: 24 }).map((_, i) => (
                   <span key={i} className="h-1 w-1 rounded-full bg-currentColor" />
@@ -136,10 +136,10 @@ export default function CalculatorHubPage() {
             <div>
               {/* Card Top Row: Icon & Tag */}
               <div className="flex items-start justify-between gap-4 mb-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#166534] text-white shadow-md shadow-[#166534]/20">
                   <Layers className="h-6 w-6" />
                 </div>
-                <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                <span className="rounded-full border border-[#bbf7d0] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#166534]">
                   23 Tools
                 </span>
               </div>
@@ -150,7 +150,7 @@ export default function CalculatorHubPage() {
                   <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
                     Linear Algebra
                   </h3>
-                  <p className="mt-1 text-xs sm:text-sm font-bold text-[#7B1824]">
+                  <p className="mt-1 text-xs sm:text-sm font-bold text-[#166534]">
                     Matrix, Vector &amp; System Solvers
                   </p>
                   <p className="mt-3 text-xs sm:text-sm text-[#5D6067] leading-relaxed max-w-sm">
@@ -161,7 +161,7 @@ export default function CalculatorHubPage() {
                 {/* 3D Matrix Graphic Mockup */}
                 <div className="relative shrink-0 flex items-center justify-center pt-2">
                   <div 
-                    className="relative flex h-20 w-20 sm:h-22 sm:w-22 items-center justify-center rounded-2xl bg-[#7B1824] shadow-lg shadow-[#7B1824]/25 transition-transform duration-300 group-hover:rotate-[-4deg] group-hover:scale-105"
+                    className="relative flex h-20 w-20 sm:h-22 sm:w-22 items-center justify-center rounded-2xl bg-[#166534] shadow-lg shadow-[#166534]/25 transition-transform duration-300 group-hover:rotate-[-4deg] group-hover:scale-105"
                     style={{ transform: "rotate(-8deg)" }}
                   >
                     <div className="flex items-center text-white font-mono font-bold leading-tight select-none">
@@ -183,7 +183,7 @@ export default function CalculatorHubPage() {
             <div className="mt-8 flex flex-wrap items-center gap-3 pt-4 border-t border-[#F3EBED]">
               <button
                 onClick={() => navigate("/calculators")}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-95"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-95"
               >
                 <span>Explore Tools</span>
                 <ArrowRight className="h-4 w-4" />
@@ -204,10 +204,10 @@ export default function CalculatorHubPage() {
           <motion.div
             whileHover={{ y: -4 }}
             transition={{ duration: 0.2 }}
-            className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-9 shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 overflow-hidden"
+            className="group relative flex flex-col justify-between rounded-[28px] border border-[#D1FAE5] bg-white p-7 sm:p-9 shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-xl hover:border-[#bbf7d0] transition-all duration-300 overflow-hidden"
           >
             {/* Background Dot Matrix Decoration (Bottom Right) */}
-            <div className="pointer-events-none absolute bottom-3 right-3 opacity-30 text-[#7B1824]" aria-hidden>
+            <div className="pointer-events-none absolute bottom-3 right-3 opacity-30 text-[#166534]" aria-hidden>
               <div className="grid grid-cols-6 gap-1.5">
                 {Array.from({ length: 24 }).map((_, i) => (
                   <span key={i} className="h-1 w-1 rounded-full bg-currentColor" />
@@ -218,10 +218,10 @@ export default function CalculatorHubPage() {
             <div>
               {/* Card Top Row: Icon & Tag */}
               <div className="flex items-start justify-between gap-4 mb-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#166534] text-white shadow-md shadow-[#166534]/20">
                   <TrendingUp className="h-6 w-6" />
                 </div>
-                <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                <span className="rounded-full border border-[#bbf7d0] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#166534]">
                   29 Tools
                 </span>
               </div>
@@ -232,7 +232,7 @@ export default function CalculatorHubPage() {
                   <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
                     Calculus 1 &amp; 2
                   </h3>
-                  <p className="mt-1 text-xs sm:text-sm font-bold text-[#7B1824]">
+                  <p className="mt-1 text-xs sm:text-sm font-bold text-[#166534]">
                     Limits, Derivatives, Integrals &amp; Series
                   </p>
                   <p className="mt-3 text-xs sm:text-sm text-[#5D6067] leading-relaxed max-w-sm">
@@ -253,24 +253,24 @@ export default function CalculatorHubPage() {
                       {/* Shaded Area Under Curve */}
                       <path
                         d="M14 55 Q35 15, 60 25 T100 12 L100 60 L14 60 Z"
-                        fill="rgba(123, 24, 36, 0.12)"
+                        fill="rgba(22, 101, 52, 0.12)"
                       />
 
                       {/* Vertical dotted boundary */}
-                      <line x1="75" y1="20" x2="75" y2="60" stroke="#7B1824" strokeWidth="1" strokeDasharray="2 2" />
+                      <line x1="75" y1="20" x2="75" y2="60" stroke="#166534" strokeWidth="1" strokeDasharray="2 2" />
 
                       {/* Smooth Curve */}
                       <path
                         d="M14 55 Q35 15, 60 25 T100 12"
-                        stroke="#7B1824"
+                        stroke="#166534"
                         strokeWidth="2.5"
                         strokeLinecap="round"
                       />
 
                       {/* Peak Dots */}
-                      <circle cx="45" cy="20" r="2.5" fill="#7B1824" />
-                      <circle cx="75" cy="20" r="2.5" fill="#7B1824" />
-                      <circle cx="100" cy="12" r="2.5" fill="#7B1824" />
+                      <circle cx="45" cy="20" r="2.5" fill="#166534" />
+                      <circle cx="75" cy="20" r="2.5" fill="#166534" />
+                      <circle cx="100" cy="12" r="2.5" fill="#166534" />
                     </svg>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export default function CalculatorHubPage() {
             <div className="mt-8 flex flex-wrap items-center gap-3 pt-4 border-t border-[#F3EBED]">
               <button
                 onClick={() => navigate("/calculus-calculators")}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-95"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-95"
               >
                 <span>Explore Tools</span>
                 <ArrowRight className="h-4 w-4" />

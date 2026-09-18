@@ -255,7 +255,7 @@ export default function Calculator({ definition }: CalculatorProps) {
       const { from, to } = graph.shadedRegion;
       const subPoints = points.filter((p) => p.x >= from && p.x <= to);
       if (subPoints.length > 1) {
-        ctx.fillStyle = "rgba(123, 24, 36, 0.15)";
+        ctx.fillStyle = "rgba(22, 101, 52, 0.15)";
         ctx.beginPath();
         const yBase = scaleY(0);
         ctx.moveTo(scaleX(subPoints[0].x), yBase);
@@ -269,7 +269,7 @@ export default function Calculator({ definition }: CalculatorProps) {
     }
 
     // Draw Primary Curve
-    ctx.strokeStyle = "#7B1824";
+    ctx.strokeStyle = "#166534";
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     let started = false;
@@ -322,7 +322,7 @@ export default function Calculator({ definition }: CalculatorProps) {
         const sx = scaleX(h.x);
         const sy = scaleY(h.y);
         if (Number.isFinite(sx) && Number.isFinite(sy)) {
-          ctx.fillStyle = "#7B1824";
+          ctx.fillStyle = "#166534";
           ctx.beginPath();
           ctx.arc(sx, sy, 5, 0, Math.PI * 2);
           ctx.fill();
@@ -344,12 +344,12 @@ export default function Calculator({ definition }: CalculatorProps) {
       <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#7B1824] text-white flex items-center justify-center shadow-md shadow-[#7B1824]/20 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-[#166534] text-white flex items-center justify-center shadow-md shadow-[#166534]/20 shrink-0">
               <IconComponent className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#7B1824]/10 text-[#7B1824]">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#166534]/10 text-[#166534]">
                   {definition.category}
                 </span>
                 <span className="text-xs text-gray-400 font-mono">
@@ -371,7 +371,7 @@ export default function Calculator({ definition }: CalculatorProps) {
         {definition.example && (
           <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-[#7B1824]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#166534]" />
               <span>Example Problem:</span>
             </span>
             <button
@@ -383,7 +383,7 @@ export default function Calculator({ definition }: CalculatorProps) {
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-xs font-mono font-medium text-gray-800 transition cursor-pointer"
             >
               <span>{definition.example}</span>
-              <span className="text-[10px] text-[#7B1824] font-bold">Use</span>
+              <span className="text-[10px] text-[#166534] font-bold">Use</span>
             </button>
           </div>
         )}
@@ -411,8 +411,8 @@ export default function Calculator({ definition }: CalculatorProps) {
               }}
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                 showKeypad
-                  ? "bg-[#7B1824] text-white shadow-xs"
-                  : "bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824]/15 border border-[#7B1824]/20"
+                  ? "bg-[#166534] text-white shadow-xs"
+                  : "bg-[#F0FDF4] text-[#166534] hover:bg-[#166534]/15 border border-[#166534]/20"
               }`}
             >
               <CalcIcon className="w-3.5 h-3.5" />
@@ -422,7 +422,7 @@ export default function Calculator({ definition }: CalculatorProps) {
             </button>
           </div>
 
-          <div className="relative rounded-xl border border-gray-300 bg-[#0C1017] p-1 shadow-inner focus-within:border-[#7B1824] transition">
+          <div className="relative rounded-xl border border-gray-300 bg-[#0C1017] p-1 shadow-inner focus-within:border-[#166534] transition">
             <textarea
               id="math-input"
               ref={textareaRef}
@@ -458,7 +458,7 @@ export default function Calculator({ definition }: CalculatorProps) {
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] disabled:opacity-40 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#7B1824]/20 transition-all cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#166534] hover:bg-[#14532D] disabled:opacity-40 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#166534]/20 transition-all cursor-pointer active:scale-95"
             >
               {isLoading ? (
                 <>
@@ -488,12 +488,12 @@ export default function Calculator({ definition }: CalculatorProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 15, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 400, damping: 28 }}
-              className="relative mt-3 sm:mt-0 sm:absolute sm:right-0 sm:-top-36 md:-top-44 z-50 w-full sm:w-[350px] md:w-[370px] rounded-2xl border-2 border-[#7B1824]/25 bg-white/98 backdrop-blur-xl p-4 sm:p-5 shadow-2xl shadow-[#7B1824]/20 select-none"
+              className="relative mt-3 sm:mt-0 sm:absolute sm:right-0 sm:-top-36 md:-top-44 z-50 w-full sm:w-[350px] md:w-[370px] rounded-2xl border-2 border-[#166534]/25 bg-white/98 backdrop-blur-xl p-4 sm:p-5 shadow-2xl shadow-[#166534]/20 select-none"
             >
               {/* Keypad Draggable Floating Header */}
               <div className="flex items-center justify-between pb-2.5 border-b border-gray-100 cursor-grab active:cursor-grabbing">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#7B1824] text-white flex items-center justify-center shadow-xs">
+                  <div className="w-7 h-7 rounded-lg bg-[#166534] text-white flex items-center justify-center shadow-xs">
                     <CalcIcon className="w-4 h-4" />
                   </div>
                   <div>
@@ -502,7 +502,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                         Math Keypad
                       </h3>
                       <span
-                        className="inline-flex items-center text-[#7B1824]/60"
+                        className="inline-flex items-center text-[#166534]/60"
                         title="Click & hold to drag"
                       >
                         <GripHorizontal className="w-3.5 h-3.5" />
@@ -522,7 +522,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                       onClick={() => setKeypadTab("standard")}
                       className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
                         keypadTab === "standard"
-                          ? "bg-white text-[#7B1824] shadow-xs"
+                          ? "bg-white text-[#166534] shadow-xs"
                           : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
@@ -533,7 +533,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                       onClick={() => setKeypadTab("calculus")}
                       className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
                         keypadTab === "calculus"
-                          ? "bg-white text-[#7B1824] shadow-xs"
+                          ? "bg-white text-[#166534] shadow-xs"
                           : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
@@ -544,7 +544,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                       onClick={() => setKeypadTab("functions")}
                       className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
                         keypadTab === "functions"
-                          ? "bg-white text-[#7B1824] shadow-xs"
+                          ? "bg-white text-[#166534] shadow-xs"
                           : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
@@ -554,7 +554,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                   <button
                     type="button"
                     onClick={() => setShowKeypad(false)}
-                    className="p-1 text-gray-400 hover:text-[#7B1824] hover:bg-[#FDF2F4] rounded-md transition"
+                    className="p-1 text-gray-400 hover:text-[#166534] hover:bg-[#F0FDF4] rounded-md transition"
                     title="Close Floating Keypad"
                   >
                     <span className="text-sm font-black leading-none">
@@ -569,42 +569,42 @@ export default function Calculator({ definition }: CalculatorProps) {
                 <button
                   type="button"
                   onClick={() => insertSymbol("x")}
-                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                  className="py-1 rounded-md hover:bg-[#166534]/10 hover:text-[#166534] transition font-mono"
                 >
                   x
                 </button>
                 <button
                   type="button"
                   onClick={() => insertSymbol("y")}
-                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                  className="py-1 rounded-md hover:bg-[#166534]/10 hover:text-[#166534] transition font-mono"
                 >
                   y
                 </button>
                 <button
                   type="button"
                   onClick={() => insertSymbol("t")}
-                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                  className="py-1 rounded-md hover:bg-[#166534]/10 hover:text-[#166534] transition font-mono"
                 >
                   t
                 </button>
                 <button
                   type="button"
                   onClick={() => insertSymbol("n")}
-                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                  className="py-1 rounded-md hover:bg-[#166534]/10 hover:text-[#166534] transition font-mono"
                 >
                   n
                 </button>
                 <button
                   type="button"
                   onClick={() => insertSymbol("pi")}
-                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                  className="py-1 rounded-md hover:bg-[#166534]/10 hover:text-[#166534] transition font-mono"
                 >
                   π
                 </button>
                 <button
                   type="button"
                   onClick={() => insertSymbol("e")}
-                  className="py-1 rounded-md hover:bg-[#7B1824]/10 hover:text-[#7B1824] transition font-mono"
+                  className="py-1 rounded-md hover:bg-[#166534]/10 hover:text-[#166534] transition font-mono"
                 >
                   e
                 </button>
@@ -646,7 +646,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={handleBackspace}
-                      className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
                       title="Backspace"
                     >
                       ⌫
@@ -656,28 +656,28 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => insertSymbol("1/(", 3)}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
                     >
                       ¹/x
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("^2")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
                     >
                       x²
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("sqrt()", 5)}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
                     >
                       ²√x
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol(" / ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-sm sm:text-base transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-sm sm:text-base transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs"
                     >
                       ÷
                     </button>
@@ -707,7 +707,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => insertSymbol(" * ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       ×
                     </button>
@@ -737,7 +737,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => insertSymbol(" - ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       −
                     </button>
@@ -767,7 +767,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => insertSymbol(" + ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-sm sm:text-base transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       +
                     </button>
@@ -797,7 +797,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => handleSolve()}
-                      className="p-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] text-white font-black text-lg sm:text-xl transition active:scale-95 cursor-pointer shadow-md shadow-[#7B1824]/30 flex items-center justify-center"
+                      className="p-2.5 rounded-xl bg-[#166534] hover:bg-[#14532D] text-white font-black text-lg sm:text-xl transition active:scale-95 cursor-pointer shadow-md shadow-[#166534]/30 flex items-center justify-center"
                       title="Calculate & Solve"
                     >
                       =
@@ -811,49 +811,49 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => insertSymbol("^3")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       x³
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("^", 1)}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       xⁿ
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("d/dx ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       d/dx
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("∫ ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       ∫ dx
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("∫[0 to 1] ", 2)}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       ∫ₐᵇ
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("sum ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       ∑ (Sum)
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("lim ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       lim
                     </button>
@@ -895,7 +895,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => insertSymbol("d/dt ")}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       d/dt
                     </button>
@@ -916,7 +916,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => handleSolve()}
-                      className="p-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] text-white font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-xs flex items-center justify-center gap-1"
+                      className="p-2.5 rounded-xl bg-[#166534] hover:bg-[#14532D] text-white font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-xs flex items-center justify-center gap-1"
                     >
                       <Play className="w-3 h-3 fill-white" />
                       <span>Solve</span>
@@ -930,63 +930,63 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => insertSymbol("sin(x)", 4)}
-                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#166534]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       sin
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("cos(x)", 4)}
-                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#166534]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       cos
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("tan(x)", 4)}
-                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#166534]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       tan
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("sec(x)", 4)}
-                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#166534]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       sec
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("csc(x)", 4)}
-                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#166534]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       csc
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("cot(x)", 4)}
-                      className="p-2.5 rounded-xl bg-white hover:bg-[#7B1824]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-white hover:bg-[#166534]/10 border border-gray-200 text-gray-900 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       cot
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("arcsin(x)", 7)}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       arcsin
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("arctan(x)", 7)}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       arctan
                     </button>
                     <button
                       type="button"
                       onClick={() => insertSymbol("ln(x)", 3)}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       ln
                     </button>
@@ -1000,7 +1000,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                     <button
                       type="button"
                       onClick={() => insertSymbol("e^x", 3)}
-                      className="p-2.5 rounded-xl bg-[#FDF2F4] hover:bg-[#7B1824]/15 border border-[#7B1824]/20 text-[#7B1824] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#166534]/15 border border-[#166534]/20 text-[#166534] font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-2xs"
                     >
                       eˣ
                     </button>
@@ -1033,13 +1033,13 @@ export default function Calculator({ definition }: CalculatorProps) {
           >
             {/* Error Message if calculation failed */}
             {!result.success && result.error && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-5 flex items-start gap-3 text-red-900">
-                <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div className="rounded-2xl border border-green-200 bg-green-50 p-5 flex items-start gap-3 text-green-900">
+                <AlertCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-red-900">
+                  <h4 className="text-sm font-bold text-green-900">
                     Input Validation Error
                   </h4>
-                  <p className="text-xs text-red-700 leading-relaxed">
+                  <p className="text-xs text-green-700 leading-relaxed">
                     {result.error}
                   </p>
                 </div>
@@ -1048,9 +1048,9 @@ export default function Calculator({ definition }: CalculatorProps) {
 
             {/* Success Hero Answer Card */}
             {result.success && result.answer && (
-              <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-3">
+              <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#7B1824]">
+                  <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#166534]">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Final Answer</span>
                   </div>
@@ -1116,7 +1116,7 @@ export default function Calculator({ definition }: CalculatorProps) {
               <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-5">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#7B1824]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#166534]" />
                     <h3 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
                       Step-by-Step Mathematical Solution
                     </h3>
@@ -1149,7 +1149,7 @@ export default function Calculator({ definition }: CalculatorProps) {
                           className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center">
+                            <span className="w-5 h-5 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center">
                               {idx + 1}
                             </span>
                             <h4 className="text-xs sm:text-sm font-bold text-gray-900">
@@ -1181,7 +1181,7 @@ export default function Calculator({ definition }: CalculatorProps) {
               <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-[#7B1824]" />
+                    <TrendingUp className="w-4 h-4 text-[#166534]" />
                     <h3 className="text-base font-bold text-gray-900">
                       Visual Function Graph &amp; Behavior
                     </h3>
@@ -1221,7 +1221,7 @@ export default function Calculator({ definition }: CalculatorProps) {
             {result.success && result.explanation && (
               <div className="rounded-2xl border border-gray-200 bg-gray-50/50 p-5 space-y-1.5 text-gray-700">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
-                  <Info className="w-3.5 h-3.5 text-[#7B1824]" />
+                  <Info className="w-3.5 h-3.5 text-[#166534]" />
                   <span>Mathematical Concept</span>
                 </div>
                 <p className="text-xs text-gray-600 leading-relaxed">

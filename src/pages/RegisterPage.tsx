@@ -2,13 +2,14 @@ import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { UserPlus, Lock, Mail, User, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { UserPlus, Lock, Mail, User, Eye, EyeOff, ArrowLeft, LayoutGrid } from "lucide-react";
 import imageLogo from "../assets/image logo.png";
 
 export default function RegisterPage() {
   const { register, isAuthenticated, loading, user } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [block, setBlock] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +33,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const err = await register(name, email, password);
+    const err = await register(name, email, password, block);
     setSubmitting(false);
     if (err) {
       setError(err);
@@ -80,21 +81,21 @@ export default function RegisterPage() {
           <div className="text-center mb-6">
             <h1 className="text-3xl sm:text-[2.65rem] font-black tracking-tight leading-tight">
               <span className="text-white">Create </span>
-              <span className="text-[#DE3848]">Account</span>
+              <span className="text-[#16a34a]">Account</span>
             </h1>
             <p className="text-xs sm:text-[13px] text-[#D1D5DB] leading-relaxed mt-2 font-normal">
               Join us to start your mathematics journey with{" "}
-              <span className="text-[#DE3848] font-semibold">
+              <span className="text-[#16a34a] font-semibold">
                 MathWorkspace.
               </span>
             </p>
             {/* Small red underline bar matching reference */}
-            <div className="w-9 h-[2.5px] bg-[#DE3848] mx-auto mt-2.5 rounded-full" />
+            <div className="w-9 h-[2.5px] bg-[#16a34a] mx-auto mt-2.5 rounded-full" />
           </div>
 
           {/* Feedback Alert */}
           {error && (
-            <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-medium text-red-300">
+            <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-xs font-medium text-green-300">
               {error}
             </div>
           )}
@@ -107,7 +108,7 @@ export default function RegisterPage() {
                 htmlFor="name"
                 className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
               >
-                <User className="w-3.5 h-3.5 text-[#DE3848]" />
+                <User className="w-3.5 h-3.5 text-[#16a34a]" />
                 <span>Full Name</span>
               </label>
               <input
@@ -118,7 +119,27 @@ export default function RegisterPage() {
                 placeholder="Alex Morgan"
                 required
                 autoComplete="name"
-                className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#DE3848]/60 transition-all duration-200"
+                className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+              />
+            </div>
+
+            {/* Block Field */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="block"
+                className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
+              >
+                <LayoutGrid className="w-3.5 h-3.5 text-[#16a34a]" />
+                <span>Block / Section</span>
+              </label>
+              <input
+                id="block"
+                type="text"
+                value={block}
+                onChange={(e) => setBlock(e.target.value)}
+                placeholder="e.g. A, B, C..."
+                required
+                className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
               />
             </div>
 
@@ -128,7 +149,7 @@ export default function RegisterPage() {
                 htmlFor="email"
                 className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
               >
-                <Mail className="w-3.5 h-3.5 text-[#DE3848]" />
+                <Mail className="w-3.5 h-3.5 text-[#16a34a]" />
                 <span>Email Address</span>
               </label>
               <input
@@ -139,7 +160,7 @@ export default function RegisterPage() {
                 placeholder="name@example.com"
                 required
                 autoComplete="email"
-                className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#DE3848]/60 transition-all duration-200"
+                className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
               />
             </div>
 
@@ -149,7 +170,7 @@ export default function RegisterPage() {
                 htmlFor="password"
                 className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
               >
-                <Lock className="w-3.5 h-3.5 text-[#DE3848]" />
+                <Lock className="w-3.5 h-3.5 text-[#16a34a]" />
                 <span>Password</span>
               </label>
               <div className="relative">
@@ -161,7 +182,7 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   required
                   autoComplete="new-password"
-                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] pl-4 pr-11 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#DE3848]/60 transition-all duration-200 font-mono tracking-wider"
+                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] pl-4 pr-11 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200 font-mono tracking-wider"
                 />
                 <button
                   type="button"
@@ -182,7 +203,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full mt-2 rounded-xl sm:rounded-2xl bg-[#8B1A24] hover:bg-[#72121B] active:scale-[0.99] text-white py-3.5 px-4 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#8B1A24]/30 hover:shadow-xl hover:shadow-[#8B1A24]/40 transition-all duration-200 cursor-pointer disabled:opacity-50"
+              className="w-full mt-2 rounded-xl sm:rounded-2xl bg-[#166534] hover:bg-[#166534] active:scale-[0.99] text-white py-3.5 px-4 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#166534]/30 hover:shadow-xl hover:shadow-[#166534]/40 transition-all duration-200 cursor-pointer disabled:opacity-50"
             >
               <UserPlus className="w-4 h-4" />
               <span>{submitting ? "Creating account..." : "Sign up"}</span>
@@ -196,7 +217,7 @@ export default function RegisterPage() {
             Already have an account?{" "}
             <Link
               to="/login"
-              className="text-[#DE3848] hover:text-[#ff5968] font-semibold transition ml-0.5"
+              className="text-[#16a34a] hover:text-[#4ade80] font-semibold transition ml-0.5"
             >
               Sign in
             </Link>

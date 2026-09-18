@@ -13,6 +13,8 @@ For example, if s(t) represents the position of an object at time t, then:
 
 represents its instantaneous velocity.
 
+"image": "src/assets/123.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT DOES "RATE OF CHANGE" MEAN?
@@ -27,6 +29,8 @@ For a function y = f(x), the average rate of change from x₁ to x₂ is:
   (f(x₂) - f(x₁))/(x₂ - x₁)
 
 This tells us the average change in y for each unit of change in x.
+
+"image": "src/assets/129.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -47,8 +51,9 @@ and:
 Therefore:
   (f(3) - f(1))/(3 - 1) = (9 - 1)/2 = 8/2 = 4
 
-So the average rate of change is:
-  4
+So the average rate of change is: 4
+
+"image": "src/assets/133.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -66,6 +71,8 @@ Instantaneous rate of change:
     dy/dx
 
 The derivative gives us the instantaneous rate of change.
+
+"image": "src/assets/134.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -88,6 +95,8 @@ The average rate of change approaches the instantaneous rate of change.
 
 Therefore:
   f'(x) = instantaneous rate of change
+
+"image": "src/assets/135.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -140,6 +149,8 @@ At t = 2:
 The object is moving at an instantaneous velocity of:
   7 units/time
 
+"image": "src/assets/136.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 7. VELOCITY VS. SPEED
@@ -161,6 +172,8 @@ but its speed is:
   20
 
 The negative sign indicates direction.
+
+"image": "src/assets/130.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -186,6 +199,8 @@ So:
 or:
   s(t) → s'(t) → s''(t)
 
+"image": "src/assets/131.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 9. EXAMPLE: POSITION, VELOCITY, AND ACCELERATION
@@ -206,6 +221,8 @@ Acceleration:
 
 The derivative therefore tells us how position changes, while the second derivative tells us how velocity changes.
 
+"image": "src/assets/132.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 10. DERIVATIVE AND SLOPE
@@ -219,6 +236,8 @@ Therefore:
   Derivative = Instantaneous Rate of Change = Tangent Slope
 
 These are three different ways of interpreting the same mathematical concept.
+
+"image": "src/assets/137.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -390,6 +409,8 @@ This means the object is momentarily neither moving upward nor downward.
 
 It is at the highest point of its motion.
 
+"image": "src/assets/138.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 19. AVERAGE RATE VS. INSTANTANEOUS RATE
@@ -439,6 +460,8 @@ At the same time:
 
 These are two interpretations of the same derivative.
 
+"image": "src/assets/139.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 21. THE FUNDAMENTAL CONNECTION
@@ -464,10 +487,14 @@ Understanding these three interpretations is essential for understanding Calculu
 
 Several common mistakes occur when interpreting the derivative as a rate of change. One is confusing average and instantaneous rates. Average rate is Δy/Δx over an interval, while the derivative is dy/dx at a point. They are related but different. Another mistake is forgetting the units of the derivative. If f'(t) = 20, you should always ask: 20 what per what? For example, 20 meters per second is much clearer than just 20. A third mistake is thinking that a positive derivative means a positive function value. These are different things: a function can have f(x) < 0 while f'(x) > 0. The function value tells you where the graph is (above or below the x‑axis), while the derivative tells you how the graph is changing (increasing or decreasing). Being aware of these common errors will help you avoid them and interpret derivatives correctly.
 
+"image": "src/assets/128.png",
+
 Mistake 1: Confusing average and instantaneous rate
   Average rate: Δy/Δx
   Derivative: dy/dx
   The first describes an interval, while the second describes a specific point.
+
+"image": "src/assets/125.png",
 
 Mistake 2: Forgetting the units
   If f'(t) = 20, you should ask: 20 what per what?
@@ -475,12 +502,16 @@ Mistake 2: Forgetting the units
     20 meters per second
   has a much clearer meaning than simply saying 20.
 
+"image": "src/assets/126.png",
+
 Mistake 3: Thinking a positive derivative means positive function value
   These are different things.
   A function can have f(x) < 0 while f'(x) > 0.
   For example, the function could be below the x-axis but still increasing.
   The function value tells you where the graph is.
   The derivative tells you how the graph is changing.
+
+"image": "src/assets/127.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -509,15 +540,7 @@ If f'(x) > 0 but becomes smaller:
 24. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Concept                    Formula
-  ───────────────────────────────────────────────────────────────────────────
-  Average Rate of Change     (f(b) - f(a))/(b - a)
-  Instantaneous Rate         f'(x) = lim(h→0) (f(x+h) - f(x))/h
-  Velocity                   v(t) = s'(t)
-  Speed                      |v(t)|
-  Acceleration               a(t) = v'(t) = s''(t)
-  Marginal Cost              C'(x)
-  Population Growth Rate     P'(t)
+"image": "src/assets/124.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

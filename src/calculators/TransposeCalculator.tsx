@@ -269,7 +269,7 @@ const TransposeCalculator: React.FC = () => {
     if (!matrix || matrix.length === 0) return null;
     return (
       <div className="mt-2">
-        {label && <span className="font-mono text-xs font-bold text-[#7B1824]">{label}</span>}
+        {label && <span className="font-mono text-xs font-bold text-[#166534]">{label}</span>}
         <div className="inline-block mt-1 border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
           {matrix.map((row, i) => (
             <div key={i} className="flex border-b border-gray-100 last:border-0">
@@ -294,7 +294,7 @@ const TransposeCalculator: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#166534]"></span>
             Matrix Transpose Calculator
           </h3>
           <p className="text-xs text-gray-500 mt-1">
@@ -307,13 +307,13 @@ const TransposeCalculator: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
             Matrix A ({matrix.length}×{matrix[0]?.length || 0})
           </h4>
           <div className="flex gap-1.5">
             <button
               onClick={addRow}
-              className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+              className="text-xs px-2.5 py-1 bg-[#F0FDF4] text-[#166534] hover:bg-[#166534] hover:text-white rounded-lg font-semibold transition cursor-pointer"
             >
               +Row
             </button>
@@ -321,7 +321,7 @@ const TransposeCalculator: React.FC = () => {
               onClick={removeRow}
               className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
                 matrix.length > 1
-                  ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                  ? 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 cursor-pointer'
                   : 'bg-gray-50 text-gray-300 cursor-not-allowed'
               }`}
               disabled={matrix.length <= 1}
@@ -330,7 +330,7 @@ const TransposeCalculator: React.FC = () => {
             </button>
             <button
               onClick={addColumn}
-              className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+              className="text-xs px-2.5 py-1 bg-[#F0FDF4] text-[#166534] hover:bg-[#166534] hover:text-white rounded-lg font-semibold transition cursor-pointer"
             >
               +Col
             </button>
@@ -338,7 +338,7 @@ const TransposeCalculator: React.FC = () => {
               onClick={removeColumn}
               className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
                 (matrix[0]?.length || 0) > 1
-                  ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                  ? 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 cursor-pointer'
                   : 'bg-gray-50 text-gray-300 cursor-not-allowed'
               }`}
               disabled={(matrix[0]?.length || 0) <= 1}
@@ -374,7 +374,7 @@ const TransposeCalculator: React.FC = () => {
                             handleMatrixChange(i, j, inputValue);
                           }
                         }}
-                        className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                        className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                         placeholder="0"
                       />
                     </td>
@@ -390,7 +390,7 @@ const TransposeCalculator: React.FC = () => {
       <div className="flex flex-wrap gap-3">
         <button
           onClick={calculateTranspose}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -413,11 +413,11 @@ const TransposeCalculator: React.FC = () => {
       {steps.length > 0 && (
         <div className="space-y-6">
           {/* Result Summary */}
-          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-[#7B1824]"></span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Transposed Matrix (Aᵀ)</h3>
+                <span className="w-3 h-3 rounded-full bg-[#166534]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Transposed Matrix (Aᵀ)</h3>
               </div>
               <div className="flex-shrink-0">
                 <PDFExport
@@ -442,7 +442,7 @@ const TransposeCalculator: React.FC = () => {
               {matrix.length === matrix[0]?.length && (
                 <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
                   <span className="text-[10px] font-bold uppercase text-gray-400 block">Matrix Type</span>
-                  <span className="font-mono text-xs font-bold text-[#7B1824]">
+                  <span className="font-mono text-xs font-bold text-[#166534]">
                     {steps.some(step => step.title.includes("Symmetric") && step.description.includes("✅")) ? "Symmetric" : "Non-Symmetric"}
                   </span>
                 </div>
@@ -460,7 +460,7 @@ const TransposeCalculator: React.FC = () => {
           {showExplanation && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Detailed Step Breakdown</h3>
               </div>
 
@@ -468,7 +468,7 @@ const TransposeCalculator: React.FC = () => {
                 {steps.map((step, idx) => (
                   <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
                     <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <div className="flex-1 space-y-1">
@@ -484,7 +484,7 @@ const TransposeCalculator: React.FC = () => {
                     {step.explanation && (
                       <div className="pt-2 pl-8 border-t border-gray-200/60">
                         <p className="text-xs text-gray-500 italic">
-                          <span className="font-semibold text-[#7B1824] not-italic">Note: </span>
+                          <span className="font-semibold text-[#166534] not-italic">Note: </span>
                           {step.explanation}
                         </p>
                       </div>
@@ -500,7 +500,7 @@ const TransposeCalculator: React.FC = () => {
       {/* Help */}
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-2 text-xs text-gray-600">
         <p className="font-bold text-gray-800 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-          <svg className="w-4 h-4 text-[#7B1824]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[#166534]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Transpose Rules & Properties

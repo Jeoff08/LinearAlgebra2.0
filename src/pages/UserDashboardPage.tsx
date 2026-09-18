@@ -38,8 +38,12 @@ import {
   RotateCcw,
   AlertCircle,
   Loader2,
-  ArrowUpRight,
   Eye,
+  User,
+  Camera,
+  Mail,
+  Shield,
+  Save,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -82,9 +86,7 @@ import { getLinearAlgebraDefinitionForTopic } from "../data/linearAlgebraCalcula
 import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
 import { ALL_CALCULUS_TOPICS } from "../data/calculus-topics";
 import { ALL_CALCULUS_2_TOPICS } from "../data/calculus-2-topics";
-import studentLogoSigma from "../assets/Student logos.png";
-import TopicContentRenderer from "../components/TopicContentRenderer";
-import keepLearningIllustration from "../assets/new logo student.png";
+import TopicContentRenderer, { extractFirstImage } from "../components/TopicContentRenderer";
 
 interface CalculatorCardMeta {
   id: string;
@@ -108,6 +110,7 @@ interface UnifiedTopicItem {
   summary: string;
   details: string;
   examples: string[];
+  image?: string;
 }
 
 export type QuizQuestionType =
@@ -462,7 +465,7 @@ const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
 ];
 
 export default function UserDashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   // Navigation State
@@ -473,6 +476,7 @@ export default function UserDashboardPage() {
     | "quizzes"
     | "quizzes-history"
     | "quiz-results"
+    | "profile"
   >("dashboard");
 
   // Mobile sidebar state
@@ -546,11 +550,31 @@ export default function UserDashboardPage() {
   const [topicCalcKey, setTopicCalcKey] = useState<number>(0);
   const [topicCopiedIdx, setTopicCopiedIdx] = useState<number | null>(null);
 
-  // Redirect admin to /admin if accidentally here
+  // Student Profile Edit State
+  const [profileNameInput, setProfileNameInput] = useState<string>("");
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string>("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveSuccessMsg, setProfileSaveSuccessMsg] = useState<string | null>(null);
+  const [profileSaveErrorMsg, setProfileSaveErrorMsg] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  // Sync profile editing fields when user changes
   useEffect(() => {
+    if (user) {
+      setProfileNameInput(user.name || "");
+      setProfileAvatarUrl(user.avatar_url || "");
+    }
+  }, [user]);
+
+  // Redirect admin to /admin if accidentally here (unless previewing as admin)
+  useEffect(() => {
+    const isPreview =
+      window.location.hash.includes("preview=student") ||
+      window.location.search.includes("preview=student");
     if (
-      user?.email?.toLowerCase().trim() === "admin@gmail.com" ||
-      user?.role === "admin"
+      !isPreview &&
+      (user?.email?.toLowerCase().trim() === "admin@gmail.com" ||
+        user?.role === "admin")
     ) {
       navigate("/admin", { replace: true });
     }
@@ -662,6 +686,7 @@ export default function UserDashboardPage() {
               t.details ||
               "Comprehensive guide and formal mathematical treatment.",
             examples: Array.isArray(t.examples) ? t.examples : [],
+            image: (t as any).image || extractFirstImage(t.details) || undefined,
           });
         }
       });
@@ -682,6 +707,7 @@ export default function UserDashboardPage() {
               t.summary || "Core differential and integral calculus concepts.",
             details: t.details || "Step-by-step principles and theorems.",
             examples: Array.isArray(t.examples) ? t.examples : [],
+            image: (t as any).image || extractFirstImage(t.details) || undefined,
           });
         }
       });
@@ -704,6 +730,7 @@ export default function UserDashboardPage() {
             details:
               t.details || "In-depth analytical methods and applications.",
             examples: Array.isArray(t.examples) ? t.examples : [],
+            image: (t as any).image || extractFirstImage(t.details) || undefined,
           });
         }
       });
@@ -1285,17 +1312,23 @@ export default function UserDashboardPage() {
 
   // Filtered available quizzes list
   const filteredAvailableQuizzes = useMemo(() => {
-    return availableQuizzes.filter((quiz) => {
-      const matchesTopic =
-        quizFilterTopic === "all" ||
-        quiz.topic.toLowerCase() === quizFilterTopic.toLowerCase();
-      const matchesSearch =
-        !quizSearchTerm ||
-        quiz.title.toLowerCase().includes(quizSearchTerm.toLowerCase()) ||
-        quiz.topic.toLowerCase().includes(quizSearchTerm.toLowerCase());
-      return matchesTopic && matchesSearch;
-    });
-  }, [availableQuizzes, quizFilterTopic, quizSearchTerm]);
+    return availableQuizzes
+      .filter((quiz) => {
+        const matchesTopic =
+          quizFilterTopic === "all" ||
+          quiz.topic.toLowerCase() === quizFilterTopic.toLowerCase();
+        const matchesSearch =
+          !quizSearchTerm ||
+          quiz.title.toLowerCase().includes(quizSearchTerm.toLowerCase()) ||
+          quiz.topic.toLowerCase().includes(quizSearchTerm.toLowerCase());
+        return matchesTopic && matchesSearch;
+      })
+      .sort((a, b) => {
+        const aCompleted = myAttempts.some((attempt) => attempt.quizId === a.id);
+        const bCompleted = myAttempts.some((attempt) => attempt.quizId === b.id);
+        return Number(aCompleted) - Number(bCompleted);
+      });
+  }, [availableQuizzes, myAttempts, quizFilterTopic, quizSearchTerm]);
 
   // Quizzes that the user has answered
   const completedQuizzes = useMemo(() => {
@@ -1304,9 +1337,141 @@ export default function UserDashboardPage() {
     );
   }, [availableQuizzes, myAttempts]);
 
+  const pendingAvailableQuizzes = useMemo(() => {
+    return availableQuizzes.filter(
+      (quiz) => !myAttempts.some((attempt) => attempt.quizId === quiz.id),
+    );
+  }, [availableQuizzes, myAttempts]);
+
   const displayName =
     user?.name || (user?.email ? user.email.split("@")[0] : "Jeoff");
   const userInitial = displayName.charAt(0).toUpperCase() || "J";
+  const userAvatarUrl = user?.avatar_url || "";
+
+  // Handle uploading user photo (base64 compressed image string stored in profiles.avatar_url)
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setProfileSaveErrorMsg("Please select a valid image file (PNG, JPG, WEBP).");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileSaveErrorMsg("Image size exceeds 2MB limit. Please choose a smaller photo.");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    setProfileSaveErrorMsg(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        // Compress image using HTML canvas to keep payload light
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxDim = 320;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+            setProfileAvatarUrl(compressedBase64);
+          } else {
+            setProfileAvatarUrl(result);
+          }
+          setIsUploadingPhoto(false);
+        };
+        img.onerror = () => {
+          setProfileAvatarUrl(result);
+          setIsUploadingPhoto(false);
+        };
+        img.src = result;
+      } else {
+        setIsUploadingPhoto(false);
+      }
+    };
+    reader.onerror = () => {
+      setIsUploadingPhoto(false);
+      setProfileSaveErrorMsg("Failed to read image file.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle saving profile changes (name and avatar_url to Supabase)
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    const trimmedName = profileNameInput.trim();
+    if (!trimmedName) {
+      setProfileSaveErrorMsg("Name cannot be empty.");
+      return;
+    }
+
+    setIsSavingProfile(true);
+    setProfileSaveErrorMsg(null);
+    setProfileSaveSuccessMsg(null);
+
+    try {
+      if (supabase) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            name: trimmedName,
+            avatar_url: profileAvatarUrl,
+          })
+          .eq("id", user.id);
+
+        if (error) {
+          console.error("Error updating profile in Supabase:", error);
+          setProfileSaveErrorMsg(error.message || "Failed to update profile.");
+          setIsSavingProfile(false);
+          return;
+        }
+      }
+
+      await refreshUser();
+
+      setProfileSaveSuccessMsg("Profile updated successfully!");
+      setTimeout(() => {
+        setProfileSaveSuccessMsg(null);
+      }, 3500);
+    } catch (err: any) {
+      console.error("Profile save error:", err);
+      setProfileSaveErrorMsg(err?.message || "An unexpected error occurred.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  // Realtime dynamic greeting based on current local hour
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Good morning";
+    if (hour >= 12 && hour < 18) return "Good afternoon";
+    return "Good evening";
+  }, []);
 
   // Counts for category badges
   const laCalcCount = allCombinedCalculators.filter(
@@ -1393,23 +1558,25 @@ export default function UserDashboardPage() {
       {/* ========================================================================= */}
       {/* 1. LEFT SIDEBAR (Desktop Fixed + Mobile Slide-over Drawer)                */}
       {/* ========================================================================= */}
-      <aside className="hidden lg:flex w-[260px] bg-white border-r border-[#EAEBED] flex-col justify-between p-5 h-full shrink-0 select-none z-30 shadow-[1px_0_4px_rgba(0,0,0,0.02)]">
+      <aside className={`hidden lg:flex bg-white border-r border-[#EAEBED] flex-col justify-between h-full shrink-0 select-none z-30 shadow-[1px_0_4px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out ${isTopicCalculatorOpen ? "w-[70px] p-3" : "w-[260px] p-5"}`}>
         <div className="flex flex-col gap-6">
           {/* Brand Logo Header */}
-          <div className="flex items-center gap-3 px-1 py-1">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#8B1526] to-[#5A0A15] flex items-center justify-center shadow-md shadow-[#801424]/30 border border-white/20 shrink-0">
+          <div className={`flex items-center gap-3 px-1 py-1 ${isTopicCalculatorOpen ? "justify-center" : ""}`}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center shadow-md shadow-[#166534]/30 border border-white/20 shrink-0">
               <span className="font-serif text-2xl font-bold text-white leading-none select-none">
                 Σ
               </span>
             </div>
+            {!isTopicCalculatorOpen && (
             <div className="flex flex-col leading-tight">
               <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D]">
-                Math<span className="text-[#801424]">Workspace</span>
+                Math<span className="text-[#166534]">Workspace</span>
               </span>
               <span className="text-[0.72rem] font-semibold text-[#8C93A0]">
                 Student Portal
               </span>
             </div>
+            )}
           </div>
 
           {/* Main Navigation Links */}
@@ -1417,125 +1584,121 @@ export default function UserDashboardPage() {
             {/* Dashboard Link (Active Maroon Pill) */}
             <button
               onClick={() => handleNavClick("dashboard")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "dashboard"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                  ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
+              title="Dashboard"
             >
               <LayoutDashboard className="w-4 h-4 shrink-0" />
-              <span>Dashboard</span>
+              {!isTopicCalculatorOpen && <span>Dashboard</span>}
             </button>
 
             {/* LEARN Section */}
+            {!isTopicCalculatorOpen && (
             <div className="pt-4 pb-1">
               <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
                 LEARN
               </span>
             </div>
+            )}
 
             {/* Calculators Link */}
             <button
               onClick={() => handleNavClick("calculators")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "calculators"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                  ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
+              title="Calculators"
             >
               <div className="flex items-center gap-3">
                 <Calculator className="w-4 h-4 shrink-0" />
-                <span>Calculators</span>
+                {!isTopicCalculatorOpen && <span>Calculators</span>}
               </div>
-              <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                  activeNav === "calculators"
-                    ? "bg-white/20 text-white"
-                    : "bg-[#F0F1F3] text-[#6B7280]"
-                }`}
-              >
-                {allCombinedCalculators.length}
-              </span>
             </button>
 
             {/* Topics Link */}
             <button
               onClick={() => handleNavClick("topics")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "topics"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                  ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
+              title="Topics"
             >
               <div className="flex items-center gap-3">
                 <BookOpen className="w-4 h-4 shrink-0" />
-                <span>Topics</span>
+                {!isTopicCalculatorOpen && <span>Topics</span>}
               </div>
-              <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                  activeNav === "topics"
-                    ? "bg-white/20 text-white"
-                    : "bg-[#F0F1F3] text-[#6B7280]"
-                }`}
-              >
-                {allCombinedTopics.length}
-              </span>
             </button>
 
             {/* PRACTICE Section */}
+            {!isTopicCalculatorOpen && (
             <div className="pt-4 pb-1">
               <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
                 PRACTICE
               </span>
             </div>
+            )}
 
             {/* Quizzes */}
             <button
               onClick={() => handleNavClick("quizzes")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "quizzes"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                  ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
+              title="Quizzes"
             >
               <HelpCircle className="w-4 h-4 shrink-0" />
-              <span>Quizzes</span>
+              {!isTopicCalculatorOpen && <span>Quizzes</span>}
             </button>
 
             {/* Quizzes History */}
             <button
               onClick={() => handleNavClick("quizzes-history")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "quizzes-history"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                  ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
               }`}
+              title="Quizzes History"
             >
               <History className="w-4 h-4 shrink-0" />
-              <span>Quizzes History</span>
+              {!isTopicCalculatorOpen && <span>Quizzes History</span>}
+            </button>
+
+            {/* ACCOUNT Section */}
+            {!isTopicCalculatorOpen && (
+              <div className="pt-4 pb-1">
+                <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                  ACCOUNT
+                </span>
+              </div>
+            )}
+
+            {/* Profile Link */}
+            <button
+              onClick={() => handleNavClick("profile")}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                activeNav === "profile"
+                  ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+              }`}
+              title="Profile"
+            >
+              <User className="w-4 h-4 shrink-0" />
+              {!isTopicCalculatorOpen && <span>My Profile</span>}
             </button>
           </nav>
         </div>
 
-        {/* Sidebar Bottom Card: Keep Learning Widget */}
-        <div className="mt-auto pt-4">
-          <div className="relative overflow-hidden rounded-[22px] bg-[#F8F9FA] border border-[#EAEBED] p-4 text-center shadow-xs flex flex-col items-center">
-            {/* Student Study 3D Illustration */}
-            <div className="w-full flex justify-center items-center mb-2">
-              <img
-                src={keepLearningIllustration}
-                alt="Keep learning illustration"
-                className="w-auto h-28 object-contain select-none pointer-events-none"
-              />
-            </div>
-            <h4 className="text-[0.88rem] font-bold text-[#1F242D] tracking-wide">
-              Keep learning, {displayName}! 
-            </h4>
-            <p className="text-[0.73rem] text-[#6B7280] mt-1 leading-relaxed max-w-[190px]">
-              Solve quizzes and master concepts step-by-step.
-            </p>
-          </div>
-        </div>
+
       </aside>
 
       {/* Mobile Drawer Backdrop */}
@@ -1564,7 +1727,7 @@ export default function UserDashboardPage() {
             <div className="flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#8B1526] to-[#5A0A15] flex items-center justify-center shadow-md shadow-[#801424]/30 border border-white/20 text-white font-serif text-2xl font-bold">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center shadow-md shadow-[#166534]/30 border border-white/20 text-white font-serif text-2xl font-bold">
                     Σ
                   </div>
                   <div className="flex flex-col">
@@ -1589,7 +1752,7 @@ export default function UserDashboardPage() {
                   onClick={() => handleNavClick("dashboard")}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm ${
                     activeNav === "dashboard"
-                      ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                      ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
                   }`}
                 >
@@ -1607,7 +1770,7 @@ export default function UserDashboardPage() {
                   onClick={() => handleNavClick("calculators")}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "calculators"
-                      ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                      ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
                   }`}
                 >
@@ -1615,16 +1778,13 @@ export default function UserDashboardPage() {
                     <Calculator className="w-4 h-4" />
                     <span>Calculators</span>
                   </div>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-                    {allCombinedCalculators.length}
-                  </span>
                 </button>
 
                 <button
                   onClick={() => handleNavClick("topics")}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "topics"
-                      ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                      ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
                   }`}
                 >
@@ -1632,9 +1792,6 @@ export default function UserDashboardPage() {
                     <BookOpen className="w-4 h-4" />
                     <span>Topics</span>
                   </div>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-                    {allCombinedTopics.length}
-                  </span>
                 </button>
 
                 <div className="pt-3 pb-1">
@@ -1647,7 +1804,7 @@ export default function UserDashboardPage() {
                   onClick={() => handleNavClick("quizzes")}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "quizzes"
-                      ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                      ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
                   }`}
                 >
@@ -1659,31 +1816,33 @@ export default function UserDashboardPage() {
                   onClick={() => handleNavClick("quizzes-history")}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "quizzes-history"
-                      ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                      ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
                   }`}
                 >
                   <History className="w-4 h-4" />
                   <span>Quizzes History</span>
                 </button>
+
+                <div className="pt-3 pb-1">
+                  <span className="text-[0.68rem] font-bold text-[#9AA1B0] uppercase px-3.5">
+                    ACCOUNT
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => handleNavClick("profile")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
+                    activeNav === "profile"
+                      ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                      : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>My Profile</span>
+                </button>
               </nav>
 
-              {/* Mobile Keep Learning Card */}
-              <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-b from-[#8B1526] via-[#75111F] to-[#45060E] p-3.5 mt-2 text-center text-white border border-white/15 shadow-[0_10px_24px_rgba(107,16,30,0.35),inset_0_1px_1px_rgba(255,255,255,0.3)] flex flex-col items-center">
-                <div className="w-full flex justify-center items-center mb-1.5">
-                  <img
-                    src={keepLearningIllustration}
-                    alt="Keep learning illustration"
-                    className="w-auto h-22 object-contain select-none pointer-events-none drop-shadow-sm"
-                  />
-                </div>
-                <h4 className="text-[0.82rem] font-bold text-white">
-                  Keep learning, {displayName}! 🚀
-                </h4>
-                <p className="text-[0.68rem] text-white/75 mt-0.5 leading-relaxed">
-                  Master math step-by-step.
-                </p>
-              </div>
             </div>
 
             <div className="pt-4 border-t border-[#EAEBED]">
@@ -1727,12 +1886,12 @@ export default function UserDashboardPage() {
                   setIsNotificationsOpen(!isNotificationsOpen);
                   setIsUserDropdownOpen(false);
                 }}
-                className="relative p-2 rounded-xl text-gray-600 hover:text-[#801424] hover:bg-gray-100/80 transition cursor-pointer border border-gray-200 shadow-2xs"
+                className="relative p-2 rounded-xl text-gray-600 hover:text-[#166534] hover:bg-gray-100/80 transition cursor-pointer border border-gray-200 shadow-2xs"
                 title="New Quiz Notifications"
               >
                 <Bell className="w-4 h-4" />
                 {unreadQuizzes.length > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#801424] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#166534] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                     {unreadQuizzes.length > 9 ? "9+" : unreadQuizzes.length}
                   </span>
                 )}
@@ -1749,14 +1908,14 @@ export default function UserDashboardPage() {
                   >
                     <div className="p-3.5 border-b border-gray-100 flex items-center justify-between bg-[#FAFBFD]">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-red-50 text-[#801424] flex items-center justify-center">
+                        <div className="w-7 h-7 rounded-lg bg-green-50 text-[#166534] flex items-center justify-center">
                           <Bell className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs font-bold text-gray-900">
                           New Quizzes Available
                         </span>
                         {unreadQuizzes.length > 0 && (
-                          <span className="px-2 py-0.5 bg-red-100 text-[#801424] text-[10px] font-extrabold rounded-full">
+                          <span className="px-2 py-0.5 bg-green-100 text-[#166534] text-[10px] font-extrabold rounded-full">
                             {unreadQuizzes.length} new
                           </span>
                         )}
@@ -1766,7 +1925,7 @@ export default function UserDashboardPage() {
                           <button
                             type="button"
                             onClick={markAllStudentNotificationsAsRead}
-                            className="text-[11px] font-bold text-[#801424] hover:underline cursor-pointer"
+                            className="text-[11px] font-bold text-[#166534] hover:underline cursor-pointer"
                           >
                             Mark all read
                           </button>
@@ -1775,7 +1934,7 @@ export default function UserDashboardPage() {
                           <button
                             type="button"
                             onClick={handleDeleteAllStudentNotifications}
-                            className="text-[11px] font-semibold text-gray-400 hover:text-red-600 transition cursor-pointer"
+                            className="text-[11px] font-semibold text-gray-400 hover:text-green-600 transition cursor-pointer"
                             title="Clear all notifications"
                           >
                             Clear all
@@ -1805,7 +1964,7 @@ export default function UserDashboardPage() {
                                 isUnread ? "bg-[#FFF8F8]" : "bg-white"
                               }`}
                             >
-                              <div className="w-8 h-8 rounded-xl bg-red-100 text-[#801424] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                              <div className="w-8 h-8 rounded-xl bg-green-100 text-[#166534] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                                 <Sparkles className="w-4 h-4" />
                               </div>
                               <div className="flex-1 min-w-0 pr-6">
@@ -1814,7 +1973,7 @@ export default function UserDashboardPage() {
                                     {quiz.title}
                                   </p>
                                   {isUnread && (
-                                    <span className="w-2 h-2 rounded-full bg-[#801424] shrink-0" />
+                                    <span className="w-2 h-2 rounded-full bg-[#166534] shrink-0" />
                                   )}
                                 </div>
                                 <p className="text-[11px] text-gray-500 truncate mt-0.5">
@@ -1827,7 +1986,7 @@ export default function UserDashboardPage() {
                                       Completed
                                     </span>
                                   ) : (
-                                    <span className="font-bold text-[#801424] bg-red-50 px-1.5 py-0.2 rounded">
+                                    <span className="font-bold text-[#166534] bg-green-50 px-1.5 py-0.2 rounded">
                                       Take Quiz →
                                     </span>
                                   )}
@@ -1837,7 +1996,7 @@ export default function UserDashboardPage() {
                               <button
                                 type="button"
                                 onClick={(e) => handleDeleteStudentNotification(quiz.id, e)}
-                                className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all shrink-0 cursor-pointer"
+                                className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all shrink-0 cursor-pointer"
                                 title="Delete notification"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1856,7 +2015,7 @@ export default function UserDashboardPage() {
                             setIsNotificationsOpen(false);
                             setActiveNav("quizzes");
                           }}
-                          className="text-xs font-bold text-[#801424] hover:underline cursor-pointer"
+                          className="text-xs font-bold text-[#166534] hover:underline cursor-pointer"
                         >
                           View All Quizzes →
                         </button>
@@ -1880,14 +2039,24 @@ export default function UserDashboardPage() {
                   <span className="text-xs font-bold text-[#1F242D]">
                     {displayName}
                   </span>
-                  <span className="text-[11px] font-medium text-[#8C93A0]">
-                    Student
-                  </span>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="text-[11px] font-medium text-[#8C93A0]">
+                      Student
+                    </span>
+                  </div>
                 </div>
 
-                <div className="w-9 h-9 rounded-full bg-[#801424] text-white font-bold text-sm flex items-center justify-center shadow-xs">
-                  {userInitial}
-                </div>
+                {userAvatarUrl ? (
+                  <img
+                    src={userAvatarUrl}
+                    alt={displayName}
+                    className="w-9 h-9 rounded-full object-cover shadow-xs border border-gray-200"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-[#166534] text-white font-bold text-sm flex items-center justify-center shadow-xs">
+                    {userInitial}
+                  </div>
+                )}
 
                 <ChevronDown className="w-3.5 h-3.5 text-[#8C93A0] group-hover:text-[#1F242D] transition-transform" />
               </button>
@@ -1906,10 +2075,28 @@ export default function UserDashboardPage() {
                       <p className="text-xs font-bold text-gray-800">
                         {displayName}
                       </p>
-                      <p className="text-[11px] text-gray-500 truncate">
-                        {user?.email || "student@mathworkspace.edu"}
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <p className="text-[11px] text-gray-500 truncate">
+                          {user?.email || "student@mathworkspace.edu"}
+                        </p>
+                        {user?.block && (
+                          <span className="inline-flex items-center shrink-0 rounded-md bg-[#166534]/10 border border-[#166534]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#166534] leading-none">
+                            Block {user.block.trim().toUpperCase()}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    <button
+                      onClick={() => {
+                        setIsUserDropdownOpen(false);
+                        handleNavClick("profile");
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-100 text-left cursor-pointer"
+                    >
+                      <User className="w-4 h-4 text-[#166534]" />
+                      <span className="font-semibold text-gray-900">My Profile</span>
+                    </button>
 
                     <button
                       onClick={() => {
@@ -1954,7 +2141,7 @@ export default function UserDashboardPage() {
                       }}
                       className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-50 text-left cursor-pointer"
                     >
-                      <LogOut className="w-4 h-4 text-red-500" />
+                      <LogOut className="w-4 h-4 text-red-600" />
                       <span>Sign Out</span>
                     </button>
                   </motion.div>
@@ -1978,19 +2165,39 @@ export default function UserDashboardPage() {
                   {/* Left Column Text & Buttons */}
                   <div className="flex flex-col items-start z-10 max-w-sm">
                     <span className="text-base sm:text-lg font-bold text-[#1F242D]">
-                      Welcome back,
+                      {greeting},
                     </span>
-                    <h1 className="text-3xl sm:text-[2.35rem] font-extrabold text-[#801424] tracking-tight leading-tight mt-0.5 mb-1.5 flex items-center gap-2">
-                      {displayName}! <span>👋</span>
+                    <h1 className="text-3xl sm:text-[2.35rem] font-extrabold text-[#166534] tracking-tight leading-tight mt-0.5 mb-2 flex items-center gap-2">
+                      {displayName}!
                     </h1>
-                    <p className="text-xs sm:text-sm font-medium text-[#6B7280] mb-6 leading-relaxed">
-                      Let's continue your math journey today.
-                    </p>
+
+                    {/* Block Assignment Badge */}
+                    <div className="mb-4">
+                      {user?.block ? (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#166534]/10 border border-[#166534]/20"
+                        >
+                          <Layers className="w-3.5 h-3.5 text-[#166534]" />
+                          <span className="text-xs font-bold text-[#166534] uppercase tracking-wide">
+                            Block {user.block.trim().toUpperCase()}
+                          </span>
+                        </motion.div>
+                      ) : (
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gray-100 border border-gray-200">
+                          <Layers className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="text-xs font-medium text-gray-400 tracking-wide">
+                            No Block Assigned
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-3">
                       <button
                         onClick={() => handleNavClick("quizzes")}
-                        className="bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] hover:from-[#8B1A28] hover:to-[#4A0812] active:scale-98 text-white font-semibold text-xs sm:text-sm px-5 sm:px-6 py-2.5 rounded-xl shadow-[0_6px_16px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.3)] flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/10"
+                        className="bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] hover:from-[#166534] hover:to-[#052e16] active:scale-98 text-white font-semibold text-xs sm:text-sm px-5 sm:px-6 py-2.5 rounded-xl shadow-[0_6px_16px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.3)] flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/10"
                       >
                         <span>Start Practicing</span>
                         <ChevronRight className="w-4 h-4" />
@@ -2000,20 +2207,13 @@ export default function UserDashboardPage() {
                         onClick={() => handleNavClick("topics")}
                         className="bg-white hover:bg-[#F8F9FA] active:scale-98 text-[#1F242D] border border-[#E0E2E6] font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer"
                       >
-                        <BookOpen className="w-4 h-4 text-[#801424]" />
+                        <BookOpen className="w-4 h-4 text-[#166534]" />
                         <span>Browse Topics</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Right Column: 3D Sigma Hero Illustration */}
-                  <div className="w-full sm:w-60 md:w-76 h-44 sm:h-52 shrink-0 flex items-center justify-center relative">
-                    <img
-                      src={studentLogoSigma}
-                      alt="3D Math Sigma"
-                      className="w-full h-full object-contain select-none pointer-events-none drop-shadow-md"
-                    />
-                  </div>
+
                 </div>
 
                 {/* 2. Right "Your Progress" Card (5 cols) */}
@@ -2059,7 +2259,7 @@ export default function UserDashboardPage() {
                                 }}
                                 className={`px-2.5 py-1.5 text-xs text-left rounded-lg font-medium transition cursor-pointer ${
                                   timeRange === opt
-                                    ? "bg-[#801424] text-white"
+                                    ? "bg-[#166534] text-white"
                                     : "text-gray-700 hover:bg-gray-100"
                                 }`}
                               >
@@ -2092,7 +2292,7 @@ export default function UserDashboardPage() {
                           cx="50"
                           cy="50"
                           r="40"
-                          className="stroke-[#801424] transition-all duration-1000"
+                          className="stroke-[#166534] transition-all duration-1000"
                           strokeWidth="10"
                           strokeDasharray="251.2"
                           strokeDashoffset={
@@ -2140,7 +2340,7 @@ export default function UserDashboardPage() {
 
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-xs bg-[#801424]" />
+                          <span className="w-2.5 h-2.5 rounded-xs bg-[#166534]" />
                           <span className="text-[#4B5565] font-medium text-[11px] sm:text-xs">
                             Highest Score
                           </span>
@@ -2167,7 +2367,7 @@ export default function UserDashboardPage() {
                   {/* Bottom Dual Mini Stat Boxes */}
                   <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[#F0F1F3]">
                     <div className="bg-[#F8F9FA] border border-[#ECEFF3] rounded-[16px] p-3 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] text-white flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(128,20,36,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(22,101,52,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)]">
                         <TrendingUp className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col leading-tight">
@@ -2181,7 +2381,7 @@ export default function UserDashboardPage() {
                     </div>
 
                     <div className="bg-[#F8F9FA] border border-[#ECEFF3] rounded-[16px] p-3 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] text-white flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(128,20,36,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(22,101,52,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)]">
                         <Trophy className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col leading-tight">
@@ -2197,67 +2397,10 @@ export default function UserDashboardPage() {
                 </div>
               </div>
 
-              {/* MIDDLE ROW: 4 STAT METRIC CARDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-                {/* 1. Quizzes Taken */}
-                <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4 transition hover:shadow-md">
-                  <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] flex items-center justify-center shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10">
-                    <FileText className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-[#8C93A0]">
-                      Quizzes Available
-                    </span>
-                    <span className="text-2xl font-bold text-[#1F242D] leading-tight my-0.5">
-                      {availableQuizzes.length}
-                    </span>
-                    <span className="text-[11px] font-medium text-[#9AA1B0]">
-                      From Admin
-                    </span>
-                  </div>
-                </div>
-
-                {/* 2. Total Attempts */}
-                <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4 transition hover:shadow-md">
-                  <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] flex items-center justify-center shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-[#8C93A0]">
-                      Total Submissions
-                    </span>
-                    <span className="text-2xl font-bold text-[#1F242D] leading-tight my-0.5">
-                      {totalQuizzesTaken}
-                    </span>
-                    <span className="text-[11px] font-medium text-[#9AA1B0]">
-                      {passedQuizzesCount} passed
-                    </span>
-                  </div>
-                </div>
-
-                {/* 4. Time Studied */}
-                <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4 transition hover:shadow-md">
-                  <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] flex items-center justify-center shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10">
-                    <Zap className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-[#8C93A0]">
-                      Time Practicing
-                    </span>
-                    <span className="text-2xl font-bold text-[#1F242D] leading-tight my-0.5">
-                      {formatSeconds(totalTimeSpentSeconds)}
-                    </span>
-                    <span className="text-[11px] font-medium text-[#9AA1B0]">
-                      Quizzes completed
-                    </span>
-                  </div>
-                </div>
-              </div>
-
               {/* LOWER ROW: 2 SPLIT CARDS (RECENT QUIZZES & RECENT QUIZ HISTORY) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                 {/* Card Left: Recent Quizzes */}
-                <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col">
                   <div>
                     {/* Header */}
                     <div className="flex items-center justify-between mb-4">
@@ -2266,9 +2409,9 @@ export default function UserDashboardPage() {
                       </h3>
                       <button
                         onClick={() => handleNavClick("quizzes")}
-                        className="bg-[#801424] hover:bg-[#6b111e] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer"
+                        className="bg-[#166534] hover:bg-[#14532d] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer"
                       >
-                        View All ({availableQuizzes.length})
+                        View All ({pendingAvailableQuizzes.length})
                       </button>
                     </div>
 
@@ -2281,9 +2424,9 @@ export default function UserDashboardPage() {
                     </div>
                   </div>
 
-                  {availableQuizzes.length === 0 ? (
+                  {pendingAvailableQuizzes.length === 0 ? (
                     <div className="py-10 flex flex-col items-center justify-center text-center">
-                      <div className="w-14 h-14 rounded-full bg-[#FCE8EB] flex items-center justify-center mb-3 text-[#801424]">
+                      <div className="w-14 h-14 rounded-full bg-[#FCE8EB] flex items-center justify-center mb-3 text-[#166534]">
                         <HelpCircle className="w-6 h-6" />
                       </div>
                       <h4 className="text-sm font-bold text-[#1F242D] mb-1">
@@ -2295,7 +2438,7 @@ export default function UserDashboardPage() {
                     </div>
                   ) : (
                     <div className="divide-y divide-[#F3F4F6] my-2">
-                      {availableQuizzes.slice(0, 4).map((quiz) => (
+                      {pendingAvailableQuizzes.slice(0, 4).map((quiz) => (
                         <div
                           key={quiz.id}
                           className="grid grid-cols-6 items-center py-3 px-1 text-xs hover:bg-[#F9FAFB] rounded-lg transition"
@@ -2334,7 +2477,7 @@ export default function UserDashboardPage() {
                             ) : (
                               <button
                                 onClick={() => handleStartQuiz(quiz)}
-                                className="px-2.5 py-1 bg-[#801424] hover:bg-[#68101D] text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
+                                className="px-2.5 py-1 bg-[#166534] hover:bg-[#14532d] text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
                               >
                                 Start
                               </button>
@@ -2373,7 +2516,7 @@ export default function UserDashboardPage() {
 
                   {myAttempts.length === 0 ? (
                     <div className="py-10 flex flex-col items-center justify-center text-center">
-                      <div className="w-14 h-14 rounded-full bg-[#FCE8EB] flex items-center justify-center mb-3 text-[#801424]">
+                      <div className="w-14 h-14 rounded-full bg-[#FCE8EB] flex items-center justify-center mb-3 text-[#166534]">
                         <Clock className="w-6 h-6" />
                       </div>
                       <h4 className="text-sm font-bold text-[#1F242D] mb-1">
@@ -2384,7 +2527,7 @@ export default function UserDashboardPage() {
                       </p>
                       <button
                         onClick={() => handleNavClick("quizzes")}
-                        className="bg-[#801424] text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
+                        className="bg-[#166534] text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
                       >
                         Take a Quiz
                       </button>
@@ -2404,7 +2547,7 @@ export default function UserDashboardPage() {
                               {att.topic}
                             </p>
                           </div>
-                          <div className="text-center font-bold text-[#801424]">
+                          <div className="text-center font-bold text-[#166534]">
                             {att.score} / {att.totalQuestions} pts
                           </div>
                           <div className="text-[11px] text-[#6B7280]">
@@ -2415,7 +2558,7 @@ export default function UserDashboardPage() {
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                                 att.passed
                                   ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-700"
+                                  : "bg-green-100 text-green-700"
                               }`}
                             >
                               {att.passed ? "Passed" : "Failed"}
@@ -2450,7 +2593,7 @@ export default function UserDashboardPage() {
                         <h2 className="text-base font-bold text-[#1F242D]">
                           {activeCalculator.title}
                         </h2>
-                        <span className="text-xs font-medium text-[#801424]">
+                        <span className="text-xs font-medium text-[#166534]">
                           {activeCalculator.categoryLabel}
                         </span>
                       </div>
@@ -2483,7 +2626,7 @@ export default function UserDashboardPage() {
                   <div className="bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#801424]" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#166534]" />
                         <h2 className="text-xl font-extrabold text-[#1F242D]">
                           All Math Calculators ({allCombinedCalculators.length})
                         </h2>
@@ -2500,7 +2643,7 @@ export default function UserDashboardPage() {
                         onClick={() => setCalcCategoryFilter("all")}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                           calcCategoryFilter === "all"
-                            ? "bg-[#801424] text-white shadow-xs"
+                            ? "bg-[#166534] text-white shadow-xs"
                             : "text-[#4B5565] hover:text-[#1F242D]"
                         }`}
                       >
@@ -2516,7 +2659,7 @@ export default function UserDashboardPage() {
                         onClick={() => setCalcCategoryFilter("linear-algebra")}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                           calcCategoryFilter === "linear-algebra"
-                            ? "bg-[#801424] text-white shadow-xs"
+                            ? "bg-[#166534] text-white shadow-xs"
                             : "text-[#4B5565] hover:text-[#1F242D]"
                         }`}
                       >
@@ -2532,7 +2675,7 @@ export default function UserDashboardPage() {
                         onClick={() => setCalcCategoryFilter("calculus-1")}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                           calcCategoryFilter === "calculus-1"
-                            ? "bg-[#801424] text-white shadow-xs"
+                            ? "bg-[#166534] text-white shadow-xs"
                             : "text-[#4B5565] hover:text-[#1F242D]"
                         }`}
                       >
@@ -2548,7 +2691,7 @@ export default function UserDashboardPage() {
                         onClick={() => setCalcCategoryFilter("calculus-2")}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                           calcCategoryFilter === "calculus-2"
-                            ? "bg-[#801424] text-white shadow-xs"
+                            ? "bg-[#166534] text-white shadow-xs"
                             : "text-[#4B5565] hover:text-[#1F242D]"
                         }`}
                       >
@@ -2568,11 +2711,11 @@ export default function UserDashboardPage() {
                       <div
                         key={calc.id}
                         onClick={() => setActiveCalculator(calc)}
-                        className="bg-white border border-[#EAEBED] hover:border-[#801424]/40 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                        className="bg-white border border-[#EAEBED] hover:border-[#166534]/40 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between group"
                       >
                         <div>
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-[11px] font-bold text-[#801424] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
+                            <span className="text-[11px] font-bold text-[#166534] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
                               {calc.badge}
                             </span>
                             <span className="text-[11px] font-medium text-[#8C93A0]">
@@ -2580,7 +2723,7 @@ export default function UserDashboardPage() {
                             </span>
                           </div>
 
-                          <h3 className="text-base font-bold text-[#1F242D] group-hover:text-[#801424] transition">
+                          <h3 className="text-base font-bold text-[#1F242D] group-hover:text-[#166534] transition">
                             {calc.title}
                           </h3>
 
@@ -2588,12 +2731,12 @@ export default function UserDashboardPage() {
                             {calc.description}
                           </p>
 
-                          <div className="bg-[#F8F9FA] rounded-xl p-2.5 text-xs font-mono text-[#801424] border border-[#EAEBED] truncate my-2">
+                          <div className="bg-[#F8F9FA] rounded-xl p-2.5 text-xs font-mono text-[#166534] border border-[#EAEBED] truncate my-2">
                             {calc.formula}
                           </div>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#801424]">
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#166534]">
                           <span>Launch Solver</span>
                           <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </div>
@@ -2612,7 +2755,9 @@ export default function UserDashboardPage() {
             <div className="flex flex-col gap-6">
               {activeTopic ? (
                 /* Topic Details Reader View */
-                <div className="flex flex-col gap-4">
+                <div className={`flex flex-col gap-4 transition-[padding] duration-300 ease-in-out ${
+                  isTopicCalculatorOpen ? "pr-6 lg:pr-[30rem] xl:pr-[34rem]" : ""
+                }`}>
                   <div className="flex items-center justify-between bg-white border border-[#EAEBED] rounded-2xl p-4 shadow-xs">
                     <div className="flex items-center gap-3">
                       <button
@@ -2627,22 +2772,22 @@ export default function UserDashboardPage() {
                         <h2 className="text-base font-bold text-[#1F242D]">
                           {activeTopic.title}
                         </h2>
-                        <span className="text-xs font-medium text-[#801424]">
+                        <span className="text-xs font-medium text-[#166534]">
                           {activeTopic.chapter} • {activeTopic.categoryLabel}
                         </span>
                       </div>
                     </div>
 
-                    {/* Top Aligned Interactive Calculator Button with Hover Tooltip */}
-                    {(() => {
+                    {/* Interactive Calculator Button inside banner */}
+                    {!isTopicCalculatorOpen && (() => {
                       const isLinear = activeTopic.category === "linear-algebra";
                       const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
                       return (
-                        <div className="relative group/topcalc flex items-center">
+                        <div className="relative group/topcalc flex items-center shrink-0">
                           <button
                             type="button"
                             onClick={() => setIsTopicCalculatorOpen(true)}
-                            className="relative flex items-center gap-2 px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl bg-[#801424] hover:bg-[#60101B] text-white font-bold text-xs shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-95 group/btn"
+                            className="relative flex items-center gap-2 px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl bg-[#166534] hover:bg-[#14532D] text-white font-bold text-xs shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-95 group/btn"
                             aria-label={calcDef.name}
                           >
                             <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 group-hover/btn:rotate-12 transition-transform">
@@ -2657,7 +2802,7 @@ export default function UserDashboardPage() {
                           {/* Hover Tooltip Popup for Desktop */}
                           <div className="absolute right-0 top-full mt-2 hidden sm:group-hover/topcalc:flex flex-col items-end z-50 pointer-events-none animate-in fade-in slide-in-from-top-1 duration-150">
                             <div className="bg-[#1F242D] text-white text-[11px] font-medium py-1.5 px-3 rounded-lg shadow-lg border border-white/10 whitespace-nowrap flex items-center gap-1.5">
-                              <Sparkles className="w-3 h-3 text-[#FF7A8A]" />
+                              <Sparkles className="w-3 h-3 text-[#4ADE80]" />
                               <span>Launch <strong>{calcDef.name}</strong></span>
                             </div>
                           </div>
@@ -2668,9 +2813,19 @@ export default function UserDashboardPage() {
 
                   {/* Topic Reader Body */}
                   <div className="bg-white border border-[#EAEBED] rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col gap-6 leading-relaxed">
+                    {activeTopic.image && (
+                      <div className="w-full max-h-80 rounded-2xl overflow-hidden bg-[#F8F9FA] border border-[#EAEBED] flex items-center justify-center p-2">
+                        <img
+                          src={activeTopic.image}
+                          alt={activeTopic.title}
+                          className="max-h-76 w-auto object-contain rounded-xl"
+                        />
+                      </div>
+                    )}
+
                     <div>
                       <h3 className="text-base sm:text-lg font-bold text-[#1F242D] mb-2 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-[#801424]" />
+                        <Sparkles className="w-4 h-4 text-[#166534]" />
                         <span>Executive Summary</span>
                       </h3>
                       <p className="text-sm text-gray-700 bg-[#F8F9FA] p-4 rounded-xl border border-gray-100 leading-relaxed">
@@ -2680,7 +2835,7 @@ export default function UserDashboardPage() {
 
                     <div>
                       <h3 className="text-base sm:text-lg font-bold text-[#1F242D] mb-2 flex items-center gap-2">
-                        <BookMarked className="w-4 h-4 text-[#801424]" />
+                        <BookMarked className="w-4 h-4 text-[#166534]" />
                         <span>Core Mathematical Theory & Principles</span>
                       </h3>
                       <div className="text-sm text-gray-700 leading-loose bg-white p-2">
@@ -2694,13 +2849,13 @@ export default function UserDashboardPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-base sm:text-lg font-bold text-[#1F242D] flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-[#801424]" />
+                              <CheckCircle2 className="w-4 h-4 text-[#166534]" />
                               <span>Step-by-Step Practice Problems ({activeTopic.examples.length})</span>
                             </h3>
                             {activeTopic.category === "linear-algebra" && (() => {
                               const laCalc = getLinearAlgebraDefinitionForTopic(activeTopic);
                               return (
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#801424] bg-[#FFF0F3] border border-[#FFCCD5] px-2.5 py-0.5 rounded-md">
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#166534] bg-[#ECFDF5] border border-[#dcfce7] px-2.5 py-0.5 rounded-md">
                                   <span>{activeTopic.title}</span>
                                   <span>→</span>
                                   <span>{laCalc.name}</span>
@@ -2719,10 +2874,10 @@ export default function UserDashboardPage() {
                             return (
                               <div
                                 key={idx}
-                                className="p-4 rounded-xl bg-white border border-[#EAEBED] hover:border-[#801424]/40 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                                className="p-4 rounded-xl bg-white border border-[#EAEBED] hover:border-[#166534]/40 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                               >
                                 <div className="flex items-start gap-3">
-                                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#801424] bg-[#FDF2F4] border border-[#F8D7DA] rounded-md shrink-0 mt-0.5">
+                                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#166534] bg-[#F0FDF4] border border-[#F8D7DA] rounded-md shrink-0 mt-0.5">
                                     Problem {idx + 1}
                                   </span>
                                   <span className="text-xs sm:text-sm font-mono text-[#1F242D] leading-relaxed">
@@ -2762,7 +2917,7 @@ export default function UserDashboardPage() {
                                       setTopicCalcKey((prev) => prev + 1);
                                       setIsTopicCalculatorOpen(true);
                                     }}
-                                    className="px-3.5 py-1.5 rounded-lg bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                                    className="px-3.5 py-1.5 rounded-lg bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
                                   >
                                     <Play className="w-3 h-3 fill-current" />
                                     <span>Try to Solve</span>
@@ -2782,28 +2937,19 @@ export default function UserDashboardPage() {
                       const isLinear = activeTopic.category === "linear-algebra";
                       const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
                       return (
-                        <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
-                          {/* Backdrop */}
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsTopicCalculatorOpen(false)}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-                          />
-
-                          {/* Slide-in Drawer */}
+                        <div className="fixed inset-y-0 right-0 z-50 overflow-hidden flex justify-end w-full sm:w-auto pointer-events-none">
+                          {/* Slide-in Drawer - No backdrop */}
                           <motion.div
                             initial={{ x: "100%" }}
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 28, stiffness: 280 }}
-                            className="relative w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl bg-[#F8F9FA] h-full shadow-2xl z-10 flex flex-col overflow-hidden border-l border-[#EAEBED]"
+                            className="relative w-full sm:w-[28rem] lg:w-[32rem] bg-[#F8F9FA] h-full shadow-2xl z-10 flex flex-col overflow-hidden border-l border-[#EAEBED] pointer-events-auto"
                           >
                             {/* Drawer Header */}
                             <div className="bg-white border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between shadow-xs shrink-0">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center shadow-xs">
+                                <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center shadow-xs">
                                   <Calculator className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -2811,14 +2957,14 @@ export default function UserDashboardPage() {
                                     <h3 className="text-base sm:text-lg font-black text-[#1F242D]">
                                       {calcDef.name}
                                     </h3>
-                                    <span className="text-[10px] font-bold text-[#801424] bg-[#FDF2F4] border border-[#F8D7DA] px-2 py-0.5 rounded-md">
+                                    <span className="text-[10px] font-bold text-[#166534] bg-[#F0FDF4] border border-[#F8D7DA] px-2 py-0.5 rounded-md">
                                       {calcDef.badge}
                                     </span>
                                   </div>
                                   <p className="text-xs text-[#6B7280] flex items-center gap-1.5 flex-wrap">
                                     <span>{activeTopic.title}</span>
                                     <span>→</span>
-                                    <span className="font-semibold text-[#801424]">{calcDef.name}</span>
+                                    <span className="font-semibold text-[#166534]">{calcDef.name}</span>
                                   </p>
                                 </div>
                               </div>
@@ -2835,9 +2981,9 @@ export default function UserDashboardPage() {
 
                             {/* Loaded Problem Notification Banner */}
                             {loadedTopicExample && (
-                              <div className="bg-[#FFF0F2] border-b border-[#F8D7DA] px-6 py-3 flex items-center justify-between text-xs text-[#801424] shrink-0">
+                              <div className="bg-[#FFF0F2] border-b border-[#F8D7DA] px-6 py-3 flex items-center justify-between text-xs text-[#166534] shrink-0">
                                 <div className="flex items-center gap-2">
-                                  <Sparkles className="w-4 h-4 text-[#801424] shrink-0" />
+                                  <Sparkles className="w-4 h-4 text-[#166534] shrink-0" />
                                   <span>
                                     <strong>Loaded Problem #{loadedTopicExample.index + 1}:</strong> &ldquo;{loadedTopicExample.text}&rdquo; (Copied to clipboard)
                                   </span>
@@ -2845,7 +2991,7 @@ export default function UserDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => setLoadedTopicExample(null)}
-                                  className="p-1 hover:bg-[#F8D7DA] rounded-md transition text-[#801424] cursor-pointer"
+                                  className="p-1 hover:bg-[#F8D7DA] rounded-md transition text-[#166534] cursor-pointer"
                                   title="Clear problem"
                                 >
                                   <X className="w-3.5 h-3.5" />
@@ -2883,7 +3029,7 @@ export default function UserDashboardPage() {
                   <div className="bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#801424]" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#166534]" />
                         <h2 className="text-xl font-extrabold text-[#1F242D]">
                           All Curriculum Topics ({allCombinedTopics.length})
                         </h2>
@@ -2904,7 +3050,7 @@ export default function UserDashboardPage() {
                         }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                           topicCategoryFilter === "all"
-                            ? "bg-[#801424] text-white shadow-xs"
+                            ? "bg-[#166534] text-white shadow-xs"
                             : "text-[#4B5565] hover:text-[#1F242D]"
                         }`}
                       >
@@ -2923,7 +3069,7 @@ export default function UserDashboardPage() {
                         }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                           topicCategoryFilter === "linear-algebra"
-                            ? "bg-[#801424] text-white shadow-xs"
+                            ? "bg-[#166534] text-white shadow-xs"
                             : "text-[#4B5565] hover:text-[#1F242D]"
                         }`}
                       >
@@ -2942,7 +3088,7 @@ export default function UserDashboardPage() {
                         }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                           topicCategoryFilter === "calculus-1"
-                            ? "bg-[#801424] text-white shadow-xs"
+                            ? "bg-[#166534] text-white shadow-xs"
                             : "text-[#4B5565] hover:text-[#1F242D]"
                         }`}
                       >
@@ -2961,7 +3107,7 @@ export default function UserDashboardPage() {
                         }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                           topicCategoryFilter === "calculus-2"
-                            ? "bg-[#801424] text-white shadow-xs"
+                            ? "bg-[#166534] text-white shadow-xs"
                             : "text-[#4B5565] hover:text-[#1F242D]"
                         }`}
                       >
@@ -2980,13 +3126,13 @@ export default function UserDashboardPage() {
                     <div className="flex items-center justify-between bg-white border border-[#EAEBED] rounded-2xl px-5 py-3 shadow-xs">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-[#6B7280]">Filtered by Chapter:</span>
-                        <span className="text-xs font-bold text-[#801424] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
+                        <span className="text-xs font-bold text-[#166534] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
                           {selectedChapterFilter}
                         </span>
                       </div>
                       <button
                         onClick={() => setSelectedChapterFilter("all")}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#801424] hover:bg-[#FCE8EB] px-3 py-1.5 rounded-xl transition cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#166534] hover:bg-[#FCE8EB] px-3 py-1.5 rounded-xl transition cursor-pointer"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" />
                         <span>Back to All Chapters</span>
@@ -3000,7 +3146,7 @@ export default function UserDashboardPage() {
                       <div
                         key={top.id}
                         onClick={() => setActiveTopic(top)}
-                        className="bg-white border border-[#EAEBED] hover:border-[#801424]/40 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                        className="bg-white border border-[#EAEBED] hover:border-[#166534]/40 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between group"
                       >
                         <div>
                           <div className="flex items-center justify-between mb-3">
@@ -3010,7 +3156,7 @@ export default function UserDashboardPage() {
                                 setSelectedChapterFilter(top.chapter);
                               }}
                               title="Click to filter by this chapter"
-                              className="text-[11px] font-bold text-[#801424] bg-[#FCE8EB] hover:bg-[#801424] hover:text-white transition-colors px-2.5 py-0.5 rounded-full cursor-pointer"
+                              className="text-[11px] font-bold text-[#166534] bg-[#FCE8EB] hover:bg-[#166534] hover:text-white transition-colors px-2.5 py-0.5 rounded-full cursor-pointer"
                             >
                               {top.chapter}
                             </span>
@@ -3019,7 +3165,17 @@ export default function UserDashboardPage() {
                             </span>
                           </div>
 
-                          <h3 className="text-base font-bold text-[#1F242D] group-hover:text-[#801424] transition">
+                          {top.image && (
+                            <div className="w-full h-36 rounded-xl overflow-hidden mb-3 bg-gray-50">
+                              <img
+                                src={top.image}
+                                alt={top.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            </div>
+                          )}
+
+                          <h3 className="text-base font-bold text-[#1F242D] group-hover:text-[#166534] transition">
                             {top.title}
                           </h3>
 
@@ -3028,7 +3184,7 @@ export default function UserDashboardPage() {
                           </p>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#801424]">
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#166534]">
                           <span>Read Module</span>
                           <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </div>
@@ -3049,7 +3205,7 @@ export default function UserDashboardPage() {
               <div className="relative overflow-hidden bg-white/95 backdrop-blur-md border border-[#EAEBED] rounded-[28px] p-5 sm:p-7 shadow-sm">
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gray-100">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-[#9C1D2E] via-[#801424] to-[#5C0A15]"
+                    className="h-full bg-gradient-to-r from-[#15803d] via-[#166534] to-[#14532d]"
                     initial={{ width: 0 }}
                     animate={{
                       width: `${
@@ -3066,14 +3222,14 @@ export default function UserDashboardPage() {
                 <div className="flex items-center justify-between gap-4 pt-1 mb-4">
                   <button
                     onClick={handleExitQuiz}
-                    className="group flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:text-red-700 hover:border-red-200 hover:bg-red-50/50 transition-all cursor-pointer"
+                    className="group flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:text-green-700 hover:border-green-200 hover:bg-green-50/50 transition-all cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
                     <span>Exit Quiz</span>
                   </button>
 
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-extrabold uppercase tracking-wider bg-[#801424]/10 text-[#801424] border border-[#801424]/20 px-3 py-1 rounded-full">
+                    <span className="text-xs font-extrabold uppercase tracking-wider bg-[#166534]/10 text-[#166534] border border-[#166534]/20 px-3 py-1 rounded-full">
                       {activeTakingQuiz.topic}
                     </span>
                     <div className="flex items-center gap-1.5 bg-[#1F242D] text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs">
@@ -3134,7 +3290,7 @@ export default function UserDashboardPage() {
                           onClick={() => setCurrentQuestionIndex(idx)}
                           className={`relative w-9 h-9 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center cursor-pointer shrink-0 ${
                             isCurrent
-                              ? "bg-gradient-to-br from-[#9C1D2E] to-[#70101E] text-white shadow-md shadow-[#801424]/30 ring-2 ring-[#801424] ring-offset-2"
+                              ? "bg-gradient-to-br from-[#15803d] to-[#166534] text-white shadow-md shadow-[#166534]/30 ring-2 ring-[#166534] ring-offset-2"
                               : isAnswered
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-black shadow-xs"
                               : "bg-gray-100/90 text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent"
@@ -3163,7 +3319,7 @@ export default function UserDashboardPage() {
                   {/* Question Header & Points Badge */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                      <span className="inline-flex items-center rounded-xl bg-gradient-to-r from-[#9C1D2E] to-[#75111F] text-white text-xs font-extrabold px-3.5 py-1.5 shadow-xs">
+                      <span className="inline-flex items-center rounded-xl bg-gradient-to-r from-[#15803d] to-[#166534] text-white text-xs font-extrabold px-3.5 py-1.5 shadow-xs">
                         Question {currentQuestionIndex + 1}
                       </span>
                       <span className="text-xs font-bold text-gray-400">
@@ -3205,7 +3361,7 @@ export default function UserDashboardPage() {
                             e.target.value
                           )
                         }
-                        className="w-full px-5 py-4 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition-all shadow-inner"
+                        className="w-full px-5 py-4 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition-all shadow-inner"
                       />
                     </div>
                   )}
@@ -3231,7 +3387,7 @@ export default function UserDashboardPage() {
                             e.target.value
                           )
                         }
-                        className="w-full px-5 py-3.5 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition-all shadow-inner resize-y"
+                        className="w-full px-5 py-3.5 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition-all shadow-inner resize-y"
                       />
                     </div>
                   )}
@@ -3257,7 +3413,7 @@ export default function UserDashboardPage() {
                             e.target.value
                           )
                         }
-                        className="w-full px-5 py-4 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition-all shadow-inner"
+                        className="w-full px-5 py-4 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition-all shadow-inner"
                       />
                     </div>
                   )}
@@ -3308,7 +3464,7 @@ export default function UserDashboardPage() {
                             }
                             className={`group w-full text-left p-4 sm:p-5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer ${
                               isSelected
-                                ? "border-[#801424] bg-gradient-to-r from-[#FCE8EB]/80 to-[#FCE8EB]/40 shadow-sm ring-2 ring-[#801424]/20"
+                                ? "border-[#166534] bg-gradient-to-r from-[#FCE8EB]/80 to-[#FCE8EB]/40 shadow-sm ring-2 ring-[#166534]/20"
                                 : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 bg-white"
                             }`}
                           >
@@ -3316,7 +3472,7 @@ export default function UserDashboardPage() {
                               <span
                                 className={`w-9 h-9 rounded-xl font-black text-xs flex items-center justify-center shrink-0 transition-all ${
                                   isSelected
-                                    ? "bg-[#801424] text-white shadow-xs"
+                                    ? "bg-[#166534] text-white shadow-xs"
                                     : "bg-gray-100 text-gray-700 group-hover:bg-gray-200"
                                 }`}
                               >
@@ -3337,7 +3493,7 @@ export default function UserDashboardPage() {
                               <div
                                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                                   isSelected
-                                    ? "border-[#801424] bg-[#801424] text-white scale-105"
+                                    ? "border-[#166534] bg-[#166534] text-white scale-105"
                                     : "border-gray-300 bg-white group-hover:border-gray-400"
                                 }`}
                               >
@@ -3386,7 +3542,7 @@ export default function UserDashboardPage() {
                             ),
                           )
                         }
-                        className="px-6 py-2.5 bg-gradient-to-r from-[#9C1D2E] via-[#801424] to-[#600D1A] hover:opacity-95 text-white text-xs font-bold rounded-xl shadow-md shadow-[#801424]/20 transition flex items-center gap-2 cursor-pointer"
+                        className="px-6 py-2.5 bg-gradient-to-r from-[#15803d] via-[#166534] to-[#14532d] hover:opacity-95 text-white text-xs font-bold rounded-xl shadow-md shadow-[#166534]/20 transition flex items-center gap-2 cursor-pointer"
                       >
                         <span>Next Question</span>
                         <ArrowRight className="w-4 h-4" />
@@ -3427,7 +3583,7 @@ export default function UserDashboardPage() {
               {/* Celebratory Hero Banner */}
               <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative">
                 <div className="flex flex-col items-center sm:items-start text-center sm:text-left z-10">
-                  <div className="inline-flex items-center gap-1.5 bg-[#801424]/10 text-[#801424] px-3 py-1 rounded-full text-xs font-bold mb-2">
+                  <div className="inline-flex items-center gap-1.5 bg-[#166534]/10 text-[#166534] px-3 py-1 rounded-full text-xs font-bold mb-2">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Quiz Complete</span>
                   </div>
@@ -3446,7 +3602,7 @@ export default function UserDashboardPage() {
                       className={`text-xs font-extrabold px-3 py-1 rounded-full ${
                         submittedResult.passed
                           ? "bg-green-100 text-green-800 border border-green-200"
-                          : "bg-red-100 text-red-800 border border-red-200"
+                          : "bg-green-100 text-green-800 border border-green-200"
                       }`}
                     >
                       {submittedResult.passed
@@ -3461,8 +3617,8 @@ export default function UserDashboardPage() {
 
                 {/* Circular Score Badge */}
                 <div className="flex flex-col items-center justify-center shrink-0">
-                  <div className="w-32 h-32 rounded-full border-8 border-[#801424] bg-[#FCE8EB] flex flex-col items-center justify-center text-center shadow-inner">
-                    <span className="text-2xl sm:text-3xl font-black text-[#801424] leading-none">
+                  <div className="w-32 h-32 rounded-full border-8 border-[#166534] bg-[#FCE8EB] flex flex-col items-center justify-center text-center shadow-inner">
+                    <span className="text-2xl sm:text-3xl font-black text-[#166534] leading-none">
                       {submittedResult.score} / {submittedResult.totalQuestions}
                     </span>
                     <span className="text-[11px] font-bold text-gray-600 mt-1">
@@ -3525,7 +3681,7 @@ export default function UserDashboardPage() {
                       className={`p-5 rounded-2xl border transition ${
                         ans.isCorrect
                           ? "border-green-200 bg-green-50/40"
-                          : "border-red-200 bg-red-50/40"
+                          : "border-green-200 bg-green-50/40"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3 mb-2.5">
@@ -3533,7 +3689,7 @@ export default function UserDashboardPage() {
                           className={`text-xs font-bold px-2.5 py-0.5 rounded-md ${
                             ans.isCorrect
                               ? "bg-green-200 text-green-900"
-                              : "bg-red-200 text-red-900"
+                              : "bg-green-200 text-green-900"
                           }`}
                         >
                           Question {idx + 1} • {ans.isCorrect ? "Correct (+1)" : "Incorrect (0)"}
@@ -3589,7 +3745,7 @@ export default function UserDashboardPage() {
                                 "bg-green-100 border-green-400 text-green-900 font-bold";
                             } else if (wasSelected && !ans.isCorrect) {
                               bgClass =
-                                "bg-red-100 border-red-400 text-red-900 font-bold";
+                                "bg-green-100 border-green-400 text-green-900 font-bold";
                             } else if (isTheCorrectAnswer) {
                               bgClass =
                                 "bg-green-50 border-green-300 text-green-800 font-bold";
@@ -3636,7 +3792,7 @@ export default function UserDashboardPage() {
                 <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-11 h-11 rounded-2xl bg-[#801424] flex items-center justify-center text-white shrink-0 shadow-xs">
+                      <div className="w-11 h-11 rounded-2xl bg-[#166534] flex items-center justify-center text-white shrink-0 shadow-xs">
                         <HelpCircle className="w-5 h-5" />
                       </div>
                       <div>
@@ -3649,7 +3805,7 @@ export default function UserDashboardPage() {
                       </div>
                     </div>
 
-                    <span className="inline-flex items-center rounded-full bg-[#801424]/10 border border-[#801424]/20 px-3.5 py-1 text-xs font-bold text-[#801424] self-start sm:self-center">
+                    <span className="inline-flex items-center rounded-full bg-[#166534]/10 border border-[#166534]/20 px-3.5 py-1 text-xs font-bold text-[#166534] self-start sm:self-center">
                       {availableQuizzes.length} Available Quiz
                       {availableQuizzes.length === 1 ? "" : "zes"}
                     </span>
@@ -3670,7 +3826,7 @@ export default function UserDashboardPage() {
                           onClick={() => setQuizFilterTopic(topicKey)}
                           className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                             quizFilterTopic === topicKey
-                              ? "bg-[#801424] text-white shadow-xs"
+                              ? "bg-[#166534] text-white shadow-xs"
                               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                           }`}
                         >
@@ -3686,7 +3842,7 @@ export default function UserDashboardPage() {
                         value={quizSearchTerm}
                         onChange={(e) => setQuizSearchTerm(e.target.value)}
                         placeholder="Search quizzes..."
-                        className="w-full pl-9 pr-3 py-1.5 bg-[#F9FAFB] border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#801424]"
+                        className="w-full pl-9 pr-3 py-1.5 bg-[#F9FAFB] border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#166534]"
                       />
                     </div>
                   </div>
@@ -3695,14 +3851,14 @@ export default function UserDashboardPage() {
                 {/* Quizzes List Cards */}
                 {isLoadingQuizzes ? (
                   <div className="py-20 flex flex-col items-center justify-center text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#801424] mb-3" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[#166534] mb-3" />
                     <p className="text-sm font-semibold text-gray-600">
                       Loading available quizzes...
                     </p>
                   </div>
                 ) : filteredAvailableQuizzes.length === 0 ? (
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-4">
+                    <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-4">
                       <HelpCircle className="w-8 h-8 stroke-[1.8]" />
                     </div>
                     <h3 className="text-base font-bold text-[#111827]">
@@ -3719,11 +3875,11 @@ export default function UserDashboardPage() {
                     {filteredAvailableQuizzes.map((quiz) => (
                       <div
                         key={quiz.id}
-                        className="bg-white border border-[#EAEBED] hover:border-[#801424]/40 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+                        className="bg-white border border-[#EAEBED] hover:border-[#166534]/40 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
                       >
                         <div>
                           <div className="flex items-center justify-between gap-2 mb-3">
-                            <span className="text-[11px] font-bold text-[#801424] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
+                            <span className="text-[11px] font-bold text-[#166534] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
                               {quiz.topic}
                             </span>
                             <span className="text-[11px] text-gray-400 font-medium">
@@ -3731,7 +3887,7 @@ export default function UserDashboardPage() {
                             </span>
                           </div>
 
-                          <h3 className="text-base font-extrabold text-[#111827] group-hover:text-[#801424] transition line-clamp-2">
+                          <h3 className="text-base font-extrabold text-[#111827] group-hover:text-[#166534] transition line-clamp-2">
                             {quiz.title}
                           </h3>
 
@@ -3776,7 +3932,7 @@ export default function UserDashboardPage() {
                           ) : (
                             <button
                               onClick={() => handleStartQuiz(quiz)}
-                              className="px-4 py-2 bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer group-hover:scale-102"
+                              className="px-4 py-2 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer group-hover:scale-102"
                             >
                               <Play className="w-3.5 h-3.5 fill-white" />
                               <span>Start Quiz</span>
@@ -3801,7 +3957,7 @@ export default function UserDashboardPage() {
                 <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-11 h-11 rounded-2xl bg-[#801424] flex items-center justify-center text-white shrink-0 shadow-xs">
+                      <div className="w-11 h-11 rounded-2xl bg-[#166534] flex items-center justify-center text-white shrink-0 shadow-xs">
                         <History className="w-5 h-5" />
                       </div>
                       <div>
@@ -3814,7 +3970,7 @@ export default function UserDashboardPage() {
                       </div>
                     </div>
 
-                    <span className="inline-flex items-center rounded-full bg-[#801424]/10 border border-[#801424]/20 px-3.5 py-1 text-xs font-bold text-[#801424]">
+                    <span className="inline-flex items-center rounded-full bg-[#166534]/10 border border-[#166534]/20 px-3.5 py-1 text-xs font-bold text-[#166534]">
                       {myAttempts.length} Total Submission
                       {myAttempts.length === 1 ? "" : "s"}
                     </span>
@@ -3842,7 +3998,7 @@ export default function UserDashboardPage() {
                       <p className="text-[11px] text-gray-500 font-medium">
                         Average Score
                       </p>
-                      <p className="text-lg font-bold text-[#801424]">
+                      <p className="text-lg font-bold text-[#166534]">
                         {studentAverageScore} pts
                       </p>
                     </div>
@@ -3860,7 +4016,7 @@ export default function UserDashboardPage() {
                 {/* History Table Card */}
                 {myAttempts.length === 0 ? (
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-4">
+                    <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-4">
                       <History className="w-8 h-8 stroke-[1.8]" />
                     </div>
                     <h3 className="text-base font-bold text-[#111827]">
@@ -3871,7 +4027,7 @@ export default function UserDashboardPage() {
                     </p>
                     <button
                       onClick={() => handleNavClick("quizzes")}
-                      className="mt-4 px-4 py-2 bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold rounded-xl cursor-pointer"
+                      className="mt-4 px-4 py-2 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-xl cursor-pointer"
                     >
                       Browse Practice Quizzes
                     </button>
@@ -3905,7 +4061,7 @@ export default function UserDashboardPage() {
                                   {att.topic}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 text-xs font-bold text-[#801424]">
+                              <td className="py-3.5 px-3 text-xs font-bold text-[#166534]">
                                 {att.score} / {att.totalQuestions} pts
                               </td>
                               <td className="py-3.5 px-3">
@@ -3913,7 +4069,7 @@ export default function UserDashboardPage() {
                                   className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
                                     att.passed
                                       ? "bg-green-100 text-green-700"
-                                      : "bg-red-100 text-red-700"
+                                      : "bg-green-100 text-green-700"
                                   }`}
                                 >
                                   {att.passed ? "Passed" : "Needs Review"}
@@ -3944,6 +4100,200 @@ export default function UserDashboardPage() {
               </div>
             )}
 
+          {/* ===================================================================== */}
+          {/* VIEW E: MY PROFILE & ACCOUNT SETTINGS                                 */}
+          {/* ===================================================================== */}
+          {activeNav === "profile" && (
+            <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+
+              {/* Profile Form Card */}
+              <div className="bg-white border border-[#ECEFF3] rounded-[26px] p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                <form onSubmit={handleSaveProfile} className="flex flex-col gap-6">
+                  {/* Photo Upload Section */}
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-gray-100">
+                    <div className="relative group">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-2 border-gray-200 shadow-sm bg-gray-50 flex items-center justify-center">
+                        {profileAvatarUrl ? (
+                          <img
+                            src={profileAvatarUrl}
+                            alt="Profile Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#166534] text-white font-extrabold text-3xl flex items-center justify-center">
+                            {userInitial}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Photo Overlay / Upload Trigger */}
+                      <label
+                        htmlFor="avatar-upload-input"
+                        className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center text-white cursor-pointer"
+                        title="Upload new photo"
+                      >
+                        <Camera className="w-6 h-6 mb-1" />
+                        <span className="text-[10px] font-bold">Change</span>
+                      </label>
+                      <input
+                        id="avatar-upload-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </div>
+
+                    <div className="flex flex-col items-center sm:items-start gap-2 flex-1 text-center sm:text-left">
+                      <h3 className="text-base font-bold text-[#1F242D]">Profile Photo</h3>
+                      <p className="text-xs text-[#8C93A0] max-w-sm">
+                        Upload a clear avatar photo (PNG, JPG, or WEBP, max 2MB). It will appear across the dashboard and in the Admin student list.
+                      </p>
+
+                      <div className="flex items-center gap-2 mt-2">
+                        <label
+                          htmlFor="avatar-upload-input"
+                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>{isUploadingPhoto ? "Processing..." : "Upload Photo"}</span>
+                        </label>
+
+                        {profileAvatarUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setProfileAvatarUrl("")}
+                            className="px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Feedback Messages */}
+                  {profileSaveSuccessMsg && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{profileSaveSuccessMsg}</span>
+                    </motion.div>
+                  )}
+
+                  {profileSaveErrorMsg && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2"
+                    >
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>{profileSaveErrorMsg}</span>
+                    </motion.div>
+                  )}
+
+                  {/* Name and Email Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">
+                        Full Name
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={profileNameInput}
+                          onChange={(e) => setProfileNameInput(e.target.value)}
+                          placeholder="Your full name"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E0E2E6] text-sm font-semibold text-[#1F242D] focus:outline-none focus:ring-2 focus:ring-[#166534]/30 focus:border-[#166534] transition"
+                        />
+                      </div>
+                      <span className="text-[11px] text-gray-400">
+                        This name will be displayed in your greetings and the Admin student directory.
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">
+                        Email Address (Gmail)
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          disabled
+                          value={user?.email || ""}
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E0E2E6] bg-gray-50 text-sm font-semibold text-gray-500 cursor-not-allowed"
+                        />
+                      </div>
+                      <span className="text-[11px] text-gray-400">
+                        Your registered login email address.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Role & Block Info Banner */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#F9FAFB] border border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs">
+                        <Shield className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-gray-400">Account Role</span>
+                        <span className="text-xs font-bold text-gray-800 capitalize">
+                          {user?.role || "Student"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-green-50 text-[#166534] flex items-center justify-center font-bold text-xs">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-gray-400">Assigned Block</span>
+                        <span className="text-xs font-bold text-[#166534]">
+                          {user?.block ? `Block ${user.block.trim().toUpperCase()}` : "No Block Assigned Yet"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleNavClick("dashboard")}
+                      className="px-5 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                    >
+                      Back to Dashboard
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingProfile || isUploadingPhoto}
+                      className="px-6 py-2.5 bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] hover:from-[#166534] hover:to-[#052e16] text-white text-xs font-bold rounded-xl shadow-md shadow-[#166534]/25 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isSavingProfile ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving Changes...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Save Profile</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* ========================================================================= */}
           {/* CUSTOM INTERACTIVE EXIT QUIZ CONFIRMATION MODAL                            */}
           {/* ========================================================================= */}
@@ -3966,7 +4316,7 @@ export default function UserDashboardPage() {
                     Exit Quiz?
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500 mt-2 leading-relaxed max-w-xs">
-                    Are you sure you want to exit? Your progress on this quiz will <strong className="text-red-600 font-bold">not be saved</strong>.
+                    Are you sure you want to exit? Your progress on this quiz will <strong className="text-green-600 font-bold">not be saved</strong>.
                   </p>
 
                   {/* Actions */}
@@ -3981,7 +4331,7 @@ export default function UserDashboardPage() {
                     <button
                       type="button"
                       onClick={confirmExitAction}
-                      className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-[#801424] hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-600/20 transition cursor-pointer"
+                      className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-green-600 to-[#166534] hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-green-600/20 transition cursor-pointer"
                     >
                       Yes, Exit
                     </button>
@@ -4035,7 +4385,7 @@ export default function UserDashboardPage() {
                           className={`p-3.5 sm:p-4 rounded-2xl border ${
                             ans.isCorrect
                               ? "border-green-200 bg-green-50/40"
-                              : "border-red-200 bg-red-50/40"
+                              : "border-green-200 bg-green-50/40"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3 mb-2">
@@ -4043,7 +4393,7 @@ export default function UserDashboardPage() {
                               className={`text-xs font-bold px-2 py-0.5 rounded-md ${
                                 ans.isCorrect
                                   ? "bg-green-200 text-green-900"
-                                  : "bg-red-200 text-red-900"
+                                  : "bg-green-200 text-green-900"
                               }`}
                             >
                               Question {idx + 1} •{" "}
@@ -4067,7 +4417,7 @@ export default function UserDashboardPage() {
                               <div className={`flex items-start gap-2 p-3 rounded-xl border text-xs font-semibold ${
                                 ans.isCorrect
                                   ? "bg-green-100 border-green-400 text-green-900"
-                                  : "bg-red-100 border-red-400 text-red-900"
+                                  : "bg-green-100 border-green-400 text-green-900"
                               }`}>
                                 <span className="shrink-0 mt-0.5">{ans.isCorrect ? "✓" : "✗"}</span>
                                 <div className="break-all">
@@ -4095,9 +4445,9 @@ export default function UserDashboardPage() {
                                 const allDone = revealed >= steps.length;
 
                                 return (
-                                  <div className="rounded-2xl border border-[#7B1824]/20 bg-gradient-to-b from-[#FFF8F9] to-white overflow-hidden shadow-xs">
+                                  <div className="rounded-2xl border border-[#166534]/20 bg-gradient-to-b from-[#F0FDF4] to-white overflow-hidden shadow-xs">
                                     {/* Header */}
-                                    <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 bg-[#7B1824] text-white">
+                                    <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 bg-[#166534] text-white">
                                       <span className="text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5">
                                         <span>📘</span> Step-by-Step Solution
                                       </span>
@@ -4107,9 +4457,9 @@ export default function UserDashboardPage() {
                                     </div>
 
                                     {/* Progress bar */}
-                                    <div className="h-1 bg-[#FDF2F4]">
+                                    <div className="h-1 bg-[#F0FDF4]">
                                       <motion.div
-                                        className="h-full bg-[#7B1824] origin-left"
+                                        className="h-full bg-[#166534] origin-left"
                                         animate={{ scaleX: steps.length > 0 ? Math.min(revealed, steps.length) / steps.length : 0 }}
                                         transition={{ type: "spring", stiffness: 200, damping: 22 }}
                                         style={{ transformOrigin: "left" }}
@@ -4129,8 +4479,8 @@ export default function UserDashboardPage() {
                                           >
                                             <span className={`shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shadow-xs ${
                                               si === revealed - 1
-                                                ? "bg-[#7B1824] text-white ring-2 ring-[#7B1824]/30"
-                                                : "bg-[#FDF2F4] text-[#7B1824]"
+                                                ? "bg-[#166534] text-white ring-2 ring-[#166534]/30"
+                                                : "bg-[#F0FDF4] text-[#166534]"
                                             }`}>
                                               {si + 1}
                                             </span>
@@ -4145,7 +4495,7 @@ export default function UserDashboardPage() {
 
                                       {/* Placeholder while no steps revealed */}
                                       {revealed === 0 && (
-                                        <p className="text-xs text-[#7B1824]/70 italic text-center py-2">
+                                        <p className="text-xs text-[#166534]/70 italic text-center py-2">
                                           Press "Show Next Step" to start the walkthrough →
                                         </p>
                                       )}
@@ -4162,7 +4512,7 @@ export default function UserDashboardPage() {
                                                   [stepKey]: Math.min((prev[stepKey] ?? 0) + 1, steps.length),
                                                 }))
                                               }
-                                              className="flex-1 py-2 px-3.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] active:scale-95 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                                              className="flex-1 py-2 px-3.5 rounded-xl bg-[#166534] hover:bg-[#14532D] active:scale-95 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                                             >
                                               <span>▶</span>
                                               Show Next Step
@@ -4173,7 +4523,7 @@ export default function UserDashboardPage() {
                                               onClick={() =>
                                                 setRevealedSteps((prev) => ({ ...prev, [stepKey]: steps.length }))
                                               }
-                                              className="py-2 px-3 rounded-xl border border-[#7B1824]/30 text-[#7B1824] hover:bg-[#FDF2F4] text-xs font-semibold transition cursor-pointer"
+                                              className="py-2 px-3 rounded-xl border border-[#166534]/30 text-[#166534] hover:bg-[#F0FDF4] text-xs font-semibold transition cursor-pointer"
                                             >
                                               Show All
                                             </button>
@@ -4219,7 +4569,7 @@ export default function UserDashboardPage() {
                                     "bg-green-100 border-green-400 text-green-900 font-bold";
                                 } else if (wasSelected && !ans.isCorrect) {
                                   style =
-                                    "bg-red-100 border-red-400 text-red-900 font-bold";
+                                    "bg-green-100 border-green-400 text-green-900 font-bold";
                                 } else if (isTheCorrect) {
                                   style =
                                     "bg-green-50 border-green-300 text-green-800 font-bold";
@@ -4257,7 +4607,7 @@ export default function UserDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setReviewingAttempt(null)}
-                      className="px-5 py-2 bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold rounded-xl cursor-pointer"
+                      className="px-5 py-2 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-xl cursor-pointer"
                     >
                       Close
                     </button>

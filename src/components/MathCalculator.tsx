@@ -92,7 +92,7 @@ function LivePreview({ expression }: { expression: string }) {
       className={`absolute bottom-2 right-3 text-xs font-mono px-2 py-1 rounded ${
         isValid 
           ? 'text-[var(--muted)] bg-[var(--moss)]/10 border border-[var(--moss)]/20' 
-          : 'text-red-400 bg-red-50/20 border border-red-400/30'
+          : 'text-green-400 bg-green-50/20 border border-green-400/30'
       }`}
     >
       {preview}
@@ -524,7 +524,7 @@ export default function MathCalculator() {
 
   function getStepColor(step: string): string {
     if (step.includes('Error') || step.includes('Unable') || step.includes('Could not')) {
-      return 'border-red-400 bg-red-50/50'
+      return 'border-green-400 bg-green-50/50'
     }
     if (step.includes('Found') || step.includes('Solution') || step.includes('Result')) {
       return 'border-[var(--moss)] bg-[var(--moss)]/5'
@@ -566,7 +566,7 @@ export default function MathCalculator() {
               className={`shrink-0 px-3 py-1 text-xs font-medium border ${
                 result.ok
                   ? 'bg-[var(--moss)]/10 border-[var(--moss)]/40 text-[var(--moss)]'
-                  : 'bg-red-50 border-red-300 text-red-700'
+                  : 'bg-green-50 border-green-300 text-green-700'
               }`}
             >
               {result.ok ? '✓ Solved' : '✗ Error'}

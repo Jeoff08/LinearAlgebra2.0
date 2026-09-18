@@ -694,9 +694,9 @@ const LinearCombination: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-2xl border border-[#7B1824]/20 bg-gradient-to-r from-[#7B1824]/10 via-[#7B1824]/5 to-transparent p-5 sm:p-6 shadow-xs">
+      <div className="rounded-2xl border border-[#166534]/20 bg-gradient-to-r from-[#166534]/10 via-[#166534]/5 to-transparent p-5 sm:p-6 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#7B1824] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center shadow-sm shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -725,7 +725,7 @@ const LinearCombination: React.FC = () => {
               setSteps([]);
               setError('');
             }}
-            className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-xs sm:text-sm font-semibold text-gray-800 bg-white transition shadow-2xs"
+            className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-xs sm:text-sm font-semibold text-gray-800 bg-white transition shadow-2xs"
           >
             <option value="combination">Linear Combination</option>
             <option value="solve">Solve for Scalars</option>
@@ -749,7 +749,7 @@ const LinearCombination: React.FC = () => {
               <button
                 key={ex.id}
                 onClick={() => loadExample(ex.id)}
-                className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-[#7B1824]/30 hover:bg-[#FDF2F4] text-xs font-semibold text-gray-700 transition shadow-2xs"
+                className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-[#166534]/30 hover:bg-[#F0FDF4] text-xs font-semibold text-gray-700 transition shadow-2xs"
               >
                 {ex.label}
               </button>
@@ -769,13 +769,13 @@ const LinearCombination: React.FC = () => {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h4 className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
                 Vectors and Scalars ({vectors.length} vectors, {vectors[0]?.length || 0}D)
               </h4>
               <div className="flex gap-2">
                 <button
                   onClick={addVector}
-                  className="px-3 py-1.5 bg-[#7B1824] hover:bg-[#60101B] text-white text-xs font-semibold rounded-xl shadow-xs transition inline-flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-[#166534] hover:bg-[#14532D] text-white text-xs font-semibold rounded-xl shadow-xs transition inline-flex items-center gap-1.5"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -787,7 +787,7 @@ const LinearCombination: React.FC = () => {
                   disabled={vectors.length <= 1}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition inline-flex items-center gap-1.5 ${
                     vectors.length > 1
-                      ? 'border border-red-200 bg-red-50 hover:bg-red-100 text-red-700'
+                      ? 'border border-green-200 bg-green-50 hover:bg-green-100 text-green-700'
                       : 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
                 >
@@ -809,13 +809,13 @@ const LinearCombination: React.FC = () => {
                         Dim {j + 1}
                       </th>
                     ))}
-                    <th className="border border-gray-200 px-3 py-2 text-xs font-bold text-[#7B1824] bg-[#FDF2F4]/60">Scalar (c)</th>
+                    <th className="border border-gray-200 px-3 py-2 text-xs font-bold text-[#166534] bg-[#F0FDF4]/60">Scalar (c)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {vectors.map((vec, i) => (
                     <tr key={i} className="hover:bg-gray-50/50 transition">
-                      <td className="border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 text-center bg-[#FDF2F4]/40">
+                      <td className="border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 text-center bg-[#F0FDF4]/40">
                         v{i + 1}
                       </td>
                       {vec.map((val, j) => (
@@ -824,18 +824,18 @@ const LinearCombination: React.FC = () => {
                             type="number"
                             value={val}
                             onChange={(e) => updateVector(i, j, e.target.value)}
-                            className="w-16 sm:w-18 px-2 py-1 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            className="w-16 sm:w-18 px-2 py-1 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             step="any"
                             placeholder="0"
                           />
                         </td>
                       ))}
-                      <td className="border border-gray-200 p-1.5 bg-[#FDF2F4]/20">
+                      <td className="border border-gray-200 p-1.5 bg-[#F0FDF4]/20">
                         <input
                           type="number"
                           value={scalars[i] || 0}
                           onChange={(e) => updateScalar(i, e.target.value)}
-                          className="w-16 sm:w-18 px-2 py-1 text-center font-mono font-bold text-sm bg-[#FFF8F9] text-[#7B1824] border border-[#F0D5D8] rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          className="w-16 sm:w-18 px-2 py-1 text-center font-mono font-bold text-sm bg-[#F0FDF4] text-[#166534] border border-[#F0D5D8] rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           step="any"
                           placeholder="0"
                         />
@@ -872,9 +872,9 @@ const LinearCombination: React.FC = () => {
 
           {/* Target Vector (for solve operation) */}
           {operation === 'solve' && (
-            <div className="p-4 rounded-xl border border-[#F0D5D8] bg-[#FDF2F4]/40 space-y-2.5">
+            <div className="p-4 rounded-xl border border-[#F0D5D8] bg-[#F0FDF4]/40 space-y-2.5">
               <h4 className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
                 Target Vector w ({targetVector.length}D)
               </h4>
               <div className="flex flex-wrap items-center gap-2">
@@ -884,7 +884,7 @@ const LinearCombination: React.FC = () => {
                     type="number"
                     value={val}
                     onChange={(e) => updateTarget(i, e.target.value)}
-                    className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     step="any"
                     placeholder="0"
                   />
@@ -901,7 +901,7 @@ const LinearCombination: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-gray-100">
           <button
             onClick={performOperation}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -924,8 +924,8 @@ const LinearCombination: React.FC = () => {
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm flex items-center gap-3">
-          <svg className="w-5 h-5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="p-4 rounded-xl border border-green-200 bg-green-50 text-green-700 text-sm flex items-center gap-3">
+          <svg className="w-5 h-5 shrink-0 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="font-semibold">{error}</span>
@@ -934,10 +934,10 @@ const LinearCombination: React.FC = () => {
 
       {/* Result Card */}
       {result && (
-        <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+        <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-[#7B1824] bg-[#FDF2F4] px-2.5 py-1 rounded-md border border-[#F0D5D8]">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#166534] bg-[#F0FDF4] px-2.5 py-1 rounded-md border border-[#F0D5D8]">
                 {operation.toUpperCase()} RESULT
               </span>
               <h4 className="text-xl sm:text-2xl font-black text-gray-900 mt-2">Computation Outcome</h4>
@@ -962,10 +962,10 @@ const LinearCombination: React.FC = () => {
         <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#7B1824]"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#166534]"></span>
               Step-by-Step Breakdown
             </h4>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#FDF2F4] text-[#7B1824] border border-[#F0D5D8]">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#F0FDF4] text-[#166534] border border-[#F0D5D8]">
               {operation.toUpperCase()}
             </span>
           </div>
@@ -974,7 +974,7 @@ const LinearCombination: React.FC = () => {
             {steps.map((item, idx) => (
               <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
                 <div className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
                   <div className="flex-1 font-mono text-xs sm:text-sm font-semibold text-gray-900 whitespace-pre-wrap">
@@ -995,7 +995,7 @@ const LinearCombination: React.FC = () => {
       {/* Operations Info Card */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-xs space-y-3">
         <h4 className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-2">
-          <svg className="w-4 h-4 text-[#7B1824]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[#166534]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Supported Operations & Linear Combination Rules

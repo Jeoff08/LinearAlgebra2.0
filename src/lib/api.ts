@@ -12,6 +12,8 @@ function mapProfile(row: {
   id: string
   email: string
   name: string
+  block?: string
+  avatar_url?: string
   role: 'admin' | 'user'
   created_at: string
 }): PublicUser {
@@ -20,6 +22,8 @@ function mapProfile(row: {
     id: row.id,
     email: row.email,
     name: row.name,
+    block: row.block || '',
+    avatar_url: row.avatar_url || '',
     role: isAdminEmail ? 'admin' : (row.role || 'user'),
     created_at: row.created_at,
   }
@@ -29,13 +33,13 @@ async function loadProfile(userId: string): Promise<PublicUser | null> {
   const client = requireClient()
   const { data, error } = await client
     .from('profiles')
-    .select('id, email, name, role, created_at')
+    .select('id, email, name, block, avatar_url, role, created_at')
     .eq('id', userId)
     .maybeSingle()
 
   if (error) throw error
   if (!data) return null
-  return mapProfile(data as PublicUser)
+  return mapProfile(data as any)
 }
 
 function toAuthError(message: string): AuthResult {
@@ -43,13 +47,13 @@ function toAuthError(message: string): AuthResult {
 }
 
 export const api = {
-  async register(input: { email: string; password: string; name: string }): Promise<AuthResult> {
+  async register(input: { email: string; password: string; name: string; block?: string }): Promise<AuthResult> {
     try {
       const client = requireClient()
       const { data, error } = await client.auth.signUp({
         email: input.email.trim(),
         password: input.password,
-        options: { data: { name: input.name.trim() || 'User' } },
+        options: { data: { name: input.name.trim() || 'User', block: input.block?.trim() || '' } },
       })
       if (error) return toAuthError(error.message)
       if (!data.user) return toAuthError('Could not create account')
@@ -62,6 +66,7 @@ export const api = {
         id: data.user.id,
         email: userEmail,
         name: input.name.trim() || 'User',
+        block: input.block?.trim() || '',
         role: (isAdminUser ? 'admin' : 'user') as 'admin' | 'user',
         created_at: new Date().toISOString(),
       }

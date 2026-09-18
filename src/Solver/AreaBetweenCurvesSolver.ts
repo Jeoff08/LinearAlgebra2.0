@@ -99,7 +99,7 @@ export function solveAreaBetweenCurves(input: string): SolverResult {
       xMin,
       xMax,
       additionalCurves: [
-        { points: gPoints, label: `g(x) = ${prettify(gStr)}`, color: '#DC2626' }
+        { points: gPoints, label: `g(x) = ${prettify(gStr)}`, color: '#166534' }
       ],
       shadedRegion: { from: Math.min(a, b), to: Math.max(a, b), label: `Area = ${formatNumber(areaVal)}` },
     },

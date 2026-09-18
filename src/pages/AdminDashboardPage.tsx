@@ -13,6 +13,7 @@ import {
   Shield,
   Search,
   ChevronDown,
+  ChevronRight,
   ClipboardList,
   ShieldCheck,
   Star,
@@ -53,6 +54,10 @@ import {
   AlertCircle,
   Archive,
   ArchiveRestore,
+  Edit,
+  ArrowRightLeft,
+  Sliders,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -104,8 +109,7 @@ import { getLinearAlgebraDefinitionForTopic } from "../data/linearAlgebraCalcula
 import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
 import { ALL_CALCULUS_TOPICS } from "../data/calculus-topics";
 import { ALL_CALCULUS_2_TOPICS } from "../data/calculus-2-topics";
-import studentLogoSigma from "../assets/Logo Student.png";
-import TopicContentRenderer from "../components/TopicContentRenderer";
+import TopicContentRenderer, { extractFirstImage } from "../components/TopicContentRenderer";
 
 export interface QuizQuestionDraft {
   id: string;
@@ -156,6 +160,8 @@ interface StudentItem {
   id: string;
   name: string;
   email: string;
+  block?: string;
+  avatarUrl?: string;
   quizzesTaken: number;
   averageScore: number;
   lastActive: string;
@@ -211,6 +217,7 @@ interface UnifiedTopicItem {
   summary: string;
   details: string;
   examples: string[];
+  image?: string;
 }
 
 // Complete registry of all 23 Linear Algebra calculators
@@ -480,6 +487,8 @@ export default function AdminDashboardPage() {
   // Navigation State
   const [activeNav, setActiveNav] = useState<
     | "dashboard"
+    | "student-overview"
+    | "student-quizzes"
     | "calculators"
     | "topics"
     | "add-quiz"
@@ -487,6 +496,18 @@ export default function AdminDashboardPage() {
     | "history-quizzes"
     | "view-students"
   >("dashboard");
+
+  // Student Overview States (Learner View Mode)
+  const [isStudentViewMode, setIsStudentViewMode] = useState(false);
+  const [studentOverviewTimeRange, setStudentOverviewTimeRange] = useState<
+    "Today" | "This Week" | "This Month" | "All Time"
+  >("This Week");
+  const [isStudentTimeDropdownOpen, setIsStudentTimeDropdownOpen] = useState(false);
+  const [previewQuizModal, setPreviewQuizModal] = useState<QuizItem | null>(null);
+  const [previewQuestionIndex, setPreviewQuestionIndex] = useState<number>(0);
+  const [previewAnswers, setPreviewAnswers] = useState<Record<string, string>>({});
+  const [previewShowExplanation, setPreviewShowExplanation] = useState<Record<string, boolean>>({});
+  const [previewQuizSubmitted, setPreviewQuizSubmitted] = useState(false);
 
   // Calculator Category State
   const [selectedCalcCategory, setSelectedCalcCategory] = useState<
@@ -513,6 +534,7 @@ export default function AdminDashboardPage() {
   const [calcSearchQuery, setCalcSearchQuery] = useState("");
   const [topicSearchQuery, setTopicSearchQuery] = useState("");
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [selectedStudentBlockFilter, setSelectedStudentBlockFilter] = useState<string>("all");
   const [timeRange, setTimeRange] = useState<
     "This Month" | "This Week" | "All Time"
   >("This Month");
@@ -630,6 +652,13 @@ export default function AdminDashboardPage() {
     totalQuestions: number;
   } | null>(null);
 
+  // Moving / changing student block
+  const [editingBlockStudent, setEditingBlockStudent] = useState<StudentItem | null>(null);
+  const [targetBlockInput, setTargetBlockInput] = useState<string>("");
+  const [isUpdatingStudentBlock, setIsUpdatingStudentBlock] = useState(false);
+  const [blockUpdateSuccessMessage, setBlockUpdateSuccessMessage] = useState<string | null>(null);
+  const [isBlockCustomizationMode, setIsBlockCustomizationMode] = useState(false);
+
   // Realtime Quiz Submission Listener
   useEffect(() => {
     if (!supabase) return;
@@ -652,8 +681,8 @@ export default function AdminDashboardPage() {
           rawDate: new Date().toISOString(),
         };
 
-        // Add to activities feed
-        setActivities((prev) => [newAct, ...prev]);
+        // Add to activities feed (keep up to 10 most recent, dropping the oldest if >= 10)
+        setActivities((prev) => [newAct, ...prev.filter((a) => a.id !== newAct.id)].slice(0, 10));
 
         // Trigger visible floating toast notification
         setRecentSubmissionToast(newAct);
@@ -675,9 +704,48 @@ export default function AdminDashboardPage() {
       )
       .subscribe();
 
+    // 3. Realtime listener on profiles table (updates name, photo, block instantly in Admin View Students)
+    const profilesRealtimeSub = supabase
+      .channel("admin-realtime-profiles")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        (payload: any) => {
+          if (payload?.new) {
+            const updated = payload.new;
+            setStudents((prev) =>
+              prev.map((s) =>
+                s.id === updated.id
+                  ? {
+                      ...s,
+                      name: updated.name || s.name,
+                      email: updated.email || s.email,
+                      block: updated.block !== undefined ? updated.block : s.block,
+                      avatarUrl: updated.avatar_url !== undefined ? updated.avatar_url : s.avatarUrl,
+                    }
+                  : s
+              )
+            );
+
+            if (updated.name) {
+              setStudentSubmissions((prev) =>
+                prev.map((sub) =>
+                  sub.userId === updated.id
+                    ? { ...sub, studentName: updated.name }
+                    : sub
+                )
+              );
+              fetchQuizzesAndStats();
+            }
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       broadcastChannel.unsubscribe();
       tableSub.unsubscribe();
+      profilesRealtimeSub.unsubscribe();
     };
   }, []);
 
@@ -815,6 +883,7 @@ export default function AdminDashboardPage() {
               t.details ||
               "Comprehensive guide and formal mathematical treatment.",
             examples: Array.isArray(t.examples) ? t.examples : [],
+            image: (t as any).image || extractFirstImage(t.details) || undefined,
           });
         }
       });
@@ -835,6 +904,7 @@ export default function AdminDashboardPage() {
               t.summary || "Core differential and integral calculus concepts.",
             details: t.details || "Step-by-step principles and theorems.",
             examples: Array.isArray(t.examples) ? t.examples : [],
+            image: (t as any).image || extractFirstImage(t.details) || undefined,
           });
         }
       });
@@ -857,6 +927,7 @@ export default function AdminDashboardPage() {
             details:
               t.details || "In-depth analytical methods and applications.",
             examples: Array.isArray(t.examples) ? t.examples : [],
+            image: (t as any).image || extractFirstImage(t.details) || undefined,
           });
         }
       });
@@ -881,32 +952,54 @@ export default function AdminDashboardPage() {
     });
   }, [allCombinedTopics, selectedTopicCategory, topicSearchQuery, searchQuery]);
 
-  // Filtered students by search
+  // Compute available blocks from students (only blocks that actually exist, sorted A-Z)
+  const availableBlocks = useMemo(() => {
+    const blockSet = new Set<string>();
+    students.forEach((s) => {
+      if (s.block && s.block.trim()) {
+        blockSet.add(s.block.trim().toUpperCase());
+      }
+    });
+    return Array.from(blockSet).sort((a, b) => a.localeCompare(b));
+  }, [students]);
+
+  // Filtered students by search AND block filter (sorted alphabetically by student name)
   const filteredStudents = useMemo(() => {
     const q = (studentSearchQuery || searchQuery).toLowerCase().trim();
-    if (!q) return students;
-    return students.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.email.toLowerCase().includes(q),
-    );
-  }, [students, studentSearchQuery, searchQuery]);
+    let list = !q
+      ? [...students]
+      : students.filter(
+          (s) =>
+            s.name.toLowerCase().includes(q) ||
+            s.email.toLowerCase().includes(q) ||
+            (s.block && s.block.toLowerCase().includes(q)),
+        );
+    // Apply block filter
+    if (selectedStudentBlockFilter !== "all") {
+      list = list.filter(
+        (s) => s.block && s.block.trim().toUpperCase() === selectedStudentBlockFilter
+      );
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+  }, [students, studentSearchQuery, searchQuery, selectedStudentBlockFilter]);
 
-  // Filtered student quiz submissions
+  // Filtered student quiz submissions (sorted alphabetically by student name)
   const filteredSubmissions = useMemo(() => {
     const q = resultsSearchQuery.toLowerCase().trim();
-    return studentSubmissions.filter((sub) => {
-      const matchesTopic =
-        resultsTopicFilter === "all" || sub.topic === resultsTopicFilter;
-      if (!matchesTopic) return false;
-      if (!q) return true;
-      return (
-        sub.studentName.toLowerCase().includes(q) ||
-        sub.studentEmail.toLowerCase().includes(q) ||
-        sub.quizTitle.toLowerCase().includes(q) ||
-        sub.topic.toLowerCase().includes(q)
-      );
-    });
+    return studentSubmissions
+      .filter((sub) => {
+        const matchesTopic =
+          resultsTopicFilter === "all" || sub.topic === resultsTopicFilter;
+        if (!matchesTopic) return false;
+        if (!q) return true;
+        return (
+          sub.studentName.toLowerCase().includes(q) ||
+          sub.studentEmail.toLowerCase().includes(q) ||
+          sub.quizTitle.toLowerCase().includes(q) ||
+          sub.topic.toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => a.studentName.localeCompare(b.studentName));
   }, [studentSubmissions, resultsSearchQuery, resultsTopicFilter]);
 
   // Summary statistics for quiz results view
@@ -1010,7 +1103,7 @@ export default function AdminDashboardPage() {
       // 3. Fetch student profiles (all non-admin registered users)
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("id, name, email, created_at, role")
+        .select("id, name, email, block, avatar_url, created_at, role")
         .order("created_at", { ascending: false });
 
       const attemptsByQuiz: Record<
@@ -1125,6 +1218,8 @@ export default function AdminDashboardPage() {
             id: prof.id,
             name: prof.name || prof.email?.split("@")[0] || "Student",
             email: prof.email || "No email",
+            block: prof.block || "",
+            avatarUrl: prof.avatar_url || "",
             quizzesTaken: userAttempts.length,
             averageScore: avg,
             lastActive: lastAtt
@@ -1180,11 +1275,11 @@ export default function AdminDashboardPage() {
             }
 
             const sName =
-              payloadStudentName?.trim() ||
               prof?.name?.trim() ||
+              payloadStudentName?.trim() ||
               prof?.email?.split("@")[0] ||
               (a.user_id ? `Student (${a.user_id.slice(0, 6)})` : "Student");
-            const sEmail = payloadStudentEmail?.trim() || prof?.email || "";
+            const sEmail = prof?.email || payloadStudentEmail?.trim() || "";
             const qTitle = quiz?.title || "Practice Quiz";
             const qTopic = quiz?.topic || "Linear Algebra";
             const totalQ = a.total_questions || 1;
@@ -1243,10 +1338,37 @@ export default function AdminDashboardPage() {
   }, []);
 
   const handleNavClick = (navKey: typeof activeNav) => {
+    if (navKey === "student-overview" || navKey === "student-quizzes") {
+      setIsStudentViewMode(true);
+    } else if (
+      navKey === "dashboard" ||
+      navKey === "add-quiz" ||
+      navKey === "view-students"
+    ) {
+      setIsStudentViewMode(false);
+    }
     setActiveNav(navKey);
     setActiveCalculator(null);
     setActiveTopic(null);
+    setIsAdminDropdownOpen(false);
     setMobileSidebarOpen(false);
+  };
+
+  // Computed values for student overview
+  const studentOverviewAvg = useMemo(() => {
+    return 0;
+  }, []);
+
+  const studentOverviewHigh = useMemo(() => {
+    return 0;
+  }, []);
+
+  const handleStartStudentPreviewQuiz = (quiz: QuizItem) => {
+    setPreviewQuizModal(quiz);
+    setPreviewQuestionIndex(0);
+    setPreviewAnswers({});
+    setPreviewShowExplanation({});
+    setPreviewQuizSubmitted(false);
   };
 
   // Filtered topics for the Quiz Generator
@@ -1651,6 +1773,62 @@ export default function AdminDashboardPage() {
     });
   };
 
+  // Move / change student to another block
+  const handleOpenMoveBlockModal = (student: StudentItem) => {
+    setEditingBlockStudent(student);
+    setTargetBlockInput(student.block || "");
+    setBlockUpdateSuccessMessage(null);
+  };
+
+  const handleSaveStudentBlock = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editingBlockStudent) return;
+
+    const newBlockClean = targetBlockInput.trim().toUpperCase();
+    setIsUpdatingStudentBlock(true);
+
+    try {
+      if (supabase) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ block: newBlockClean })
+          .eq("id", editingBlockStudent.id);
+
+        if (error) {
+          console.error("Supabase error updating student block:", error);
+          alert(`Failed to update student block: ${error.message}`);
+          setIsUpdatingStudentBlock(false);
+          return;
+        }
+      }
+
+      // Optimistically update local students list
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.id === editingBlockStudent.id
+            ? { ...s, block: newBlockClean }
+            : s
+        )
+      );
+
+      setBlockUpdateSuccessMessage(
+        newBlockClean
+          ? `Moved ${editingBlockStudent.name} to Block ${newBlockClean} successfully!`
+          : `Removed block assignment for ${editingBlockStudent.name}.`
+      );
+
+      setTimeout(() => {
+        setEditingBlockStudent(null);
+        setBlockUpdateSuccessMessage(null);
+      }, 1200);
+    } catch (err: any) {
+      console.error("Error saving student block:", err);
+      alert("An unexpected error occurred while updating block.");
+    } finally {
+      setIsUpdatingStudentBlock(false);
+    }
+  };
+
   const getMonthYearLabel = (rawDateStr?: string, fallbackFormatted?: string) => {
     if (rawDateStr) {
       const d = new Date(rawDateStr);
@@ -1666,6 +1844,14 @@ export default function AdminDashboardPage() {
     }
     return "Earlier Submissions";
   };
+
+  // Realtime dynamic greeting for student overview
+  const studentOverviewGreeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Good morning";
+    if (hour >= 12 && hour < 18) return "Good afternoon";
+    return "Good evening";
+  }, []);
 
   // Metrics calculations
   const totalQuizzes = quizzes.length;
@@ -1752,143 +1938,354 @@ export default function AdminDashboardPage() {
       {/* ========================================================================= */}
       {/* 1. LEFT SIDEBAR (Desktop Fixed + Mobile Drawer)                           */}
       {/* ========================================================================= */}
-      <aside className="hidden lg:flex w-[260px] bg-white border-r border-[#EAEBED] flex-col justify-between p-5 h-full shrink-0 overflow-hidden select-none z-30">
+      <aside className={`hidden lg:flex bg-white border-r border-[#EAEBED] flex-col justify-between h-full shrink-0 overflow-hidden select-none z-30 transition-all duration-300 ease-in-out ${isTopicCalculatorOpen ? "w-[70px] p-3" : "w-[260px] p-5"}`}>
         <div className="flex flex-col gap-6">
           {/* Brand Logo Header */}
-          <div className="flex items-center gap-3 px-1 py-1">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#8B1526] to-[#5A0A15] flex items-center justify-center shadow-md shadow-[#801424]/30 border border-white/20 shrink-0">
+          <div className={`flex items-center gap-3 px-1 py-1 ${isTopicCalculatorOpen ? "justify-center" : ""}`}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center shadow-md shadow-[#166534]/30 border border-white/20 shrink-0">
               <span className="font-serif text-2xl font-bold text-white leading-none select-none">
                 Σ
               </span>
             </div>
+            {!isTopicCalculatorOpen && (
             <div className="flex flex-col leading-tight">
               <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D]">
-                Math<span className="text-[#801424]">Workspace</span>
+                Math<span className="text-[#166534]">Workspace</span>
               </span>
-              <span className="text-[0.72rem] font-semibold text-[#8C93A0]">
-                Admin Dashboard
-              </span>
+              <AnimatePresence mode="wait" initial={false}>
+                {isStudentViewMode ? (
+                  <motion.span
+                    key="portal-title-student"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: 0.18 }}
+                    className="text-[0.72rem] font-semibold text-[#8C93A0] flex items-center gap-1.5"
+                  >
+                    <span className="text-[#166534] font-bold">Student Portal</span>
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#166534]/10 text-[#166534]">
+                      Overview
+                    </span>
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="portal-title-admin"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: 0.18 }}
+                    className="text-[0.72rem] font-semibold text-[#8C93A0]"
+                  >
+                    Admin Dashboard
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
+            )}
           </div>
 
           {/* Main Navigation Links */}
           <nav className="flex flex-col gap-1 mt-1">
-            {/* Dashboard Link */}
-            <button
-              onClick={() => handleNavClick("dashboard")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${
-                activeNav === "dashboard"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4 shrink-0" />
-              <span>Dashboard</span>
-            </button>
+            <AnimatePresence mode="wait" initial={false}>
+              {isStudentViewMode ? (
+                /* STUDENT OVERVIEW SIDEBAR NAVIGATION */
+                <motion.div
+                  key="student-nav"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 12 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="flex flex-col gap-1"
+                >
+                  {/* Dashboard (Student Overview) */}
+                  <button
+                    onClick={() => handleNavClick("student-overview")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "student-overview"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Dashboard"
+                  >
+                    <LayoutDashboard className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Dashboard</span>}
+                  </button>
 
-            {/* Calculators Link */}
-            <button
-              onClick={() => handleNavClick("calculators")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${
-                activeNav === "calculators"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
-              }`}
-            >
-              <Calculator className="w-4 h-4 shrink-0" />
-              <span>Calculators</span>
-            </button>
+                  {/* LEARN Section */}
+                  {!isTopicCalculatorOpen && (
+                    <div className="pt-4 pb-1">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        LEARN
+                      </span>
+                    </div>
+                  )}
 
-            {/* Topics Link */}
-            <button
-              onClick={() => handleNavClick("topics")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${
-                activeNav === "topics"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
-              }`}
-            >
-              <BookOpen className="w-4 h-4 shrink-0" />
-              <span>Topics</span>
-            </button>
+                  {/* Calculators */}
+                  <button
+                    onClick={() => handleNavClick("calculators")}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "calculators"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Calculators"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Calculator className="w-4 h-4 shrink-0" />
+                      {!isTopicCalculatorOpen && <span>Calculators</span>}
+                    </div>
+                  </button>
 
-            {/* Section: Quiz Management */}
-            <div className="pt-5 pb-1">
-              <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
-                Quiz Management
-              </span>
-            </div>
+                  {/* Topics */}
+                  <button
+                    onClick={() => handleNavClick("topics")}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "topics"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Topics"
+                  >
+                    <div className="flex items-center gap-3">
+                      <BookOpen className="w-4 h-4 shrink-0" />
+                      {!isTopicCalculatorOpen && <span>Topics</span>}
+                    </div>
+                  </button>
 
-            {/* Add Quiz */}
-            <button
-              onClick={() => handleNavClick("add-quiz")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
-                activeNav === "add-quiz"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
-              }`}
-            >
-              <PlusSquare className="w-4 h-4 shrink-0" />
-              <span>Add Quiz</span>
-            </button>
+                  {/* PRACTICE Section */}
+                  {!isTopicCalculatorOpen && (
+                    <div className="pt-4 pb-1">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        PRACTICE
+                      </span>
+                    </div>
+                  )}
 
-            {/* Quiz Results */}
-            <button
-              onClick={() => handleNavClick("quiz-results")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
-                activeNav === "quiz-results"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
-              }`}
-            >
-              <BarChart3 className="w-4 h-4 shrink-0" />
-              <span>Quiz Results</span>
-            </button>
+                  {/* Quizzes */}
+                  <button
+                    onClick={() => handleNavClick("student-quizzes")}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "student-quizzes"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Quizzes"
+                  >
+                    <div className="flex items-center gap-3">
+                      <HelpCircle className="w-4 h-4 shrink-0" />
+                      {!isTopicCalculatorOpen && <span>Quizzes</span>}
+                    </div>
+                    {!isTopicCalculatorOpen && (
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                          activeNav === "student-quizzes"
+                            ? "bg-white/20 text-white"
+                            : "bg-[#F0F1F3] text-[#6B7280]"
+                        }`}
+                      >
+                        {quizzes.length}
+                      </span>
+                    )}
+                  </button>
 
-            {/* History Quizzes */}
-            <button
-              onClick={() => handleNavClick("history-quizzes")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
-                activeNav === "history-quizzes"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
-              }`}
-            >
-              <History className="w-4 h-4 shrink-0" />
-              <span>History Quizzes</span>
-            </button>
+                  {/* Quizzes History */}
+                  <button
+                    onClick={() => handleNavClick("history-quizzes")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "history-quizzes"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Quizzes History"
+                  >
+                    <History className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Quizzes History</span>}
+                  </button>
 
-            {/* Section: User Management */}
-            <div className="pt-5 pb-1">
-              <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
-                User Management
-              </span>
-            </div>
+                  {/* Quiz Results */}
+                  <button
+                    onClick={() => handleNavClick("quiz-results")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "quiz-results"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Quiz Results"
+                  >
+                    <BarChart3 className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Quiz Results</span>}
+                  </button>
+                </motion.div>
+              ) : (
+                /* REGULAR ADMIN SIDEBAR NAVIGATION */
+                <motion.div
+                  key="admin-nav"
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -12 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="flex flex-col gap-1"
+                >
+                  {/* Dashboard Link */}
+                  <button
+                    onClick={() => handleNavClick("dashboard")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "dashboard"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Dashboard"
+                  >
+                    <LayoutDashboard className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Dashboard</span>}
+                  </button>
 
-            {/* View Students */}
-            <button
-              onClick={() => handleNavClick("view-students")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${
-                activeNav === "view-students"
-                  ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
-              }`}
-            >
-              <Users className="w-4 h-4 shrink-0" />
-              <span>View Students</span>
-            </button>
+                  {/* Calculators Link */}
+                  <button
+                    onClick={() => handleNavClick("calculators")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "calculators"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Calculators"
+                  >
+                    <Calculator className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Calculators</span>}
+                  </button>
+
+                  {/* Topics Link */}
+                  <button
+                    onClick={() => handleNavClick("topics")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "topics"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Topics"
+                  >
+                    <BookOpen className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Topics</span>}
+                  </button>
+
+                  {/* Section: Quiz Management */}
+                  {!isTopicCalculatorOpen && (
+                    <div className="pt-5 pb-1">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        Quiz Management
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Add Quiz */}
+                  <button
+                    onClick={() => handleNavClick("add-quiz")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "add-quiz"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Add Quiz"
+                  >
+                    <PlusSquare className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Add Quiz</span>}
+                  </button>
+
+                  {/* Quiz Results */}
+                  <button
+                    onClick={() => handleNavClick("quiz-results")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "quiz-results"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Quiz Results"
+                  >
+                    <BarChart3 className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Quiz Results</span>}
+                  </button>
+
+                  {/* History Quizzes */}
+                  <button
+                    onClick={() => handleNavClick("history-quizzes")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "history-quizzes"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="History Quizzes"
+                  >
+                    <History className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>History Quizzes</span>}
+                  </button>
+
+                  {/* Section: User Management */}
+                  {!isTopicCalculatorOpen && (
+                    <div className="pt-5 pb-1">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        User Management
+                      </span>
+                    </div>
+                  )}
+
+                  {/* View Students */}
+                  <button
+                    onClick={() => handleNavClick("view-students")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "view-students"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="View Students"
+                  >
+                    <Users className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>View Students</span>}
+                  </button>
+
+                  {/* Student Overview */}
+                  <button
+                    onClick={() => handleNavClick("student-overview")}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                      activeNav === "student-overview"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Student Overview"
+                  >
+                    <GraduationCap className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Student Overview</span>}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </nav>
         </div>
 
-        {/* Bottom Sidebar: Admin Logo */}
-        <div className="mt-4 flex items-center justify-center">
-          <img
-            src={adminLogo}
-            alt="Admin Panel"
-            className="w-full max-w-[220px] object-contain select-none pointer-events-none"
-            draggable={false}
-          />
-        </div>
+        {/* Bottom Sidebar Action for Student View Mode */}
+        <AnimatePresence>
+          {isStudentViewMode && !isTopicCalculatorOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 12, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: 12, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="pt-3 pb-1 border-t border-[#F0F1F3] overflow-hidden"
+            >
+              <button
+                onClick={() => {
+                  setIsStudentViewMode(false);
+                  setActiveNav("dashboard");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-[#166534]/30 bg-[#F0FDF4] text-[#166534] font-bold text-xs hover:bg-[#FCE8EB] transition shadow-xs cursor-pointer active:scale-98"
+                title="Return to Admin Dashboard"
+              >
+                <ArrowLeft className="w-4 h-4 shrink-0" />
+                <span>Return to Admin</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </aside>
 
       {/* Mobile Drawer Backdrop & Sidebar */}
@@ -1912,17 +2309,26 @@ export default function AdminDashboardPage() {
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#8B1526] to-[#5A0A15] flex items-center justify-center shadow-md shadow-[#801424]/30 border border-white/20 shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center shadow-md shadow-[#166534]/30 border border-white/20 shrink-0">
                       <span className="font-serif text-2xl font-bold text-white leading-none">
                         Σ
                       </span>
                     </div>
                     <div className="flex flex-col leading-tight">
                       <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D]">
-                        Math<span className="text-[#801424]">Workspace</span>
+                        Math<span className="text-[#166534]">Workspace</span>
                       </span>
-                      <span className="text-[0.72rem] font-semibold text-[#8C93A0]">
-                        Admin Dashboard
+                      <span className="text-[0.72rem] font-semibold text-[#8C93A0] flex items-center gap-1.5">
+                        {isStudentViewMode ? (
+                          <>
+                            <span className="text-[#166534] font-bold">Student Portal</span>
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#166534]/10 text-[#166534]">
+                              Overview
+                            </span>
+                          </>
+                        ) : (
+                          "Admin Dashboard"
+                        )}
                       </span>
                     </div>
                   </div>
@@ -1935,88 +2341,223 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <nav className="flex flex-col gap-1 mt-1">
-                  <button
-                    onClick={() => handleNavClick("dashboard")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
-                      activeNav === "dashboard"
-                        ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7]"
-                    }`}
-                  >
-                    <LayoutDashboard className="w-4 h-4 shrink-0" />
-                    <span>Dashboard</span>
-                  </button>
-                  <button
-                    onClick={() => handleNavClick("calculators")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
-                      activeNav === "calculators"
-                        ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7]"
-                    }`}
-                  >
-                    <Calculator className="w-4 h-4 shrink-0" />
-                    <span>Calculators</span>
-                  </button>
-                  <button
-                    onClick={() => handleNavClick("topics")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
-                      activeNav === "topics"
-                        ? "bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] text-white shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7]"
-                    }`}
-                  >
-                    <BookOpen className="w-4 h-4 shrink-0" />
-                    <span>Topics</span>
-                  </button>
-                  <div className="pt-4 pb-1">
-                    <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
-                      Quiz Management
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleNavClick("add-quiz")}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
-                  >
-                    <PlusSquare className="w-4 h-4 shrink-0" />
-                    <span>Add Quiz</span>
-                  </button>
-                  <button
-                    onClick={() => handleNavClick("quiz-results")}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
-                  >
-                    <BarChart3 className="w-4 h-4 shrink-0" />
-                    <span>Quiz Results</span>
-                  </button>
-                  <button
-                    onClick={() => handleNavClick("history-quizzes")}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
-                  >
-                    <History className="w-4 h-4 shrink-0" />
-                    <span>History Quizzes</span>
-                  </button>
-                  <div className="pt-4 pb-1">
-                    <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
-                      User Management
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleNavClick("view-students")}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
-                  >
-                    <Users className="w-4 h-4 shrink-0" />
-                    <span>View Students</span>
-                  </button>
+                  <AnimatePresence mode="wait" initial={false}>
+                    {isStudentViewMode ? (
+                      /* STUDENT OVERVIEW MOBILE DRAWER */
+                      <motion.div
+                        key="mobile-student-nav"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex flex-col gap-1"
+                      >
+                        <button
+                          onClick={() => handleNavClick("student-overview")}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
+                            activeNav === "student-overview"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <LayoutDashboard className="w-4 h-4 shrink-0" />
+                          <span>Dashboard</span>
+                        </button>
+
+                        <div className="pt-4 pb-1">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                            LEARN
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => handleNavClick("calculators")}
+                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "calculators"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Calculator className="w-4 h-4 shrink-0" />
+                            <span>Calculators</span>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => handleNavClick("topics")}
+                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "topics"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <BookOpen className="w-4 h-4 shrink-0" />
+                            <span>Topics</span>
+                          </div>
+                        </button>
+
+                        <div className="pt-4 pb-1">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                            PRACTICE
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => handleNavClick("student-quizzes")}
+                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "student-quizzes"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <HelpCircle className="w-4 h-4 shrink-0" />
+                            <span>Quizzes</span>
+                          </div>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                            activeNav === "student-quizzes" ? "bg-white/20 text-white" : "bg-[#F0F1F3] text-[#6B7280]"
+                          }`}>
+                            {quizzes.length}
+                          </span>
+                        </button>
+
+                        <button
+                          onClick={() => handleNavClick("history-quizzes")}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "history-quizzes"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <History className="w-4 h-4 shrink-0" />
+                          <span>Quizzes History</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleNavClick("quiz-results")}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "quiz-results"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <BarChart3 className="w-4 h-4 shrink-0" />
+                          <span>Quiz Results</span>
+                        </button>
+
+                        <div className="pt-4 border-t border-[#F0F1F3] mt-2">
+                          <button
+                            onClick={() => {
+                              setIsStudentViewMode(false);
+                              handleNavClick("dashboard");
+                            }}
+                            className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#166534]/30 bg-[#F0FDF4] text-[#166534] font-bold text-xs hover:bg-[#FCE8EB] transition shadow-xs"
+                          >
+                            <ArrowLeft className="w-4 h-4" />
+                            <span>Return to Admin</span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      /* REGULAR ADMIN MOBILE DRAWER */
+                      <motion.div
+                        key="mobile-admin-nav"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex flex-col gap-1"
+                      >
+                        <button
+                          onClick={() => handleNavClick("dashboard")}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
+                            activeNav === "dashboard"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <LayoutDashboard className="w-4 h-4 shrink-0" />
+                          <span>Dashboard</span>
+                        </button>
+                        <button
+                          onClick={() => handleNavClick("calculators")}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
+                            activeNav === "calculators"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <Calculator className="w-4 h-4 shrink-0" />
+                          <span>Calculators</span>
+                        </button>
+                        <button
+                          onClick={() => handleNavClick("topics")}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
+                            activeNav === "topics"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <BookOpen className="w-4 h-4 shrink-0" />
+                          <span>Topics</span>
+                        </button>
+                        <div className="pt-4 pb-1">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                            Quiz Management
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleNavClick("add-quiz")}
+                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
+                        >
+                          <PlusSquare className="w-4 h-4 shrink-0" />
+                          <span>Add Quiz</span>
+                        </button>
+                        <button
+                          onClick={() => handleNavClick("quiz-results")}
+                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
+                        >
+                          <BarChart3 className="w-4 h-4 shrink-0" />
+                          <span>Quiz Results</span>
+                        </button>
+                        <button
+                          onClick={() => handleNavClick("history-quizzes")}
+                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
+                        >
+                          <History className="w-4 h-4 shrink-0" />
+                          <span>History Quizzes</span>
+                        </button>
+                        <div className="pt-4 pb-1">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                            User Management
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleNavClick("view-students")}
+                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
+                        >
+                          <Users className="w-4 h-4 shrink-0" />
+                          <span>View Students</span>
+                        </button>
+                        <button
+                          onClick={() => handleNavClick("student-overview")}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "student-overview"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <GraduationCap className="w-4 h-4 shrink-0" />
+                          <span>Student Overview</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </nav>
               </div>
 
-              <div className="mt-4 flex items-center justify-center">
-                <img
-                  src={adminLogo}
-                  alt="Admin Panel"
-                  className="w-full max-w-[220px] object-contain select-none pointer-events-none"
-                  draggable={false}
-                />
-              </div>
             </motion.aside>
           </div>
         )}
@@ -2040,14 +2581,14 @@ export default function AdminDashboardPage() {
                   setRecentSubmissionToast(null);
                   handleNavClick("history-quizzes");
                 }}
-                className="fixed top-5 right-6 z-[120] bg-white border border-[#801424]/20 rounded-2xl shadow-xl p-4 flex items-center gap-3.5 max-w-sm cursor-pointer hover:shadow-2xl transition"
+                className="fixed top-5 right-6 z-[120] bg-white border border-[#166534]/20 rounded-2xl shadow-xl p-4 flex items-center gap-3.5 max-w-sm cursor-pointer hover:shadow-2xl transition"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs animate-bounce">
+                <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs animate-bounce">
                   <Bell className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold text-[#801424] uppercase tracking-wide">
+                    <span className="text-[11px] font-extrabold text-[#166534] uppercase tracking-wide">
                       New Quiz Submission!
                     </span>
                     <span className="text-[10px] text-gray-400">Just now</span>
@@ -2057,7 +2598,7 @@ export default function AdminDashboardPage() {
                   </p>
                   <p className="text-[11px] text-gray-500 truncate">
                     {recentSubmissionToast.quizTitle} • Score:{" "}
-                    <span className="font-bold text-[#801424]">
+                    <span className="font-bold text-[#166534]">
                       {recentSubmissionToast.score}/{recentSubmissionToast.totalQuestions}
                     </span>
                   </p>
@@ -2093,12 +2634,12 @@ export default function AdminDashboardPage() {
                   setIsNotificationsOpen(!isNotificationsOpen);
                   setIsAdminDropdownOpen(false);
                 }}
-                className="relative p-2.5 rounded-xl text-gray-600 hover:text-[#801424] hover:bg-gray-100/80 transition cursor-pointer border border-gray-200 shadow-2xs"
+                className="relative p-2.5 rounded-xl text-gray-600 hover:text-[#166534] hover:bg-gray-100/80 transition cursor-pointer border border-gray-200 shadow-2xs"
                 title="Student Submission Notifications"
               >
                 <Bell className="w-4 h-4" />
                 {unreadActivities.length > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#801424] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#166534] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                     {unreadActivities.length > 9 ? "9+" : unreadActivities.length}
                   </span>
                 )}
@@ -2115,14 +2656,14 @@ export default function AdminDashboardPage() {
                   >
                     <div className="p-3.5 border-b border-gray-100 flex items-center justify-between bg-[#FAFBFD]">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-red-50 text-[#801424] flex items-center justify-center">
+                        <div className="w-7 h-7 rounded-lg bg-green-50 text-[#166534] flex items-center justify-center">
                           <Bell className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs font-bold text-gray-900">
                           Student Submissions
                         </span>
                         {unreadActivities.length > 0 && (
-                          <span className="px-2 py-0.5 bg-red-100 text-[#801424] text-[10px] font-extrabold rounded-full">
+                          <span className="px-2 py-0.5 bg-green-100 text-[#166534] text-[10px] font-extrabold rounded-full">
                             {unreadActivities.length} new
                           </span>
                         )}
@@ -2132,7 +2673,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={markAllAdminNotificationsAsRead}
-                            className="text-[11px] font-bold text-[#801424] hover:underline cursor-pointer"
+                            className="text-[11px] font-bold text-[#166534] hover:underline cursor-pointer"
                           >
                             Mark all read
                           </button>
@@ -2141,7 +2682,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={handleDeleteAllAdminNotifications}
-                            className="text-[11px] font-semibold text-gray-400 hover:text-red-600 transition cursor-pointer"
+                            className="text-[11px] font-semibold text-gray-400 hover:text-green-600 transition cursor-pointer"
                             title="Clear all notifications"
                           >
                             Clear all
@@ -2166,7 +2707,7 @@ export default function AdminDashboardPage() {
                                 isUnread ? "bg-[#FFF8F8]" : "bg-white"
                               }`}
                             >
-                              <div className="w-8 h-8 rounded-xl bg-[#801424] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-2xs">
+                              <div className="w-8 h-8 rounded-xl bg-[#166534] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-2xs">
                                 {act.studentName.charAt(0).toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0 pr-6">
@@ -2175,14 +2716,14 @@ export default function AdminDashboardPage() {
                                     {act.studentName}
                                   </p>
                                   {isUnread && (
-                                    <span className="w-2 h-2 rounded-full bg-[#801424] shrink-0" />
+                                    <span className="w-2 h-2 rounded-full bg-[#166534] shrink-0" />
                                   )}
                                 </div>
                                 <p className="text-[11px] text-gray-600 truncate mt-0.5">
                                   Submitted <span className="font-semibold text-gray-900">{act.quizTitle}</span>
                                 </p>
                                 <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400">
-                                  <span className="font-bold text-[#801424]">
+                                  <span className="font-bold text-[#166534]">
                                     {act.score} / {act.totalQuestions} pts
                                   </span>
                                   <span>{act.submittedAt}</span>
@@ -2192,7 +2733,7 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={(e) => handleDeleteAdminNotification(act.id, e)}
-                                className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all shrink-0 cursor-pointer"
+                                className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all shrink-0 cursor-pointer"
                                 title="Delete notification"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -2211,7 +2752,7 @@ export default function AdminDashboardPage() {
                             setIsNotificationsOpen(false);
                             handleNavClick("history-quizzes");
                           }}
-                          className="text-xs font-bold text-[#801424] hover:underline cursor-pointer"
+                          className="text-xs font-bold text-[#166534] hover:underline cursor-pointer"
                         >
                           View All in History →
                         </button>
@@ -2221,6 +2762,7 @@ export default function AdminDashboardPage() {
                 )}
               </AnimatePresence>
             </div>
+
 
             {/* Admin Profile Details */}
             <div className="relative">
@@ -2234,14 +2776,14 @@ export default function AdminDashboardPage() {
               >
                 <div className="hidden sm:flex flex-col text-right leading-tight">
                   <span className="text-sm font-bold text-[#1F242D]">
-                    {user?.name || "User"}
+                    {isStudentViewMode ? "Student Learner" : (user?.name || "User")}
                   </span>
                   <span className="text-[0.72rem] font-medium text-[#8C93A0]">
-                    Administrator
+                    {isStudentViewMode ? "Learner View (Preview)" : "Administrator"}
                   </span>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#8B1526] to-[#5A0A15] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[#801424]/25 border border-white/20">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[#166534]/25 border border-white/20">
+                  {isStudentViewMode ? "S" : (user?.name ? user.name.charAt(0).toUpperCase() : "U")}
                 </div>
                 <ChevronDown className="w-4 h-4 text-[#717A8A]" />
               </button>
@@ -2254,23 +2796,61 @@ export default function AdminDashboardPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-52 bg-white border border-[#EAEBED] rounded-2xl shadow-xl py-2 z-30"
+                    className="absolute right-0 mt-2 w-56 bg-white border border-[#EAEBED] rounded-2xl shadow-xl py-2 z-30"
                   >
                     <div className="px-4 py-2 border-b border-[#F0F1F3]">
                       <p className="text-xs font-bold text-[#1F242D]">
-                        {user?.name || "User"}
+                        {isStudentViewMode ? "Student Learner" : (user?.name || "User")}
                       </p>
-                      <p className="text-[0.72rem] text-[#8C93A0] truncate">
-                        {user?.email || "admin@gmail.com"}
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <p className="text-[0.72rem] text-[#8C93A0] truncate">
+                          {isStudentViewMode ? "learner.preview@workspace.local" : (user?.email || "admin@gmail.com")}
+                        </p>
+                        {user?.block && (
+                          <span className="inline-flex items-center shrink-0 rounded-md bg-[#166534]/10 border border-[#166534]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#166534] leading-none">
+                            Block {user.block.trim().toUpperCase()}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleNavClick("dashboard")}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#4B5565] hover:bg-[#F6F7F9] text-left cursor-pointer"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-[#717A8A]" />
-                      <span>Admin Overview</span>
-                    </button>
+
+                    {isStudentViewMode ? (
+                      <button
+                        onClick={() => {
+                          setIsStudentViewMode(false);
+                          handleNavClick("dashboard");
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#166534] hover:bg-[#F0FDF4] text-left cursor-pointer"
+                      >
+                        <ArrowLeft className="w-4 h-4 text-[#166534]" />
+                        <span>Return to Admin Dashboard</span>
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleNavClick("dashboard")}
+                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#F6F7F9] text-left cursor-pointer ${
+                            activeNav === "dashboard"
+                              ? "text-[#166534] font-bold bg-[#F0FDF4]"
+                              : "text-[#4B5565]"
+                          }`}
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-[#717A8A]" />
+                          <span>Admin Overview</span>
+                        </button>
+                        <button
+                          onClick={() => handleNavClick("student-overview")}
+                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#F6F7F9] text-left cursor-pointer ${
+                            activeNav === "student-overview"
+                              ? "text-[#166534] font-bold bg-[#F0FDF4]"
+                              : "text-[#4B5565]"
+                          }`}
+                        >
+                          <GraduationCap className="w-4 h-4 text-[#717A8A]" />
+                          <span>Student Overview</span>
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => handleNavClick("calculators")}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#4B5565] hover:bg-[#F6F7F9] text-left cursor-pointer"
@@ -2305,40 +2885,1279 @@ export default function AdminDashboardPage() {
         </header>
 
         {/* ========================================================================= */}
+        {/* VIEW: STUDENT OVERVIEW (STUDENT-END DASHBOARD PREVIEW)                    */}
+        {/* ========================================================================= */}
+        <AnimatePresence mode="wait">
+          {activeNav === "student-overview" && (
+            <motion.div
+              key="student-overview-view"
+              initial={{ opacity: 0, y: 15, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -15, scale: 0.99 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="p-6 sm:p-7 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-16"
+            >
+            {/* 1. TOP NOTICE / PREVIEW BANNER */}
+            <div className="bg-gradient-to-r from-[#166534]/10 via-[#15803d]/5 to-white border border-[#166534]/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center text-white shadow-md shadow-[#166534]/25 shrink-0 border border-white/20">
+                  <GraduationCap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-[#1F242D]">
+                      Student Dashboard Overview
+                    </h2>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#166534]/15 text-[#166534] border border-[#166534]/25">
+                      Learner View Mode
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mt-0.5">
+                    Simulating default student portal experience &bull; No specific student account is linked
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* 2. TOP ROW: HERO WELCOME BANNER (LEFT) & YOUR PROGRESS CARD (RIGHT) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Left Hero Banner (7 cols) */}
+              <div className="lg:col-span-7 bg-white border border-[#ECEFF3] rounded-[26px] p-6 sm:p-7 shadow-[0_8px_30px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                {/* Left Column Text & Buttons */}
+                <div className="flex flex-col items-start z-10 max-w-sm">
+                  <span className="text-base sm:text-lg font-bold text-[#1F242D]">
+                    {studentOverviewGreeting},
+                  </span>
+                  <h1 className="text-3xl sm:text-[2.35rem] font-extrabold text-[#166534] tracking-tight leading-tight mt-0.5 mb-5 flex items-center gap-2">
+                    Student Learner!
+                  </h1>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const quizSec = document.getElementById("student-overview-quizzes");
+                        quizSec?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] hover:from-[#166534] hover:to-[#052e16] active:scale-98 text-white font-semibold text-xs sm:text-sm px-5 sm:px-6 py-2.5 rounded-xl shadow-[0_6px_16px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.3)] flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/10"
+                    >
+                      <span>Start Practicing</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleNavClick("topics")}
+                      className="bg-white hover:bg-[#F8F9FA] active:scale-98 text-[#1F242D] border border-[#E0E2E6] font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4 text-[#166534]" />
+                      <span>Browse Topics</span>
+                    </button>
+                  </div>
+                </div>
+
+                </div>
+
+              {/* Right "Your Progress" Card (5 cols) */}
+              <div className="lg:col-span-5 bg-white border border-[#ECEFF3] rounded-[24px] p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                {/* Card Header + Time Dropdown */}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm sm:text-base font-bold text-[#1F242D]">
+                    Your Progress
+                  </h2>
+
+                  <div className="relative">
+                    <button
+                      onClick={() =>
+                        setIsStudentTimeDropdownOpen(!isStudentTimeDropdownOpen)
+                      }
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E0E2E6] bg-white hover:bg-[#F8F9FA] text-xs font-semibold text-[#4B5565] transition cursor-pointer"
+                    >
+                      <span>{studentOverviewTimeRange}</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-[#8C93A0]" />
+                    </button>
+
+                    <AnimatePresence>
+                      {isStudentTimeDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 5 }}
+                          className="absolute right-0 top-full mt-1.5 w-32 bg-white rounded-xl border border-[#EAEBED] shadow-lg p-1 z-30 flex flex-col"
+                        >
+                          {(
+                            [
+                              "Today",
+                              "This Week",
+                              "This Month",
+                              "All Time",
+                            ] as const
+                          ).map((opt) => (
+                            <button
+                              key={opt}
+                              onClick={() => {
+                                setStudentOverviewTimeRange(opt);
+                                setIsStudentTimeDropdownOpen(false);
+                              }}
+                              className={`px-2.5 py-1.5 text-xs text-left rounded-lg font-medium transition cursor-pointer ${
+                                studentOverviewTimeRange === opt
+                                  ? "bg-[#166534] text-white font-bold"
+                                  : "text-gray-700 hover:bg-gray-100"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+
+                {/* Circular Donut & Legend Column */}
+                <div className="flex items-center justify-between gap-4 py-2">
+                  {/* Donut Chart */}
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0 flex items-center justify-center">
+                    <svg
+                      viewBox="0 0 100 100"
+                      className="w-full h-full -rotate-90"
+                    >
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        className="stroke-[#EAEBED]"
+                        strokeWidth="10"
+                        fill="none"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        className="stroke-[#166534] transition-all duration-1000"
+                        strokeWidth="10"
+                        strokeDasharray="251.2"
+                        strokeDashoffset={
+                          251.2 - (251.2 * studentOverviewAvg) / 100
+                        }
+                        strokeLinecap="round"
+                        fill="none"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span className="text-xl sm:text-2xl font-extrabold text-[#1F242D] leading-none">
+                        {studentOverviewAvg} pts
+                      </span>
+                      <span className="text-[10px] font-semibold text-[#8C93A0] mt-1">
+                        Overall Progress
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Legend Stat Items */}
+                  <div className="flex flex-col gap-2 flex-1 pl-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#10B981]" />
+                        <span className="text-[#4B5565] font-medium text-[11px] sm:text-xs">
+                          Quizzes Taken
+                        </span>
+                      </div>
+                      <span className="font-bold text-[#1F242D] text-xs">
+                        0
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#F59E0B]" />
+                        <span className="text-[#4B5565] font-medium text-[11px] sm:text-xs">
+                          Average Score
+                        </span>
+                      </div>
+                      <span className="font-bold text-[#1F242D] text-xs">
+                        0 pts
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#166534]" />
+                        <span className="text-[#4B5565] font-medium text-[11px] sm:text-xs">
+                          Highest Score
+                        </span>
+                      </div>
+                      <span className="font-bold text-[#1F242D] text-xs">
+                        0%
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#1F242D]" />
+                        <span className="text-[#4B5565] font-medium text-[11px] sm:text-xs">
+                          Time Spent
+                        </span>
+                      </div>
+                      <span className="font-bold text-[#1F242D] text-xs">
+                        0m 0s
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Dual Mini Stat Boxes */}
+                <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[#F0F1F3]">
+                  <div className="bg-[#F8F9FA] border border-[#ECEFF3] rounded-[16px] p-3 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(22,101,52,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-[10px] font-medium text-[#8C93A0]">
+                        Average Score
+                      </span>
+                      <span className="text-base font-bold text-[#1F242D]">
+                        0 pts
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#F8F9FA] border border-[#ECEFF3] rounded-[16px] p-3 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(22,101,52,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                      <Trophy className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-[10px] font-medium text-[#8C93A0]">
+                        Highest Score
+                      </span>
+                      <span className="text-base font-bold text-[#1F242D]">
+                        0 pts
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. LOWER ROW: 2 SPLIT CARDS (AVAILABLE QUIZZES & RECENT QUIZ HISTORY) */}
+            <div id="student-overview-quizzes" className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              {/* Card Left: Available Quizzes */}
+              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div>
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm sm:text-base font-bold text-[#1F242D]">
+                        Available Quizzes
+                      </h3>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#166534]/10 text-[#166534]">
+                        {quizzes.length}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleNavClick("history-quizzes")}
+                      className="bg-[#166534] hover:bg-[#14532d] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer"
+                    >
+                      View All ({quizzes.length})
+                    </button>
+                  </div>
+
+                  {/* Table Headers */}
+                  <div className="grid grid-cols-6 text-[11px] font-semibold text-[#8C93A0] py-2 border-b border-[#F0F1F3] px-1">
+                    <span className="col-span-3">Quiz Title</span>
+                    <span className="col-span-1">Topic</span>
+                    <span className="col-span-1 text-center">Questions</span>
+                    <span className="col-span-1 text-right">Action</span>
+                  </div>
+                </div>
+
+                {quizzes.length === 0 ? (
+                  <div className="py-10 flex flex-col items-center justify-center text-center">
+                    <div className="w-14 h-14 rounded-full bg-[#FCE8EB] flex items-center justify-center mb-3 text-[#166534]">
+                      <HelpCircle className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-sm font-bold text-[#1F242D] mb-1">
+                      No quizzes added yet
+                    </h4>
+                    <p className="text-xs text-[#8C93A0] mb-4">
+                      Quizzes published in Add Quiz will appear here for students.
+                    </p>
+                    <button
+                      onClick={() => handleNavClick("add-quiz")}
+                      className="bg-[#166534] text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#14532d] transition"
+                    >
+                      Create a Quiz
+                    </button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[#F3F4F6] my-2">
+                    {quizzes.slice(0, 4).map((quiz) => (
+                      <div
+                        key={quiz.id}
+                        className="grid grid-cols-6 items-center py-3 px-1 text-xs hover:bg-[#F9FAFB] rounded-lg transition"
+                      >
+                        <div className="col-span-3 min-w-0 pr-2">
+                          <p className="font-bold text-[#1F242D] truncate">
+                            {quiz.title}
+                          </p>
+                          <p className="text-[11px] text-[#8C93A0]">
+                            {quiz.createdAt}
+                          </p>
+                        </div>
+                        <div className="col-span-1">
+                          <span className="text-[10px] font-semibold bg-gray-100 text-gray-700 px-2 py-0.5 rounded truncate inline-block max-w-full">
+                            {quiz.topic}
+                          </span>
+                        </div>
+                        <div className="col-span-1 text-center font-medium text-[#4B5565]">
+                          {quiz.questionsCount || quiz.questions?.length || 5}
+                        </div>
+                        <div className="col-span-1 text-right">
+                          <button
+                            onClick={() => handleStartStudentPreviewQuiz(quiz)}
+                            className="px-2.5 py-1 bg-[#166534] hover:bg-[#14532d] text-white text-[11px] font-bold rounded-lg transition cursor-pointer active:scale-95 shadow-xs"
+                            title="Preview quiz as student"
+                          >
+                            Start
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Card Right: Recent Quiz History */}
+              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div>
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm sm:text-base font-bold text-[#1F242D]">
+                      Recent Quiz History
+                    </h3>
+                    <button
+                      onClick={() => handleNavClick("quiz-results")}
+                      className="bg-white border border-[#E0E2E6] hover:bg-[#F8F9FA] text-[#4B5565] text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer"
+                    >
+                      View All ({studentSubmissions.length})
+                    </button>
+                  </div>
+
+                  {/* Table Headers */}
+                  <div className="grid grid-cols-5 text-[11px] font-semibold text-[#8C93A0] py-2 border-b border-[#F0F1F3] px-1">
+                    <span className="col-span-2">Quiz Title</span>
+                    <span className="text-center">Score</span>
+                    <span>Taken At</span>
+                    <span className="text-right">Result</span>
+                  </div>
+                </div>
+
+                {studentSubmissions.length === 0 ? (
+                  <div className="divide-y divide-[#F3F4F6] my-2">
+                    {/* Simulated benchmark history for realistic student view preview */}
+                    {[
+                      {
+                        id: "sample-1",
+                        title: "Matrix Operations & Inversion",
+                        topic: "Linear Algebra",
+                        score: "5 / 5",
+                        date: "Today, 10:30 AM",
+                        passed: true,
+                      },
+                      {
+                        id: "sample-2",
+                        title: "Derivatives & Chain Rule",
+                        topic: "Calculus 1",
+                        score: "4 / 5",
+                        date: "Yesterday",
+                        passed: true,
+                      },
+                      {
+                        id: "sample-3",
+                        title: "Eigenvalues & Eigenvectors",
+                        topic: "Linear Algebra",
+                        score: "3 / 5",
+                        date: "Sep 12, 2026",
+                        passed: true,
+                      },
+                      {
+                        id: "sample-4",
+                        title: "Fundamental Theorem of Calc",
+                        topic: "Calculus 2",
+                        score: "2 / 5",
+                        date: "Sep 10, 2026",
+                        passed: false,
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.id}
+                        className="grid grid-cols-5 items-center py-3 px-1 text-xs hover:bg-[#F9FAFB] rounded-lg transition"
+                      >
+                        <div className="col-span-2 min-w-0 pr-2">
+                          <p className="font-bold text-[#1F242D] truncate">
+                            {item.title}
+                          </p>
+                          <p className="text-[11px] text-[#8C93A0]">
+                            {item.topic}
+                          </p>
+                        </div>
+                        <div className="text-center font-bold text-[#166534]">
+                          {item.score} pts
+                        </div>
+                        <div className="text-[11px] text-[#6B7280] truncate">
+                          {item.date}
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              item.passed
+                                ? "bg-green-100 text-green-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {item.passed ? "Passed" : "Failed"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[#F3F4F6] my-2">
+                    {studentSubmissions.slice(0, 4).map((sub) => (
+                      <div
+                        key={sub.id}
+                        className="grid grid-cols-5 items-center py-3 px-1 text-xs hover:bg-[#F9FAFB] rounded-lg transition"
+                      >
+                        <div className="col-span-2 min-w-0 pr-2">
+                          <p className="font-bold text-[#1F242D] truncate">
+                            {sub.quizTitle}
+                          </p>
+                          <p className="text-[11px] text-[#8C93A0]">
+                            {sub.topic}
+                          </p>
+                        </div>
+                        <div className="text-center font-bold text-[#166534]">
+                          {sub.score} / {sub.totalQuestions} pts
+                        </div>
+                        <div className="text-[11px] text-[#6B7280] truncate">
+                          {sub.submittedAt}
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              sub.passed
+                                ? "bg-green-100 text-green-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {sub.passed ? "Passed" : "Failed"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 4. STUDENT QUICK ACCESS SOLVERS & TOPICS SECTION */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Core Student Solvers Hub Card */}
+              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#166534]/10 flex items-center justify-center text-[#166534]">
+                        <Calculator className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-sm sm:text-base font-bold text-[#1F242D]">
+                        Student Math Solvers Hub
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => handleNavClick("calculators")}
+                      className="text-xs font-semibold text-[#166534] hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <span>All 52+ Solvers</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mb-4">
+                    Students have full access to interactive solvers with step-by-step matrix operations and calculus derivatives.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      {
+                        title: "Matrix Operations",
+                        badge: "Linear Algebra",
+                        desc: "Addition, multiplication, scalar scaling",
+                      },
+                      {
+                        title: "Determinant Calculator",
+                        badge: "Linear Algebra",
+                        desc: "Gauss-Jordan & cofactor expansion",
+                      },
+                      {
+                        title: "Derivative Solver",
+                        badge: "Calculus 1",
+                        desc: "Power rule, product rule, chain rule",
+                      },
+                      {
+                        title: "Integral Solver",
+                        badge: "Calculus 2",
+                        desc: "Definite & indefinite integration",
+                      },
+                    ].map((calc, i) => (
+                      <div
+                        key={i}
+                        onClick={() => handleNavClick("calculators")}
+                        className="p-3.5 rounded-xl border border-[#ECEFF3] hover:border-[#166534]/40 hover:bg-[#FDF9FA] transition cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 group-hover:bg-[#166534]/10 group-hover:text-[#166534]">
+                            {calc.badge}
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#166534] transition-transform group-hover:translate-x-0.5" />
+                        </div>
+                        <h4 className="text-xs font-bold text-[#1F242D] group-hover:text-[#166534]">
+                          {calc.title}
+                        </h4>
+                        <p className="text-[11px] text-[#8C93A0] mt-0.5 line-clamp-1">
+                          {calc.desc}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Curriculum Topics Card */}
+              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#166534]/10 flex items-center justify-center text-[#166534]">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-sm sm:text-base font-bold text-[#1F242D]">
+                        Curriculum Topics Hub
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => handleNavClick("topics")}
+                      className="text-xs font-semibold text-[#166534] hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Explore Topics</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mb-4">
+                    Course syllabus and comprehensive step-by-step guides across three math disciplines.
+                  </p>
+
+                  <div className="flex flex-col gap-2.5">
+                    {[
+                      {
+                        title: "Linear Algebra Track",
+                        count: "23 Solvers • 14 Chapters",
+                        desc: "Systems of Linear Equations, Matrix Inverses, Eigenvalues & Eigenvectors",
+                      },
+                      {
+                        title: "Calculus 1 Track",
+                        count: "17 Solvers • 12 Chapters",
+                        desc: "Limits, Differentiation, Optimization, Curve Sketching",
+                      },
+                      {
+                        title: "Calculus 2 Track",
+                        count: "12 Solvers • 10 Chapters",
+                        desc: "Integration Techniques, Volumes of Revolution, Infinite Series",
+                      },
+                    ].map((track, i) => (
+                      <div
+                        key={i}
+                        onClick={() => handleNavClick("topics")}
+                        className="p-3 rounded-xl border border-[#ECEFF3] hover:border-[#166534]/40 hover:bg-[#FDF9FA] transition cursor-pointer flex items-center justify-between group"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-[#1F242D] group-hover:text-[#166534]">
+                              {track.title}
+                            </h4>
+                            <span className="text-[10px] font-semibold text-[#8C93A0]">
+                              ({track.count})
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#6B7280] mt-0.5">
+                            {track.desc}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#166534] shrink-0 transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. INTERACTIVE STUDENT QUIZ PREVIEW MODAL */}
+            <AnimatePresence>
+              {previewQuizModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="bg-white rounded-2xl shadow-2xl border border-[#EAEBED] max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+                  >
+                    {/* Modal Header */}
+                    <div className="p-5 border-b border-[#F0F1F3] flex items-center justify-between bg-[#FAFBFD]">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#166534]/10 text-[#166534]">
+                            Student View Simulation
+                          </span>
+                          <span className="text-[10px] font-medium bg-gray-200 text-gray-700 px-2 py-0.5 rounded">
+                            {previewQuizModal.topic}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-bold text-[#1F242D] mt-1">
+                          {previewQuizModal.title}
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => setPreviewQuizModal(null)}
+                        className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-500 cursor-pointer transition"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Modal Content */}
+                    <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
+                      {previewQuizSubmitted ? (
+                        /* Simulated Completion Screen */
+                        <div className="py-8 flex flex-col items-center justify-center text-center">
+                          <div className="w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center mb-4">
+                            <CheckCircle2 className="w-8 h-8" />
+                          </div>
+                          <h4 className="text-xl font-bold text-[#1F242D] mb-1">
+                            Quiz Preview Completed!
+                          </h4>
+                          <p className="text-xs text-[#6B7280] max-w-md mb-6">
+                            This simulated attempt demonstrated the student test-taking and grading experience. No permanent score was saved to any account.
+                          </p>
+                          <div className="p-4 rounded-xl bg-[#F8F9FA] border border-[#ECEFF3] flex items-center gap-6 mb-6">
+                            <div className="text-center">
+                              <p className="text-[11px] text-[#8C93A0]">Score</p>
+                              <p className="text-lg font-bold text-[#166534]">
+                                {Object.keys(previewAnswers).length} / {previewQuizModal.questions?.length || previewQuizModal.questionsCount}
+                              </p>
+                            </div>
+                            <div className="w-[1px] h-8 bg-[#EAEBED]" />
+                            <div className="text-center">
+                              <p className="text-[11px] text-[#8C93A0]">Status</p>
+                              <p className="text-lg font-bold text-green-700">
+                                Passed
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => {
+                                setPreviewQuizSubmitted(false);
+                                setPreviewQuestionIndex(0);
+                                setPreviewAnswers({});
+                                setPreviewShowExplanation({});
+                              }}
+                              className="px-4 py-2 rounded-xl border border-[#E0E2E6] text-xs font-semibold hover:bg-gray-100 cursor-pointer transition"
+                            >
+                              Restart Preview
+                            </button>
+                            <button
+                              onClick={() => setPreviewQuizModal(null)}
+                              className="px-5 py-2 rounded-xl bg-[#166534] text-white text-xs font-semibold hover:bg-[#14532d] cursor-pointer transition"
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </div>
+                      ) : previewQuizModal.questions && previewQuizModal.questions.length > 0 ? (
+                        (() => {
+                          const currQ = previewQuizModal.questions[previewQuestionIndex] || previewQuizModal.questions[0];
+                          const totalQs = previewQuizModal.questions.length;
+                          const qKey = currQ.id || `${previewQuestionIndex}`;
+                          const selectedOpt = previewAnswers[qKey];
+                          const isShowingExp = previewShowExplanation[qKey];
+
+                          return (
+                            <>
+                              {/* Question Progress Tracker */}
+                              <div className="flex items-center justify-between text-xs pb-3 border-b border-[#F0F1F3]">
+                                <span className="font-bold text-[#1F242D]">
+                                  Question {previewQuestionIndex + 1} of {totalQs}
+                                </span>
+                                <span className="text-[#8C93A0] font-medium">
+                                  ★ {previewQuizModal.pointsPerItem || 1} pt per item
+                                </span>
+                              </div>
+
+                              {/* Question Prompt */}
+                              <div className="p-4 rounded-xl bg-[#F8F9FA] border border-[#ECEFF3]">
+                                <p className="text-sm font-semibold text-[#1F242D] leading-relaxed">
+                                  {currQ.prompt || "Question prompt not specified."}
+                                </p>
+                              </div>
+
+                              {/* Options */}
+                              <div className="flex flex-col gap-2.5">
+                                {[
+                                  { key: "A", text: currQ.optionA },
+                                  { key: "B", text: currQ.optionB },
+                                  { key: "C", text: currQ.optionC },
+                                  { key: "D", text: currQ.optionD },
+                                ]
+                                  .filter((opt) => opt.text && opt.text.trim())
+                                  .map((opt) => {
+                                    const isSelected = selectedOpt === opt.key;
+                                    return (
+                                      <button
+                                        key={opt.key}
+                                        onClick={() =>
+                                          setPreviewAnswers((prev) => ({
+                                            ...prev,
+                                            [qKey]: opt.key,
+                                          }))
+                                        }
+                                        className={`p-3.5 rounded-xl border text-left text-xs font-medium transition cursor-pointer flex items-center justify-between ${
+                                          isSelected
+                                            ? "border-[#166534] bg-[#F0FDF4] text-[#166534]"
+                                            : "border-[#EAEBED] hover:border-gray-300 hover:bg-[#FAFBFD] text-[#333]"
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <span
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                                              isSelected
+                                                ? "bg-[#166534] text-white"
+                                                : "bg-gray-100 text-gray-600"
+                                            }`}
+                                          >
+                                            {opt.key}
+                                          </span>
+                                          <span>{opt.text}</span>
+                                        </div>
+                                        {isSelected && (
+                                          <Check className="w-4 h-4 text-[#166534]" />
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                              </div>
+
+                              {/* Step-by-Step Solution / Explanation Reveal */}
+                              <div className="pt-2">
+                                <button
+                                  onClick={() =>
+                                    setPreviewShowExplanation((prev) => ({
+                                      ...prev,
+                                      [qKey]: !prev[qKey],
+                                    }))
+                                  }
+                                  className="text-xs font-semibold text-[#166534] hover:underline flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>
+                                    {isShowingExp
+                                      ? "Hide Answer & Explanation"
+                                      : "Show Answer Key & Explanation"}
+                                  </span>
+                                </button>
+
+                                {isShowingExp && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    className="mt-2.5 p-3.5 rounded-xl bg-amber-50/60 border border-amber-200 text-xs text-amber-900"
+                                  >
+                                    <p className="font-bold mb-1">
+                                      Correct Answer: {currQ.correct || "A"}
+                                    </p>
+                                    <p className="text-[11px] leading-relaxed text-amber-800">
+                                      {currQ.explanation ||
+                                        "No detailed solution step written for this question."}
+                                    </p>
+                                  </motion.div>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <div className="py-8 text-center text-xs text-gray-500">
+                          This quiz has no individual questions configured yet.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Modal Footer Controls */}
+                    {!previewQuizSubmitted && previewQuizModal.questions && previewQuizModal.questions.length > 0 && (
+                      <div className="p-4 border-t border-[#F0F1F3] bg-[#FAFBFD] flex items-center justify-between">
+                        <button
+                          disabled={previewQuestionIndex === 0}
+                          onClick={() => setPreviewQuestionIndex((prev) => Math.max(0, prev - 1))}
+                          className="px-3.5 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          Previous
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          {previewQuestionIndex < (previewQuizModal.questions.length - 1) ? (
+                            <button
+                              onClick={() =>
+                                setPreviewQuestionIndex((prev) =>
+                                  Math.min(previewQuizModal.questions.length - 1, prev + 1)
+                                )
+                              }
+                              className="px-4 py-1.5 rounded-lg bg-[#166534] hover:bg-[#14532d] text-white text-xs font-semibold cursor-pointer transition"
+                            >
+                              Next
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setPreviewQuizSubmitted(true)}
+                              className="px-4 py-1.5 rounded-lg bg-green-700 hover:bg-green-800 text-white text-xs font-semibold cursor-pointer transition"
+                            >
+                              Finish Preview
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+        {/* ========================================================================= */}
+        {/* VIEW: STUDENT QUIZZES (Dedicated Full-Page Student Quizzes View)           */}
+        {/* ========================================================================= */}
+        <AnimatePresence mode="wait">
+          {activeNav === "student-quizzes" && (
+            <motion.div
+              key="student-quizzes-view"
+              initial={{ opacity: 0, y: 15, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -15, scale: 0.99 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="p-6 sm:p-7 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-16"
+            >
+            {/* Top Preview Banner */}
+            <div className="bg-gradient-to-r from-[#166534]/10 via-[#15803d]/5 to-white border border-[#166534]/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center text-white shadow-md shadow-[#166534]/25 shrink-0 border border-white/20">
+                  <HelpCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-[#1F242D]">
+                      Quizzes & Practice
+                    </h2>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#166534]/15 text-[#166534] border border-[#166534]/25">
+                      Student View
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mt-0.5">
+                    Browse and preview all published quizzes as a student would see them
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white border border-[#ECEFF3] rounded-[20px] p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] shrink-0 shadow-[0_6px_16px_rgba(22,101,52,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)] flex items-center justify-center">
+                  <ClipboardList className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-semibold text-[#8C93A0]">Total Quizzes</span>
+                  <span className="text-xl font-extrabold text-[#1F242D] tracking-tight">{quizzes.length}</span>
+                </div>
+              </div>
+              <div className="bg-white border border-[#ECEFF3] rounded-[20px] p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] shrink-0 shadow-[0_6px_16px_rgba(22,101,52,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)] flex items-center justify-center">
+                  <FileQuestion className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-semibold text-[#8C93A0]">Total Questions</span>
+                  <span className="text-xl font-extrabold text-[#1F242D] tracking-tight">{quizzes.reduce((sum, q) => sum + (q.questionsCount || q.questions?.length || 0), 0)}</span>
+                </div>
+              </div>
+              <div className="bg-white border border-[#ECEFF3] rounded-[20px] p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] shrink-0 shadow-[0_6px_16px_rgba(22,101,52,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)] flex items-center justify-center">
+                  <Star className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-semibold text-[#8C93A0]">Avg Points/Item</span>
+                  <span className="text-xl font-extrabold text-[#1F242D] tracking-tight">
+                    {quizzes.length > 0 ? Math.round(quizzes.reduce((sum, q) => sum + (q.pointsPerItem || 1), 0) / quizzes.length) : 0} pts
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quiz Cards Grid */}
+            <div className="bg-white border border-[#ECEFF3] rounded-[24px] p-5 sm:p-7 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-base sm:text-lg font-bold text-[#1F242D]">
+                    Available Quizzes
+                  </h3>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#166534]/10 text-[#166534]">
+                    {quizzes.length} Published
+                  </span>
+                </div>
+              </div>
+
+              {quizzes.length === 0 ? (
+                <div className="py-16 flex flex-col items-center justify-center text-center">
+                  <div className="w-20 h-20 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center mb-4">
+                    <HelpCircle className="w-9 h-9 text-[#166534] stroke-[1.5]" />
+                  </div>
+                  <h4 className="text-lg font-bold text-[#1F242D] mb-2">
+                    No Quizzes Published Yet
+                  </h4>
+                  <p className="text-sm text-[#6B7280] max-w-md mb-5">
+                    Students will see quizzes here once the admin publishes them via the Add Quiz section.
+                  </p>
+                  <button
+                    onClick={() => handleNavClick("add-quiz")}
+                    className="bg-[#166534] hover:bg-[#14532d] text-white text-sm font-bold px-5 py-2.5 rounded-xl cursor-pointer transition shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 inline mr-1.5" />
+                    Create a Quiz
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {quizzes.map((quiz) => (
+                    <div
+                      key={quiz.id}
+                      className="group relative bg-[#FAFBFD] hover:bg-white border border-[#ECEFF3] hover:border-[#166534]/30 rounded-2xl p-5 transition-all duration-200 hover:shadow-[0_8px_24px_rgba(22,101,52,0.08)] flex flex-col justify-between"
+                    >
+                      {/* Quiz Header */}
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#166534]/10 text-[#166534]">
+                              {quiz.topic}
+                            </span>
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                              {quiz.questionType === "identification" ? "Identification" : "Multiple Choice"}
+                            </span>
+                          </div>
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/8 group-hover:bg-[#166534]/15 flex items-center justify-center transition">
+                            <FileText className="w-4 h-4 text-[#166534]" />
+                          </div>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-[#1F242D] group-hover:text-[#166534] transition mb-1.5 line-clamp-2">
+                          {quiz.title}
+                        </h4>
+
+                        <p className="text-[11px] text-[#8C93A0] mb-4">
+                          Created {quiz.createdAt}
+                        </p>
+
+                        {/* Quiz Info Row */}
+                        <div className="flex items-center gap-3 text-[11px] text-[#6B7280] mb-4 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <ListOrdered className="w-3.5 h-3.5 text-[#166534]" />
+                            <span className="font-semibold">{quiz.questionsCount || quiz.questions?.length || 0} Questions</span>
+                          </div>
+                          <span className="text-[#D1D5DB]">•</span>
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3.5 h-3.5 text-amber-500" />
+                            <span className="font-semibold">{quiz.pointsPerItem || 1} pt/item</span>
+                          </div>
+                          <span className="text-[#D1D5DB]">•</span>
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-blue-500" />
+                            <span className="font-semibold">{quiz.attempts} attempts</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <button
+                        onClick={() => handleStartStudentPreviewQuiz(quiz)}
+                        className="w-full py-2.5 rounded-xl bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] hover:from-[#166534] hover:to-[#052e16] text-white text-xs font-bold transition-all duration-200 cursor-pointer shadow-[0_4px_12px_rgba(22,101,52,0.25),inset_0_1px_1px_rgba(255,255,255,0.2)] active:scale-[0.98] flex items-center justify-center gap-2 border border-white/10"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        <span>Start Quiz</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Interactive Student Quiz Preview Modal (reuse from student-overview) */}
+            <AnimatePresence>
+              {previewQuizModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="bg-white rounded-2xl shadow-2xl border border-[#EAEBED] max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+                  >
+                    {/* Modal Header */}
+                    <div className="p-5 border-b border-[#F0F1F3] flex items-center justify-between bg-[#FAFBFD]">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#166534]/10 text-[#166534]">
+                            Student View Simulation
+                          </span>
+                          <span className="text-[10px] font-medium bg-gray-200 text-gray-700 px-2 py-0.5 rounded">
+                            {previewQuizModal.topic}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-bold text-[#1F242D] mt-1">
+                          {previewQuizModal.title}
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => setPreviewQuizModal(null)}
+                        className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-500 cursor-pointer transition"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Modal Content */}
+                    <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
+                      {previewQuizSubmitted ? (
+                        <div className="py-8 flex flex-col items-center justify-center text-center">
+                          <div className="w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center mb-4">
+                            <CheckCircle2 className="w-8 h-8" />
+                          </div>
+                          <h4 className="text-xl font-bold text-[#1F242D] mb-1">
+                            Quiz Preview Completed!
+                          </h4>
+                          <p className="text-xs text-[#6B7280] max-w-md mb-6">
+                            This simulated attempt demonstrated the student test-taking and grading experience. No permanent score was saved.
+                          </p>
+                          <div className="p-4 rounded-xl bg-[#F8F9FA] border border-[#ECEFF3] flex items-center gap-6 mb-6">
+                            <div className="text-center">
+                              <p className="text-[11px] text-[#8C93A0]">Score</p>
+                              <p className="text-lg font-bold text-[#166534]">
+                                {Object.keys(previewAnswers).length} / {previewQuizModal.questions?.length || previewQuizModal.questionsCount}
+                              </p>
+                            </div>
+                            <div className="w-[1px] h-8 bg-[#EAEBED]" />
+                            <div className="text-center">
+                              <p className="text-[11px] text-[#8C93A0]">Status</p>
+                              <p className="text-lg font-bold text-green-700">Passed</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => {
+                                setPreviewQuizSubmitted(false);
+                                setPreviewQuestionIndex(0);
+                                setPreviewAnswers({});
+                                setPreviewShowExplanation({});
+                              }}
+                              className="px-4 py-2 rounded-xl border border-[#E0E2E6] text-xs font-semibold hover:bg-gray-100 cursor-pointer transition"
+                            >
+                              Restart Preview
+                            </button>
+                            <button
+                              onClick={() => setPreviewQuizModal(null)}
+                              className="px-5 py-2 rounded-xl bg-[#166534] text-white text-xs font-semibold hover:bg-[#14532d] cursor-pointer transition"
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </div>
+                      ) : previewQuizModal.questions && previewQuizModal.questions.length > 0 ? (
+                        (() => {
+                          const currQ = previewQuizModal.questions[previewQuestionIndex] || previewQuizModal.questions[0];
+                          const totalQs = previewQuizModal.questions.length;
+                          const qKey = currQ.id || `${previewQuestionIndex}`;
+                          const selectedOpt = previewAnswers[qKey];
+                          const isShowingExp = previewShowExplanation[qKey];
+
+                          return (
+                            <>
+                              <div className="flex items-center justify-between text-xs pb-3 border-b border-[#F0F1F3]">
+                                <span className="font-bold text-[#1F242D]">
+                                  Question {previewQuestionIndex + 1} of {totalQs}
+                                </span>
+                                <span className="text-[#8C93A0] font-medium">
+                                  ★ {previewQuizModal.pointsPerItem || 1} pt per item
+                                </span>
+                              </div>
+
+                              <div className="p-4 rounded-xl bg-[#F8F9FA] border border-[#ECEFF3]">
+                                <p className="text-sm font-semibold text-[#1F242D] leading-relaxed">
+                                  {currQ.prompt || "Question prompt not specified."}
+                                </p>
+                              </div>
+
+                              <div className="flex flex-col gap-2.5">
+                                {[
+                                  { key: "A", text: currQ.optionA },
+                                  { key: "B", text: currQ.optionB },
+                                  { key: "C", text: currQ.optionC },
+                                  { key: "D", text: currQ.optionD },
+                                ]
+                                  .filter((opt) => opt.text && opt.text.trim())
+                                  .map((opt) => {
+                                    const isSelected = selectedOpt === opt.key;
+                                    return (
+                                      <button
+                                        key={opt.key}
+                                        onClick={() =>
+                                          setPreviewAnswers((prev) => ({
+                                            ...prev,
+                                            [qKey]: opt.key,
+                                          }))
+                                        }
+                                        className={`p-3.5 rounded-xl border text-left text-xs font-medium transition cursor-pointer flex items-center justify-between ${
+                                          isSelected
+                                            ? "border-[#166534] bg-[#F0FDF4] text-[#166534]"
+                                            : "border-[#EAEBED] hover:border-gray-300 hover:bg-[#FAFBFD] text-[#333]"
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <span
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                                              isSelected
+                                                ? "bg-[#166534] text-white"
+                                                : "bg-gray-100 text-gray-600"
+                                            }`}
+                                          >
+                                            {opt.key}
+                                          </span>
+                                          <span>{opt.text}</span>
+                                        </div>
+                                        {isSelected && (
+                                          <Check className="w-4 h-4 text-[#166534]" />
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                              </div>
+
+                              <div className="pt-2">
+                                <button
+                                  onClick={() =>
+                                    setPreviewShowExplanation((prev) => ({
+                                      ...prev,
+                                      [qKey]: !prev[qKey],
+                                    }))
+                                  }
+                                  className="text-xs font-semibold text-[#166534] hover:underline flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>
+                                    {isShowingExp
+                                      ? "Hide Answer & Explanation"
+                                      : "Show Answer Key & Explanation"}
+                                  </span>
+                                </button>
+
+                                {isShowingExp && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    className="mt-2.5 p-3.5 rounded-xl bg-amber-50/60 border border-amber-200 text-xs text-amber-900"
+                                  >
+                                    <p className="font-bold mb-1">
+                                      Correct Answer: {currQ.correct || "A"}
+                                    </p>
+                                    <p className="text-[11px] leading-relaxed text-amber-800">
+                                      {currQ.explanation || "No detailed solution step written for this question."}
+                                    </p>
+                                  </motion.div>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <div className="py-8 text-center text-xs text-gray-500">
+                          This quiz has no individual questions configured yet.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Modal Footer Controls */}
+                    {!previewQuizSubmitted && previewQuizModal.questions && previewQuizModal.questions.length > 0 && (
+                      <div className="p-4 border-t border-[#F0F1F3] bg-[#FAFBFD] flex items-center justify-between">
+                        <button
+                          disabled={previewQuestionIndex === 0}
+                          onClick={() => setPreviewQuestionIndex((prev) => Math.max(0, prev - 1))}
+                          className="px-3.5 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          Previous
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          {previewQuestionIndex < (previewQuizModal.questions.length - 1) ? (
+                            <button
+                              onClick={() =>
+                                setPreviewQuestionIndex((prev) =>
+                                  Math.min(previewQuizModal.questions.length - 1, prev + 1)
+                                )
+                              }
+                              className="px-4 py-1.5 rounded-lg bg-[#166534] hover:bg-[#14532d] text-white text-xs font-semibold cursor-pointer transition"
+                            >
+                              Next
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setPreviewQuizSubmitted(true)}
+                              className="px-4 py-1.5 rounded-lg bg-green-700 hover:bg-green-800 text-white text-xs font-semibold cursor-pointer transition"
+                            >
+                              Finish Preview
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========================================================================= */}
         {/* VIEW A: MAIN DASHBOARD VIEW                                               */}
         {/* ========================================================================= */}
-        {activeNav === "dashboard" && (
-          <div className="p-6 sm:p-7 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-12">
-            {/* 3. HERO / WELCOME BANNER CARD WITH MATHEMATICAL TEXTURE & 3D SIGMA */}
-            <section className="relative overflow-hidden bg-white border border-[#E8ECF2] rounded-[26px] p-7 sm:p-9 shadow-[0_8px_30px_rgba(0,0,0,0.03)] min-h-[190px] flex items-center">
-              {/* 3D Sigma Graphic on the Right Background */}
-              <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[55%] pointer-events-none select-none flex items-center justify-end">
-                <img
-                  src={studentLogoSigma}
-                  alt="3D Math Illustration"
-                  className="w-full h-full object-contain object-right opacity-95 drop-shadow-md"
-                />
-              </div>
-
-              {/* Left Welcome Copy */}
-              <div className="relative z-10 max-w-xl flex flex-col">
-                <span className="text-xs sm:text-sm font-semibold text-[#6B7280] mb-1">
-                  Welcome back,
-                </span>
-                <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-black text-[#111827] tracking-tight leading-none mb-3 flex items-center gap-2.5">
-                  <span className="text-[#801424]">{user?.name || "User"}</span>
-                  <span className="inline-block animate-wave text-3xl">
-                    👋
-                  </span>
-                </h1>
-              </div>
-            </section>
-
-            {/* 4. FOUR STATS METRIC CARDS ROW */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <AnimatePresence mode="wait">
+          {activeNav === "dashboard" && (
+            <motion.div
+              key="admin-dashboard-view"
+              initial={{ opacity: 0, y: 15, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -15, scale: 0.99 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="p-6 sm:p-7 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-12"
+            >
+            {/* 4. STATS METRIC CARDS ROW */}
+            <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
               {/* Card 1: Total Quizzes */}
               <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#DFE3E8] transition-all duration-200 flex items-center gap-4">
-                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10 flex items-center justify-center">
+                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] shrink-0 shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#166534]/10 flex items-center justify-center">
                   <ClipboardList className="w-5 h-5 text-white stroke-[2.2]" />
                 </div>
                 <div className="flex flex-col min-w-0">
@@ -2348,15 +4167,12 @@ export default function AdminDashboardPage() {
                   <span className="text-2xl sm:text-[1.75rem] font-black text-[#111827] tracking-tight leading-tight mt-0.5">
                     {totalQuizzes}
                   </span>
-                  <span className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">
-                    — 0% this month
-                  </span>
                 </div>
               </div>
 
               {/* Card 2: Total Students */}
               <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#DFE3E8] transition-all duration-200 flex items-center gap-4">
-                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10 flex items-center justify-center">
+                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] shrink-0 shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#166534]/10 flex items-center justify-center">
                   <Users className="w-5 h-5 text-white stroke-[2.2]" />
                 </div>
                 <div className="flex flex-col min-w-0">
@@ -2366,15 +4182,12 @@ export default function AdminDashboardPage() {
                   <span className="text-2xl sm:text-[1.75rem] font-black text-[#111827] tracking-tight leading-tight mt-0.5">
                     {totalStudents}
                   </span>
-                  <span className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">
-                    — 0% this month
-                  </span>
                 </div>
               </div>
 
               {/* Card 3: Total Attempts */}
               <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#DFE3E8] transition-all duration-200 flex items-center gap-4">
-                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10 flex items-center justify-center">
+                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] shrink-0 shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#166534]/10 flex items-center justify-center">
                   <ShieldCheck className="w-5 h-5 text-white stroke-[2.2]" />
                 </div>
                 <div className="flex flex-col min-w-0">
@@ -2384,39 +4197,19 @@ export default function AdminDashboardPage() {
                   <span className="text-2xl sm:text-[1.75rem] font-black text-[#111827] tracking-tight leading-tight mt-0.5">
                     {totalAttempts}
                   </span>
-                  <span className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">
-                    — 0% this month
-                  </span>
                 </div>
               </div>
 
-              {/* Card 4: Average Score */}
-              <div className="bg-white border border-[#ECEFF3] rounded-[22px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#DFE3E8] transition-all duration-200 flex items-center gap-4">
-                <div className="w-13 h-13 rounded-full bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5A0A15] shrink-0 shadow-[0_8px_20px_rgba(128,20,36,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] ring-4 ring-[#801424]/10 flex items-center justify-center">
-                  <Star className="w-5 h-5 text-white stroke-[2.2]" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-semibold text-[#6B7280]">
-                    Average Score
-                  </span>
-                  <span className="text-2xl sm:text-[1.75rem] font-black text-[#111827] tracking-tight leading-tight mt-0.5">
-                    {averageScore} pts
-                  </span>
-                  <span className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">
-                    — 0% this month
-                  </span>
-                </div>
-              </div>
             </section>
 
             {/* 5. MIDDLE ROW: QUIZ OVERVIEW & RECENT QUIZ ACTIVITY */}
-            <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <section className="hidden">
               {/* Left Card: Quiz Overview (Chart) */}
               <div className="lg:col-span-7 bg-white border border-[#ECEFF3] rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-[#801424]" />
+                    <BarChart3 className="w-4 h-4 text-[#166534]" />
                     <h3 className="text-base font-bold text-[#111827]">
                       Quiz Overview
                     </h3>
@@ -2452,7 +4245,7 @@ export default function AdminDashboardPage() {
                               }}
                               className={`w-full text-left px-3 py-1.5 text-xs font-medium cursor-pointer ${
                                 timeRange === t
-                                  ? "bg-[#801424]/10 text-[#801424] font-bold"
+                                  ? "bg-[#166534]/10 text-[#166534] font-bold"
                                   : "text-[#4B5563] hover:bg-[#F3F4F6]"
                               }`}
                             >
@@ -2563,17 +4356,17 @@ export default function AdminDashboardPage() {
                     {/* Red Line: Attempts Baseline */}
                     <polyline
                       fill="none"
-                      stroke="#801424"
+                      stroke="#166534"
                       strokeWidth="2.5"
                       points="60,175 140,175 220,175 300,175 380,175 460,175"
                     />
                     {/* Point circles for Attempts */}
-                    <circle cx="60" cy="175" r="3.5" fill="#801424" />
-                    <circle cx="140" cy="175" r="3.5" fill="#801424" />
-                    <circle cx="220" cy="175" r="3.5" fill="#801424" />
-                    <circle cx="300" cy="175" r="3.5" fill="#801424" />
-                    <circle cx="380" cy="175" r="3.5" fill="#801424" />
-                    <circle cx="460" cy="175" r="3.5" fill="#801424" />
+                    <circle cx="60" cy="175" r="3.5" fill="#166534" />
+                    <circle cx="140" cy="175" r="3.5" fill="#166534" />
+                    <circle cx="220" cy="175" r="3.5" fill="#166534" />
+                    <circle cx="300" cy="175" r="3.5" fill="#166534" />
+                    <circle cx="380" cy="175" r="3.5" fill="#166534" />
+                    <circle cx="460" cy="175" r="3.5" fill="#166534" />
                   </svg>
 
                   {/* X-Axis Date Labels */}
@@ -2590,7 +4383,7 @@ export default function AdminDashboardPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#801424]" />
+                    <Clock className="w-4 h-4 text-[#166534]" />
                     <h3 className="text-base font-bold text-[#111827]">
                       Recent Quiz Activity
                     </h3>
@@ -2598,7 +4391,7 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleNavClick("quiz-results")}
-                    className="text-xs font-bold text-[#801424] hover:underline cursor-pointer"
+                    className="text-xs font-bold text-[#166534] hover:underline cursor-pointer"
                   >
                     View All
                   </button>
@@ -2608,7 +4401,7 @@ export default function AdminDashboardPage() {
                 <div className="flex-1 flex flex-col justify-center py-2">
                   {activities.length === 0 ? (
                     <div className="flex flex-col items-center py-8 text-center">
-                      <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3.5">
+                      <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-3.5">
                         <ClipboardList className="w-7 h-7 stroke-[1.8]" />
                       </div>
                       <h4 className="text-sm font-bold text-[#111827]">
@@ -2634,7 +4427,7 @@ export default function AdminDashboardPage() {
                             </span>
                           </div>
                           <div className="flex flex-col text-right">
-                            <span className="text-sm font-bold text-[#801424]">
+                            <span className="text-sm font-bold text-[#166534]">
                               {act.score}/{act.totalQuestions}
                             </span>
                             <span className="text-[11px] text-[#9CA3AF]">
@@ -2652,7 +4445,7 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleNavClick("add-quiz")}
-                    className="w-full py-2 bg-[#F9FAFB] hover:bg-[#801424]/10 border border-[#E5E7EB] hover:border-[#801424]/30 rounded-xl text-xs font-bold text-[#801424] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-2 bg-[#F9FAFB] hover:bg-[#166534]/10 border border-[#E5E7EB] hover:border-[#166534]/30 rounded-xl text-xs font-bold text-[#166534] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Create New Quiz</span>
@@ -2661,161 +4454,61 @@ export default function AdminDashboardPage() {
               </div>
             </section>
 
-            {/* 6. BOTTOM ROW: TOP PERFORMING QUIZZES & RECENT STUDENT PERFORMANCE */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Bottom Left Card: Top Performing Quizzes */}
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                <div>
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-[#111827]">
-                      Top Performing Quizzes
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => handleNavClick("quiz-results")}
-                      className="text-xs font-bold text-[#801424] hover:underline cursor-pointer"
-                    >
-                      View All
-                    </button>
-                  </div>
-
-                  {/* Table Header Row */}
-                  <div className="grid grid-cols-3 text-xs font-semibold text-[#9CA3AF] py-2 border-b border-[#F3F4F6]">
-                    <span>Quiz Title</span>
-                    <span className="text-center">Attempts</span>
-                    <span className="text-right">Average Score</span>
-                  </div>
-                </div>
-
-                {/* Empty state / Quiz items */}
-                <div className="flex-1 flex flex-col items-center justify-center py-12 text-center">
-                  {quizzes.length === 0 ? (
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3.5">
-                        <Trophy className="w-7 h-7 stroke-[1.8]" />
-                      </div>
-                      <h4 className="text-sm font-bold text-[#111827]">
-                        No quizzes yet.
-                      </h4>
-                      <p className="text-xs text-[#6B7280] mt-1 max-w-[240px]">
-                        Add quizzes to see performance data.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="w-full flex flex-col divide-y divide-[#F3F4F6]">
-                      {quizzes.map((quiz) => (
-                        <div
-                          key={quiz.id}
-                          className="grid grid-cols-3 text-xs py-3 items-center text-left"
-                        >
-                          <span className="font-bold text-[#111827] truncate">
-                            {quiz.title}
-                          </span>
-                          <span className="text-center text-[#4B5563]">
-                            {quiz.attempts}
-                          </span>
-                          <span className="text-right font-bold text-[#801424]">
-                            {quiz.averageScore} pts
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-2" />
+            {/* 6. RECENT QUIZ TAKERS */}
+            <section className="bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-[#111827]">
+                  Recent Quiz Takers
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => handleNavClick("quiz-results")}
+                  className="text-xs font-bold text-[#166534] hover:underline cursor-pointer"
+                >
+                  View All
+                </button>
               </div>
 
-              {/* Bottom Right Card: Recent Student Performance */}
-              <div className="bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                <div>
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-[#111827]">
-                      Recent Student Performance
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => handleNavClick("view-students")}
-                      className="text-xs font-bold text-[#801424] hover:underline cursor-pointer"
-                    >
-                      View All
-                    </button>
-                  </div>
-
-                  {/* Table Header Row */}
-                  <div className="grid grid-cols-4 text-xs font-semibold text-[#9CA3AF] py-2 border-b border-[#F3F4F6]">
-                    <span className="col-span-1">Student</span>
-                    <span className="col-span-1 text-center">Quizzes Taken</span>
-                    <span className="col-span-1 text-center">Avg Score</span>
-                    <span className="col-span-1 text-right">Last Active</span>
-                  </div>
-                </div>
-
-                {/* Empty state / Student items */}
-                <div className="flex-1 flex flex-col items-center justify-center py-6 text-center">
-                  {students.length === 0 ? (
-                    <div className="flex flex-col items-center py-6">
-                      <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
-                        <Users className="w-6 h-6 stroke-[1.8]" />
-                      </div>
-                      <h4 className="text-sm font-bold text-[#111827]">
-                        No registered students yet.
-                      </h4>
-                      <p className="text-xs text-[#6B7280] mt-1 max-w-[260px]">
-                        Registered students will appear here automatically.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="w-full flex flex-col divide-y divide-[#F3F4F6]">
-                      {students.slice(0, 5).map((st) => {
-                        const isStudentOnline =
-                          onlineStudentKeys.has(st.id.toLowerCase()) ||
-                          onlineStudentKeys.has(st.email.toLowerCase());
-
-                        return (
-                          <div
-                            key={st.id}
-                            className="grid grid-cols-4 text-xs py-3 items-center text-left hover:bg-[#F9FAFB] rounded-lg px-1 transition"
-                          >
-                            <div className="col-span-1 min-w-0 pr-2">
-                              <div className="flex items-center gap-1.5">
-                                <p className="font-bold text-[#111827] truncate">
-                                  {st.name}
-                                </p>
-                                {isStudentOnline && (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    Online
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-[#9CA3AF] truncate">
-                                {st.email}
-                              </p>
-                            </div>
-                          <div className="col-span-1 text-center font-medium text-[#4B5563]">
-                            {st.quizzesTaken}
-                          </div>
-                          <div className="col-span-1 text-center font-bold text-[#801424]">
-                            {st.averageScore} pts
-                          </div>
-                          <div className="col-span-1 text-right text-[11px] text-[#6B7280]">
-                            {st.lastActive}
-                          </div>
-                        </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-2" />
+              <div className="grid grid-cols-3 text-xs font-semibold text-[#9CA3AF] py-2 border-b border-[#F3F4F6]">
+                <span>Name</span>
+                <span>Quiz</span>
+                <span className="text-right">Submitted</span>
               </div>
+
+              {activities.length === 0 ? (
+                <div className="flex flex-col items-center py-10 text-center">
+                  <Users className="w-8 h-8 text-[#166534] mb-3" />
+                  <h4 className="text-sm font-bold text-[#111827]">
+                    No quiz takers yet.
+                  </h4>
+                  <p className="text-xs text-[#6B7280] mt-1">
+                    Recent quiz takers will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="w-full flex flex-col divide-y divide-[#F3F4F6]">
+                  {activities.slice(0, 10).map((act) => (
+                    <div
+                      key={act.id}
+                      className="grid grid-cols-3 text-xs py-3 items-center"
+                    >
+                      <span className="font-bold text-[#111827] truncate">
+                        {act.studentName}
+                      </span>
+                      <span className="text-[#4B5563] truncate">
+                        {act.quizTitle}
+                      </span>
+                      <span className="text-right text-[11px] text-[#6B7280]">
+                        {act.submittedAt}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ========================================================================= */}
         {/* VIEW B: CALCULATORS SECTION (Smooth Swipe to Right for Single Calculator)   */}
@@ -2836,7 +4529,7 @@ export default function AdminDashboardPage() {
                   {/* Header Banner for Calculators Hub */}
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="max-w-xl">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#801424]/10 border border-[#801424]/20 text-[#801424] text-xs font-bold uppercase tracking-wider mb-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#166534]/10 border border-[#166534]/20 text-[#166534] text-xs font-bold uppercase tracking-wider mb-2">
                         <Calculator className="w-3.5 h-3.5" />
                         <span>Admin Calculator Suite</span>
                       </div>
@@ -2858,7 +4551,7 @@ export default function AdminDashboardPage() {
                         value={calcSearchQuery}
                         onChange={(e) => setCalcSearchQuery(e.target.value)}
                         placeholder="Filter calculators..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-[#F9FAFB] border border-[#E2E4E8] rounded-xl text-sm focus:outline-none focus:border-[#801424] focus:ring-1 focus:ring-[#801424]"
+                        className="w-full pl-10 pr-4 py-2.5 bg-[#F9FAFB] border border-[#E2E4E8] rounded-xl text-sm focus:outline-none focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
                       />
                     </div>
                   </div>
@@ -2870,7 +4563,7 @@ export default function AdminDashboardPage() {
                       onClick={() => setSelectedCalcCategory("linear-algebra")}
                       className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
                         selectedCalcCategory === "linear-algebra"
-                          ? "bg-[#801424] text-white shadow-md shadow-[#801424]/25"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
                           : "text-[#4B5565] hover:bg-[#F3F4F6] hover:text-[#111827]"
                       }`}
                     >
@@ -2896,7 +4589,7 @@ export default function AdminDashboardPage() {
                       onClick={() => setSelectedCalcCategory("calculus-1")}
                       className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
                         selectedCalcCategory === "calculus-1"
-                          ? "bg-[#801424] text-white shadow-md shadow-[#801424]/25"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
                           : "text-[#4B5565] hover:bg-[#F3F4F6] hover:text-[#111827]"
                       }`}
                     >
@@ -2922,7 +4615,7 @@ export default function AdminDashboardPage() {
                       onClick={() => setSelectedCalcCategory("calculus-2")}
                       className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
                         selectedCalcCategory === "calculus-2"
-                          ? "bg-[#801424] text-white shadow-md shadow-[#801424]/25"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
                           : "text-[#4B5565] hover:bg-[#F3F4F6] hover:text-[#111827]"
                       }`}
                     >
@@ -2954,21 +4647,21 @@ export default function AdminDashboardPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.98 }}
                         transition={{ duration: 0.2 }}
-                        className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#801424]/40 hover:shadow-md transition-all duration-200 group"
+                        className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#166534]/40 hover:shadow-md transition-all duration-200 group"
                       >
                         <div>
                           {/* Header with badge */}
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-md truncate max-w-[200px]">
+                            <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md truncate max-w-[200px]">
                               {calc.badge}
                             </span>
-                            <div className="w-8 h-8 rounded-lg bg-[#F8F9FA] flex items-center justify-center text-[#4B5563] group-hover:bg-[#801424] group-hover:text-white transition-colors shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#F8F9FA] flex items-center justify-center text-[#4B5563] group-hover:bg-[#166534] group-hover:text-white transition-colors shrink-0">
                               <Calculator className="w-4 h-4" />
                             </div>
                           </div>
 
                           {/* Title */}
-                          <h3 className="text-base font-bold text-[#111827] group-hover:text-[#801424] transition-colors line-clamp-1">
+                          <h3 className="text-base font-bold text-[#111827] group-hover:text-[#166534] transition-colors line-clamp-1">
                             {calc.title}
                           </h3>
 
@@ -2991,7 +4684,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setActiveCalculator(calc)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#801424] hover:bg-[#68101D] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95 group/btn"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#166534] hover:bg-[#14532d] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95 group/btn"
                           >
                             <span>Open Calculator</span>
                             <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
@@ -3003,7 +4696,7 @@ export default function AdminDashboardPage() {
 
                   {filteredCalculators.length === 0 && (
                     <div className="bg-white border border-[#EAEBED] rounded-2xl p-12 text-center flex flex-col items-center justify-center">
-                      <div className="w-14 h-14 rounded-full bg-red-50 text-[#801424] flex items-center justify-center mb-3">
+                      <div className="w-14 h-14 rounded-full bg-green-50 text-[#166534] flex items-center justify-center mb-3">
                         <Search className="w-6 h-6" />
                       </div>
                       <h4 className="text-base font-bold text-[#111827]">
@@ -3033,7 +4726,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setActiveCalculator(null)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#F8F9FA] hover:bg-[#801424]/10 border border-[#E5E7EB] hover:border-[#801424]/30 rounded-xl text-xs font-bold text-[#801424] transition-all cursor-pointer active:scale-95 group"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#F8F9FA] hover:bg-[#166534]/10 border border-[#E5E7EB] hover:border-[#166534]/30 rounded-xl text-xs font-bold text-[#166534] transition-all cursor-pointer active:scale-95 group"
                     >
                       <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
                       <span>Back to All Calculators</span>
@@ -3046,7 +4739,7 @@ export default function AdminDashboardPage() {
                         {activeCalculator.category.replace("-", " ")}
                       </span>
                       <span>/</span>
-                      <span className="font-bold text-[#801424] truncate max-w-[240px]">
+                      <span className="font-bold text-[#166534] truncate max-w-[240px]">
                         {activeCalculator.title}
                       </span>
                     </div>
@@ -3056,7 +4749,7 @@ export default function AdminDashboardPage() {
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col md:flex-row md:items-center justify-between gap-5">
                     <div className="max-w-2xl">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-md">
+                        <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md">
                           {activeCalculator.badge}
                         </span>
                         <span className="text-xs text-[#9CA3AF]">
@@ -3122,7 +4815,7 @@ export default function AdminDashboardPage() {
                   {/* Header Banner for Topics Hub */}
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="max-w-xl">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#801424]/10 border border-[#801424]/20 text-[#801424] text-xs font-bold uppercase tracking-wider mb-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#166534]/10 border border-[#166534]/20 text-[#166534] text-xs font-bold uppercase tracking-wider mb-2">
                         <BookOpen className="w-3.5 h-3.5" />
                         <span>Curriculum Management</span>
                       </div>
@@ -3144,7 +4837,7 @@ export default function AdminDashboardPage() {
                         value={topicSearchQuery}
                         onChange={(e) => setTopicSearchQuery(e.target.value)}
                         placeholder="Search all topics & lessons..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-[#F9FAFB] border border-[#E2E4E8] rounded-xl text-sm focus:outline-none focus:border-[#801424] focus:ring-1 focus:ring-[#801424]"
+                        className="w-full pl-10 pr-4 py-2.5 bg-[#F9FAFB] border border-[#E2E4E8] rounded-xl text-sm focus:outline-none focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
                       />
                     </div>
                   </div>
@@ -3156,7 +4849,7 @@ export default function AdminDashboardPage() {
                       onClick={() => setSelectedTopicCategory("linear-algebra")}
                       className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
                         selectedTopicCategory === "linear-algebra"
-                          ? "bg-[#801424] text-white shadow-md shadow-[#801424]/25"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
                           : "text-[#4B5565] hover:bg-[#F3F4F6] hover:text-[#111827]"
                       }`}
                     >
@@ -3182,7 +4875,7 @@ export default function AdminDashboardPage() {
                       onClick={() => setSelectedTopicCategory("calculus-1")}
                       className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
                         selectedTopicCategory === "calculus-1"
-                          ? "bg-[#801424] text-white shadow-md shadow-[#801424]/25"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
                           : "text-[#4B5565] hover:bg-[#F3F4F6] hover:text-[#111827]"
                       }`}
                     >
@@ -3208,7 +4901,7 @@ export default function AdminDashboardPage() {
                       onClick={() => setSelectedTopicCategory("calculus-2")}
                       className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
                         selectedTopicCategory === "calculus-2"
-                          ? "bg-[#801424] text-white shadow-md shadow-[#801424]/25"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
                           : "text-[#4B5565] hover:bg-[#F3F4F6] hover:text-[#111827]"
                       }`}
                     >
@@ -3240,21 +4933,32 @@ export default function AdminDashboardPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.98 }}
                         transition={{ duration: 0.2 }}
-                        className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#801424]/40 hover:shadow-md transition-all duration-200 group"
+                        className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#166534]/40 hover:shadow-md transition-all duration-200 group"
                       >
                         <div>
                           {/* Header with chapter badge */}
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-[0.68rem] font-bold text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-md truncate max-w-[200px]">
+                            <span className="text-[0.68rem] font-bold text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md truncate max-w-[200px]">
                               {top.chapter}
                             </span>
-                            <div className="w-8 h-8 rounded-lg bg-[#F8F9FA] flex items-center justify-center text-[#4B5563] group-hover:bg-[#801424] group-hover:text-white transition-colors shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#F8F9FA] flex items-center justify-center text-[#4B5563] group-hover:bg-[#166534] group-hover:text-white transition-colors shrink-0">
                               <BookOpen className="w-4 h-4" />
                             </div>
                           </div>
 
+                          {/* Topic Image Thumbnail */}
+                          {top.image && (
+                            <div className="w-full h-36 rounded-xl overflow-hidden mb-3 bg-gray-50">
+                              <img
+                                src={top.image}
+                                alt={top.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            </div>
+                          )}
+
                           {/* Title */}
-                          <h3 className="text-base font-bold text-[#111827] group-hover:text-[#801424] transition-colors line-clamp-2">
+                          <h3 className="text-base font-bold text-[#111827] group-hover:text-[#166534] transition-colors line-clamp-2">
                             {top.title}
                           </h3>
 
@@ -3276,7 +4980,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setActiveTopic(top)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#801424] hover:bg-[#68101D] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95 group/btn"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#166534] hover:bg-[#14532d] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95 group/btn"
                           >
                             <span>Explore Topic</span>
                             <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
@@ -3288,7 +4992,7 @@ export default function AdminDashboardPage() {
 
                   {filteredTopics.length === 0 && (
                     <div className="bg-white border border-[#EAEBED] rounded-2xl p-12 text-center flex flex-col items-center justify-center">
-                      <div className="w-14 h-14 rounded-full bg-red-50 text-[#801424] flex items-center justify-center mb-3">
+                      <div className="w-14 h-14 rounded-full bg-green-50 text-[#166534] flex items-center justify-center mb-3">
                         <Search className="w-6 h-6" />
                       </div>
                       <h4 className="text-base font-bold text-[#111827]">
@@ -3302,22 +5006,24 @@ export default function AdminDashboardPage() {
                 </motion.div>
               )}
 
-              {/* SUB-VIEW 2: DEDICATED TOPIC DETAIL & STUDY PAGE (Swipes from Right!) */}
+              {/* SUB-VIEW 2: DEDICATED TOPIC DETAIL & STUDY PAGE */}
               {activeTopic && (
                 <motion.div
                   key="topic-detail-view"
-                  initial={{ opacity: 0, x: 80 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 80 }}
-                  transition={{ type: "spring", stiffness: 280, damping: 28 }}
-                  className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-20"
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 1 }}
+                  transition={{ duration: 0 }}
+                  className={`p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-20 transition-[padding] duration-300 ease-in-out ${
+                    isTopicCalculatorOpen ? "pr-6 lg:pr-[30rem] xl:pr-[34rem]" : ""
+                  }`}
                 >
                   {/* Top Navigation & Breadcrumb Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-[#EAEBED] rounded-2xl p-4 shadow-xs">
                     <button
                       type="button"
                       onClick={() => setActiveTopic(null)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#F8F9FA] hover:bg-[#801424]/10 border border-[#E5E7EB] hover:border-[#801424]/30 rounded-xl text-xs font-bold text-[#801424] transition-all cursor-pointer active:scale-95 group"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#F8F9FA] hover:bg-[#166534]/10 border border-[#E5E7EB] hover:border-[#166534]/30 rounded-xl text-xs font-bold text-[#166534] transition-all cursor-pointer active:scale-95 group"
                     >
                       <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
                       <span>Back to All Topics</span>
@@ -3330,7 +5036,7 @@ export default function AdminDashboardPage() {
                         {activeTopic.category.replace("-", " ")}
                       </span>
                       <span>/</span>
-                      <span className="font-bold text-[#801424] truncate max-w-[240px]">
+                      <span className="font-bold text-[#166534] truncate max-w-[240px]">
                         {activeTopic.title}
                       </span>
                     </div>
@@ -3340,7 +5046,7 @@ export default function AdminDashboardPage() {
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="max-w-3xl">
                       <div className="flex items-center gap-2.5 mb-2.5">
-                        <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-md">
+                        <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md">
                           {activeTopic.chapter}
                         </span>
                         <span className="text-[0.7rem] font-bold uppercase tracking-wider text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-md">
@@ -3355,16 +5061,16 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
 
-                    {/* Top Aligned Interactive Calculator Button with Hover Tooltip */}
-                    {(() => {
+                    {/* Interactive Calculator Button inside banner */}
+                    {!isTopicCalculatorOpen && (() => {
                       const isLinear = activeTopic.category === "linear-algebra";
                       const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
                       return (
-                        <div className="relative group/topcalc flex items-center">
+                        <div className="relative group/topcalc flex items-center shrink-0 self-start sm:self-center">
                           <button
                             type="button"
                             onClick={() => setIsTopicCalculatorOpen(true)}
-                            className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#801424] hover:bg-[#68101D] text-white font-bold text-xs shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-95 group/btn"
+                            className="relative flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-[#166534] hover:bg-[#14532d] text-white font-bold text-xs shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-95 group/btn"
                             aria-label={calcDef.name}
                           >
                             <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 group-hover/btn:rotate-12 transition-transform">
@@ -3379,7 +5085,7 @@ export default function AdminDashboardPage() {
                           {/* Hover Tooltip Popup for Desktop */}
                           <div className="absolute right-0 top-full mt-2 hidden sm:group-hover/topcalc:flex flex-col items-end z-50 pointer-events-none animate-in fade-in slide-in-from-top-1 duration-150">
                             <div className="bg-[#111827] text-white text-[11px] font-medium py-1.5 px-3 rounded-lg shadow-lg border border-white/10 whitespace-nowrap flex items-center gap-1.5">
-                              <Sparkles className="w-3 h-3 text-[#FF7A8A]" />
+                              <Sparkles className="w-3 h-3 text-[#4ADE80]" />
                               <span>Launch <strong>{calcDef.name}</strong></span>
                             </div>
                           </div>
@@ -3388,281 +5094,214 @@ export default function AdminDashboardPage() {
                     })()}
                   </div>
 
-                  {/* Main Lesson Content Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Left Column: Conceptual Deep Dive & Details */}
-                    <div className="lg:col-span-8 flex flex-col gap-6">
-                      {/* Overview & Theory Card */}
-                      <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
-                        <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-[#F3F4F6]">
-                          <div className="w-8 h-8 rounded-lg bg-red-50 text-[#801424] flex items-center justify-center">
-                            <BookMarked className="w-4 h-4" />
-                          </div>
-                          <h3 className="text-base font-bold text-[#111827]">
-                            Theoretical Overview & Fundamentals
-                          </h3>
-                        </div>
-                        <div className="text-sm text-[#374151] leading-relaxed space-y-3">
-                          <TopicContentRenderer content={activeTopic.details} />
-                        </div>
+                  {/* Main Lesson Content */}
+                  <div className="flex flex-col gap-6">
+                    {/* Topic Hero Image */}
+                    {activeTopic.image && (
+                      <div className="w-full max-h-80 rounded-3xl overflow-hidden bg-[#F8F9FA] border border-[#EAEBED] flex items-center justify-center p-2">
+                        <img
+                          src={activeTopic.image}
+                          alt={activeTopic.title}
+                          className="max-h-76 w-auto object-contain rounded-2xl"
+                        />
                       </div>
+                    )}
 
-                      {/* Worked Example Problems Card */}
-                      {activeTopic.examples && activeTopic.examples.length > 0 && (
-                        <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-3 border-b border-[#F3F4F6] gap-2">
-                            <div className="flex flex-wrap items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-red-50 text-[#801424] flex items-center justify-center">
-                                <HelpCircle className="w-4 h-4" />
-                              </div>
-                              <h3 className="text-base font-bold text-[#111827]">
-                                Step-by-Step Worked Problems ({activeTopic.examples.length})
-                              </h3>
-                              {activeTopic.category === "linear-algebra" && (() => {
-                                const laCalc = getLinearAlgebraDefinitionForTopic(activeTopic);
-                                return (
-                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#801424] bg-[#FFF0F3] border border-[#FFCCD5] px-2.5 py-0.5 rounded-md">
-                                    <span>{activeTopic.title}</span>
-                                    <span>→</span>
-                                    <span>{laCalc.name}</span>
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                            <span className="text-xs text-[#6B7280]">
-                              Click &ldquo;Try to Solve&rdquo; to open solver
-                            </span>
-                          </div>
-
-                          <div className="space-y-4">
-                            {activeTopic.examples.map((ex, i) => {
-                              const rawExText = typeof ex === "string" ? ex : (ex as any).question || JSON.stringify(ex);
-                              return (
-                                <div
-                                  key={i}
-                                  className="p-4.5 bg-[#F9FAFB] border border-[#F0F1F3] rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                                >
-                                  <div className="flex items-start gap-2.5">
-                                    <span className="px-2 py-0.5 text-[0.7rem] font-bold text-[#801424] bg-white border border-red-200 rounded-md shrink-0 mt-0.5">
-                                      Problem {i + 1}
-                                    </span>
-                                    <p className="text-xs sm:text-sm font-semibold text-[#111827] leading-relaxed">
-                                      {rawExText}
-                                    </p>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(rawExText);
-                                        setTopicCopiedIdx(i);
-                                        setTimeout(() => setTopicCopiedIdx(null), 2000);
-                                      }}
-                                      className="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-xs text-gray-600 font-semibold transition cursor-pointer flex items-center gap-1"
-                                      title="Copy text"
-                                    >
-                                      {topicCopiedIdx === i ? (
-                                        <>
-                                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                          <span className="text-emerald-600 text-[11px]">Copied</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Copy className="w-3.5 h-3.5" />
-                                          <span className="text-[11px]">Copy</span>
-                                        </>
-                                      )}
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(rawExText);
-                                        setLoadedTopicExample({ text: rawExText, index: i });
-                                        setTopicCalcKey((prev) => prev + 1);
-                                        setIsTopicCalculatorOpen(true);
-                                      }}
-                                      className="px-3.5 py-1.5 rounded-lg bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
-                                    >
-                                      <Play className="w-3 h-3 fill-current" />
-                                      <span>Try to Solve</span>
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                    {/* Overview & Theory Card */}
+                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
+                      <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-[#F3F4F6]">
+                        <div className="w-8 h-8 rounded-lg bg-green-50 text-[#166534] flex items-center justify-center">
+                          <BookMarked className="w-4 h-4" />
                         </div>
-                      )}
+                        <h3 className="text-base font-bold text-[#111827]">
+                          Theoretical Overview & Fundamentals
+                        </h3>
+                      </div>
+                      <div className="text-sm text-[#374151] leading-relaxed space-y-3">
+                        <TopicContentRenderer content={activeTopic.details} />
+                      </div>
                     </div>
 
-                    {/* Slide-out Calculator Drawer from Right */}
-                    <AnimatePresence>
-                      {isTopicCalculatorOpen && activeTopic && (() => {
-                        const isLinear = activeTopic.category === "linear-algebra";
-                        const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
-                        return (
-                          <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
-                            {/* Backdrop */}
-                            <motion.div
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                              onClick={() => setIsTopicCalculatorOpen(false)}
-                              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-                            />
+                    {/* Worked Example Problems Card */}
+                    {activeTopic.examples && activeTopic.examples.length > 0 && (
+                      <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-3 border-b border-[#F3F4F6] gap-2">
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-green-50 text-[#166534] flex items-center justify-center">
+                              <HelpCircle className="w-4 h-4" />
+                            </div>
+                            <h3 className="text-base font-bold text-[#111827]">
+                              Step-by-Step Worked Problems ({activeTopic.examples.length})
+                            </h3>
+                            {activeTopic.category === "linear-algebra" && (() => {
+                              const laCalc = getLinearAlgebraDefinitionForTopic(activeTopic);
+                              return (
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#166534] bg-[#ECFDF5] border border-[#dcfce7] px-2.5 py-0.5 rounded-md">
+                                  <span>{activeTopic.title}</span>
+                                  <span>→</span>
+                                  <span>{laCalc.name}</span>
+                                </span>
+                              );
+                            })()}
+                          </div>
+                          <span className="text-xs text-[#6B7280]">
+                            Click &ldquo;Try to Solve&rdquo; to open solver
+                          </span>
+                        </div>
 
-                            {/* Slide-in Drawer */}
-                            <motion.div
-                              initial={{ x: "100%" }}
-                              animate={{ x: 0 }}
-                              exit={{ x: "100%" }}
-                              transition={{ type: "spring", damping: 28, stiffness: 280 }}
-                              className="relative w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl bg-[#F8F9FA] h-full shadow-2xl z-10 flex flex-col overflow-hidden border-l border-[#EAEBED]"
-                            >
-                              {/* Drawer Header */}
-                              <div className="bg-white border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between shadow-xs shrink-0">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center shadow-xs">
-                                    <Calculator className="w-5 h-5" />
-                                  </div>
-                                  <div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <h3 className="text-base sm:text-lg font-black text-[#111827]">
-                                        {calcDef.name}
-                                      </h3>
-                                      <span className="text-xs font-bold text-[#801424] bg-white border border-[#F8D7DA] px-2.5 py-0.5 rounded-lg">
-                                        {calcDef.badge}
-                                      </span>
-                                    </div>
-                                    <p className="text-xs text-[#6B7280] flex items-center gap-1.5 flex-wrap">
-                                      <span>{activeTopic.title}</span>
-                                      <span>→</span>
-                                      <span className="font-semibold text-[#801424]">{calcDef.name}</span>
-                                    </p>
-                                  </div>
+                        <div className="space-y-4">
+                          {activeTopic.examples.map((ex, i) => {
+                            const rawExText = typeof ex === "string" ? ex : (ex as any).question || JSON.stringify(ex);
+                            return (
+                              <div
+                                key={i}
+                                className="p-4.5 bg-[#F9FAFB] border border-[#F0F1F3] rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                              >
+                                <div className="flex items-start gap-2.5">
+                                  <span className="px-2 py-0.5 text-[0.7rem] font-bold text-[#166534] bg-white border border-green-200 rounded-md shrink-0 mt-0.5">
+                                    Problem {i + 1}
+                                  </span>
+                                  <p className="text-xs sm:text-sm font-semibold text-[#111827] leading-relaxed">
+                                    {rawExText}
+                                  </p>
                                 </div>
 
-                                <button
-                                  type="button"
-                                  onClick={() => setIsTopicCalculatorOpen(false)}
-                                  className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-                                >
-                                  <X className="w-4 h-4" />
-                                  <span className="hidden sm:inline">Close</span>
-                                </button>
-                              </div>
-
-                              {/* Loaded Problem Notification Banner */}
-                              {loadedTopicExample && (
-                                <div className="bg-[#FFF0F2] border-b border-[#F8D7DA] px-6 py-3 flex items-center justify-between text-xs text-[#801424] shrink-0">
-                                  <div className="flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-[#801424] shrink-0" />
-                                    <span>
-                                      <strong>Loaded Problem #{loadedTopicExample.index + 1}:</strong> &ldquo;{loadedTopicExample.text}&rdquo; (Copied to clipboard)
-                                    </span>
-                                  </div>
+                                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                                   <button
                                     type="button"
-                                    onClick={() => setLoadedTopicExample(null)}
-                                    className="p-1 hover:bg-[#F8D7DA] rounded-md transition text-[#801424] cursor-pointer"
-                                    title="Clear problem"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(rawExText);
+                                      setTopicCopiedIdx(i);
+                                      setTimeout(() => setTopicCopiedIdx(null), 2000);
+                                    }}
+                                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-xs text-gray-600 font-semibold transition cursor-pointer flex items-center gap-1"
+                                    title="Copy text"
                                   >
-                                    <X className="w-3.5 h-3.5" />
+                                    {topicCopiedIdx === i ? (
+                                      <>
+                                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span className="text-emerald-600 text-[11px]">Copied</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3.5 h-3.5" />
+                                        <span className="text-[11px]">Copy</span>
+                                      </>
+                                    )}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(rawExText);
+                                      setLoadedTopicExample({ text: rawExText, index: i });
+                                      setTopicCalcKey((prev) => prev + 1);
+                                      setIsTopicCalculatorOpen(true);
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-lg bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                                  >
+                                    <Play className="w-3 h-3 fill-current" />
+                                    <span>Try to Solve</span>
                                   </button>
                                 </div>
-                              )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                              {/* Scrollable Calculator Body */}
-                              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-                                <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-xs">
-                                  {isLinear ? (
-                                    <div>{(calcDef as any).component}</div>
-                                  ) : (
-                                    <CalculusCalculator
-                                      key={`${(calcDef as any).id}-${topicCalcKey}`}
-                                      definition={
-                                        loadedTopicExample
-                                          ? { ...calcDef, example: loadedTopicExample.text } as any
-                                          : calcDef as any
-                                      }
-                                    />
-                                  )}
+                  {/* Slide-out Calculator Drawer from Right */}
+                  <AnimatePresence>
+                    {isTopicCalculatorOpen && activeTopic && (() => {
+                      const isLinear = activeTopic.category === "linear-algebra";
+                      const calcDef = isLinear ? getLinearAlgebraDefinitionForTopic(activeTopic) : getCalculusDefinitionForTopic(activeTopic);
+                      return (
+                        <div className="fixed inset-y-0 right-0 z-50 overflow-hidden flex justify-end w-full sm:w-auto pointer-events-none">
+                          {/* Slide-in Drawer - No backdrop */}
+                          <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                            className="relative w-full sm:w-[28rem] lg:w-[32rem] bg-[#F8F9FA] h-full shadow-2xl z-10 flex flex-col overflow-hidden border-l border-[#EAEBED] pointer-events-auto"
+                          >
+                            {/* Drawer Header */}
+                            <div className="bg-white border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between shadow-xs shrink-0">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center shadow-xs">
+                                  <Calculator className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="text-base sm:text-lg font-black text-[#111827]">
+                                      {calcDef.name}
+                                    </h3>
+                                    <span className="text-xs font-bold text-[#166534] bg-white border border-[#F8D7DA] px-2.5 py-0.5 rounded-lg">
+                                      {calcDef.badge}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-[#6B7280] flex items-center gap-1.5 flex-wrap">
+                                    <span>{activeTopic.title}</span>
+                                    <span>→</span>
+                                    <span className="font-semibold text-[#166534]">{calcDef.name}</span>
+                                  </p>
                                 </div>
                               </div>
-                            </motion.div>
-                          </div>
-                        );
-                      })()}
-                    </AnimatePresence>
 
-                    {/* Right Column: Key Takeaways & Quick Solver Suite */}
-                    <div className="lg:col-span-4 flex flex-col gap-6">
-                      {/* Topic Metadata Card */}
-                      <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 shadow-xs">
-                        <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-[#F3F4F6]">
-                          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                            <Lightbulb className="w-4 h-4" />
-                          </div>
-                          <h3 className="text-sm font-bold text-[#111827]">
-                            Curriculum Highlights
-                          </h3>
+                              <button
+                                type="button"
+                                onClick={() => setIsTopicCalculatorOpen(false)}
+                                className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                              >
+                                <X className="w-4 h-4" />
+                                <span className="hidden sm:inline">Close</span>
+                              </button>
+                            </div>
+
+                            {/* Loaded Problem Notification Banner */}
+                            {loadedTopicExample && (
+                              <div className="bg-[#FFF0F2] border-b border-[#F8D7DA] px-6 py-3 flex items-center justify-between text-xs text-[#166534] shrink-0">
+                                <div className="flex items-center gap-2">
+                                  <Sparkles className="w-4 h-4 text-[#166534] shrink-0" />
+                                  <span>
+                                    <strong>Loaded Problem #{loadedTopicExample.index + 1}:</strong> &ldquo;{loadedTopicExample.text}&rdquo; (Copied to clipboard)
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setLoadedTopicExample(null)}
+                                  className="p-1 hover:bg-[#F8D7DA] rounded-md transition text-[#166534] cursor-pointer"
+                                  title="Clear problem"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Scrollable Calculator Body */}
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                              <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-xs">
+                                {isLinear ? (
+                                  <div>{(calcDef as any).component}</div>
+                                ) : (
+                                  <CalculusCalculator
+                                    key={`${(calcDef as any).id}-${topicCalcKey}`}
+                                    definition={
+                                      loadedTopicExample
+                                        ? { ...calcDef, example: loadedTopicExample.text } as any
+                                        : calcDef as any
+                                    }
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
                         </div>
-
-                        <ul className="space-y-3">
-                          <li className="flex items-start gap-2 text-xs text-[#4B5565] leading-relaxed">
-                            <CheckCircle2 className="w-4 h-4 text-[#801424] shrink-0 mt-0.5" />
-                            <span>
-                              <strong>Subject:</strong>{" "}
-                              {activeTopic.categoryLabel}
-                            </span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs text-[#4B5565] leading-relaxed">
-                            <CheckCircle2 className="w-4 h-4 text-[#801424] shrink-0 mt-0.5" />
-                            <span>
-                              <strong>Module:</strong> {activeTopic.chapter}
-                            </span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs text-[#4B5565] leading-relaxed">
-                            <CheckCircle2 className="w-4 h-4 text-[#801424] shrink-0 mt-0.5" />
-                            <span>
-                              <strong>Examples Available:</strong>{" "}
-                              {activeTopic.examples.length} problem sets
-                            </span>
-                          </li>
-                        </ul>
-                      </div>
-
-                      {/* Launch Connected Calculators Card */}
-                      <div className="bg-gradient-to-br from-[#801424] to-[#500c16] text-white rounded-3xl p-6 shadow-lg flex flex-col justify-between gap-4">
-                        <div>
-                          <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center mb-3">
-                            <Calculator className="w-5 h-5 text-white" />
-                          </div>
-                          <h4 className="text-base font-bold">
-                            Interactive Solvers Available
-                          </h4>
-                          <p className="text-xs text-white/80 mt-1 leading-relaxed">
-                            Test formulas and solve step-by-step problems for{" "}
-                            {activeTopic.categoryLabel} in the admin suite.
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveNav("calculators");
-                            setSelectedCalcCategory(activeTopic.category);
-                          }}
-                          className="w-full py-2.5 bg-white hover:bg-gray-100 text-[#801424] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                        >
-                          <span>Open {activeTopic.categoryLabel} Solvers</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                      );
+                    })()}
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -3678,12 +5317,12 @@ export default function AdminDashboardPage() {
             <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#9C1D2E] via-[#801424] to-[#5C0A15] flex items-center justify-center text-white shrink-0 shadow-md shadow-[#801424]/25 border border-white/20">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] flex items-center justify-center text-white shrink-0 shadow-md shadow-[#166534]/25 border border-white/20">
                     <Wand2 className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-md">
+                      <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md">
                         Admin Quiz Generator
                       </span>
                       <span className="text-xs text-gray-500 font-medium">
@@ -3709,7 +5348,7 @@ export default function AdminDashboardPage() {
                     onClick={() => setGeneratorStep(1)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                       generatorStep === 1
-                        ? "bg-[#801424] text-white shadow-xs"
+                        ? "bg-[#166534] text-white shadow-xs"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -3727,7 +5366,7 @@ export default function AdminDashboardPage() {
                     onClick={() => setGeneratorStep(2)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                       generatorStep === 2
-                        ? "bg-[#801424] text-white shadow-xs"
+                        ? "bg-[#166534] text-white shadow-xs"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     }`}
                   >
@@ -3748,14 +5387,14 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setIsPublishedQuizzesDrawerOpen(true)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-[#801424] bg-white hover:bg-[#FCE8EB]/40 text-gray-700 hover:text-[#801424] text-xs font-bold transition-all duration-300 cursor-pointer shadow-xs"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-[#166534] bg-white hover:bg-[#FCE8EB]/40 text-gray-700 hover:text-[#166534] text-xs font-bold transition-all duration-300 cursor-pointer shadow-xs"
                     title="Published Quizzes"
                   >
-                    <ClipboardList className="w-4 h-4 text-[#801424] shrink-0" />
+                    <ClipboardList className="w-4 h-4 text-[#166534] shrink-0" />
                     <span className="max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-300 ease-in-out whitespace-nowrap">
                       Published Quizzes
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-[#801424] text-white shadow-xs shrink-0">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-[#166534] text-white shadow-xs shrink-0">
                       {quizzes.length}
                     </span>
                   </button>
@@ -3795,12 +5434,12 @@ export default function AdminDashboardPage() {
                         }}
                         className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                           generatorCategory === "linear-algebra"
-                            ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424] shadow-xs"
+                            ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534] shadow-xs"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <div className="w-9 h-9 rounded-xl bg-[#801424]/10 text-[#801424] flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 text-[#166534] flex items-center justify-center">
                             <Layers className="w-5 h-5" />
                           </div>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
@@ -3824,12 +5463,12 @@ export default function AdminDashboardPage() {
                         }}
                         className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                           generatorCategory === "calculus-1"
-                            ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424] shadow-xs"
+                            ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534] shadow-xs"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <div className="w-9 h-9 rounded-xl bg-[#801424]/10 text-[#801424] flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 text-[#166534] flex items-center justify-center">
                             <TrendingUp className="w-5 h-5" />
                           </div>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
@@ -3853,12 +5492,12 @@ export default function AdminDashboardPage() {
                         }}
                         className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                           generatorCategory === "calculus-2"
-                            ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424] shadow-xs"
+                            ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534] shadow-xs"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <div className="w-9 h-9 rounded-xl bg-[#801424]/10 text-[#801424] flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 text-[#166534] flex items-center justify-center">
                             <Zap className="w-5 h-5" />
                           </div>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
@@ -3891,7 +5530,7 @@ export default function AdminDashboardPage() {
                         <button
                           type="button"
                           onClick={handleSelectAllTopics}
-                          className="px-2.5 py-1 text-xs font-bold text-[#801424] hover:bg-red-50 rounded-lg transition cursor-pointer"
+                          className="px-2.5 py-1 text-xs font-bold text-[#166534] hover:bg-green-50 rounded-lg transition cursor-pointer"
                         >
                           Select All ({availableGeneratorTopics.length})
                         </button>
@@ -3917,7 +5556,7 @@ export default function AdminDashboardPage() {
                         placeholder="Search topics by keyword (e.g. matrices, chain rule, series)..."
                         value={generatorTopicSearch}
                         onChange={(e) => setGeneratorTopicSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#801424] focus:border-[#801424]"
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#166534] focus:border-[#166534]"
                       />
                     </div>
 
@@ -3931,13 +5570,13 @@ export default function AdminDashboardPage() {
                             onClick={() => handleToggleTopic(topic.id)}
                             className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
                               isChecked
-                                ? "border-[#801424] bg-[#FCE8EB]/30 ring-1 ring-[#801424]"
+                                ? "border-[#166534] bg-[#FCE8EB]/30 ring-1 ring-[#166534]"
                                 : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
                             }`}
                           >
-                            <div className="pt-0.5 text-[#801424]">
+                            <div className="pt-0.5 text-[#166534]">
                               {isChecked ? (
-                                <CheckSquare className="w-4 h-4 text-[#801424]" />
+                                <CheckSquare className="w-4 h-4 text-[#166534]" />
                               ) : (
                                 <Square className="w-4 h-4 text-gray-400" />
                               )}
@@ -3982,11 +5621,11 @@ export default function AdminDashboardPage() {
                           onClick={() => setGeneratorQuestionType("multiple_choice")}
                           className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
                             generatorQuestionType === "multiple_choice"
-                              ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424]"
+                              ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534]"
                               : "border-gray-200 hover:border-gray-300 bg-white"
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-[#801424]/10 text-[#801424] flex items-center justify-center mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 text-[#166534] flex items-center justify-center mb-2">
                             <FileQuestion className="w-4 h-4" />
                           </div>
                           <h5 className="text-xs font-bold text-[#111827]">
@@ -4003,11 +5642,11 @@ export default function AdminDashboardPage() {
                           onClick={() => setGeneratorQuestionType("identification")}
                           className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
                             generatorQuestionType === "identification"
-                              ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424]"
+                              ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534]"
                               : "border-gray-200 hover:border-gray-300 bg-white"
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-[#801424]/10 text-[#801424] flex items-center justify-center mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 text-[#166534] flex items-center justify-center mb-2">
                             <Lightbulb className="w-4 h-4" />
                           </div>
                           <h5 className="text-xs font-bold text-[#111827]">
@@ -4024,11 +5663,11 @@ export default function AdminDashboardPage() {
                           onClick={() => setGeneratorQuestionType("enumeration")}
                           className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
                             generatorQuestionType === "enumeration"
-                              ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424]"
+                              ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534]"
                               : "border-gray-200 hover:border-gray-300 bg-white"
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-[#801424]/10 text-[#801424] flex items-center justify-center mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 text-[#166534] flex items-center justify-center mb-2">
                             <ListOrdered className="w-4 h-4" />
                           </div>
                           <h5 className="text-xs font-bold text-[#111827]">
@@ -4045,11 +5684,11 @@ export default function AdminDashboardPage() {
                           onClick={() => setGeneratorQuestionType("problem_solving")}
                           className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
                             generatorQuestionType === "problem_solving"
-                              ? "border-[#801424] bg-[#FCE8EB]/30 ring-2 ring-[#801424]"
+                              ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534]"
                               : "border-gray-200 hover:border-gray-300 bg-white"
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-[#801424]/10 text-[#801424] flex items-center justify-center mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 text-[#166534] flex items-center justify-center mb-2">
                             <Calculator className="w-4 h-4" />
                           </div>
                           <h5 className="text-xs font-bold text-[#111827]">
@@ -4075,7 +5714,7 @@ export default function AdminDashboardPage() {
                             onClick={() => setGeneratorItemCount(cnt)}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                               generatorItemCount === cnt
-                                ? "bg-[#801424] text-white shadow-xs"
+                                ? "bg-[#166534] text-white shadow-xs"
                                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                             }`}
                           >
@@ -4104,7 +5743,7 @@ export default function AdminDashboardPage() {
                                 setGeneratorItemCount(1);
                               }
                             }}
-                            className="w-20 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition"
+                            className="w-20 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition"
                           />
                         </div>
                       </div>
@@ -4116,7 +5755,7 @@ export default function AdminDashboardPage() {
                         <label className="block text-xs font-bold text-[#374151] uppercase tracking-wide">
                           Points Per Item
                         </label>
-                        <span className="text-xs font-semibold text-[#801424] bg-red-50 px-2.5 py-0.5 rounded-full border border-red-100">
+                        <span className="text-xs font-semibold text-[#166534] bg-green-50 px-2.5 py-0.5 rounded-full border border-green-100">
                           Total: {(typeof generatorItemCount === "number" ? generatorItemCount : 1) * (typeof generatorPointsPerItem === "number" ? generatorPointsPerItem : 1)} pts
                         </span>
                       </div>
@@ -4128,7 +5767,7 @@ export default function AdminDashboardPage() {
                             onClick={() => setGeneratorPointsPerItem(pts)}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                               generatorPointsPerItem === pts
-                                ? "bg-[#801424] text-white shadow-xs"
+                                ? "bg-[#166534] text-white shadow-xs"
                                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                             }`}
                           >
@@ -4157,7 +5796,7 @@ export default function AdminDashboardPage() {
                                 setGeneratorPointsPerItem(1);
                               }
                             }}
-                            className="w-20 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition"
+                            className="w-20 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition"
                           />
                         </div>
                       </div>
@@ -4204,22 +5843,22 @@ export default function AdminDashboardPage() {
                         >
                           {/* Spinning ring */}
                           <div className="relative w-28 h-28 mb-6">
-                            <div className="absolute inset-0 rounded-full border-4 border-[#801424]/10" />
-                            <div className="absolute inset-0 rounded-full border-4 border-t-[#801424] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                            <div className="absolute inset-2 rounded-full border-4 border-t-transparent border-r-[#9C1D2E]/60 border-b-transparent border-l-transparent animate-spin [animation-direction:reverse] [animation-duration:0.8s]" />
+                            <div className="absolute inset-0 rounded-full border-4 border-[#166534]/10" />
+                            <div className="absolute inset-0 rounded-full border-4 border-t-[#166534] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                            <div className="absolute inset-2 rounded-full border-4 border-t-transparent border-r-[#15803d]/60 border-b-transparent border-l-transparent animate-spin [animation-direction:reverse] [animation-duration:0.8s]" />
                             <div className="absolute inset-0 flex items-center justify-center">
                               <img src={quizLoaderLogo} alt="Loading" className="w-14 h-14 object-contain animate-pulse" />
                             </div>
                           </div>
                           {/* Text */}
-                          <h3 className="text-[#801424] text-xl font-bold tracking-wide mb-1">Generating Quiz</h3>
-                          <p className="text-[#801424]/60 text-sm mb-6">Crafting your questions, please wait...</p>
+                          <h3 className="text-[#166534] text-xl font-bold tracking-wide mb-1">Generating Quiz</h3>
+                          <p className="text-[#166534]/60 text-sm mb-6">Crafting your questions, please wait...</p>
                           {/* Animated dots bar */}
                           <div className="flex gap-2">
                             {[0, 1, 2, 3, 4].map((i) => (
                               <motion.div
                                 key={i}
-                                className="w-2.5 h-2.5 rounded-full bg-[#801424]"
+                                className="w-2.5 h-2.5 rounded-full bg-[#166534]"
                                 animate={{ scale: [1, 1.6, 1], opacity: [0.4, 1, 0.4] }}
                                 transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
                               />
@@ -4235,7 +5874,7 @@ export default function AdminDashboardPage() {
                         type="button"
                         disabled={isGeneratingQuiz}
                         onClick={handleGenerateQuiz}
-                        className="w-full py-3.5 bg-gradient-to-r from-[#9C1D2E] via-[#801424] to-[#5C0A15] hover:opacity-95 text-white rounded-2xl text-sm font-bold shadow-md shadow-[#801424]/20 transition flex items-center justify-center gap-2.5 cursor-pointer"
+                        className="w-full py-3.5 bg-gradient-to-r from-[#15803d] via-[#166534] to-[#14532d] hover:opacity-95 text-white rounded-2xl text-sm font-bold shadow-md shadow-[#166534]/20 transition flex items-center justify-center gap-2.5 cursor-pointer"
                       >
                         {isGeneratingQuiz ? (
                           <>
@@ -4269,7 +5908,7 @@ export default function AdminDashboardPage() {
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#166534] bg-green-50 border border-green-100 px-2 py-0.5 rounded">
                           {newQuizTopic} • {newQuizQuestionDrafts.length} Questions
                         </span>
                         <h3 className="text-lg font-extrabold text-[#111827] mt-1">
@@ -4322,7 +5961,7 @@ export default function AdminDashboardPage() {
                         value={newQuizTitle}
                         onChange={(e) => setNewQuizTitle(e.target.value)}
                         placeholder="e.g. Linear Algebra: Matrix Operations Quiz 1"
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#801424] focus:border-[#801424]"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#166534] focus:border-[#166534]"
                       />
                     </div>
 
@@ -4347,7 +5986,7 @@ export default function AdminDashboardPage() {
                           {/* Question Card Header */}
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center rounded-lg bg-[#801424] text-white text-xs font-bold px-2.5 py-1">
+                              <span className="inline-flex items-center rounded-lg bg-[#166534] text-white text-xs font-bold px-2.5 py-1">
                                 Question {index + 1}
                               </span>
                               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
@@ -4363,7 +6002,7 @@ export default function AdminDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleRegenerateQuestion(index)}
-                              className="px-2.5 py-1 text-xs font-bold text-[#801424] hover:bg-red-50 rounded-lg transition flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1 text-xs font-bold text-[#166534] hover:bg-green-50 rounded-lg transition flex items-center gap-1 cursor-pointer"
                               title="Regenerate this question"
                             >
                               <RefreshCw className="w-3 h-3" />
@@ -4387,7 +6026,7 @@ export default function AdminDashboardPage() {
                                   e.target.value
                                 )
                               }
-                              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#801424] focus:border-[#801424] resize-y font-medium"
+                              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#166534] focus:border-[#166534] resize-y font-medium"
                             />
                           </div>
 
@@ -4446,7 +6085,7 @@ export default function AdminDashboardPage() {
                                             e.target.value
                                           )
                                         }
-                                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#801424]"
+                                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#166534]"
                                       />
                                     </div>
                                   );
@@ -4596,7 +6235,7 @@ export default function AdminDashboardPage() {
                                     );
                                   }}
                                   placeholder="Step 1...&#10;Step 2...&#10;Step 3..."
-                                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#801424] resize-y"
+                                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#166534] resize-y"
                                 />
                               </div>
                             </div>
@@ -4631,7 +6270,7 @@ export default function AdminDashboardPage() {
                         type="button"
                         disabled={isSubmittingQuiz}
                         onClick={handleCreateQuiz}
-                        className="px-6 py-2.5 bg-gradient-to-r from-[#9C1D2E] via-[#801424] to-[#5C0A15] hover:opacity-95 disabled:opacity-60 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#801424]/20 transition flex items-center gap-2 cursor-pointer"
+                        className="px-6 py-2.5 bg-gradient-to-r from-[#15803d] via-[#166534] to-[#14532d] hover:opacity-95 disabled:opacity-60 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#166534]/20 transition flex items-center gap-2 cursor-pointer"
                       >
                         {isSubmittingQuiz ? (
                           <>
@@ -4675,7 +6314,7 @@ export default function AdminDashboardPage() {
                     {/* Drawer Header */}
                     <div className="bg-white border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between shadow-xs shrink-0">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center shadow-xs">
+                        <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center shadow-xs">
                           <ClipboardList className="w-5 h-5" />
                         </div>
                         <div>
@@ -4683,7 +6322,7 @@ export default function AdminDashboardPage() {
                             <h3 className="text-base sm:text-lg font-black text-[#111827]">
                               Published Quizzes
                             </h3>
-                            <span className="text-xs font-bold text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-lg">
+                            <span className="text-xs font-bold text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-lg">
                               {quizzes.length}
                             </span>
                           </div>
@@ -4707,12 +6346,12 @@ export default function AdminDashboardPage() {
                     <div className="p-6 overflow-y-auto flex-1 space-y-3">
                       {isLoadingQuizzes ? (
                         <div className="py-16 flex flex-col items-center justify-center text-center">
-                          <Loader2 className="w-8 h-8 animate-spin text-[#801424] mb-3" />
+                          <Loader2 className="w-8 h-8 animate-spin text-[#166534] mb-3" />
                           <p className="text-xs text-[#6B7280]">Loading quizzes...</p>
                         </div>
                       ) : quizzes.length === 0 ? (
                         <div className="py-16 text-center flex flex-col items-center">
-                          <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
+                          <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-3">
                             <ClipboardList className="w-7 h-7 stroke-[1.8]" />
                           </div>
                           <h4 className="text-sm font-bold text-[#111827]">
@@ -4734,7 +6373,7 @@ export default function AdminDashboardPage() {
                                   {quiz.title}
                                 </h4>
                                 <div className="flex items-center gap-1.5 mt-1">
-                                  <span className="text-[10px] font-bold text-[#801424] bg-red-50 border border-red-100 px-2 py-0.5 rounded">
+                                  <span className="text-[10px] font-bold text-[#166534] bg-green-50 border border-green-100 px-2 py-0.5 rounded">
                                     {quiz.topic}
                                   </span>
                                   {quiz.questionType && (
@@ -4752,7 +6391,7 @@ export default function AdminDashboardPage() {
                                     setAdminReviewQuizModal(quiz);
                                   }}
                                   title="View questions and answer key"
-                                  className="p-1.5 rounded-xl text-gray-600 hover:text-[#801424] hover:bg-red-50 border border-gray-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                                  className="p-1.5 rounded-xl text-gray-600 hover:text-[#166534] hover:bg-green-50 border border-gray-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                   <span>Answers</span>
@@ -4761,7 +6400,7 @@ export default function AdminDashboardPage() {
                                   type="button"
                                   onClick={() => handleDeleteQuiz(quiz.id)}
                                   title="Delete Quiz"
-                                  className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-200 transition cursor-pointer"
+                                  className="p-1.5 rounded-xl text-gray-400 hover:text-green-600 hover:bg-green-50 border border-gray-200 transition cursor-pointer"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -4798,7 +6437,7 @@ export default function AdminDashboardPage() {
                   >
                     <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#801424] bg-red-50 border border-red-100 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#166534] bg-green-50 border border-green-100 px-2 py-0.5 rounded">
                           {adminReviewQuizModal.topic} • Admin Answer Key
                         </span>
                         <h3 className="text-lg font-extrabold text-[#111827] mt-1">
@@ -4820,7 +6459,7 @@ export default function AdminDashboardPage() {
                           className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2 text-xs"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-[#801424]">
+                            <span className="font-bold text-[#166534]">
                               Item {idx + 1}
                             </span>
                             <span className="font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
@@ -4852,7 +6491,7 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setAdminReviewQuizModal(null)}
-                        className="px-4 py-2 bg-[#801424] text-white rounded-xl text-xs font-bold hover:bg-[#6b101e] transition cursor-pointer"
+                        className="px-4 py-2 bg-[#166534] text-white rounded-xl text-xs font-bold hover:bg-[#14532d] transition cursor-pointer"
                       >
                         Close
                       </button>
@@ -4873,7 +6512,7 @@ export default function AdminDashboardPage() {
             <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-[#801424] flex items-center justify-center text-white shrink-0 shadow-sm shadow-[#801424]/20">
+                  <div className="w-11 h-11 rounded-2xl bg-[#166534] flex items-center justify-center text-white shrink-0 shadow-sm shadow-[#166534]/20">
                     <BarChart3 className="w-5 h-5" />
                   </div>
                   <div>
@@ -4893,14 +6532,14 @@ export default function AdminDashboardPage() {
                   >
                     <RefreshCw
                       className={`w-3.5 h-3.5 ${
-                        isLoadingQuizzes ? "animate-spin text-[#801424]" : ""
+                        isLoadingQuizzes ? "animate-spin text-[#166534]" : ""
                       }`}
                     />
                     <span>Refresh</span>
                   </button>
                   <button
                     onClick={() => handleNavClick("add-quiz")}
-                    className="px-4 py-2.5 bg-[#801424] hover:bg-[#68101D] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
+                    className="px-4 py-2.5 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Create New Quiz</span>
@@ -4916,7 +6555,7 @@ export default function AdminDashboardPage() {
                   onClick={() => setResultsViewMode("students")}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                     resultsViewMode === "students"
-                      ? "bg-white text-[#801424] shadow-xs"
+                      ? "bg-white text-[#166534] shadow-xs"
                       : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
@@ -4926,7 +6565,7 @@ export default function AdminDashboardPage() {
                   onClick={() => setResultsViewMode("quizzes")}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                     resultsViewMode === "quizzes"
-                      ? "bg-white text-[#801424] shadow-xs"
+                      ? "bg-white text-[#166534] shadow-xs"
                       : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
@@ -4943,14 +6582,14 @@ export default function AdminDashboardPage() {
                       placeholder="Search student name, email, or quiz..."
                       value={resultsSearchQuery}
                       onChange={(e) => setResultsSearchQuery(e.target.value)}
-                      className="pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#801424] w-full sm:w-64"
+                      className="pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#166534] w-full sm:w-64"
                     />
                   </div>
 
                   <select
                     value={resultsTopicFilter}
                     onChange={(e) => setResultsTopicFilter(e.target.value)}
-                    className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#801424] cursor-pointer"
+                    className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#166534] cursor-pointer"
                   >
                     <option value="all">All Topics</option>
                     <option value="Linear Algebra">Linear Algebra</option>
@@ -4966,7 +6605,7 @@ export default function AdminDashboardPage() {
               <>
                 {filteredSubmissions.length === 0 ? (
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center shadow-xs">
-                    <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
+                    <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-3">
                       <GraduationCap className="w-6 h-6 stroke-[1.8]" />
                     </div>
                     <h4 className="text-base font-bold text-[#111827]">
@@ -5005,7 +6644,7 @@ export default function AdminDashboardPage() {
                             >
                               <td className="py-3.5 px-3">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="w-8 h-8 rounded-full bg-[#801424] text-white flex items-center justify-center text-xs font-bold uppercase shrink-0">
+                                  <div className="w-8 h-8 rounded-full bg-[#166534] text-white flex items-center justify-center text-xs font-bold uppercase shrink-0">
                                     {sub.studentName.slice(0, 2)}
                                   </div>
                                   <div className="min-w-0">
@@ -5036,7 +6675,7 @@ export default function AdminDashboardPage() {
                                       ? "bg-emerald-100 text-emerald-700"
                                       : sub.percentage >= 60
                                       ? "bg-amber-100 text-amber-800"
-                                      : "bg-red-100 text-red-700"
+                                      : "bg-green-100 text-green-700"
                                   }`}
                                 >
                                   {sub.percentage}%
@@ -5047,7 +6686,7 @@ export default function AdminDashboardPage() {
                                   className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
                                     sub.passed
                                       ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                      : "bg-red-50 text-red-700 border border-red-200"
+                                      : "bg-green-50 text-green-700 border border-green-200"
                                   }`}
                                 >
                                   {sub.passed ? "Passed" : "Needs Review"}
@@ -5067,7 +6706,7 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedSubmissionForReview(sub)}
-                                  className="px-2.5 py-1.5 bg-gray-100 hover:bg-[#801424] hover:text-white text-gray-700 text-xs font-bold rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
+                                  className="px-2.5 py-1.5 bg-gray-100 hover:bg-[#166534] hover:text-white text-gray-700 text-xs font-bold rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
                                   title="Inspect student quiz responses"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
@@ -5089,7 +6728,7 @@ export default function AdminDashboardPage() {
               <>
                 {quizzes.length === 0 ? (
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center shadow-xs">
-                    <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
+                    <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-3">
                       <BarChart3 className="w-6 h-6 stroke-[1.8]" />
                     </div>
                     <h4 className="text-base font-bold text-[#111827]">
@@ -5100,7 +6739,7 @@ export default function AdminDashboardPage() {
                     </p>
                     <button
                       onClick={() => handleNavClick("add-quiz")}
-                      className="mt-4 px-4 py-2 bg-[#801424] text-white text-xs font-bold rounded-xl cursor-pointer"
+                      className="mt-4 px-4 py-2 bg-[#166534] text-white text-xs font-bold rounded-xl cursor-pointer"
                     >
                       Add Your First Quiz
                     </button>
@@ -5135,7 +6774,7 @@ export default function AdminDashboardPage() {
                                 {quiz.questionsCount}
                               </td>
                               <td className="py-3.5 px-3 text-xs font-medium text-[#111827]">
-                                <span className="font-bold text-[#801424]">
+                                <span className="font-bold text-[#166534]">
                                   {quiz.attempts}
                                 </span>{" "}
                                 student{quiz.attempts === 1 ? "" : "s"}
@@ -5148,7 +6787,7 @@ export default function AdminDashboardPage() {
                                       : quiz.averageScore >= 50
                                       ? "bg-yellow-100 text-yellow-800"
                                       : quiz.averageScore > 0
-                                      ? "bg-red-100 text-red-700"
+                                      ? "bg-green-100 text-green-700"
                                       : "bg-gray-100 text-gray-500"
                                   }`}
                                 >
@@ -5162,7 +6801,7 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteQuiz(quiz.id)}
-                                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition cursor-pointer"
                                   title="Delete Quiz"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -5184,9 +6823,9 @@ export default function AdminDashboardPage() {
         {/* VIEW F: HISTORY QUIZZES (Admin View)                                       */}
         {/* ========================================================================= */}
         {activeNav === "history-quizzes" && (() => {
-          const activeActivities = activities.filter(
-            (a) => !archivedActivityIds.includes(a.id)
-          );
+          const activeActivities = activities
+            .filter((a) => !archivedActivityIds.includes(a.id))
+            .sort((a, b) => a.studentName.localeCompare(b.studentName));
           const archivedActivities = activities.filter((a) =>
             archivedActivityIds.includes(a.id)
           );
@@ -5209,6 +6848,12 @@ export default function AdminDashboardPage() {
             },
             {} as Record<string, ActivityItem[]>
           );
+          // Sort each archived month/year group by student name alphabetically
+          Object.keys(archivedByMonthYear).forEach((key) => {
+            archivedByMonthYear[key].sort((a, b) =>
+              a.studentName.localeCompare(b.studentName)
+            );
+          });
 
           return (
             <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
@@ -5216,7 +6861,7 @@ export default function AdminDashboardPage() {
               <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-[#801424] flex items-center justify-center text-white shrink-0 shadow-xs">
+                    <div className="w-11 h-11 rounded-xl bg-[#166534] flex items-center justify-center text-white shrink-0 shadow-xs">
                       <History className="w-5 h-5" />
                     </div>
                     <div>
@@ -5236,7 +6881,7 @@ export default function AdminDashboardPage() {
                       onClick={() => setHistoryTab("active")}
                       className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                         historyTab === "active"
-                          ? "bg-white text-[#801424] shadow-xs"
+                          ? "bg-white text-[#166534] shadow-xs"
                           : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
@@ -5244,7 +6889,7 @@ export default function AdminDashboardPage() {
                       <span
                         className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                           historyTab === "active"
-                            ? "bg-[#801424] text-white"
+                            ? "bg-[#166534] text-white"
                             : "bg-gray-200 text-gray-700"
                         }`}
                       >
@@ -5257,7 +6902,7 @@ export default function AdminDashboardPage() {
                       onClick={() => setHistoryTab("archived")}
                       className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                         historyTab === "archived"
-                          ? "bg-white text-[#801424] shadow-xs"
+                          ? "bg-white text-[#166534] shadow-xs"
                           : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
@@ -5266,7 +6911,7 @@ export default function AdminDashboardPage() {
                       <span
                         className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                           historyTab === "archived"
-                            ? "bg-[#801424] text-white"
+                            ? "bg-[#166534] text-white"
                             : "bg-gray-200 text-gray-700"
                         }`}
                       >
@@ -5282,7 +6927,7 @@ export default function AdminDashboardPage() {
                 <>
                   {activeActivities.length === 0 ? (
                     <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
-                      <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-3">
+                      <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-3">
                         <History className="w-6 h-6 stroke-[1.8]" />
                       </div>
                       <h4 className="text-base font-bold text-[#111827]">
@@ -5328,7 +6973,7 @@ export default function AdminDashboardPage() {
                                   <td className="py-3.5 px-3 text-xs text-[#4B5563]">
                                     {act.quizTitle}
                                   </td>
-                                  <td className="py-3.5 px-3 text-xs font-bold text-[#801424]">
+                                  <td className="py-3.5 px-3 text-xs font-bold text-[#166534]">
                                     {act.score} / {act.totalQuestions} pts
                                   </td>
                                   <td className="py-3.5 px-3">
@@ -5336,7 +6981,7 @@ export default function AdminDashboardPage() {
                                       className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
                                         passed
                                           ? "bg-green-100 text-green-700"
-                                          : "bg-red-100 text-red-700"
+                                          : "bg-green-100 text-green-700"
                                       }`}
                                     >
                                       {passed ? "Passed" : "Needs Review"}
@@ -5353,7 +6998,7 @@ export default function AdminDashboardPage() {
                                           handleArchiveActivity(act.id)
                                         }
                                         title="Archive submission (hide from active history)"
-                                        className="px-2.5 py-1 rounded-xl text-gray-600 hover:text-[#801424] hover:bg-red-50 border border-gray-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                                        className="px-2.5 py-1 rounded-xl text-gray-600 hover:text-[#166534] hover:bg-green-50 border border-gray-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
                                       >
                                         <Archive className="w-3.5 h-3.5" />
                                         <span className="hidden sm:inline">
@@ -5366,7 +7011,7 @@ export default function AdminDashboardPage() {
                                           handleDeleteActivity(act.id)
                                         }
                                         title="Delete submission permanently"
-                                        className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-200 transition cursor-pointer"
+                                        className="p-1.5 rounded-xl text-gray-400 hover:text-green-600 hover:bg-green-50 border border-gray-200 transition cursor-pointer"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -5396,7 +7041,7 @@ export default function AdminDashboardPage() {
                           value={archivedSearchQuery}
                           onChange={(e) => setArchivedSearchQuery(e.target.value)}
                           placeholder="Search archived by student name, quiz title, or month/year..."
-                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#801424] focus:bg-white transition"
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition"
                         />
                       </div>
                       {archivedSearchQuery && (
@@ -5446,7 +7091,7 @@ export default function AdminDashboardPage() {
                             {/* Month & Year Group Header */}
                             <div className="bg-[#FAFBFD] border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between">
                               <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 text-[#801424] flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-lg bg-green-50 border border-green-100 text-[#166534] flex items-center justify-center">
                                   <Archive className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -5458,7 +7103,7 @@ export default function AdminDashboardPage() {
                                   </span>
                                 </div>
                               </div>
-                              <span className="text-xs font-bold text-[#801424] bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-full">
+                              <span className="text-xs font-bold text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-full">
                                 {groupItems.length} record
                                 {groupItems.length === 1 ? "" : "s"}
                               </span>
@@ -5500,7 +7145,7 @@ export default function AdminDashboardPage() {
                                         <td className="py-3.5 px-3 text-xs text-[#4B5563]">
                                           {act.quizTitle}
                                         </td>
-                                        <td className="py-3.5 px-3 text-xs font-bold text-[#801424]">
+                                        <td className="py-3.5 px-3 text-xs font-bold text-[#166534]">
                                           {act.score} / {act.totalQuestions} pts
                                         </td>
                                         <td className="py-3.5 px-3">
@@ -5508,7 +7153,7 @@ export default function AdminDashboardPage() {
                                             className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
                                               passed
                                                 ? "bg-green-100 text-green-700"
-                                                : "bg-red-100 text-red-700"
+                                                : "bg-green-100 text-green-700"
                                             }`}
                                           >
                                             {passed ? "Passed" : "Needs Review"}
@@ -5536,7 +7181,7 @@ export default function AdminDashboardPage() {
                                                 handleDeleteActivity(act.id)
                                               }
                                               title="Permanently delete from archive"
-                                              className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-200 transition cursor-pointer"
+                                              className="p-1.5 rounded-xl text-gray-400 hover:text-green-600 hover:bg-green-50 border border-gray-200 transition cursor-pointer"
                                             >
                                               <Trash2 className="w-3.5 h-3.5" />
                                             </button>
@@ -5568,7 +7213,7 @@ export default function AdminDashboardPage() {
             <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-[#801424] flex items-center justify-center text-white shrink-0 shadow-sm shadow-[#801424]/20">
+                  <div className="w-11 h-11 rounded-2xl bg-[#166534] flex items-center justify-center text-white shrink-0 shadow-sm shadow-[#166534]/20">
                     <Users className="w-5 h-5" />
                   </div>
                   <div>
@@ -5581,8 +7226,25 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-start sm:self-center">
-                  <span className="inline-flex items-center rounded-full bg-[#801424]/10 border border-[#801424]/20 px-3.5 py-1 text-xs font-bold text-[#801424]">
+                <div className="flex items-center gap-3 self-start sm:self-center flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setIsBlockCustomizationMode((prev) => !prev)}
+                    className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow-xs ${
+                      isBlockCustomizationMode
+                        ? "bg-[#166534] text-white border-[#166534] shadow-[#166534]/20"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:text-[#166534] hover:border-[#166534]/30"
+                    }`}
+                    title="Toggle customization controls for block assignments"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>Customize</span>
+                    {isBlockCustomizationMode && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    )}
+                  </button>
+
+                  <span className="inline-flex items-center rounded-full bg-[#166534]/10 border border-[#166534]/20 px-3.5 py-1 text-xs font-bold text-[#166534]">
                     {students.length} Registered Student{students.length === 1 ? "" : "s"}
                   </span>
                 </div>
@@ -5598,7 +7260,7 @@ export default function AdminDashboardPage() {
                     value={studentSearchQuery}
                     onChange={(e) => setStudentSearchQuery(e.target.value)}
                     placeholder="Search by student name or email..."
-                    className="w-full pl-10 pr-4 py-2 bg-[#F9FAFB] border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#801424] focus:ring-1 focus:ring-[#801424]"
+                    className="w-full pl-10 pr-4 py-2 bg-[#F9FAFB] border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
                   />
                 </div>
                 {studentSearchQuery && (
@@ -5612,15 +7274,47 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
+            {/* Block Filter Buttons — only show when Customize mode is toggled and there are blocks */}
+            {isBlockCustomizationMode && availableBlocks.length > 0 && (
+              <div className="bg-white border border-[#166534]/20 rounded-2xl p-4 shadow-xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-gray-500 mr-1">Filter by Block:</span>
+                  <button
+                    onClick={() => setSelectedStudentBlockFilter("all")}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                      selectedStudentBlockFilter === "all"
+                        ? "bg-[#166534] text-white border-[#166534] shadow-sm"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    All Blocks
+                  </button>
+                  {availableBlocks.map((block) => (
+                    <button
+                      key={block}
+                      onClick={() => setSelectedStudentBlockFilter(block)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        selectedStudentBlockFilter === block
+                          ? "bg-[#166534] text-white border-[#166534] shadow-sm"
+                          : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      Block {block}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Students Table */}
             {isLoadingQuizzes ? (
               <div className="py-16 flex flex-col items-center justify-center text-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#801424] mb-3" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#166534] mb-3" />
                 <p className="text-xs font-semibold text-gray-600">Loading student directory...</p>
               </div>
             ) : filteredStudents.length === 0 ? (
               <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center justify-center shadow-xs">
-                <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#801424] mb-4">
+                <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-4">
                   <Users className="w-8 h-8 stroke-[1.8]" />
                 </div>
                 <h3 className="text-base font-bold text-[#111827]">No Students Found</h3>
@@ -5638,17 +7332,19 @@ export default function AdminDashboardPage() {
                       <tr className="border-b border-[#EAEBED] text-xs font-bold uppercase text-[#6B7280]">
                         <th className="pb-3 px-3">Student Name</th>
                         <th className="pb-3 px-3">Email Address</th>
+                        <th className="pb-3 px-3 text-center">Block</th>
                         <th className="pb-3 px-3">Joined Date</th>
                         <th className="pb-3 px-3 text-center">Quizzes Taken</th>
-                        <th className="pb-3 px-3 text-center">Average Score</th>
                         <th className="pb-3 px-3">Status</th>
                         <th className="pb-3 px-3 text-right">Last Active</th>
+                        {isBlockCustomizationMode && (
+                          <th className="pb-3 px-3 text-center">Action</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#F3F4F6]">
                       {filteredStudents.map((st) => {
                         const hasAttempts = st.quizzesTaken > 0;
-                        const isGoodScore = st.averageScore >= 75;
                         const isOnline =
                           onlineStudentKeys.has(st.id.toLowerCase()) ||
                           onlineStudentKeys.has(st.email.toLowerCase());
@@ -5658,9 +7354,17 @@ export default function AdminDashboardPage() {
                             <td className="py-3.5 px-3">
                               <div className="flex items-center gap-3">
                                 <div className="relative">
-                                  <div className="w-9 h-9 rounded-xl bg-[#801424] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-                                    {st.name.slice(0, 2).toUpperCase()}
-                                  </div>
+                                  {st.avatarUrl ? (
+                                    <img
+                                      src={st.avatarUrl}
+                                      alt={st.name}
+                                      className="w-9 h-9 rounded-xl object-cover shrink-0 shadow-xs border border-gray-200"
+                                    />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-xl bg-[#166534] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                                      {st.name.slice(0, 2).toUpperCase()}
+                                    </div>
+                                  )}
                                   {isOnline && (
                                     <span
                                       title="Online now"
@@ -5684,28 +7388,38 @@ export default function AdminDashboardPage() {
                             <td className="py-3.5 px-3 text-xs text-[#4B5563]">
                               {st.email}
                             </td>
+                            <td className="py-3.5 px-3 text-xs font-bold text-center">
+                              {isBlockCustomizationMode ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenMoveBlockModal(st)}
+                                  className="group/blk inline-flex items-center gap-1 cursor-pointer transition hover:opacity-80"
+                                  title="Click to move/change student's block"
+                                >
+                                  {st.block ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold text-xs bg-[#166534]/10 text-[#166534] border border-[#166534]/20 uppercase group-hover/blk:bg-[#166534] group-hover/blk:text-white transition">
+                                      {st.block}
+                                      <Edit className="w-2.5 h-2.5 opacity-60 group-hover/blk:opacity-100" />
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-gray-400 bg-gray-50 border border-dashed border-gray-300 hover:border-[#166534] hover:text-[#166534]">
+                                      <span>+ Assign</span>
+                                    </span>
+                                  )}
+                                </button>
+                              ) : st.block ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md font-bold text-xs bg-[#166534]/10 text-[#166534] border border-[#166534]/20 uppercase">
+                                  {st.block}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 font-normal italic">—</span>
+                              )}
+                            </td>
                             <td className="py-3.5 px-3 text-xs text-[#6B7280]">
                               {st.joinedDate}
                             </td>
                             <td className="py-3.5 px-3 text-xs font-bold text-center text-[#111827]">
                               {st.quizzesTaken}
-                            </td>
-                            <td className="py-3.5 px-3 text-xs font-bold text-center">
-                              {hasAttempts ? (
-                                <span
-                                  className={`px-2.5 py-1 rounded-lg ${
-                                    isGoodScore
-                                      ? "bg-green-100 text-green-800"
-                                      : st.averageScore >= 50
-                                      ? "bg-amber-100 text-amber-800"
-                                      : "bg-red-100 text-red-800"
-                                  }`}
-                                >
-                                  {st.averageScore} pts
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 font-normal">No attempts</span>
-                              )}
                             </td>
                             <td className="py-3.5 px-3">
                               <span
@@ -5721,6 +7435,19 @@ export default function AdminDashboardPage() {
                             <td className="py-3.5 px-3 text-xs text-[#6B7280] text-right">
                               {st.lastActive}
                             </td>
+                            {isBlockCustomizationMode && (
+                              <td className="py-3.5 px-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenMoveBlockModal(st)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#166534] bg-[#166534]/10 hover:bg-[#166534] hover:text-white border border-[#166534]/20 transition cursor-pointer"
+                                  title="Move student to another block"
+                                >
+                                  <ArrowRightLeft className="w-3 h-3" />
+                                  <span>Move Block</span>
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
@@ -5731,6 +7458,206 @@ export default function AdminDashboardPage() {
             )}
           </div>
         )}
+
+      {/* ========================================================================= */}
+      {/* MOVE / CHANGE STUDENT BLOCK MODAL                                         */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {editingBlockStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#EAEBED] flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#166534] text-white flex items-center justify-center font-bold text-sm shadow-md shadow-[#166534]/20">
+                    <ArrowRightLeft className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#111827]">
+                      Move Student Block
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      Change block assignment for this student
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isUpdatingStudentBlock) {
+                      setEditingBlockStudent(null);
+                      setBlockUpdateSuccessMessage(null);
+                    }
+                  }}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Student Info Card */}
+              <div className="bg-[#F9FAFB] rounded-2xl p-4 my-4 border border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {editingBlockStudent.avatarUrl ? (
+                    <img
+                      src={editingBlockStudent.avatarUrl}
+                      alt={editingBlockStudent.name}
+                      className="w-9 h-9 rounded-xl object-cover shrink-0 border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-xl bg-[#166534] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                      {editingBlockStudent.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-[#111827]">
+                      {editingBlockStudent.name}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {editingBlockStudent.email}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-gray-400 uppercase font-bold block">Current</span>
+                  {editingBlockStudent.block ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md font-bold text-xs bg-[#166534]/10 text-[#166534] border border-[#166534]/20 uppercase">
+                      Block {editingBlockStudent.block}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400 italic">None</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Success Message Banner */}
+              {blockUpdateSuccessMessage && (
+                <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{blockUpdateSuccessMessage}</span>
+                </div>
+              )}
+
+              {/* Block Selection Form */}
+              <form onSubmit={handleSaveStudentBlock} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                    Assign to Block (Letter or Name):
+                  </label>
+                  <input
+                    type="text"
+                    value={targetBlockInput}
+                    onChange={(e) => setTargetBlockInput(e.target.value.toUpperCase())}
+                    placeholder="e.g. A, B, C, D, or 1A..."
+                    maxLength={10}
+                    className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-800 tracking-wider placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/20 uppercase transition"
+                    autoFocus
+                  />
+                  <span className="text-[11px] text-gray-500 mt-1 block">
+                    Type a block letter/name, or click any existing block below:
+                  </span>
+                </div>
+
+                {/* Quick Select Chips */}
+                {availableBlocks.length > 0 && (
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-600 block mb-1.5">
+                      Existing Blocks in Class:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableBlocks.map((blk) => (
+                        <button
+                          type="button"
+                          key={blk}
+                          onClick={() => setTargetBlockInput(blk)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ${
+                            targetBlockInput.trim().toUpperCase() === blk
+                              ? "bg-[#166534] text-white border-[#166534] shadow-xs"
+                              : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                          }`}
+                        >
+                          Block {blk}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick Common Blocks (A, B, C, D) */}
+                <div>
+                  <span className="text-[11px] font-bold text-gray-600 block mb-1.5">
+                    Quick Choose:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {["A", "B", "C", "D", "E"].map((letter) => (
+                      <button
+                        type="button"
+                        key={letter}
+                        onClick={() => setTargetBlockInput(letter)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer border ${
+                          targetBlockInput.trim().toUpperCase() === letter
+                            ? "bg-[#166534] text-white border-[#166534] shadow-xs"
+                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        Block {letter}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-100 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setTargetBlockInput("")}
+                    disabled={isUpdatingStudentBlock || !targetBlockInput}
+                    className="text-xs font-semibold text-gray-500 hover:text-red-600 transition disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                  >
+                    Clear Block
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingBlockStudent(null);
+                        setBlockUpdateSuccessMessage(null);
+                      }}
+                      disabled={isUpdatingStudentBlock}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isUpdatingStudentBlock}
+                      className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold shadow-md shadow-[#166534]/20 transition cursor-pointer disabled:opacity-60"
+                    >
+                      {isUpdatingStudentBlock ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Save & Move Block</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ========================================================================= */}
       {/* REVIEW STUDENT QUIZ SUBMISSION MODAL                                      */}
@@ -5747,7 +7674,7 @@ export default function AdminDashboardPage() {
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#801424] text-white flex items-center justify-center text-sm font-bold uppercase shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center text-sm font-bold uppercase shrink-0">
                     {selectedSubmissionForReview.studentName.slice(0, 2)}
                   </div>
                   <div>
@@ -5788,7 +7715,7 @@ export default function AdminDashboardPage() {
                         ? "text-emerald-700"
                         : selectedSubmissionForReview.percentage >= 60
                         ? "text-amber-700"
-                        : "text-red-700"
+                        : "text-green-700"
                     }`}
                   >
                     {selectedSubmissionForReview.percentage}%
@@ -5798,7 +7725,7 @@ export default function AdminDashboardPage() {
                   <p className="text-[10px] uppercase font-bold text-gray-400">Status</p>
                   <p
                     className={`text-sm font-bold ${
-                      selectedSubmissionForReview.passed ? "text-emerald-700" : "text-red-700"
+                      selectedSubmissionForReview.passed ? "text-emerald-700" : "text-green-700"
                     }`}
                   >
                     {selectedSubmissionForReview.passed ? "Passed" : "Needs Review"}
@@ -5831,7 +7758,7 @@ export default function AdminDashboardPage() {
                         className={`p-4 rounded-2xl border ${
                           isRight
                             ? "border-emerald-200 bg-emerald-50/30"
-                            : "border-red-200 bg-red-50/30"
+                            : "border-green-200 bg-green-50/30"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
@@ -5843,7 +7770,7 @@ export default function AdminDashboardPage() {
                             className={`text-[10px] font-extrabold px-2 py-0.5 rounded shrink-0 ${
                               isRight
                                 ? "bg-emerald-100 text-emerald-800"
-                                : "bg-red-100 text-red-800"
+                                : "bg-green-100 text-green-800"
                             }`}
                           >
                             {isRight ? "Correct" : "Incorrect"}
@@ -5865,7 +7792,7 @@ export default function AdminDashboardPage() {
                                   "bg-emerald-100 border-emerald-400 text-emerald-950 font-bold";
                               } else if (isStudentPick && !isRight) {
                                 choiceClass =
-                                  "bg-red-100 border-red-400 text-red-950 font-bold";
+                                  "bg-green-100 border-green-400 text-green-950 font-bold";
                               }
 
                               return (

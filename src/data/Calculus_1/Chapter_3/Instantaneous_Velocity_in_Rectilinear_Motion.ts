@@ -20,6 +20,8 @@ where:
   t = time
   v(t) = instantaneous velocity
 
+"image": "src/assets/119.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT IS RECTILINEAR MOTION?
@@ -451,13 +453,7 @@ Step 4: Interpret the Answer
 17. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Concept                           Formula
-  ───────────────────────────────────────────────────────────────────────────
-  Position                  s(t)
-  Average Velocity          v_avg = (s(t₂) - s(t₁))/(t₂ - t₁)
-  Instantaneous Velocity    v(t) = s'(t) = lim(h→0) (s(t+h) - s(t))/h
-  Speed                     |v(t)|
-  Acceleration              a(t) = v'(t) = s''(t)
+"image": "src/assets/120.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

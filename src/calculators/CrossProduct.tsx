@@ -562,7 +562,7 @@ const CrossProduct: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#166534]"></span>
             Cross Product & 3D Vector Operations
           </h3>
           <p className="text-xs text-gray-500 mt-1">
@@ -573,12 +573,12 @@ const CrossProduct: React.FC = () => {
         {/* Quick Examples */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs font-semibold text-gray-400 mr-1">Presets:</span>
-          <button onClick={() => loadExample('basis')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Basis Vectors</button>
-          <button onClick={() => loadExample('parallel')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Parallel</button>
-          <button onClick={() => loadExample('opposite')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Opposite</button>
-          <button onClick={() => loadExample('orthogonal')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Orthogonal</button>
-          <button onClick={() => loadExample('arbitrary')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Arbitrary</button>
-          <button onClick={() => loadExample('unit')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer">Unit Vectors</button>
+          <button onClick={() => loadExample('basis')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer">Basis Vectors</button>
+          <button onClick={() => loadExample('parallel')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer">Parallel</button>
+          <button onClick={() => loadExample('opposite')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer">Opposite</button>
+          <button onClick={() => loadExample('orthogonal')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer">Orthogonal</button>
+          <button onClick={() => loadExample('arbitrary')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer">Arbitrary</button>
+          <button onClick={() => loadExample('unit')} className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer">Unit Vectors</button>
           <button onClick={resetVectors} className="px-2.5 py-1 text-xs font-semibold border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg transition cursor-pointer">Reset</button>
         </div>
       </div>
@@ -590,7 +590,7 @@ const CrossProduct: React.FC = () => {
           <select
             value={operation}
             onChange={(e) => { setOperation(e.target.value as Operation); setResult(''); setSteps([]); setError(''); }}
-            className="px-3.5 py-2 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-xs sm:text-sm font-semibold text-gray-800 shadow-2xs"
+            className="px-3.5 py-2 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-xs sm:text-sm font-semibold text-gray-800 shadow-2xs"
           >
             <option value="cross">Cross Product</option>
             <option value="dot">Dot Product</option>
@@ -606,19 +606,19 @@ const CrossProduct: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
           <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
             Vector A (3D)
           </h4>
           <div className="flex gap-2 flex-wrap items-center p-3 bg-gray-50/70 rounded-xl border border-gray-100">
             {vectorA.map((val, i) => (
               <div key={i} className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#7B1824]">{['x', 'y', 'z'][i]}</span>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#166534]">{['x', 'y', 'z'][i]}</span>
                 <input
                   type="number"
                   value={getDisplayValue(val)}
                   onChange={(e) => updateVector(1, i, e.target.value)}
                   onBlur={(e) => { if (e.target.value === '') updateVector(1, i, ''); }}
-                  className="w-20 pl-6 pr-2 py-1.5 border border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-center font-mono font-bold text-sm shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-20 pl-6 pr-2 py-1.5 border border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-center font-mono font-bold text-sm shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   step="any"
                   placeholder="0"
                 />
@@ -630,19 +630,19 @@ const CrossProduct: React.FC = () => {
 
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
           <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
             Vector B (3D)
           </h4>
           <div className="flex gap-2 flex-wrap items-center p-3 bg-gray-50/70 rounded-xl border border-gray-100">
             {vectorB.map((val, i) => (
               <div key={i} className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#7B1824]">{['x', 'y', 'z'][i]}</span>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#166534]">{['x', 'y', 'z'][i]}</span>
                 <input
                   type="number"
                   value={getDisplayValue(val)}
                   onChange={(e) => updateVector(2, i, e.target.value)}
                   onBlur={(e) => { if (e.target.value === '') updateVector(2, i, ''); }}
-                  className="w-20 pl-6 pr-2 py-1.5 border border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-center font-mono font-bold text-sm shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-20 pl-6 pr-2 py-1.5 border border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-center font-mono font-bold text-sm shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   step="any"
                   placeholder="0"
                 />
@@ -657,7 +657,7 @@ const CrossProduct: React.FC = () => {
       <div className="flex flex-wrap gap-3">
         <button
           onClick={performOperation}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -678,18 +678,18 @@ const CrossProduct: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-[#FDF2F4] rounded-xl border border-[#7B1824]/20 text-xs sm:text-sm font-semibold text-[#7B1824]">
+        <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#166534]/20 text-xs sm:text-sm font-semibold text-[#166534]">
           {error}
         </div>
       )}
 
       {result && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-[#7B1824]"></span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Computed Result</h3>
+                <span className="w-3 h-3 rounded-full bg-[#166534]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Computed Result</h3>
               </div>
               <div className="flex-shrink-0">
                 <PDFExport
@@ -711,14 +711,14 @@ const CrossProduct: React.FC = () => {
           {showSteps && steps.length > 0 && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Detailed Step Breakdown</h3>
               </div>
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                 {steps.filter(item => item.step.trim() !== '').map((item, idx) => (
                   <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
                     <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <div className="flex-1 font-mono text-xs sm:text-sm text-gray-800 whitespace-pre-wrap">
@@ -728,7 +728,7 @@ const CrossProduct: React.FC = () => {
                     {item.explanation && (
                       <div className="pt-2 pl-8 border-t border-gray-200/60">
                         <p className="text-xs text-gray-500 italic">
-                          <span className="font-semibold text-[#7B1824] not-italic">Note: </span>
+                          <span className="font-semibold text-[#166534] not-italic">Note: </span>
                           {item.explanation}
                         </p>
                       </div>
@@ -744,7 +744,7 @@ const CrossProduct: React.FC = () => {
       {/* Help */}
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
         <p className="font-bold text-gray-800 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-          <svg className="w-4 h-4 text-[#7B1824]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[#166534]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Cross Product Properties & Guide

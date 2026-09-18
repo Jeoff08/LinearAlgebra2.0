@@ -26,7 +26,7 @@
   --ink: #111827;
   --paper: #FFFFFF;
   --heading: #111827;
-  --danger: #DC2626;
+  --danger: #166534;
   --muted: #6B7280;
   --panel: rgba(255, 255, 255, 0.98);
   --line: #E5E7EB;
@@ -45,7 +45,7 @@ html.light, :root[data-theme="light"] {
   --ink: #111827;
   --paper: #FFFFFF;
   --heading: #111827;
-  --danger: #DC2626;
+  --danger: #166534;
   --muted: #6B7280;
   --panel: rgba(255, 255, 255, 0.98);
   --line: #E5E7EB;
@@ -56,7 +56,7 @@ html.dark, :root[data-theme="dark"] {
   --ink: #111827;
   --paper: #FFFFFF;
   --heading: #111827;
-  --danger: #DC2626;
+  --danger: #166534;
   --muted: #6B7280;
   --panel: rgba(255, 255, 255, 0.98);
   --line: #E5E7EB;
@@ -68,7 +68,7 @@ html.dark, :root[data-theme="dark"] {
 }
 
 ::selection {
-  background: #7B1824;
+  background: #166534;
   color: #FFFFFF;
 }
 
@@ -455,8 +455,8 @@ html.dark .card-clean:hover {
 }
 
 .dot.offline {
-  background: #EF4444;
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+  background: #22C55E;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
 }
 
 .sync-copy {
@@ -704,9 +704,9 @@ html.dark .auth-page-bg {
 
 .topic-sidebar-item.active {
   background: #FBF3F5;
-  color: #7B1824;
+  color: #166534;
   font-weight: 600;
-  border-left-color: #7B1824;
+  border-left-color: #166534;
 }
 
 html.dark .topic-sidebar-item:hover {
@@ -715,9 +715,9 @@ html.dark .topic-sidebar-item:hover {
 }
 
 html.dark .topic-sidebar-item.active {
-  background: rgba(123, 24, 36, 0.15);
-  color: #E05260;
-  border-left-color: #E05260;
+  background: rgba(22, 101, 52, 0.15);
+  color: #22c55e;
+  border-left-color: #22c55e;
 }
 
 .topic-sidebar-count {
@@ -729,7 +729,7 @@ html.dark .topic-sidebar-item.active {
 }
 
 .topic-sidebar-item.active .topic-sidebar-count {
-  color: #7B1824;
+  color: #166534;
 }
 
 /* ===== FILTER PILL TABS ===== */
@@ -750,13 +750,13 @@ html.dark .topic-sidebar-item.active {
 }
 
 .filter-pill:hover {
-  border-color: #D6B1B7;
+  border-color: #bbf7d0;
   background: #FDFBFB;
 }
 
 .filter-pill.active {
-  background: #7B1824;
-  border-color: #7B1824;
+  background: #166534;
+  border-color: #166534;
   color: #FFFFFF;
 }
 
@@ -779,13 +779,13 @@ html.dark .filter-pill {
 }
 
 html.dark .filter-pill:hover {
-  border-color: #E05260;
+  border-color: #22c55e;
   background: #1E293B;
 }
 
 html.dark .filter-pill.active {
-  background: #7B1824;
-  border-color: #7B1824;
+  background: #166534;
+  border-color: #166534;
   color: #FFFFFF;
 }
 
@@ -803,7 +803,7 @@ html.dark .filter-pill.active {
 
 .toc-item:hover {
   background: #FDFBFB;
-  border-color: #EAE2E4;
+  border-color: #D1FAE5;
 }
 
 .toc-number {
@@ -814,7 +814,7 @@ html.dark .filter-pill.active {
   height: 2rem;
   border-radius: 0.5rem;
   background: #FBF3F5;
-  color: #7B1824;
+  color: #166534;
   font-size: 0.8125rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -943,7 +943,7 @@ html.dark .toc-number {
 }
 
 .mv-heading-red {
-  color: #A31D24;
+  color: #15803d;
 }
 
 /* Description text */
@@ -970,7 +970,7 @@ html.dark .toc-number {
   align-items: center;
   gap: 0.65rem;
   padding: 0.85rem 1.65rem;
-  background: #8B1A24;
+  background: #166534;
   color: #FFFFFF;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -978,12 +978,12 @@ html.dark .toc-number {
   border-radius: 0.75rem;
   cursor: pointer;
   transition: all 200ms ease;
-  box-shadow: 0 4px 20px rgba(139, 26, 36, 0.45);
+  box-shadow: 0 4px 20px rgba(22, 101, 52, 0.45);
 }
 
 .mv-btn-red:hover {
-  background: #73141D;
-  box-shadow: 0 6px 26px rgba(139, 26, 36, 0.6);
+  background: #166534;
+  box-shadow: 0 6px 26px rgba(22, 101, 52, 0.6);
   transform: translateY(-1px);
 }
 
@@ -1035,8 +1035,8 @@ html.dark .toc-number {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;
-  border: 1px solid #8B1A24;
-  background: rgba(139, 26, 36, 0.2);
+  border: 1px solid #166534;
+  background: rgba(22, 101, 52, 0.2);
   flex-shrink: 0;
 }
 
@@ -1093,8 +1093,8 @@ html.dark .toc-number {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background: rgba(139, 26, 36, 0.35);
-  border: 1px solid rgba(163, 29, 36, 0.6);
+  background: rgba(22, 101, 52, 0.35);
+  border: 1px solid rgba(21, 128, 61, 0.6);
   flex-shrink: 0;
 }
 
@@ -1172,10 +1172,10 @@ html.dark .page-transition-overlay {
 }
 
 .topic-sidebar-item.active {
-  background-color: #FDF2F4;
-  color: #7B1824;
+  background-color: #F0FDF4;
+  color: #166534;
   font-weight: 700;
-  border-color: rgba(123, 24, 36, 0.15);
+  border-color: rgba(22, 101, 52, 0.15);
 }
 
 .topic-sidebar-item.active::before {
@@ -1185,7 +1185,7 @@ html.dark .page-transition-overlay {
   top: 0.35rem;
   bottom: 0.35rem;
   width: 3.5px;
-  background-color: #7B1824;
+  background-color: #166534;
   border-radius: 0 4px 4px 0;
 }
 
@@ -1197,7 +1197,7 @@ html.dark .page-transition-overlay {
 }
 
 .topic-sidebar-item.active .topic-sidebar-count {
-  color: #7B1824;
+  color: #166534;
   font-weight: 700;
 }
 
@@ -1223,10 +1223,10 @@ html.dark .page-transition-overlay {
 }
 
 .filter-pill.active {
-  background-color: #7B1824;
+  background-color: #166534;
   color: #FFFFFF;
-  border-color: #7B1824;
-  box-shadow: 0 1px 3px rgba(123, 24, 36, 0.25);
+  border-color: #166534;
+  box-shadow: 0 1px 3px rgba(22, 101, 52, 0.25);
 }
 
 .filter-pill .pill-count {
@@ -1251,7 +1251,7 @@ html.dark .page-transition-overlay {
   flex-direction: column;
   justify-content: space-between;
   background-color: #FFFFFF;
-  border: 1px solid #EAE2E4;
+  border: 1px solid #D1FAE5;
   border-radius: 1.25rem;
   padding: 1.5rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
@@ -1261,8 +1261,8 @@ html.dark .page-transition-overlay {
 
 .topic-grid-card:hover {
   transform: translateY(-2px);
-  border-color: #cf9fa6;
-  box-shadow: 0 10px 25px -5px rgba(123, 24, 36, 0.08), 0 8px 10px -6px rgba(123, 24, 36, 0.04);
+  border-color: #bbf7d0;
+  box-shadow: 0 10px 25px -5px rgba(22, 101, 52, 0.08), 0 8px 10px -6px rgba(22, 101, 52, 0.04);
 }
 
 /* ========================================================================= */
@@ -1286,7 +1286,7 @@ table {
   -webkit-overflow-scrolling: touch;
   padding-bottom: 0.5rem;
   scrollbar-width: thin;
-  scrollbar-color: rgba(123, 24, 36, 0.3) transparent;
+  scrollbar-color: rgba(22, 101, 52, 0.3) transparent;
 }
 
 .matrix-scroll-wrapper::-webkit-scrollbar {
@@ -1294,12 +1294,12 @@ table {
 }
 
 .matrix-scroll-wrapper::-webkit-scrollbar-thumb {
-  background-color: rgba(123, 24, 36, 0.25);
+  background-color: rgba(22, 101, 52, 0.25);
   border-radius: 9999px;
 }
 
 .matrix-scroll-wrapper::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(123, 24, 36, 0.45);
+  background-color: rgba(22, 101, 52, 0.45);
 }
 
 /* Safe area insets for mobile notches / home indicators */

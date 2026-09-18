@@ -136,7 +136,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
       const sectionGap = 9;
 
       // --- BRAND HEADER BAR ---
-      doc.setFillColor(123, 24, 36); // Maroon #7B1824
+      doc.setFillColor(22, 101, 52); // Maroon #166534
       doc.rect(margin, yPos - 6, maxWidth, 3, "F");
       yPos += 4;
 
@@ -256,11 +256,11 @@ const PDFExport: React.FC<PDFExportProps> = ({
       ensureSpace(25);
 
       // Result Header banner
-      doc.setFillColor(253, 242, 244); // Maroon Tint #FDF2F4
+      doc.setFillColor(240, 253, 244); // Maroon Tint #F0FDF4
       doc.roundedRect(margin, yPos - 2, maxWidth, 8, 1.5, 1.5, "F");
 
       doc.setFontSize(11);
-      doc.setTextColor(123, 24, 36); // Maroon #7B1824
+      doc.setTextColor(22, 101, 52); // Maroon #166534
       doc.setFont("helvetica", "bold");
       doc.text("CALCULATED RESULT", margin + 4, yPos + 4);
       yPos += 12;
@@ -525,7 +525,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
           onClick={() => exportPDF()}
           disabled={isExporting}
           title={`Export PDF in ${currentConfig.name} format`}
-          className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#7B1824] hover:bg-[#60101B] text-white text-xs sm:text-sm font-semibold rounded-l-xl border-r border-[#60101B] shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#166534] hover:bg-[#14532D] text-white text-xs sm:text-sm font-semibold rounded-l-xl border-r border-[#14532D] shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
         >
           <FileText className="w-4 h-4 text-white/80" />
           <span>{isExporting ? "Exporting..." : buttonLabel}</span>
@@ -538,7 +538,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="inline-flex items-center justify-center px-2 py-2 bg-[#60101B] hover:bg-[#4D0C14] text-white rounded-r-xl shadow-xs transition-all focus:outline-none cursor-pointer"
+          className="inline-flex items-center justify-center px-2 py-2 bg-[#14532D] hover:bg-[#052e16] text-white rounded-r-xl shadow-xs transition-all focus:outline-none cursor-pointer"
           title="Choose Paper Size & Options (A4, Short, Long)"
           aria-expanded={isOpen}
           aria-label="Paper size options"
@@ -554,7 +554,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
         <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white border border-gray-200 shadow-2xl z-50 p-3 animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
             <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
-              <Printer className="w-3.5 h-3.5 text-[#7B1824]" />
+              <Printer className="w-3.5 h-3.5 text-[#166534]" />
               <span>Select Paper Size</span>
             </div>
             <span className="text-[10px] text-gray-400 font-medium">
@@ -575,7 +575,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
                   onClick={() => handleSizeChange(sizeKey)}
                   className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between transition-colors text-xs cursor-pointer ${
                     isSelected
-                      ? "bg-[#FDF2F4] border border-[#7B1824]/30 text-[#7B1824] font-semibold"
+                      ? "bg-[#F0FDF4] border border-[#166534]/30 text-[#166534] font-semibold"
                       : "hover:bg-gray-50 text-gray-700 border border-transparent"
                   }`}
                 >
@@ -598,7 +598,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
                     </span>
                   </div>
                   {isSelected && (
-                    <div className="w-4 h-4 rounded-full bg-[#7B1824] text-white flex items-center justify-center flex-shrink-0">
+                    <div className="w-4 h-4 rounded-full bg-[#166534] text-white flex items-center justify-center flex-shrink-0">
                       <Check className="w-2.5 h-2.5 stroke-[3]" />
                     </div>
                   )}
@@ -616,7 +616,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
                 onClick={() => setSelectedOrientation("portrait")}
                 className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
                   selectedOrientation === "portrait"
-                    ? "bg-white text-[#7B1824] font-bold shadow-xs"
+                    ? "bg-white text-[#166534] font-bold shadow-xs"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
               >
@@ -627,7 +627,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
                 onClick={() => setSelectedOrientation("landscape")}
                 className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
                   selectedOrientation === "landscape"
-                    ? "bg-white text-[#7B1824] font-bold shadow-xs"
+                    ? "bg-white text-[#166534] font-bold shadow-xs"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
               >
@@ -641,7 +641,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
             type="button"
             onClick={() => exportPDF()}
             disabled={isExporting}
-            className="w-full mt-3 py-2 px-3 bg-[#7B1824] hover:bg-[#60101B] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="w-full mt-3 py-2 px-3 bg-[#166534] hover:bg-[#14532D] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download {currentConfig.name} PDF</span>

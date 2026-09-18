@@ -679,7 +679,7 @@ const MatrixCalculator: React.FC = () => {
                 setUseSecondMatrix(getOperationRequiresSecondMatrix(e.target.value));
                 setResult(null);
               }}
-              className="w-full px-3.5 py-2 text-sm font-semibold rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none cursor-pointer transition-all shadow-2xs"
+              className="w-full px-3.5 py-2 text-sm font-semibold rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none cursor-pointer transition-all shadow-2xs"
             >
               {Object.entries(operations).map(([key, op]) => (
                 <option key={key} value={key} className="bg-white text-gray-900">
@@ -702,7 +702,7 @@ const MatrixCalculator: React.FC = () => {
             type="number"
             value={rows}
             onChange={(e) => setRows(Math.max(1, Math.min(5, parseInt(e.target.value) || 1)))}
-            className="w-14 px-2 py-1.5 text-center text-sm font-bold border border-gray-200 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none"
+            className="w-14 px-2 py-1.5 text-center text-sm font-bold border border-gray-200 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none"
             min="1"
             max="5"
           />
@@ -713,14 +713,14 @@ const MatrixCalculator: React.FC = () => {
             type="number"
             value={cols}
             onChange={(e) => setCols(Math.max(1, Math.min(5, parseInt(e.target.value) || 1)))}
-            className="w-14 px-2 py-1.5 text-center text-sm font-bold border border-gray-200 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none"
+            className="w-14 px-2 py-1.5 text-center text-sm font-bold border border-gray-200 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none"
             min="1"
             max="5"
           />
         </div>
         <button
           onClick={handleResize}
-          className="px-4 py-2 bg-[#7B1824] text-white font-bold rounded-xl hover:bg-[#60101B] transition text-xs shadow-xs cursor-pointer active:scale-95"
+          className="px-4 py-2 bg-[#166534] text-white font-bold rounded-xl hover:bg-[#14532D] transition text-xs shadow-xs cursor-pointer active:scale-95"
         >
           Resize
         </button>
@@ -749,7 +749,7 @@ const MatrixCalculator: React.FC = () => {
                         value={getDisplayValue(val)}
                         onChange={(e) => updateMatrix(1, i, j, e.target.value)}
                         onBlur={() => handleInputBlur(1, i, j)}
-                        className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                        className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                         placeholder="0"
                       />
                     </td>
@@ -779,7 +779,7 @@ const MatrixCalculator: React.FC = () => {
                           value={getDisplayValue(val)}
                           onChange={(e) => updateMatrix(2, i, j, e.target.value)}
                           onBlur={() => handleInputBlur(2, i, j)}
-                          className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                          className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                           placeholder="0"
                         />
                       </td>
@@ -796,7 +796,7 @@ const MatrixCalculator: React.FC = () => {
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <button
           onClick={performOperation}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
           <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z" />
@@ -818,9 +818,9 @@ const MatrixCalculator: React.FC = () => {
       {result && (
         <div className="space-y-5 animate-in fade-in duration-300">
           {/* Result Hero Box */}
-          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-3">
+          <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#7B1824] inline-flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#166534] inline-flex items-center gap-1.5">
                 <span>Final Result</span>
               </span>
               <div className="flex-shrink-0">
@@ -843,7 +843,7 @@ const MatrixCalculator: React.FC = () => {
             <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#7B1824]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#166534]" />
                   <h4 className="text-base font-black text-gray-900 tracking-tight">
                     Step-by-Step Solution
                   </h4>
@@ -858,7 +858,7 @@ const MatrixCalculator: React.FC = () => {
                     </div>
                     {result.stepExplanations && result.stepExplanations[idx] && (
                       <div className="pt-2 border-t border-gray-200/60 text-xs text-gray-600 leading-relaxed">
-                        <span className="font-bold text-[#7B1824]">Note: </span>
+                        <span className="font-bold text-[#166534]">Note: </span>
                         {result.stepExplanations[idx]}
                       </div>
                     )}

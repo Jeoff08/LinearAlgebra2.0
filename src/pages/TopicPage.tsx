@@ -1,6 +1,7 @@
 // TopicPage.tsx
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect, useCallback } from "react";
+import anime from "animejs";
 import { playNavButtonAnimation } from "../utils/buttonAnimation";
 import { 
   ArrowLeft, 
@@ -72,8 +73,8 @@ import QuadraticForm from "../calculators/QuadraticForm";
 // Calculus solver placeholder component
 function CalculusPlaceholderCalculator({ name, description }: { name: string; description: string }) {
   return (
-    <div className="p-8 rounded-2xl border border-[#FFD0D8] bg-[#FFF8F9] text-center space-y-4">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md">
+    <div className="p-8 rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] text-center space-y-4">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#166534] text-white shadow-md">
         <Calculator className="h-6 w-6" />
       </div>
       <div>
@@ -243,6 +244,38 @@ export default function TopicPage() {
 
   const currentTopicIndex = useMemo(() => TOPICS.findIndex((t) => t.id === id), [id]);
   const nextTopic = currentTopicIndex < TOPICS.length - 1 ? TOPICS[currentTopicIndex + 1] : null;
+
+  // Whenever topic changes, ensure the window resets to top
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [id]);
+
+  const handleNextTopicClick = (e: React.MouseEvent<HTMLElement>) => {
+    playNavButtonAnimation(e, { color: "rgba(34, 197, 94, 0.45)", scaleDown: 0.92 });
+
+    const currentScroll = window.scrollY || document.documentElement.scrollTop;
+    if (currentScroll > 0) {
+      const scrollObj = { y: currentScroll };
+      anime({
+        targets: scrollObj,
+        y: 0,
+        duration: 250,
+        easing: "easeOutExpo",
+        update: () => {
+          window.scrollTo(0, scrollObj.y);
+        },
+        complete: () => {
+          window.scrollTo(0, 0);
+        },
+      });
+    } else {
+      window.scrollTo(0, 0);
+    }
+
+    if (nextTopic) {
+      navigate(`/topics/${nextTopic.id}`);
+    }
+  };
 
   const sections = useMemo(() => {
     if (!topic?.details) return [];
@@ -525,7 +558,7 @@ export default function TopicPage() {
       <div className="min-h-screen bg-[#FDFBFB] pt-28 pb-16 px-4 text-center">
         <h2 className="text-2xl font-bold text-[#111827]">Topic Not Found</h2>
         <p className="text-[#6B7280] mt-2">The requested topic could not be located.</p>
-        <Link to="/?tab=topics" className="inline-block mt-4 text-[#7B1824] font-bold">← Back to Topics</Link>
+        <Link to="/?tab=topics" className="inline-block mt-4 text-[#166534] font-bold">← Back to Topics</Link>
       </div>
     );
   }
@@ -552,11 +585,11 @@ export default function TopicPage() {
           <text x="254" y="139" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">x</text>
           <text x="46" y="16" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">y</text>
           <text x="36" y="148" fill="#374151" fontSize="10">0</text>
-          <line x1="140" y1="135" x2="140" y2="75" stroke="#7B1824" strokeWidth="1.2" strokeDasharray="3 3" />
+          <line x1="140" y1="135" x2="140" y2="75" stroke="#166534" strokeWidth="1.2" strokeDasharray="3 3" />
           <text x="136" y="150" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">x₀</text>
-          <path d="M 60 130 C 100 120, 130 90, 180 45 C 210 25, 230 20, 245 18" stroke="#8B1A24" strokeWidth="2.2" strokeLinecap="round" />
-          <line x1="75" y1="135" x2="205" y2="25" stroke="#7B1824" strokeWidth="1.6" strokeDasharray="3 3" />
-          <circle cx="140" cy="75" r="4.5" fill="#7B1824" />
+          <path d="M 60 130 C 100 120, 130 90, 180 45 C 210 25, 230 20, 245 18" stroke="#166534" strokeWidth="2.2" strokeLinecap="round" />
+          <line x1="75" y1="135" x2="205" y2="25" stroke="#166534" strokeWidth="1.6" strokeDasharray="3 3" />
+          <circle cx="140" cy="75" r="4.5" fill="#166534" />
         </svg>
       );
     }
@@ -568,12 +601,12 @@ export default function TopicPage() {
           <text x="254" y="139" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">x</text>
           <text x="46" y="16" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">y</text>
           <text x="36" y="148" fill="#374151" fontSize="10">0</text>
-          <path d="M 95 135 L 95 85 C 125 60, 165 58, 195 80 L 195 135 Z" fill="rgba(123, 24, 36, 0.18)" />
-          <line x1="95" y1="135" x2="95" y2="85" stroke="#7B1824" strokeWidth="1.2" strokeDasharray="3 3" />
-          <line x1="195" y1="135" x2="195" y2="80" stroke="#7B1824" strokeWidth="1.2" strokeDasharray="3 3" />
+          <path d="M 95 135 L 95 85 C 125 60, 165 58, 195 80 L 195 135 Z" fill="rgba(22, 101, 52, 0.18)" />
+          <line x1="95" y1="135" x2="95" y2="85" stroke="#166534" strokeWidth="1.2" strokeDasharray="3 3" />
+          <line x1="195" y1="135" x2="195" y2="80" stroke="#166534" strokeWidth="1.2" strokeDasharray="3 3" />
           <text x="92" y="150" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">a</text>
           <text x="192" y="150" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">b</text>
-          <path d="M 60 110 C 95 80, 145 50, 235 90" stroke="#8B1A24" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+          <path d="M 60 110 C 95 80, 145 50, 235 90" stroke="#166534" strokeWidth="2.2" strokeLinecap="round" fill="none" />
         </svg>
       );
     }
@@ -585,14 +618,14 @@ export default function TopicPage() {
           <text x="254" y="139" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">x</text>
           <text x="46" y="16" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">y</text>
           <text x="36" y="148" fill="#374151" fontSize="10">0</text>
-          <line x1="50" y1="135" x2="140" y2="70" stroke="#7B1824" strokeWidth="2.2" strokeLinecap="round" />
-          <line x1="50" y1="135" x2="180" y2="115" stroke="#991B28" strokeWidth="2.2" strokeLinecap="round" />
-          <line x1="140" y1="70" x2="230" y2="50" stroke="#7B1824" strokeWidth="1.2" strokeDasharray="3 3" />
-          <line x1="180" y1="115" x2="230" y2="50" stroke="#991B28" strokeWidth="1.2" strokeDasharray="3 3" />
-          <line x1="50" y1="135" x2="230" y2="50" stroke="#4A0E15" strokeWidth="2.2" strokeLinecap="round" />
-          <text x="135" y="62" fill="#7B1824" fontSize="11" fontWeight="700">u</text>
-          <text x="185" y="125" fill="#991B28" fontSize="11" fontWeight="700">v</text>
-          <text x="235" y="45" fill="#4A0E15" fontSize="11" fontWeight="700">u+v</text>
+          <line x1="50" y1="135" x2="140" y2="70" stroke="#166534" strokeWidth="2.2" strokeLinecap="round" />
+          <line x1="50" y1="135" x2="180" y2="115" stroke="#15803D" strokeWidth="2.2" strokeLinecap="round" />
+          <line x1="140" y1="70" x2="230" y2="50" stroke="#166534" strokeWidth="1.2" strokeDasharray="3 3" />
+          <line x1="180" y1="115" x2="230" y2="50" stroke="#15803D" strokeWidth="1.2" strokeDasharray="3 3" />
+          <line x1="50" y1="135" x2="230" y2="50" stroke="#052e16" strokeWidth="2.2" strokeLinecap="round" />
+          <text x="135" y="62" fill="#166534" fontSize="11" fontWeight="700">u</text>
+          <text x="185" y="125" fill="#15803D" fontSize="11" fontWeight="700">v</text>
+          <text x="235" y="45" fill="#052e16" fontSize="11" fontWeight="700">u+v</text>
         </svg>
       );
     }
@@ -603,12 +636,12 @@ export default function TopicPage() {
         <text x="254" y="139" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">x</text>
         <text x="46" y="16" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">y</text>
         <text x="36" y="148" fill="#374151" fontSize="10">0</text>
-        <line x1="150" y1="135" x2="150" y2="70" stroke="#7B1824" strokeWidth="1.2" strokeDasharray="3 3" />
+        <line x1="150" y1="135" x2="150" y2="70" stroke="#166534" strokeWidth="1.2" strokeDasharray="3 3" />
         <text x="146" y="150" fill="#374151" fontSize="11" fontStyle="italic" fontWeight="600">a</text>
-        <path d="M 60 125 C 95 120, 130 90, 150 70 C 170 50, 195 35, 230 28" stroke="#8B1A24" strokeWidth="2.2" strokeLinecap="round" />
-        <circle cx="150" cy="70" r="4" fill="#FFFFFF" stroke="#7B1824" strokeWidth="2" />
-        <circle cx="150" cy="45" r="4" fill="#7B1824" />
-        <circle cx="225" cy="30" r="4" fill="#7B1824" />
+        <path d="M 60 125 C 95 120, 130 90, 150 70 C 170 50, 195 35, 230 28" stroke="#166534" strokeWidth="2.2" strokeLinecap="round" />
+        <circle cx="150" cy="70" r="4" fill="#FFFFFF" stroke="#166534" strokeWidth="2" />
+        <circle cx="150" cy="45" r="4" fill="#166534" />
+        <circle cx="225" cy="30" r="4" fill="#166534" />
       </svg>
     );
   };
@@ -630,48 +663,27 @@ export default function TopicPage() {
         </div>
         <div className="relative z-10 mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-10">
           
-          {/* Top Breadcrumbs & Action Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-4 py-1.5 text-xs text-white/90 shadow-sm max-w-full overflow-hidden truncate">
-                <BookOpen className="w-3.5 h-3.5 text-[#E05260] shrink-0" />
-                <span className="truncate">{topic.subCategoryLabel ? topic.subCategoryLabel.split(":")[0] : `Chapter ${topic.chapterNumber || 1}`}</span>
-                <span className="text-white/40">&gt;</span>
-                <span className="text-white/70">Overview</span>
-                <span className="text-white/40">&gt;</span>
-                <span className="font-bold text-white truncate">{topic.title}</span>
-              </div>
-            </div>
-
-            {/* Right Buttons: Slideshow Mode + Next Topic */}
-            <div className="flex items-center gap-2.5 self-start sm:self-auto">
-              {/* TV Slideshow Mode Button */}
-              <button
-                onClick={() => {
-                  setCurrentSlideIndex(0);
-                  setIsSlideshowOpen(true);
-                }}
-                className="inline-flex items-center gap-2 rounded-full border border-[#FF7A8A]/40 bg-gradient-to-r from-[#7B1824] to-[#991B28] hover:from-[#8B1A24] hover:to-[#B91C1C] px-4 py-1.5 text-xs font-bold text-white backdrop-blur-md transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
-                title="Start Slideshow for this topic (Keyboard next/prev enabled)"
-              >
-                <Tv className="w-3.5 h-3.5 text-[#FFB3BA]" />
-                <span>Topic Slideshow</span>
-              </button>
-
-              {nextTopic && (
-                <Link to={`/topics/${nextTopic.id}`} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 hover:bg-white/15 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-sm">
-                  <span>Next Topic: {nextTopic.title.length > 20 ? nextTopic.title.slice(0, 18) + "..." : nextTopic.title}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              )}
-            </div>
+          {/* Top Action Bar */}
+          <div className="flex items-center justify-end gap-3 mb-8">
+            {/* TV Slideshow Mode Button */}
+            <button
+              onClick={() => {
+                setCurrentSlideIndex(0);
+                setIsSlideshowOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-[#4ADE80]/40 bg-gradient-to-r from-[#166534] to-[#15803D] hover:from-[#166534] hover:to-[#16A34A] px-4 py-1.5 text-xs font-bold text-white backdrop-blur-md transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+              title="Start Slideshow for this topic (Keyboard next/prev enabled)"
+            >
+              <Tv className="w-3.5 h-3.5 text-[#86EFAC]" />
+              <span>Topic Slideshow</span>
+            </button>
           </div>
 
           {/* Main Hero Header */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 flex flex-col gap-6">
               <div className="flex items-start gap-4 sm:gap-6">
-                <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-[#7B1824] text-white font-black text-xl sm:text-2xl tracking-tight shadow-xl shadow-[#7B1824]/40 shrink-0 border border-white/10">
+                <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-[#166534] text-white font-black text-xl sm:text-2xl tracking-tight shadow-xl shadow-[#166534]/40 shrink-0 border border-white/10">
                   {chapterTag}
                 </div>
                 <div className="space-y-3 flex-1">
@@ -685,27 +697,6 @@ export default function TopicPage() {
                   <p className="text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed font-normal max-w-2xl">
                     {topic.summary || "A comprehensive study on foundations, mathematical theorems, step-by-step verified explanations, and practical problem solving."}
                   </p>
-                  <div className="flex flex-wrap items-center gap-2.5 pt-2">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-white/90">
-                      <BookOpen className="w-3.5 h-3.5 text-[#E05260]" />
-                      <span>{sections.length} Sections &amp; Lessons</span>
-                    </div>
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-white/90">
-                      <Clock className="w-3.5 h-3.5 text-[#E05260]" />
-                      <span>2h 45m Estimated</span>
-                    </div>
-                    {/* TV Presentation Quick Link */}
-                    <button
-                      onClick={() => {
-                        setCurrentSlideIndex(0);
-                        setIsSlideshowOpen(true);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-1 text-xs font-semibold text-white transition-all cursor-pointer"
-                    >
-                      <Tv className="w-3.5 h-3.5 text-[#FF7A8A]" />
-                      <span>Start Presentation</span>
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -715,17 +706,17 @@ export default function TopicPage() {
             <div className="lg:col-span-4 flex items-center justify-center lg:justify-end">
               <div className="relative w-full max-w-[340px] rounded-2xl bg-[#FFF0F2] p-4 sm:p-5 shadow-2xl border border-white/40 text-gray-900">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-[#7B1824] uppercase tracking-wider">Interactive Curve</span>
+                  <span className="text-[11px] font-bold text-[#166534] uppercase tracking-wider">Interactive Curve</span>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => setIsCompleted(!isCompleted)} title={isCompleted ? "Marked Complete" : "Mark as Complete"} className={`h-6 w-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${isCompleted ? "bg-[#7B1824] text-white" : "bg-[#FFE2E6] text-[#7B1824] hover:bg-[#FFD4DC]"}`}>
+                    <button onClick={() => setIsCompleted(!isCompleted)} title={isCompleted ? "Marked Complete" : "Mark as Complete"} className={`h-6 w-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${isCompleted ? "bg-[#166534] text-white" : "bg-[#DCFCE7] text-[#166534] hover:bg-[#BBF7D0]"}`}>
                       <Check className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-2 border border-[#EAE2E4] shadow-inner">{renderTopicIllustration()}</div>
+                <div className="bg-white rounded-xl p-2 border border-[#D1FAE5] shadow-inner">{renderTopicIllustration()}</div>
                 <div className="mt-3 flex items-center justify-between text-xs">
                   <span className="text-[#6B7280] font-medium">Verified Visualization</span>
-                  <button onClick={() => { setActiveTab("problems"); setShowCalculator(true); }} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#7B1824] hover:underline cursor-pointer">
+                  <button onClick={() => { setActiveTab("problems"); setShowCalculator(true); }} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#166534] hover:underline cursor-pointer">
                     <Calculator className="w-3 h-3" />
                     <span>Launch Solver</span>
                   </button>
@@ -748,11 +739,11 @@ export default function TopicPage() {
           {/* Top Slideshow Control Header */}
           <header className="hidden">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-[#7B1824] flex items-center justify-center font-bold text-sm text-white">
+              <div className="h-8 w-8 rounded-lg bg-[#166534] flex items-center justify-center font-bold text-sm text-white">
                 {chapterTag}
               </div>
               <div>
-                <div className="text-xs font-semibold text-[#FF7A8A] uppercase tracking-wider">
+                <div className="text-xs font-semibold text-[#4ADE80] uppercase tracking-wider">
                   {topic.title} &bull; Slideshow
                 </div>
                 <div className="text-sm sm:text-base font-bold text-white truncate max-w-xs sm:max-w-md">
@@ -794,7 +785,7 @@ export default function TopicPage() {
               {/* Close Button */}
               <button
                 onClick={() => setIsSlideshowOpen(false)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#7B1824] hover:bg-[#60101B] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#166534] hover:bg-[#14532D] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all cursor-pointer active:scale-95"
                 title="Exit Slideshow (Esc)"
               >
                 <X className="w-4 h-4" />
@@ -821,7 +812,7 @@ export default function TopicPage() {
                         ? "border border-amber-400/30 bg-amber-500/20 text-amber-300"
                         : currentSlide.type === "completion"
                         ? "border border-emerald-400/30 bg-emerald-500/20 text-emerald-300"
-                        : "border border-[#FF7A8A]/30 bg-[#7B1824]/30 text-[#FFB3BA]"
+                        : "border border-[#4ADE80]/30 bg-[#166534]/30 text-[#86EFAC]"
                     }`}>
                       <Sparkles className="w-3 h-3" />
                       <span>{currentSlide.badge}</span>
@@ -844,7 +835,7 @@ export default function TopicPage() {
                 {currentSlide.type === "completion" ? (
                   /* Completion Slide */
                   <div className="space-y-6 text-center py-6 flex-1 flex flex-col justify-center items-center">
-                    <div className="h-16 w-16 rounded-2xl bg-[#7B1824] flex items-center justify-center text-white shadow-xl shadow-[#7B1824]/40">
+                    <div className="h-16 w-16 rounded-2xl bg-[#166534] flex items-center justify-center text-white shadow-xl shadow-[#166534]/40">
                       <Sparkles className="w-8 h-8" />
                     </div>
                     <div className="space-y-2">
@@ -880,7 +871,7 @@ export default function TopicPage() {
                         <Link
                           to={`/topics/${nextTopic.id}`}
                           onClick={() => setIsSlideshowOpen(false)}
-                          className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-6 py-2.5 text-xs sm:text-sm font-bold text-white transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95"
+                          className="inline-flex items-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-6 py-2.5 text-xs sm:text-sm font-bold text-white transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95"
                         >
                           <span>Next Topic: {nextTopic.title}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -939,7 +930,7 @@ export default function TopicPage() {
                         {currentSlide.title}
                       </h2>
                       {currentSlide.subtitle && currentSlide.subtitle !== currentSlide.content && (
-                        <p className="text-xs sm:text-sm text-[#FFB3BA] font-medium leading-relaxed">
+                        <p className="text-xs sm:text-sm text-[#86EFAC] font-medium leading-relaxed">
                           {currentSlide.subtitle}
                         </p>
                       )}
@@ -996,7 +987,7 @@ export default function TopicPage() {
                       ) : (
                         <button
                           onClick={nextSlide}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-[#FFB3BA] hover:text-white transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[#86EFAC] hover:text-white transition-colors cursor-pointer"
                         >
                           <span>Next Lesson</span>
                           <ArrowRight className="w-3 h-3" />
@@ -1042,7 +1033,7 @@ export default function TopicPage() {
                         ? "w-6 bg-amber-400"
                         : s.type === "completion"
                         ? "w-6 bg-emerald-400"
-                        : "w-6 bg-[#FF7A8A]"
+                        : "w-6 bg-[#4ADE80]"
                       : "w-2 bg-white/20 hover:bg-white/40"
                   }`}
                   title={`Go to slide ${idx + 1}: ${s.title}`}
@@ -1071,7 +1062,7 @@ export default function TopicPage() {
                 className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-xs font-bold transition-all cursor-pointer ${
                   currentSlideIndex === slides.length - 1
                     ? "bg-white/5 text-gray-500 cursor-not-allowed"
-                    : "bg-[#7B1824] hover:bg-[#60101B] text-white shadow-md active:scale-95 hover:scale-105"
+                    : "bg-[#166534] hover:bg-[#14532D] text-white shadow-md active:scale-95 hover:scale-105"
                 }`}
               >
                 <span>Next</span>
@@ -1090,7 +1081,7 @@ export default function TopicPage() {
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 pt-4">
           <button
             onClick={(e) => {
-              playNavButtonAnimation(e, { color: "rgba(224, 82, 96, 0.45)" });
+              playNavButtonAnimation(e, { color: "rgba(34, 197, 94, 0.45)" });
               const returnView = topic.category === "calculus"
                 ? ((topic.chapterNumber || 1) >= 9 ? "topics-calculus-2" : "topics-calculus")
                 : "topics-linear";
@@ -1112,7 +1103,7 @@ export default function TopicPage() {
               sessionStorage.setItem("returningChapter", String(ch));
               navigate("/?tab=topics");
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white hover:bg-[#FFF8F9] px-4 py-2 text-xs font-bold text-[#374151] transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white hover:bg-[#F0FDF4] px-4 py-2 text-xs font-bold text-[#374151] transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Topics</span>
@@ -1122,128 +1113,156 @@ export default function TopicPage() {
       <div className="sticky top-16 z-20 bg-white border-b border-[#E5E7EB] shadow-xs">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10">
           <nav className="flex items-center gap-6 sm:gap-10 overflow-x-auto py-3 sm:py-3.5">
-            <button onClick={() => setActiveTab("toc")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "toc" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("toc")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "toc" ? "text-[#166534]" : "text-[#4B5563] hover:text-[#111827]"}`}>
               <List className="w-4 h-4" />
               <span>Table of Contents</span>
-              {activeTab === "toc" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#7B1824] rounded-full" />}
+              {activeTab === "toc" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#166534] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("overview")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "overview" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("overview")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "overview" ? "text-[#166534]" : "text-[#4B5563] hover:text-[#111827]"}`}>
               <Info className="w-4 h-4" />
               <span>Overview</span>
-              {activeTab === "overview" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#7B1824] rounded-full" />}
+              {activeTab === "overview" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#166534] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("problems")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "problems" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("problems")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "problems" ? "text-[#166534]" : "text-[#4B5563] hover:text-[#111827]"}`}>
               <PenTool className="w-4 h-4" />
               <span>Practice Problems</span>
-              {activeTab === "problems" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#7B1824] rounded-full" />}
+              {activeTab === "problems" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#166534] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("summary")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "summary" ? "text-[#7B1824]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("summary")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "summary" ? "text-[#166534]" : "text-[#4B5563] hover:text-[#111827]"}`}>
               <FileText className="w-4 h-4" />
               <span>Summary</span>
-              {activeTab === "summary" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#7B1824] rounded-full" />}
+              {activeTab === "summary" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#166534] rounded-full" />}
             </button>
           </nav>
         </div>
       </div>
       <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-10 pb-24">
         {activeTab === "toc" && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {displayedLessons.map((lesson, idx) => {
-              const isExpanded = expandedSectionIndex === idx;
-              return (
-                <div key={`lesson-${lesson.number}`} className={`rounded-2xl transition-all duration-200 overflow-hidden ${isExpanded ? "border border-[#FFD0D8] bg-[#FFF8F9] shadow-xs" : "border border-[#EAE2E4] bg-white hover:border-[#FFD0D8] shadow-xs"}`}>
-                  <div onClick={() => setExpandedSectionIndex(isExpanded ? null : idx)} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none">
-                    <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
-                      <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-colors ${isExpanded ? "bg-[#FFE2E6] text-[#7B1824]" : "bg-[#F3F4F6] text-[#374151]"}`}>{lesson.number}</div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-sm sm:text-base font-bold text-[#7B1824] leading-snug tracking-tight">{lesson.title}</h3>
-                        <p className="text-xs text-[#6B7280] font-normal leading-relaxed mt-0.5 truncate">{lesson.subtitle}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 sm:gap-4 shrink-0 self-end sm:self-auto">
-                      <div className="flex items-center gap-1 text-xs text-[#6B7280] font-medium"><Clock className="w-3.5 h-3.5 text-[#9CA3AF]" /><span>{lesson.duration}</span></div>
-                      {isExpanded ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentSlideIndex(idx);
-                            setIsSlideshowOpen(true);
-                          }}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-4 py-2 text-xs font-bold text-white shadow-xs transition-all cursor-pointer active:scale-95 hover:scale-105"
-                          title="Open presentation for this topic lesson"
+                const isExpanded = expandedSectionIndex === idx;
+                return (
+                  <div
+                    key={`lesson-${lesson.number}`}
+                    className={`rounded-2xl transition-all duration-200 overflow-hidden ${
+                      isExpanded
+                        ? "border-2 border-[#dcfce7] bg-white shadow-sm ring-1 ring-[#BBF7D0]"
+                        : "border border-[#D1FAE5] bg-white hover:border-[#dcfce7] hover:bg-[#FFFDFE] shadow-xs"
+                    }`}
+                  >
+                    <div
+                      onClick={() => setExpandedSectionIndex(isExpanded ? null : idx)}
+                      className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none"
+                    >
+                      <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
+                        <div
+                          className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-colors ${
+                            isExpanded ? "bg-[#166534] text-white shadow-sm" : "bg-[#F3F4F6] text-[#374151]"
+                          }`}
                         >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span>Start Lesson</span>
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          <div className="relative flex items-center justify-center h-6 w-6">
-                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#E5E7EB" strokeWidth="3" />
-                              {lesson.progress > 0 && <circle cx="18" cy="18" r="15.5" fill="none" stroke="#22C55E" strokeWidth="3" strokeDasharray="97.38" strokeDashoffset={97.38 - (97.38 * lesson.progress) / 100} strokeLinecap="round" />}
-                            </svg>
+                          {String(lesson.number).padStart(2, "0")}
+                        </div>
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#166534] bg-[#ECFDF5] border border-[#BBF7D0] px-2 py-0.5 rounded-md">
+                              Lesson {lesson.number}
+                            </span>
+                            {isExpanded && (
+                              <span className="text-[10px] font-bold text-[#B45309] bg-[#FEF3C7] border border-[#FDE68A] px-2 py-0.5 rounded-md">
+                                Open
+                              </span>
+                            )}
                           </div>
-                          <span className="text-[11px] font-bold text-[#6B7280]">{lesson.progress}%</span>
+                          <h3 className="text-sm sm:text-base font-bold text-[#111827] group-hover:text-[#166534] transition-colors leading-snug tracking-tight">
+                            {lesson.title}
+                          </h3>
+                          <p className="text-xs text-[#6B7280] font-normal leading-relaxed mt-0.5 truncate">
+                            {lesson.subtitle}
+                          </p>
                         </div>
-                      )}
-                      <div className="text-[#7B1824] p-1">{isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4 text-[#9CA3AF]" />}</div>
+                      </div>
+
+                      <div className="text-[#166534] p-1 shrink-0 self-end sm:self-auto">
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4 text-[#9CA3AF]" />}
+                      </div>
                     </div>
+
+                    {isExpanded && (
+                      <div className="border-t border-[#BBF7D0] p-5 sm:p-6 bg-[#FFFDFE] space-y-4">
+                        <div className="prose max-w-none min-w-0 text-sm text-[#374151] leading-relaxed text-justify [overflow-wrap:anywhere]">
+                          <TopicContentRenderer content={lesson.content || topic.details} />
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#F3F4F6]">
+                          <div className="flex items-center gap-2 text-xs text-[#6B7280]">
+                            <Sparkles className="w-4 h-4 text-[#166534]" />
+                            <span>Verified textbook content with formal rigor</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setActiveTab("problems");
+                                setShowCalculator(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-white hover:bg-[#F0FDF4] px-3.5 py-1.5 text-xs font-bold text-[#166534] transition-all cursor-pointer shadow-xs"
+                            >
+                              <Calculator className="w-3.5 h-3.5" />
+                              <span>Try in Calculator</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {isExpanded && (
-                    <div className="border-t border-[#FFD0D8] p-5 sm:p-6 bg-white/70 space-y-4">
-                      <div className="prose max-w-none min-w-0 text-sm text-[#374151] leading-relaxed text-justify [overflow-wrap:anywhere]">
-                        <TopicContentRenderer content={lesson.content || topic.details} />
-                      </div>
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#F3F4F6]">
-                        <div className="flex items-center gap-2 text-xs text-[#6B7280]"><Sparkles className="w-4 h-4 text-[#7B1824]" /><span>Verified textbook content with formal rigor</span></div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => { setActiveTab("problems"); setShowCalculator(true); }} className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] px-3.5 py-1.5 text-xs font-bold text-[#7B1824] transition-all cursor-pointer shadow-xs"><Calculator className="w-3.5 h-3.5" /><span>Try in Calculator</span></button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+
             {sections.length > 6 && (
-              <div className="flex justify-center pt-3"><button onClick={() => setShowAllLessons(!showAllLessons)} className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] px-5 py-2 text-xs font-bold text-[#374151] shadow-xs transition-all cursor-pointer"><span>{showAllLessons ? "Show Less" : "Show More"}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllLessons ? "rotate-180" : ""}`} /></button></div>
+              <div className="flex justify-center pt-3">
+                <button
+                  onClick={() => setShowAllLessons(!showAllLessons)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] px-5 py-2 text-xs font-bold text-[#374151] shadow-xs transition-all cursor-pointer"
+                >
+                  <span>{showAllLessons ? "Show Less" : "Show More"}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllLessons ? "rotate-180" : ""}`} />
+                </button>
+              </div>
             )}
           </div>
         )}
         {activeTab === "overview" && (
           <div className="space-y-8">
-            <div className="rounded-2xl border border-[#EAE2E4] bg-white p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="rounded-2xl border border-[#D1FAE5] bg-white p-6 sm:p-8 shadow-sm space-y-4">
               <h2 className="text-xl font-bold text-[#111827]">Topic Overview &amp; Learning Objectives</h2>
               <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed">{topic.summary}</p>
               <div className="min-w-0 text-sm text-[#4B5563] leading-relaxed text-justify [overflow-wrap:anywhere] pt-2">
                 <TopicContentRenderer content={overviewDetails} />
               </div>
             </div>
-            <div className="rounded-2xl border border-[#d6b1b7] bg-[#fbf3f5] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="rounded-2xl border border-[#bbf7d0] bg-[#fbf3f5] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm shrink-0"><Calculator className="w-6 h-6" /></div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#166534] text-white shadow-sm shrink-0"><Calculator className="w-6 h-6" /></div>
                 <div>
                   <h3 className="text-base font-bold text-[#111827]">{calculatorInfo.name}</h3>
                   <p className="text-xs sm:text-sm text-[#6B7280]">{calculatorInfo.description}</p>
                 </div>
               </div>
-              <button onClick={() => setShowCalculator(!showCalculator)} className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all cursor-pointer shrink-0"><span>{showCalculator ? "Hide Calculator" : "Launch Interactive Solver"}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform ${showCalculator ? "rotate-180" : ""}`} /></button>
+              <button onClick={() => setShowCalculator(!showCalculator)} className="inline-flex items-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all cursor-pointer shrink-0"><span>{showCalculator ? "Hide Calculator" : "Launch Interactive Solver"}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform ${showCalculator ? "rotate-180" : ""}`} /></button>
             </div>
-            {showCalculator && <div className="rounded-2xl border border-[#EAE2E4] bg-white p-6 shadow-md">{calculatorInfo.component}</div>}
+            {showCalculator && <div className="rounded-2xl border border-[#D1FAE5] bg-white p-6 shadow-md">{calculatorInfo.component}</div>}
           </div>
         )}
         {activeTab === "problems" && (
           <div className="space-y-6">
             {/* Interactive Calculator Section */}
-            <div id="interactive-calculator-section" className="rounded-2xl border border-[#EAE2E4] bg-white p-6 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAE2E4] pb-4">
+            <div id="interactive-calculator-section" className="rounded-2xl border border-[#D1FAE5] bg-white p-6 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D1FAE5] pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm shrink-0"><Calculator className="w-5 h-5" /></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] text-white shadow-sm shrink-0"><Calculator className="w-5 h-5" /></div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-base font-bold text-[#111827]">{calculatorInfo.name}</h3>
                       {topic.category === "linear-algebra" && (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#801424] bg-[#FFF0F3] border border-[#FFCCD5] px-2.5 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#166534] bg-[#ECFDF5] border border-[#dcfce7] px-2.5 py-0.5 rounded-full">
                           <span>{topic.title}</span>
                           <span>→</span>
                           <span>{calculatorInfo.name}</span>
@@ -1257,9 +1276,9 @@ export default function TopicPage() {
 
               {/* Loaded Example Banner Notification */}
               {loadedExample && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[#FFF0F3] border border-[#FFCCD5] text-[#7B1824] text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[#ECFDF5] border border-[#dcfce7] text-[#166534] text-xs animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#7B1824] shrink-0" />
+                    <Sparkles className="w-4 h-4 text-[#166534] shrink-0" />
                     <span>
                       <strong>Loaded Problem #{loadedExample.index + 1}:</strong> Expression copied to clipboard &amp; pasted to calculator!
                     </span>
@@ -1270,13 +1289,13 @@ export default function TopicPage() {
                         navigator.clipboard.writeText(loadedExample.text);
                         setCopiedIndex(loadedExample.index);
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-[#FFCCD5] hover:bg-[#FDF2F4] font-bold text-[11px] cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-white border border-[#dcfce7] hover:bg-[#F0FDF4] font-bold text-[11px] cursor-pointer"
                     >
                       Copy Text
                     </button>
                     <button
                       onClick={() => setLoadedExample(null)}
-                      className="p-1 text-[#7B1824]/60 hover:text-[#7B1824] cursor-pointer"
+                      className="p-1 text-[#166534]/60 hover:text-[#166534] cursor-pointer"
                       title="Dismiss"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -1307,12 +1326,12 @@ export default function TopicPage() {
                       key={`example-${idx}`} 
                       className={`rounded-2xl border bg-white p-5 space-y-3 transition-all duration-200 ${
                         isThisLoaded 
-                          ? "border-[#7B1824] shadow-md ring-2 ring-[#7B1824]/20" 
-                          : "border-[#EAE2E4] shadow-sm hover:border-[#d6b1b7]"
+                          ? "border-[#166534] shadow-md ring-2 ring-[#166534]/20" 
+                          : "border-[#D1FAE5] shadow-sm hover:border-[#bbf7d0]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#d6b1b7] bg-[#fbf3f5] text-[#7B1824]">
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#bbf7d0] bg-[#fbf3f5] text-[#166534]">
                           Problem #{idx + 1}
                         </span>
 
@@ -1320,7 +1339,7 @@ export default function TopicPage() {
                           {/* "Try to Solve" Button */}
                           <button
                             onClick={() => handleTryToSolve(exampleText, idx)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:scale-105 active:scale-95"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#166534] hover:bg-[#14532D] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:scale-105 active:scale-95"
                             title="Paste and solve this example directly in the calculator"
                           >
                             <Sparkles className="w-3.5 h-3.5" />
@@ -1330,7 +1349,7 @@ export default function TopicPage() {
                           {/* Copy Button */}
                           <button 
                             onClick={() => handleCopyExample(exampleText, idx)} 
-                            className="text-xs text-[#6B7280] hover:text-[#7B1824] inline-flex items-center gap-1 cursor-pointer py-1 px-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="text-xs text-[#6B7280] hover:text-[#166534] inline-flex items-center gap-1 cursor-pointer py-1 px-2 rounded-lg hover:bg-gray-100 transition-colors"
                             title="Copy problem text"
                           >
                             {copiedIndex === idx ? (
@@ -1360,76 +1379,27 @@ export default function TopicPage() {
         )}
         {activeTab === "summary" && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-[#EAE2E4] bg-white p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="rounded-2xl border border-[#D1FAE5] bg-white p-6 sm:p-8 shadow-sm space-y-4">
               <h2 className="text-xl font-bold text-[#111827]">Quick Summary &amp; Key Takeaways</h2>
-              <div className="p-4 rounded-xl border border-[#d6b1b7] bg-[#fbf3f5] text-sm text-[#7B1824] font-medium leading-relaxed">{topic.summary}</div>
+              <div className="p-4 rounded-xl border border-[#bbf7d0] bg-[#fbf3f5] text-sm text-[#166534] font-medium leading-relaxed">{topic.summary}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                <div className="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] space-y-2"><h4 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Fundamental Conditions</h4><p className="text-xs text-[#4B5563] leading-relaxed">Verify existence, limit equivalence, and continuous behavior across the given domain.</p></div>
-                <div className="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] space-y-2"><h4 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Next Learning Milestone</h4><p className="text-xs text-[#4B5563] leading-relaxed">Advance to subsequent properties, derivatives, and integral calculus applications.</p></div>
+                <div className="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] space-y-2"><h4 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Fundamental Conditions</h4><p className="text-xs text-[#4B5563] leading-relaxed">Verify existence, limit equivalence, and continuous behavior across the given domain.</p></div>
+                <div className="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] space-y-2"><h4 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Next Learning Milestone</h4><p className="text-xs text-[#4B5563] leading-relaxed">Advance to subsequent properties, derivatives, and integral calculus applications.</p></div>
               </div>
             </div>
           </div>
         )}
-        {/* ======================================================================= */}
-        {/* NEXT TOPIC RECOMMENDATION BANNER & CURRICULUM PROGRESS                  */}
-        {/* ======================================================================= */}
-        {nextTopic && (
-          <section className="my-10 rounded-3xl border-2 border-[#FFD0D8] bg-gradient-to-br from-[#FFF8F9] via-white to-[#FDF2F4] p-6 sm:p-8 lg:p-10 shadow-md">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#7B1824] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-xs">
-                    <Sparkles className="w-3 h-3" />
-                    Recommended Next Topic
-                  </span>
-                  <span className="text-xs font-semibold text-[#6B7280]">
-                    {nextTopic.subCategoryLabel || nextTopic.categoryLabel}
-                  </span>
-                </div>
-
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#111827] tracking-tight">
-                  Ready for {nextTopic.title}?
-                </h3>
-
-                <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed">
-                  {nextTopic.summary || "Build upon your mathematical understanding and progress to the subsequent core theorems and verified problem sets."}
-                </p>
-
-                <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-[#6B7280]">
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 border border-[#E5E7EB] font-medium">
-                    <BookOpen className="w-3.5 h-3.5 text-[#7B1824]" />
-                    {nextTopic.examples?.length || 4}+ Verified Examples
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 border border-[#E5E7EB] font-medium">
-                    <Clock className="w-3.5 h-3.5 text-[#7B1824]" />
-                    ~20 min Lesson
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
-                <Link
-                  to={`/topics/${nextTopic.id}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#7B1824] hover:bg-[#60101B] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#7B1824]/25 transition-all hover:scale-105 active:scale-95 text-center cursor-pointer"
-                >
-                  <span>Proceed to {nextTopic.title}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* BOTTOM NAVIGATION: Next Topic */}
         {nextTopic && (
           <div className="flex items-center justify-end border-t border-[#E5E7EB] pt-8 mt-6">
-            <Link
-              to={`/topics/${nextTopic.id}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+            <button
+              type="button"
+              onClick={handleNextTopicClick}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
             >
               <span>Next: {nextTopic.title}</span>
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </button>
           </div>
         )}
       </main>

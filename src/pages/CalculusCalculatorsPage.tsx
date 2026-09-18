@@ -165,7 +165,7 @@ export default function CalculusCalculatorsPage() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs"
+                className="inline-flex items-center gap-2 rounded-full border border-[#166534]/60 bg-[#166534]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#22c55e] tracking-wider shadow-xs"
               >
                 <CalcIcon className="w-3.5 h-3.5" />
                 <span>Calculus Suite · 29 Independent Solvers</span>
@@ -180,7 +180,7 @@ export default function CalculusCalculatorsPage() {
             >
               <span className="text-white">Solve Smarter with</span>
               <br />
-              <span className="text-[#A31D24]">Calculus 1 &amp; 2 Calculators</span>
+              <span className="text-[#15803d]">Calculus 1 &amp; 2 Calculators</span>
             </motion.h1>
 
             <motion.p
@@ -200,7 +200,7 @@ export default function CalculusCalculatorsPage() {
             >
               <button
                 onClick={scrollToCatalog}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#7B1824]/30 transition-all duration-200 cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#166534]/30 transition-all duration-200 cursor-pointer active:scale-95"
               >
                 <span>Browse All 29 Solvers</span>
                 <ArrowRight className="w-4 h-4" />
@@ -283,7 +283,7 @@ export default function CalculusCalculatorsPage() {
                               placeholder="Search 29 calculators..."
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
-                              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 text-white text-xs placeholder-gray-400 border border-white/10 outline-none focus:border-[#7B1824]"
+                              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 text-white text-xs placeholder-gray-400 border border-white/10 outline-none focus:border-[#166534]"
                             />
                           </div>
                         </div>
@@ -298,7 +298,7 @@ export default function CalculusCalculatorsPage() {
                                 onClick={() => handleSelectTool(tool.id)}
                                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition cursor-pointer ${
                                   tool.id === selectedToolId
-                                    ? "bg-[#7B1824] text-white font-bold"
+                                    ? "bg-[#166534] text-white font-bold"
                                     : "text-gray-300 hover:bg-white/10 hover:text-white"
                                 }`}
                               >
@@ -371,7 +371,7 @@ export default function CalculusCalculatorsPage() {
                       onClick={() => setSelectedCategory(cat.id)}
                       className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                         selectedCategory === cat.id
-                          ? "bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/20"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                       }`}
                     >
@@ -397,7 +397,7 @@ export default function CalculusCalculatorsPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search 29 calculus solvers..."
-                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 focus:bg-white focus:border-[#7B1824] focus:ring-2 focus:ring-[#7B1824]/10 outline-none transition"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 focus:bg-white focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/10 outline-none transition"
                   />
                   {searchTerm && (
                     <button
@@ -422,11 +422,11 @@ export default function CalculusCalculatorsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       whileHover={{ y: -4 }}
                       onClick={() => handleSelectTool(tool.id)}
-                      className="group relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-200 cursor-pointer overflow-hidden bg-white text-gray-900 border-gray-200 hover:border-[#7B1824]/40 hover:shadow-lg shadow-xs"
+                      className="group relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-200 cursor-pointer overflow-hidden bg-white text-gray-900 border-gray-200 hover:border-[#166534]/40 hover:shadow-lg shadow-xs"
                     >
                       <div className="space-y-3">
                         <div className="flex items-start justify-between gap-3">
-                          <div className="w-11 h-11 rounded-xl flex items-center justify-center transition-all bg-[#7B1824]/10 text-[#7B1824] group-hover:bg-[#7B1824] group-hover:text-white">
+                          <div className="w-11 h-11 rounded-xl flex items-center justify-center transition-all bg-[#166534]/10 text-[#166534] group-hover:bg-[#166534] group-hover:text-white">
                             <ToolIcon className="w-5 h-5" />
                           </div>
                           <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border bg-gray-100 text-gray-600 border-gray-200">
@@ -448,7 +448,7 @@ export default function CalculusCalculatorsPage() {
                         <span className="text-[11px] font-mono text-gray-400 truncate max-w-[200px]">
                           e.g. {tool.example}
                         </span>
-                        <div className="inline-flex items-center gap-1 text-xs font-bold text-[#7B1824] group-hover:translate-x-1 transition-transform">
+                        <div className="inline-flex items-center gap-1 text-xs font-bold text-[#166534] group-hover:translate-x-1 transition-transform">
                           <span>Solve</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>

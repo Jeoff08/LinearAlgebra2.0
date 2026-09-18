@@ -365,7 +365,7 @@ const LeastSquares: React.FC = () => {
     if (!matrix || matrix.length === 0) return null;
     return (
       <div className="mt-2">
-        {label && <span className="font-mono text-xs font-bold text-[#7B1824]">{label}</span>}
+        {label && <span className="font-mono text-xs font-bold text-[#166534]">{label}</span>}
         <div className="inline-block mt-1 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-2xs">
           {matrix.map((row, i) => (
             <div key={i} className="flex border-b border-gray-100 last:border-0">
@@ -385,7 +385,7 @@ const LeastSquares: React.FC = () => {
     if (!vector || vector.length === 0) return null;
     return (
       <div className="mt-2">
-        {label && <span className="font-mono text-xs font-bold text-[#7B1824]">{label}</span>}
+        {label && <span className="font-mono text-xs font-bold text-[#166534]">{label}</span>}
         <div className="inline-block mt-1 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-2xs">
           {vector.map((val, i) => (
             <div key={i} className="px-3 py-1.5 text-center font-mono text-xs sm:text-sm border-b border-gray-100 last:border-0 text-gray-900">
@@ -424,7 +424,7 @@ const LeastSquares: React.FC = () => {
                                 handleMatrixChange(i, j, inputValue);
                               }
                             }}
-                            className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                            className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                             placeholder="0"
                           />
                         </td>
@@ -450,7 +450,7 @@ const LeastSquares: React.FC = () => {
                         handleVectorChange(i, inputValue);
                       }
                     }}
-                    className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                    className="w-14 sm:w-16 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                     placeholder="0"
                   />
                 </div>
@@ -463,7 +463,7 @@ const LeastSquares: React.FC = () => {
       <div className="flex flex-wrap gap-2.5">
         <button
           onClick={calculateLeastSquares}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
           <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z" />
@@ -500,7 +500,7 @@ const LeastSquares: React.FC = () => {
         {matrixA.length > 1 && (
           <button
             onClick={removeRow}
-            className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2 border border-green-200 bg-green-50 text-green-700 font-semibold rounded-xl hover:bg-green-100 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -511,7 +511,7 @@ const LeastSquares: React.FC = () => {
         {(matrixA[0]?.length || 0) > 1 && (
           <button
             onClick={removeColumn}
-            className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2 border border-green-200 bg-green-50 text-green-700 font-semibold rounded-xl hover:bg-green-100 transition text-xs shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -532,10 +532,10 @@ const LeastSquares: React.FC = () => {
       {steps.length > 0 && (
         <div className="space-y-5 animate-in fade-in duration-300">
           {/* Result Summary Hero Box */}
-          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
               <div className="flex-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#7B1824] inline-flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#166534] inline-flex items-center gap-1.5">
                   <span>Least Squares Solution Complete</span>
                 </span>
                 <div className="mt-1 text-xs text-gray-600">
@@ -552,7 +552,7 @@ const LeastSquares: React.FC = () => {
                   </div>
                   <div className="bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
                     <span className="text-[10px] uppercase font-bold text-gray-400 block">Residual Norm (||r||₂)</span>
-                    <span className="font-mono text-xs font-bold text-[#7B1824]">{residualNorm.toFixed(6)}</span>
+                    <span className="font-mono text-xs font-bold text-[#166534]">{residualNorm.toFixed(6)}</span>
                   </div>
                 </div>
               </div>
@@ -576,7 +576,7 @@ const LeastSquares: React.FC = () => {
             <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#7B1824]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#166534]" />
                   <h4 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
                     Step-by-Step Solution
                   </h4>
@@ -588,7 +588,7 @@ const LeastSquares: React.FC = () => {
                 {steps.map((step, idx) => (
                   <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                         {idx + 1}
                       </span>
                       <p className="font-bold text-gray-900 text-sm">{step.title}</p>
@@ -611,7 +611,7 @@ const LeastSquares: React.FC = () => {
 
                     {step.explanation && (
                       <div className="mt-2 pt-2 border-t border-gray-200/60 pl-7 text-xs text-gray-600 leading-relaxed">
-                        <span className="font-bold text-[#7B1824]">Concept: </span>
+                        <span className="font-bold text-[#166534]">Concept: </span>
                         {step.explanation}
                       </div>
                     )}

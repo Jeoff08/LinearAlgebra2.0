@@ -4,9 +4,15 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   name text not null default '',
+  block text not null default '',
+  avatar_url text not null default '',
   role text not null default 'user' check (role in ('admin', 'user')),
   created_at timestamptz not null default now()
 );
+
+-- Ensure block and avatar_url columns exist if table was created previously
+alter table public.profiles add column if not exists block text not null default '';
+alter table public.profiles add column if not exists avatar_url text not null default '';
 
 create table if not exists public.notes (
   id uuid primary key default gen_random_uuid(),
@@ -56,7 +62,15 @@ create policy "Users insert own profile" on public.profiles
 
 drop policy if exists "Update own profile" on public.profiles;
 create policy "Update own profile" on public.profiles
-  for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+  for update to authenticated using (
+    id = auth.uid() or exists (
+      select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'
+    )
+  ) with check (
+    id = auth.uid() or exists (
+      select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'
+    )
+  );
 
 -- Notes policies
 drop policy if exists "Notes by owner" on public.notes;
@@ -87,17 +101,20 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, name, role)
+  insert into public.profiles (id, email, name, block, role)
   values (
     new.id,
     coalesce(new.email, ''),
     coalesce(new.raw_user_meta_data->>'name', 'User'),
+    coalesce(new.raw_user_meta_data->>'block', ''),
     case
       when lower(coalesce(new.email, '')) = 'admin@gmail.com' then 'admin'
       else 'user'
     end
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update set
+    name = excluded.name,
+    block = excluded.block;
   return new;
 end;
 $$;

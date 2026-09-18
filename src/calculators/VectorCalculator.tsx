@@ -439,7 +439,7 @@ const VectorCalculator: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#166534]"></span>
             Vector Calculator
           </h3>
           <p className="text-xs text-gray-500 mt-1">
@@ -452,31 +452,31 @@ const VectorCalculator: React.FC = () => {
           <span className="text-xs font-semibold text-gray-400 mr-1">Presets:</span>
           <button
             onClick={() => loadExample('2D')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             2D
           </button>
           <button
             onClick={() => loadExample('3D')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             3D
           </button>
           <button
             onClick={() => loadExample('parallel')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             Parallel
           </button>
           <button
             onClick={() => loadExample('perpendicular')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             Perpendicular
           </button>
           <button
             onClick={() => loadExample('same')}
-            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#FDF2F4] hover:text-[#7B1824] text-gray-700 rounded-lg transition cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-[#F0FDF4] hover:text-[#166534] text-gray-700 rounded-lg transition cursor-pointer"
           >
             Same
           </button>
@@ -503,7 +503,7 @@ const VectorCalculator: React.FC = () => {
               setSteps([]);
               setError('');
             }}
-            className="px-3.5 py-2 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-xs sm:text-sm font-semibold text-gray-800 shadow-2xs"
+            className="px-3.5 py-2 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-xs sm:text-sm font-semibold text-gray-800 shadow-2xs"
           >
             <option value="norm">Norm (Magnitude)</option>
             <option value="dot">Dot Product</option>
@@ -525,13 +525,13 @@ const VectorCalculator: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+              <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
               Vector v₁ ({vector1.length}D)
             </h4>
             <div className="flex gap-1.5">
               <button
                 onClick={() => addComponent(1)}
-                className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+                className="text-xs px-2.5 py-1 bg-[#F0FDF4] text-[#166534] hover:bg-[#166534] hover:text-white rounded-lg font-semibold transition cursor-pointer"
               >
                 + Component
               </button>
@@ -540,7 +540,7 @@ const VectorCalculator: React.FC = () => {
                 disabled={vector1.length <= 1}
                 className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
                   vector1.length > 1
-                    ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                    ? 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 cursor-pointer'
                     : 'bg-gray-50 text-gray-300 cursor-not-allowed'
                 }`}
               >
@@ -556,7 +556,7 @@ const VectorCalculator: React.FC = () => {
                 value={getDisplayValue(val)}
                 onChange={(e) => updateVector(1, i, e.target.value)}
                 onBlur={() => handleInputBlur(1, i)}
-                className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                 placeholder="0"
                 step="any"
               />
@@ -570,13 +570,13 @@ const VectorCalculator: React.FC = () => {
           <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
                 Vector v₂ ({vector2.length}D)
               </h4>
               <div className="flex gap-1.5">
                 <button
                   onClick={() => addComponent(2)}
-                  className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+                  className="text-xs px-2.5 py-1 bg-[#F0FDF4] text-[#166534] hover:bg-[#166534] hover:text-white rounded-lg font-semibold transition cursor-pointer"
                 >
                   + Component
                 </button>
@@ -585,7 +585,7 @@ const VectorCalculator: React.FC = () => {
                   disabled={vector2.length <= 1}
                   className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
                     vector2.length > 1
-                      ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                      ? 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 cursor-pointer'
                       : 'bg-gray-50 text-gray-300 cursor-not-allowed'
                   }`}
                 >
@@ -601,7 +601,7 @@ const VectorCalculator: React.FC = () => {
                   value={getDisplayValue(val)}
                   onChange={(e) => updateVector(2, i, e.target.value)}
                   onBlur={() => handleInputBlur(2, i)}
-                  className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                  className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                   placeholder="0"
                   step="any"
                 />
@@ -619,7 +619,7 @@ const VectorCalculator: React.FC = () => {
               type="number"
               value={scalarValue}
               onChange={(e) => setScalarValue(parseFloat(e.target.value) || 0)}
-              className="w-24 px-3 py-1.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-center font-bold text-sm"
+              className="w-24 px-3 py-1.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-center font-bold text-sm"
               step="any"
             />
           </div>
@@ -628,7 +628,7 @@ const VectorCalculator: React.FC = () => {
 
       {/* Warnings */}
       {useSecondVector && vector1.length !== vector2.length && (
-        <div className="p-3 bg-[#FDF2F4] rounded-xl border border-[#7B1824]/20 text-xs text-[#7B1824] font-semibold">
+        <div className="p-3 bg-[#F0FDF4] rounded-xl border border-[#166534]/20 text-xs text-[#166534] font-semibold">
           ⚠️ Warning: Vectors have different dimensions ({vector1.length}D vs {vector2.length}D). 
           {operation === 'dot' && ' Dot product requires equal dimensions.'}
           {operation === 'angle' && ' Angle calculation requires equal dimensions.'}
@@ -639,7 +639,7 @@ const VectorCalculator: React.FC = () => {
       )}
 
       {operation === 'cross' && (vector1.length !== 3 || vector2.length !== 3) && (
-        <div className="p-3 bg-[#FDF2F4] rounded-xl border border-[#7B1824]/20 text-xs text-[#7B1824] font-semibold">
+        <div className="p-3 bg-[#F0FDF4] rounded-xl border border-[#166534]/20 text-xs text-[#166534] font-semibold">
           ⚠️ Cross product requires 3D vectors. Current dimensions: v₁={vector1.length}D, v₂={vector2.length}D
         </div>
       )}
@@ -648,7 +648,7 @@ const VectorCalculator: React.FC = () => {
       <div className="flex flex-wrap gap-3">
         <button
           onClick={performOperation}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -670,7 +670,7 @@ const VectorCalculator: React.FC = () => {
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-[#FDF2F4] rounded-xl border border-[#7B1824]/20 text-xs sm:text-sm font-semibold text-[#7B1824]">
+        <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#166534]/20 text-xs sm:text-sm font-semibold text-[#166534]">
           {error}
         </div>
       )}
@@ -678,11 +678,11 @@ const VectorCalculator: React.FC = () => {
       {/* Result */}
       {result && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-[#7B1824]"></span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Computed Result</h3>
+                <span className="w-3 h-3 rounded-full bg-[#166534]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Computed Result</h3>
               </div>
               <div className="flex-shrink-0">
                 <PDFExport
@@ -704,14 +704,14 @@ const VectorCalculator: React.FC = () => {
           {showSteps && steps.length > 0 && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Detailed Step Breakdown</h3>
               </div>
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                 {steps.filter(s => s.trim() !== '').map((step, idx) => (
                   <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
                     <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <div className="flex-1 font-mono text-xs sm:text-sm text-gray-800 whitespace-pre-wrap">
@@ -729,7 +729,7 @@ const VectorCalculator: React.FC = () => {
       {/* Help */}
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
         <p className="font-bold text-gray-800 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-          <svg className="w-4 h-4 text-[#7B1824]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[#166534]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Supported Vector Operations

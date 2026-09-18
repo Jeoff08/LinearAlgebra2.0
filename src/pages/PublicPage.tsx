@@ -699,7 +699,7 @@ export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Learn the basics of functions, limits, and continuity.",
     defaultTopicCount: 8,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M7 16l15-7 15 7-15 7-15-7z" />
         <path d="M7 23l15 7 15-7" />
         <path d="M7 30l15 7 15-7" />
@@ -713,7 +713,7 @@ export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Master the rules and techniques of differentiation.",
     defaultTopicCount: 7,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M8 36h28" />
         <path d="M12 28l9-9 6 6 9-11" />
         <path d="M29 14h7v7" />
@@ -727,7 +727,7 @@ export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Use derivatives to solve real-world problems.",
     defaultTopicCount: 6,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M10 14c3 18 21 18 24 0" />
         <line x1="6" y1="23" x2="38" y2="23" strokeDasharray="3 3" strokeWidth="1.8" />
       </svg>
@@ -740,7 +740,7 @@ export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Understand antiderivatives, and integration techniques.",
     defaultTopicCount: 6,
     icon: (
-      <div className="flex items-center justify-center w-10 h-10 font-serif text-3xl font-bold text-[#7B1824] select-none">
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-3xl font-bold text-[#166534] select-none">
         ∫
       </div>
     ),
@@ -752,7 +752,7 @@ export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Learn substitution, parts, and other methods.",
     defaultTopicCount: 7,
     icon: (
-      <div className="flex items-center justify-center w-10 h-10 font-serif text-3xl font-black text-[#7B1824] select-none">
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-3xl font-black text-[#166534] select-none">
         Σ
       </div>
     ),
@@ -764,7 +764,7 @@ export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Explore convergence, tests, and series.",
     defaultTopicCount: 6,
     icon: (
-      <div className="flex flex-col items-center justify-center w-10 h-10 font-serif leading-none select-none text-[#7B1824]">
+      <div className="flex flex-col items-center justify-center w-10 h-10 font-serif leading-none select-none text-[#166534]">
         <span className="text-xl font-black">Σ</span>
         <span className="text-sm font-black -mt-1">Σ</span>
       </div>
@@ -777,7 +777,7 @@ export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Volume, area, and other geometric uses.",
     defaultTopicCount: 6,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 6l15 8v16l-15 8-15-8V14l15-8z" />
         <path d="M22 6v32" />
         <path d="M7 14l15 8 15-8" />
@@ -791,10 +791,10 @@ export const CALCULUS_1_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Higher-order derivatives, techniques and more.",
     defaultTopicCount: 6,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M8 8v28h28" />
         <path d="M12 30c6-1 14-8 16-18" />
-        <circle cx="28" cy="12" r="2.5" fill="#7B1824" />
+        <circle cx="28" cy="12" r="2.5" fill="#166534" />
       </svg>
     ),
   },
@@ -809,7 +809,7 @@ export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Logarithmic, exponential, and inverse trigonometric functions.",
     defaultTopicCount: 6,
     icon: (
-      <span className="font-mono text-sm font-bold text-[#7B1824]">f⁻¹(x)</span>
+      <span className="font-mono text-sm font-bold text-[#166534]">f⁻¹(x)</span>
     ),
   },
   {
@@ -819,7 +819,7 @@ export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Trigonometric derivatives, integrals, and identities.",
     defaultTopicCount: 6,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
         <path d="M8 22c4-12 8-12 12 0s8 12 12 0 8-12 12 0" />
       </svg>
     ),
@@ -831,7 +831,7 @@ export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Natural logarithms, exponential growth, and decay models.",
     defaultTopicCount: 6,
     icon: (
-      <span className="font-mono text-base font-bold text-[#7B1824]">ln(x)</span>
+      <span className="font-mono text-base font-bold text-[#166534]">ln(x)</span>
     ),
   },
   {
@@ -841,7 +841,7 @@ export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Integration by parts, partial fractions, and trig substitutions.",
     defaultTopicCount: 6,
     icon: (
-      <div className="flex items-center justify-center w-10 h-10 font-serif text-2xl font-bold text-[#7B1824]">
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-2xl font-bold text-[#166534]">
         ∫udv
       </div>
     ),
@@ -853,7 +853,7 @@ export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "L'Hôpital's rule, infinity limits, and improper integrals.",
     defaultTopicCount: 6,
     icon: (
-      <div className="flex flex-col items-center justify-center font-mono text-xs font-bold text-[#7B1824]">
+      <div className="flex flex-col items-center justify-center font-mono text-xs font-bold text-[#166534]">
         <span>lim</span>
         <span className="text-[9px]">x→∞</span>
       </div>
@@ -866,7 +866,7 @@ export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Convergence tests, geometric series, and alternating series.",
     defaultTopicCount: 6,
     icon: (
-      <div className="flex items-center justify-center w-10 h-10 font-serif text-2xl font-black text-[#7B1824]">
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-2xl font-black text-[#166534]">
         ∑ aₙ
       </div>
     ),
@@ -878,7 +878,7 @@ export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Taylor and Maclaurin series, radius and interval of convergence.",
     defaultTopicCount: 6,
     icon: (
-      <div className="flex items-center justify-center w-10 h-10 font-serif text-sm font-bold text-[#7B1824]">
+      <div className="flex items-center justify-center w-10 h-10 font-serif text-sm font-bold text-[#166534]">
         ∑ cₙxⁿ
       </div>
     ),
@@ -890,7 +890,7 @@ export const CALCULUS_2_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Parametric equations, polar curves, areas, and conic sections.",
     defaultTopicCount: 6,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
         <circle cx="22" cy="22" r="14" strokeDasharray="3 3" />
         <path d="M22 8c6 5 8 10 5 14s-9 2-8-3 6-5 8-3" />
       </svg>
@@ -907,7 +907,7 @@ export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Linear equations, Gaussian elimination, and row echelon forms.",
     defaultTopicCount: 3,
     icon: (
-      <span className="font-mono text-xs font-black tracking-tight text-[#7B1824]">
+      <span className="font-mono text-xs font-black tracking-tight text-[#166534]">
         Ax=b
       </span>
     ),
@@ -919,7 +919,7 @@ export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Vectors in Rⁿ, linear combinations, and spanning sets.",
     defaultTopicCount: 3,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="8" y1="36" x2="36" y2="36" />
         <line x1="8" y1="36" x2="8" y2="8" />
         <line x1="8" y1="36" x2="32" y2="12" />
@@ -934,7 +934,7 @@ export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Matrix multiplication, transpose, and invertible matrices.",
     defaultTopicCount: 3,
     icon: (
-      <div className="flex items-center justify-center font-mono text-xs font-bold text-[#7B1824]">
+      <div className="flex items-center justify-center font-mono text-xs font-bold text-[#166534]">
         [A⁻¹]
       </div>
     ),
@@ -946,7 +946,7 @@ export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Cofactor expansion, Cramer's rule, and geometric volume.",
     defaultTopicCount: 2,
     icon: (
-      <div className="flex items-center justify-center font-mono text-sm font-bold text-[#7B1824]">
+      <div className="flex items-center justify-center font-mono text-sm font-bold text-[#166534]">
         |A|
       </div>
     ),
@@ -958,7 +958,7 @@ export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Subspaces, null spaces, column spaces, basis, and coordinate systems.",
     defaultTopicCount: 4,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="22 6 38 14 38 30 22 38 6 30 6 14" />
         <line x1="22" y1="6" x2="22" y2="38" />
         <line x1="6" y1="14" x2="38" y2="30" />
@@ -972,7 +972,7 @@ export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Matrix transformations, kernel, range, and rank-nullity theorem.",
     defaultTopicCount: 2,
     icon: (
-      <span className="font-mono text-xs font-bold text-[#7B1824]">
+      <span className="font-mono text-xs font-bold text-[#166534]">
         T:V→W
       </span>
     ),
@@ -984,7 +984,7 @@ export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Characteristic polynomials, eigenspaces, and matrix powers.",
     defaultTopicCount: 2,
     icon: (
-      <span className="font-serif text-2xl font-bold text-[#7B1824]">
+      <span className="font-serif text-2xl font-bold text-[#166534]">
         λ
       </span>
     ),
@@ -996,7 +996,7 @@ export const LINEAR_ALGEBRA_CHAPTER_CARDS: ChapterCardItem[] = [
     description: "Inner products, Gram-Schmidt, LU, QR, and SVD factorizations.",
     defaultTopicCount: 8,
     icon: (
-      <svg className="w-10 h-10 text-[#7B1824]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-10 h-10 text-[#166534]" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="8" y1="36" x2="36" y2="36" />
         <line x1="8" y1="36" x2="8" y2="8" />
         <rect x="8" y="26" width="10" height="10" strokeDasharray="2 2" />
@@ -1235,49 +1235,49 @@ export default function PublicPage() {
 
     if (id.includes("foundations") || title.includes("foundations")) {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] text-white shadow-sm">
           <Landmark className="w-5 h-5" />
         </div>
       );
     }
     if (id.includes("real-number") || title.includes("real number") || id.includes("interval") || title.includes("interval")) {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-serif text-xl font-bold text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] font-serif text-xl font-bold text-white shadow-sm">
           ℝ
         </div>
       );
     }
     if (id.includes("distance") || id.includes("midpoint") || title.includes("distance") || title.includes("midpoint")) {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] text-white shadow-sm">
           <TrendingUp className="w-5 h-5" />
         </div>
       );
     }
     if (id.includes("line") || id.includes("slope") || title.includes("line") || title.includes("slope")) {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] text-white shadow-sm">
           <Activity className="w-5 h-5" />
         </div>
       );
     }
     if (id.includes("function") || title.includes("function")) {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-mono text-sm font-bold text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] font-mono text-sm font-bold text-white shadow-sm">
           f(x)
         </div>
       );
     }
     if (id.includes("domain") || id.includes("range") || title.includes("domain") || title.includes("range")) {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-mono text-xs font-bold text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] font-mono text-xs font-bold text-white shadow-sm">
           [x]
         </div>
       );
     }
     if (id.includes("limit") || title.includes("limit")) {
       return (
-        <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[#7B1824] text-white font-mono leading-tight shadow-sm">
+        <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[#166534] text-white font-mono leading-tight shadow-sm">
           <span className="text-[10px] font-bold">lim</span>
           <span className="text-[7.5px] opacity-90">x→a</span>
         </div>
@@ -1285,7 +1285,7 @@ export default function PublicPage() {
     }
     if (id.includes("derivative") || title.includes("derivative")) {
       return (
-        <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[#7B1824] text-white font-mono leading-tight shadow-sm">
+        <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[#166534] text-white font-mono leading-tight shadow-sm">
           <span className="text-[9px] font-bold border-b border-white/60 pb-[0.5px]">d</span>
           <span className="text-[9px] font-bold pt-[0.5px]">dx</span>
         </div>
@@ -1293,20 +1293,20 @@ export default function PublicPage() {
     }
     if (id.includes("integral") || id.includes("integration") || title.includes("integral")) {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-serif text-xl font-bold text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] font-serif text-xl font-bold text-white shadow-sm">
           ∫
         </div>
       );
     }
     if (id.includes("matrix") || id.includes("determinant") || id.includes("eigen") || id.includes("vector")) {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-mono text-xs font-bold text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] font-mono text-xs font-bold text-white shadow-sm">
           [A]
         </div>
       );
     }
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] font-serif text-lg font-bold text-white shadow-sm">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] font-serif text-lg font-bold text-white shadow-sm">
         λ
       </div>
     );
@@ -1374,14 +1374,14 @@ export default function PublicPage() {
         opacity: opacity,
         pointerEvents: "auto",
         boxShadow: isCenter
-          ? "0 20px 50px rgba(0,0,0,0.6), 0 0 35px rgba(192,33,43,0.35)"
+          ? "0 20px 50px rgba(0,0,0,0.6), 0 0 35px rgba(22,163,74,0.35)"
           : "0 12px 35px rgba(0,0,0,0.4)",
       });
 
       if (isCenter) {
-        cardEl.classList.add("ring-2", "ring-[#C0212B]", "ring-offset-2", "ring-offset-black/40");
+        cardEl.classList.add("ring-2", "ring-[#16a34a]", "ring-offset-2", "ring-offset-black/40");
       } else {
-        cardEl.classList.remove("ring-2", "ring-[#C0212B]", "ring-offset-2", "ring-offset-black/40");
+        cardEl.classList.remove("ring-2", "ring-[#16a34a]", "ring-offset-2", "ring-offset-black/40");
       }
     });
   }, []);
@@ -1549,7 +1549,7 @@ export default function PublicPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
                   >
-                    <span className="text-[#E02434] font-extrabold text-xs sm:text-[13px] tracking-[0.25em] uppercase block mb-2 sm:mb-3">
+                    <span className="text-[#16a34a] font-extrabold text-xs sm:text-[13px] tracking-[0.25em] uppercase block mb-2 sm:mb-3">
                       MATH TOOLS & TOPICS
                     </span>
                   </motion.div>
@@ -1563,7 +1563,7 @@ export default function PublicPage() {
                   >
                     <span className="text-white block font-black">Linear Algebra / Calculus</span>
                     <span className="text-white block font-black">1 & 2</span>
-                    <span className="text-[#C0212B] block font-black">Calculators</span>
+                    <span className="text-[#16a34a] block font-black">Calculators</span>
                   </motion.h1>
 
                   {/* Subtitle Description */}
@@ -1589,7 +1589,7 @@ export default function PublicPage() {
                         playNavButtonAnimation(e, { color: "rgba(255, 255, 255, 0.4)" });
                         navigate("/calculator-hub");
                       }}
-                      className="inline-flex items-center gap-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-3 sm:px-6 sm:py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#7B1824]/40 hover:shadow-xl hover:shadow-[#7B1824]/60 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+                      className="inline-flex items-center gap-2.5 rounded-xl bg-[#166534] hover:bg-[#14532D] px-5 py-3 sm:px-6 sm:py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#166534]/40 hover:shadow-xl hover:shadow-[#166534]/60 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
                     >
                       <Calculator className="w-4 h-4 shrink-0" />
                       <span>Explore Calculators</span>
@@ -1599,7 +1599,7 @@ export default function PublicPage() {
                     {/* Secondary Button: Browse Topics */}
                     <button
                       onClick={(e) => {
-                        playNavButtonAnimation(e, { color: "rgba(224, 82, 96, 0.45)" });
+                        playNavButtonAnimation(e, { color: "rgba(34, 197, 94, 0.45)" });
                         setActiveView("categories");
                         navigate("/?tab=topics");
                         window.dispatchEvent(new CustomEvent("navtabchange", { detail: "topics" }));
@@ -1617,7 +1617,7 @@ export default function PublicPage() {
           </div>
 
           {/* ── Main Lower Content Layout (23 Calculators Overview) with Pure White Background ── */}
-          <div className="relative z-10 w-full bg-[#FFFFFF] border-t border-[#EAE2E4] py-12 sm:py-16 lg:py-20 flex flex-col justify-between flex-1">
+          <div className="relative z-10 w-full bg-[#FFFFFF] border-t border-[#D1FAE5] py-12 sm:py-16 lg:py-20 flex flex-col justify-between flex-1">
             <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 flex flex-col justify-between flex-1">
 
             {/* ── Animated Linear Algebra Header Label ── */}
@@ -1630,11 +1630,11 @@ export default function PublicPage() {
             >
               {/* Badge with pulse dot & shimmer animation */}
               <div 
-                className="relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#7B1824]/10 border border-[#7B1824]/25 text-[#7B1824] shadow-xs cursor-default"
+                className="relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#166534]/10 border border-[#166534]/25 text-[#166534] shadow-xs cursor-default"
               >
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7B1824] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#7B1824]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#166534] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#166534]"></span>
                 </span>
                 <span className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase">
                   Linear Algebra
@@ -1650,7 +1650,7 @@ export default function PublicPage() {
                 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-black text-[#111827] tracking-tight flex items-center gap-3"
               >
                 <span>Linear Algebra</span>
-                <span className="text-[#7B1824] font-light">|</span>
+                <span className="text-[#166534] font-light">|</span>
                 <span className="text-base sm:text-lg lg:text-xl font-semibold text-[#6B7280]">
                   23 Specialized Calculators
                 </span>
@@ -1680,7 +1680,7 @@ export default function PublicPage() {
                     transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center gap-2.5 mb-3"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7B1824] text-white shadow-md">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#166534] text-white shadow-md">
                       <Calculator className="w-5 h-5 text-white" />
                     </div>
                     <h3 className="text-xl sm:text-2xl font-black tracking-tight text-[#111827]">
@@ -1725,7 +1725,7 @@ export default function PublicPage() {
                   {/* Poster Header (Moved OUTSIDE the border) */}
                   <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-3 pb-3 mb-2">
                     <div className="flex items-baseline gap-2.5">
-                      <span className="font-serif text-3xl sm:text-4xl font-black text-[#7B1824] tracking-tight">
+                      <span className="font-serif text-3xl sm:text-4xl font-black text-[#166534] tracking-tight">
                         23
                       </span>
                       <h4 className="text-base sm:text-lg font-black tracking-tight text-[#0F172A] uppercase">
@@ -1769,23 +1769,23 @@ export default function PublicPage() {
                             onMouseLeave={() => setHoveredShowcaseCalc((prev) => (prev?.id === calc.id ? null : prev))}
                             className={`relative flex flex-col justify-between p-2.5 sm:p-3 rounded-xl bg-white border cursor-pointer text-left min-h-[108px] sm:min-h-[114px] transition-colors duration-200 ${
                               hoveredShowcaseCalc?.id === calc.id
-                                ? "border-[#7B1824] shadow-lg shadow-[#7B1824]/20 ring-2 ring-[#7B1824]/25"
-                                : "border-[#E2E8F0] hover:border-[#7B1824]/60 hover:shadow-md shadow-xs"
+                                ? "border-[#166534] shadow-lg shadow-[#166534]/20 ring-2 ring-[#166534]/25"
+                                : "border-[#E2E8F0] hover:border-[#166534]/60 hover:shadow-md shadow-xs"
                             }`}
                           >
                             {/* Card Top: Index badge & Glyphs */}
                             <div className="flex items-start justify-between gap-1 mb-1.5">
-                              <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-md bg-[#7B1824] text-[9.5px] font-black text-white shrink-0 shadow-xs">
+                              <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-md bg-[#166534] text-[9.5px] font-black text-white shrink-0 shadow-xs">
                                 {idx + 1}
                               </span>
-                              <div className="h-6 w-6 rounded-md bg-[#7B1824] flex items-center justify-center text-white shrink-0 overflow-hidden text-[9.5px] shadow-xs group-hover:scale-110 group-hover:bg-[#60101B] transition-all duration-200">
+                              <div className="h-6 w-6 rounded-md bg-[#166534] flex items-center justify-center text-white shrink-0 overflow-hidden text-[9.5px] shadow-xs group-hover:scale-110 group-hover:bg-[#14532D] transition-all duration-200">
                                 {calc.glyph}
                               </div>
                             </div>
 
                             {/* Card Content: Title & Summary */}
                             <div className="flex-1 flex flex-col justify-end">
-                              <div className="text-[11px] sm:text-xs font-black text-[#1E293B] group-hover:text-[#7B1824] line-clamp-1 leading-snug transition-colors duration-200">
+                              <div className="text-[11px] sm:text-xs font-black text-[#1E293B] group-hover:text-[#166534] line-clamp-1 leading-snug transition-colors duration-200">
                                 {calc.title}
                               </div>
                               <p className="text-[9.5px] sm:text-[10px] text-[#64748B] line-clamp-2 leading-relaxed mt-0.5">
@@ -1807,7 +1807,7 @@ export default function PublicPage() {
                                 className="rounded-xl bg-[#0F172A] text-white p-3.5 border border-[#334155] text-left shadow-2xl relative pointer-events-none animate-in fade-in zoom-in-95 duration-150"
                               >
                                 <div className="flex items-center gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-                                  <span className="flex items-center justify-center h-4.5 w-4.5 rounded bg-[#7B1824] text-white text-[9.5px] font-bold">
+                                  <span className="flex items-center justify-center h-4.5 w-4.5 rounded bg-[#166534] text-white text-[9.5px] font-bold">
                                     #{idx + 1}
                                   </span>
                                   <span className="font-bold text-xs text-white line-clamp-1">
@@ -1820,7 +1820,7 @@ export default function PublicPage() {
                                 </div>
                                 <div className="flex items-center justify-between text-[10px] text-[#94A3B8] pt-1 border-t border-white/10">
                                   <span>💡 Click to view modal</span>
-                                  <span className="text-[#F87171] font-semibold">Launch ↗</span>
+                                  <span className="text-[#4ade80] font-semibold">Launch ↗</span>
                                 </div>
                                 {/* Arrow Pointer */}
                                 <div className={`absolute left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-[#0F172A] rotate-45 ${
@@ -1846,15 +1846,15 @@ export default function PublicPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col items-start mt-12 sm:mt-16 lg:mt-20 pt-8 sm:pt-10 border-t border-[#EAE2E4] w-full"
+              className="flex flex-col items-start mt-12 sm:mt-16 lg:mt-20 pt-8 sm:pt-10 border-t border-[#D1FAE5] w-full"
             >
               {/* Badge with pulse dot */}
               <div 
-                className="relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#7B1824]/10 border border-[#7B1824]/25 text-[#7B1824] shadow-xs cursor-default"
+                className="relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#166534]/10 border border-[#166534]/25 text-[#166534] shadow-xs cursor-default"
               >
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7B1824] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#7B1824]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#166534] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#166534]"></span>
                 </span>
                 <span className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase">
                   Calculus 1 & 2
@@ -1870,7 +1870,7 @@ export default function PublicPage() {
                 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-black text-[#111827] tracking-tight flex items-center gap-3 mb-6"
               >
                 <span>Calculus 1 & 2</span>
-                <span className="text-[#7B1824] font-light">|</span>
+                <span className="text-[#166534] font-light">|</span>
                 <span className="text-base sm:text-lg lg:text-xl font-semibold text-[#6B7280]">
                   Differential, Integral & Multivariable Topics
                 </span>
@@ -1920,7 +1920,7 @@ export default function PublicPage() {
                 {/* Poster Header (Moved OUTSIDE the border) */}
                 <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-3 pb-3 mb-2">
                   <div className="flex items-baseline gap-2.5">
-                    <span className="font-serif text-3xl sm:text-4xl font-black text-[#7B1824] tracking-tight">
+                    <span className="font-serif text-3xl sm:text-4xl font-black text-[#166534] tracking-tight">
                       29
                     </span>
                     <h4 className="text-base sm:text-lg font-black tracking-tight text-[#0F172A] uppercase">
@@ -1964,32 +1964,32 @@ export default function PublicPage() {
                           onMouseLeave={() => setHoveredShowcaseCalc((prev) => (prev?.id === calc.id ? null : prev))}
                           className={`relative flex flex-col justify-between p-2.5 sm:p-3 rounded-xl bg-white border cursor-pointer text-left min-h-[110px] sm:min-h-[118px] transition-colors duration-200 ${
                             hoveredShowcaseCalc?.id === calc.id
-                              ? "border-[#7B1824] shadow-lg shadow-[#7B1824]/20 ring-2 ring-[#7B1824]/25"
-                              : "border-[#E2E8F0] hover:border-[#7B1824]/60 hover:shadow-md shadow-xs"
+                              ? "border-[#166534] shadow-lg shadow-[#166534]/20 ring-2 ring-[#166534]/25"
+                              : "border-[#E2E8F0] hover:border-[#166534]/60 hover:shadow-md shadow-xs"
                           }`}
                         >
                           {/* Card Top: Index badge, Category tag & Glyphs */}
                           <div className="flex items-start justify-between gap-1 mb-1.5">
                             <div className="flex items-center gap-1.5">
-                              <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-md bg-[#7B1824] text-[9.5px] font-black text-white shrink-0 shadow-xs">
+                              <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-md bg-[#166534] text-[9.5px] font-black text-white shrink-0 shadow-xs">
                                 {idx + 1}
                               </span>
                               <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded ${
                                 calc.category === "Calculus 1"
-                                  ? "bg-[#7B1824]/10 text-[#7B1824]"
+                                  ? "bg-[#166534]/10 text-[#166534]"
                                   : "bg-[#1E293B]/10 text-[#1E293B]"
                               }`}>
                                 {calc.category === "Calculus 1" ? "Calc 1" : "Calc 2"}
                               </span>
                             </div>
-                            <div className="h-6 w-6 rounded-md bg-[#7B1824] flex items-center justify-center text-white shrink-0 overflow-hidden text-[9.5px] shadow-xs group-hover:scale-110 group-hover:bg-[#60101B] transition-all duration-200">
+                            <div className="h-6 w-6 rounded-md bg-[#166534] flex items-center justify-center text-white shrink-0 overflow-hidden text-[9.5px] shadow-xs group-hover:scale-110 group-hover:bg-[#14532D] transition-all duration-200">
                               {calc.glyph}
                             </div>
                           </div>
 
                           {/* Card Content: Title & Summary */}
                           <div className="flex-1 flex flex-col justify-end">
-                            <div className="text-[11px] sm:text-xs font-black text-[#1E293B] group-hover:text-[#7B1824] line-clamp-1 leading-snug transition-colors duration-200">
+                            <div className="text-[11px] sm:text-xs font-black text-[#1E293B] group-hover:text-[#166534] line-clamp-1 leading-snug transition-colors duration-200">
                               {calc.title}
                             </div>
                             <p className="text-[9.5px] sm:text-[10px] text-[#64748B] line-clamp-2 leading-relaxed mt-0.5">
@@ -2012,14 +2012,14 @@ export default function PublicPage() {
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="flex items-center justify-center h-4.5 w-4.5 rounded bg-[#7B1824] text-white text-[9.5px] font-bold">
+                                  <span className="flex items-center justify-center h-4.5 w-4.5 rounded bg-[#166534] text-white text-[9.5px] font-bold">
                                     #{idx + 1}
                                   </span>
                                   <span className="font-bold text-xs text-white line-clamp-1">
                                     {calc.title}
                                   </span>
                                 </div>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-[#FCA5A5]">
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-[#86efac]">
                                   {calc.category}
                                 </span>
                               </div>
@@ -2029,7 +2029,7 @@ export default function PublicPage() {
                               </div>
                               <div className="flex items-center justify-between text-[10px] text-[#94A3B8] pt-1 border-t border-white/10">
                                 <span>💡 Click to view modal</span>
-                                <span className="text-[#F87171] font-semibold">Launch ↗</span>
+                                <span className="text-[#4ade80] font-semibold">Launch ↗</span>
                               </div>
                               {/* Arrow Pointer */}
                               <div className={`absolute left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-[#0F172A] rotate-45 ${
@@ -2057,7 +2057,7 @@ export default function PublicPage() {
                 onClick={() => setSelectedModalCalc(null)}
               >
                 <div 
-                  className="relative w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl shadow-black/60 border border-[#EAE2E4] text-[#111827] transform transition-all animate-in zoom-in-95 duration-200"
+                  className="relative w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl shadow-black/60 border border-[#D1FAE5] text-[#111827] transform transition-all animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Close X Button */}
@@ -2071,13 +2071,13 @@ export default function PublicPage() {
 
                   {/* Modal Header */}
                   <div className="flex items-center gap-4 pr-8">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-lg shadow-[#7B1824]/30">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#166534] text-white shadow-lg shadow-[#166534]/30">
                       {selectedModalCalc.glyph}
                     </div>
                     <div>
                       {selectedModalCalc.popular && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[#f3c5cb] bg-[#fbf2f4] px-2.5 py-0.5 text-[0.7rem] font-extrabold text-[#7B1824] mb-1">
-                          <Star className="h-3 w-3 fill-[#7B1824] text-[#7B1824]" />
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[#dcfce7] bg-[#fbf2f4] px-2.5 py-0.5 text-[0.7rem] font-extrabold text-[#166534] mb-1">
+                          <Star className="h-3 w-3 fill-[#166534] text-[#166534]" />
                           Popular Tool
                         </span>
                       )}
@@ -2108,7 +2108,7 @@ export default function PublicPage() {
                         setSelectedModalCalc(null);
                         navigate(target);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#7B1824] hover:bg-[#60101B] text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#7B1824]/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#166534] hover:bg-[#14532D] text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#166534]/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
                     >
                       <Calculator className="w-4 h-4" />
                       <span>Launch Calculator</span>
@@ -2152,7 +2152,7 @@ export default function PublicPage() {
                   transition={{ duration: 0.5, delay: 0.1 }}
                   className="text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-[3.75rem] leading-[1.08]"
                 >
-                  <span className="text-[#E05260]">ALL TOPICS.</span>
+                  <span className="text-[#22c55e]">ALL TOPICS.</span>
                 </motion.h1>
 
                 {/* Subtitle */}
@@ -2179,7 +2179,7 @@ export default function PublicPage() {
                       const el = document.getElementById("disciplines-section");
                       el?.scrollIntoView({ behavior: "smooth" });
                     }}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#7B1824]/30 transition-all duration-200 cursor-pointer active:scale-95"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#166534]/30 transition-all duration-200 cursor-pointer active:scale-95"
                   >
                     <BookOpen className="h-4 w-4" />
                     <span>Explore Topics</span>
@@ -2189,7 +2189,7 @@ export default function PublicPage() {
                     onClick={() => navigate("/calculator-hub")}
                     className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-[#F9FAFB] px-5 py-3 text-xs sm:text-sm font-bold text-[#111827] shadow-md transition-all duration-200 cursor-pointer active:scale-95"
                   >
-                    <Calculator className="h-4 w-4 text-[#7B1824]" />
+                    <Calculator className="h-4 w-4 text-[#166534]" />
                     <span>Try Calculators</span>
                   </button>
                 </motion.div>
@@ -2216,15 +2216,15 @@ export default function PublicPage() {
                   setSelectedLinearChapter(null);
                   setActiveView("topics-linear");
                 }}
-                className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 cursor-pointer"
+                className="group relative flex flex-col justify-between rounded-[28px] border border-[#D1FAE5] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#bbf7d0] transition-all duration-300 cursor-pointer"
               >
                 <div>
                   {/* Top Row: Icon & Tag */}
                   <div className="flex items-start justify-between gap-4 mb-5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#166534] text-white shadow-md shadow-[#166534]/20">
                       <Calculator className="h-6 w-6" />
                     </div>
-                    <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                    <span className="rounded-full border border-[#bbf7d0] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#166534]">
                       MATH
                     </span>
                   </div>
@@ -2232,16 +2232,16 @@ export default function PublicPage() {
                   {/* Header & Right Graphic Badge */}
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div>
-                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#7B1824] transition-colors">
+                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#166534] transition-colors">
                         Linear Algebra
                       </h3>
-                      <p className="mt-1 text-xs font-bold text-[#7B1824]">
+                      <p className="mt-1 text-xs font-bold text-[#166534]">
                         26 Topics Available
                       </p>
                     </div>
 
                     {/* 01 / 10 Crimson Graphic Badge */}
-                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 font-mono font-bold leading-tight shrink-0">
+                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-[#166534] text-white shadow-md shadow-[#166534]/20 font-mono font-bold leading-tight shrink-0">
                       <span className="text-xs">01</span>
                       <span className="h-[1px] w-6 bg-white/40 my-0.5" />
                       <span className="text-xs">10</span>
@@ -2254,20 +2254,20 @@ export default function PublicPage() {
 
                   {/* Feature Pills */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-[#F5EDEF]">
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <Binary className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Binary className="h-3.5 w-3.5 text-[#166534]" />
                       Matrix Solvers
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <span className="font-serif font-bold text-[#7B1824]">∑</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <span className="font-serif font-bold text-[#166534]">∑</span>
                       Eigen Systems
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <Layers className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Layers className="h-3.5 w-3.5 text-[#166534]" />
                       Vector Spaces
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <Zap className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Zap className="h-3.5 w-3.5 text-[#166534]" />
                       LU / QR / SVD
                     </span>
                   </div>
@@ -2283,15 +2283,15 @@ export default function PublicPage() {
                   setSelectedCalculusChapter(null);
                   setActiveView("topics-calculus");
                 }}
-                className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 cursor-pointer"
+                className="group relative flex flex-col justify-between rounded-[28px] border border-[#D1FAE5] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#bbf7d0] transition-all duration-300 cursor-pointer"
               >
                 <div>
                   {/* Top Row: Icon & Tag */}
                   <div className="flex items-start justify-between gap-4 mb-5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#166534] text-white shadow-md shadow-[#166534]/20">
                       <TrendingUp className="h-6 w-6" />
                     </div>
-                    <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                    <span className="rounded-full border border-[#bbf7d0] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#166534]">
                       CALC I
                     </span>
                   </div>
@@ -2299,19 +2299,19 @@ export default function PublicPage() {
                   {/* Header & Right Graphic Badge */}
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div>
-                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#7B1824] transition-colors">
+                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#166534] transition-colors">
                         Calculus I
                       </h3>
-                      <p className="mt-1 text-xs font-bold text-[#7B1824]">
+                      <p className="mt-1 text-xs font-bold text-[#166534]">
                         {calculusTopics.length} Topics Available
                       </p>
                     </div>
 
                     {/* Integral Graphic Mockup */}
-                    <div className="relative flex h-14 w-18 items-center justify-center rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] p-1.5 shadow-xs shrink-0">
+                    <div className="relative flex h-14 w-18 items-center justify-center rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] p-1.5 shadow-xs shrink-0">
                       <svg className="w-full h-full" viewBox="0 0 70 40" fill="none">
-                        <path d="M5 35 Q20 5, 45 18 T65 8" stroke="#7B1824" strokeWidth="1.8" />
-                        <path d="M5 35 Q20 5, 45 18 T65 8 L65 35 L5 35 Z" fill="rgba(123, 24, 36, 0.15)" />
+                        <path d="M5 35 Q20 5, 45 18 T65 8" stroke="#166534" strokeWidth="1.8" />
+                        <path d="M5 35 Q20 5, 45 18 T65 8 L65 35 L5 35 Z" fill="rgba(22, 101, 52, 0.15)" />
                       </svg>
                     </div>
                   </div>
@@ -2322,20 +2322,20 @@ export default function PublicPage() {
 
                   {/* Feature Pills */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-[#F5EDEF]">
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <Zap className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Zap className="h-3.5 w-3.5 text-[#166534]" />
                       Derivatives
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <Activity className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Activity className="h-3.5 w-3.5 text-[#166534]" />
                       Limit &amp; Continuity
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <Compass className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Compass className="h-3.5 w-3.5 text-[#166534]" />
                       Foundations
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <FunctionSquare className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <FunctionSquare className="h-3.5 w-3.5 text-[#166534]" />
                       Functions &amp; Graphs
                     </span>
                   </div>
@@ -2351,15 +2351,15 @@ export default function PublicPage() {
                   setSelectedCalculus2Chapter(null);
                   setActiveView("topics-calculus-2");
                 }}
-                className="group relative flex flex-col justify-between rounded-[28px] border border-[#EAE2E4] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#cf9fa6] transition-all duration-300 cursor-pointer"
+                className="group relative flex flex-col justify-between rounded-[28px] border border-[#D1FAE5] bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-[#bbf7d0] transition-all duration-300 cursor-pointer"
               >
                 <div>
                   {/* Top Row: Icon & Tag */}
                   <div className="flex items-start justify-between gap-4 mb-5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#166534] text-white shadow-md shadow-[#166534]/20">
                       <GraduationCap className="h-6 w-6" />
                     </div>
-                    <span className="rounded-full border border-[#d6b1b7] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#7B1824]">
+                    <span className="rounded-full border border-[#bbf7d0] bg-[#fbf3f5] px-3.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-wider text-[#166534]">
                       CALC II
                     </span>
                   </div>
@@ -2367,16 +2367,16 @@ export default function PublicPage() {
                   {/* Header & Right Graphic Badge */}
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div>
-                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#7B1824] transition-colors">
+                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827] group-hover:text-[#166534] transition-colors">
                         Calculus II
                       </h3>
-                      <p className="mt-1 text-xs font-bold text-[#7B1824]">
+                      <p className="mt-1 text-xs font-bold text-[#166534]">
                         {calculus2Topics.length} Topics Available
                       </p>
                     </div>
 
                     {/* Sigma Badge */}
-                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-[#7B1824] text-white shadow-md shadow-[#7B1824]/20 font-mono font-bold leading-tight shrink-0">
+                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-[#166534] text-white shadow-md shadow-[#166534]/20 font-mono font-bold leading-tight shrink-0">
                       <span className="text-lg font-serif">Σ</span>
                       <span className="text-[9px] mt-0.5 opacity-80">n=1</span>
                     </div>
@@ -2388,20 +2388,20 @@ export default function PublicPage() {
 
                   {/* Feature Pills */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-[#F5EDEF]">
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <span className="font-serif font-bold text-[#7B1824]">∫</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <span className="font-serif font-bold text-[#166534]">∫</span>
                       Integration
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <span className="font-serif font-bold text-[#7B1824]">∞</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <span className="font-serif font-bold text-[#166534]">∞</span>
                       Series
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <Compass className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Compass className="h-3.5 w-3.5 text-[#166534]" />
                       Polar &amp; Conics
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAE2E4] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
-                      <Activity className="h-3.5 w-3.5 text-[#7B1824]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-[#FDFBFB] px-3 py-1.5 text-xs font-medium text-[#374151]">
+                      <Activity className="h-3.5 w-3.5 text-[#166534]" />
                       Transcendentals
                     </span>
                   </div>
@@ -2441,13 +2441,13 @@ export default function PublicPage() {
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
                 <div className="max-w-3xl">
                   {/* Red TOPICS Eyebrow Tag */}
-                  <div className="inline-flex items-center rounded-full bg-[#3D0E14] border border-[#5E1620] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF6575] mb-3 shadow-xs">
+                  <div className="inline-flex items-center rounded-full bg-[#052e16] border border-[#14532d] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#4ade80] mb-3 shadow-xs">
                     TOPICS
                   </div>
 
                   {/* Main Headline in Red */}
                   <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-black tracking-tight leading-none mb-3">
-                    <span className="text-[#DE2438]">Linear Algebra Topics</span>
+                    <span className="text-[#16a34a]">Linear Algebra Topics</span>
                   </h1>
 
                   {/* Subtitle Description */}
@@ -2470,10 +2470,10 @@ export default function PublicPage() {
 
                   return (
                     <>
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D1FAE5] pb-5">
                         <div>
                           <div className="flex items-center gap-2 mb-1.5">
-                            <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                            <span className="inline-flex items-center rounded-full bg-[#166534] px-3 py-0.5 text-[11px] font-bold text-white">
                               Chapter {selectedLinearChapter}
                             </span>
                             <span className="text-xs text-[#6B7280] font-medium">
@@ -2490,7 +2490,7 @@ export default function PublicPage() {
 
                         <button
                           onClick={() => setSelectedLinearChapter(null)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#D1FAE5] bg-white hover:bg-[#F0FDF4] hover:border-[#bbf7d0] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#166534] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
                         >
                           <ArrowLeft className="w-4 h-4" />
                           <span>Back to All Chapters</span>
@@ -2513,7 +2513,7 @@ export default function PublicPage() {
                                   </span>
                                 </div>
 
-                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug mt-3 mb-2">
+                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#166534] transition-colors leading-snug mt-3 mb-2">
                                   {topic.title}
                                 </h3>
 
@@ -2523,14 +2523,14 @@ export default function PublicPage() {
                               </div>
 
                               <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
-                                <span className="text-xs sm:text-sm font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                                <span className="text-xs sm:text-sm font-bold text-[#166534] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
                                   View Topic <ArrowRight className="w-3.5 h-3.5" />
                                 </span>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#EAE2E4]">
+                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#D1FAE5]">
                             No topics available in this chapter yet.
                           </div>
                         )}
@@ -2542,10 +2542,10 @@ export default function PublicPage() {
             ) : (
               /* View Mode C: EXACT REFERENCE DESIGN — 8 CHAPTER CARDS GRID (4x2 Layout) */
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D1FAE5] pb-5">
                   <div>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                      <span className="inline-flex items-center rounded-full bg-[#166534] px-3 py-0.5 text-[11px] font-bold text-white">
                         Curriculum
                       </span>
                       <span className="text-xs text-[#6B7280] font-medium">
@@ -2562,12 +2562,12 @@ export default function PublicPage() {
 
                   <button
                     onClick={(e) => {
-                      playNavButtonAnimation(e, { color: "rgba(139, 26, 36, 0.3)" });
+                      playNavButtonAnimation(e, { color: "rgba(22, 101, 52, 0.3)" });
                       setTopicSearch("");
                       setActiveView("categories");
                       navigate("/?tab=topics");
                     }}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                    className="inline-flex items-center gap-2 rounded-xl border border-[#D1FAE5] bg-white hover:bg-[#F0FDF4] hover:border-[#bbf7d0] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#166534] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Topics</span>
@@ -2587,14 +2587,14 @@ export default function PublicPage() {
                         setSelectedLinearChapter(chapter.chapterNumber);
                         setTopicSearch("");
                       }}
-                      className="group relative overflow-hidden rounded-[26px] border border-[#EAE2E4] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
+                      className="group relative overflow-hidden rounded-[26px] border border-[#D1FAE5] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
                     >
                       {/* Subtle pinkish/rose glow at bottom-left corner matching reference */}
-                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#FFF0F3]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#ECFDF5]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
 
                       {/* Top Row: Chapter Badge + Topics Count */}
                       <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
+                        <span className="inline-flex items-center rounded-full bg-[#166534] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
                           Chapter {chapter.chapterNumber}
                         </span>
                         <span className="text-xs font-medium text-[#6B7280]">
@@ -2609,7 +2609,7 @@ export default function PublicPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug tracking-tight mb-1.5">
+                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#166534] transition-colors leading-snug tracking-tight mb-1.5">
                             {chapter.title}
                           </h3>
                           <p className="text-xs text-[#6B7280] leading-relaxed font-normal">
@@ -2620,7 +2620,7 @@ export default function PublicPage() {
 
                       {/* Bottom Right: Circular Dark Red Arrow Button */}
                       <div className="flex justify-end relative z-10 mt-auto pt-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7B1824] group-hover:bg-[#9B1B28] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#166534] group-hover:bg-[#15803d] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
                           <ArrowRight className="h-3.5 w-3.5" />
                         </div>
                       </div>
@@ -2657,13 +2657,13 @@ export default function PublicPage() {
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
                 <div className="max-w-3xl">
                   {/* Red TOPICS Eyebrow Tag */}
-                  <div className="inline-flex items-center rounded-full bg-[#3D0E14] border border-[#5E1620] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF6575] mb-3 shadow-xs">
+                  <div className="inline-flex items-center rounded-full bg-[#052e16] border border-[#14532d] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#4ade80] mb-3 shadow-xs">
                     TOPICS
                   </div>
 
                   {/* Main Headline in Red */}
                   <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-black tracking-tight leading-none mb-3">
-                    <span className="text-[#DE2438]">Calculus Topics</span>
+                    <span className="text-[#16a34a]">Calculus Topics</span>
                   </h1>
 
                   {/* Subtitle Description */}
@@ -2686,10 +2686,10 @@ export default function PublicPage() {
 
                   return (
                     <>
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D1FAE5] pb-5">
                         <div>
                           <div className="flex items-center gap-2 mb-1.5">
-                            <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                            <span className="inline-flex items-center rounded-full bg-[#166534] px-3 py-0.5 text-[11px] font-bold text-white">
                               Chapter {selectedCalculusChapter}
                             </span>
                             <span className="text-xs text-[#6B7280] font-medium">
@@ -2706,7 +2706,7 @@ export default function PublicPage() {
 
                         <button
                           onClick={() => setSelectedCalculusChapter(null)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#D1FAE5] bg-white hover:bg-[#F0FDF4] hover:border-[#bbf7d0] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#166534] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
                         >
                           <ArrowLeft className="w-4 h-4" />
                           <span>Back to All Chapters</span>
@@ -2729,7 +2729,7 @@ export default function PublicPage() {
                                   </span>
                                 </div>
 
-                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug mt-3 mb-2">
+                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#166534] transition-colors leading-snug mt-3 mb-2">
                                   {topic.title}
                                 </h3>
 
@@ -2739,14 +2739,14 @@ export default function PublicPage() {
                               </div>
 
                               <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
-                                <span className="text-xs sm:text-sm font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                                <span className="text-xs sm:text-sm font-bold text-[#166534] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
                                   View Topic <ArrowRight className="w-3.5 h-3.5" />
                                 </span>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#EAE2E4]">
+                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#D1FAE5]">
                             No topics available in this chapter yet.
                           </div>
                         )}
@@ -2758,10 +2758,10 @@ export default function PublicPage() {
             ) : (
               /* View Mode C: EXACT REFERENCE DESIGN — 8 CHAPTER CARDS GRID (4x2 Layout) */
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D1FAE5] pb-5">
                   <div>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                      <span className="inline-flex items-center rounded-full bg-[#166534] px-3 py-0.5 text-[11px] font-bold text-white">
                         Curriculum
                       </span>
                       <span className="text-xs text-[#6B7280] font-medium">
@@ -2778,12 +2778,12 @@ export default function PublicPage() {
 
                   <button
                     onClick={(e) => {
-                      playNavButtonAnimation(e, { color: "rgba(139, 26, 36, 0.3)" });
+                      playNavButtonAnimation(e, { color: "rgba(22, 101, 52, 0.3)" });
                       setTopicSearch("");
                       setActiveView("categories");
                       navigate("/?tab=topics");
                     }}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                    className="inline-flex items-center gap-2 rounded-xl border border-[#D1FAE5] bg-white hover:bg-[#F0FDF4] hover:border-[#bbf7d0] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#166534] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Topics</span>
@@ -2803,14 +2803,14 @@ export default function PublicPage() {
                         setSelectedCalculusChapter(chapter.chapterNumber);
                         setTopicSearch("");
                       }}
-                      className="group relative overflow-hidden rounded-[26px] border border-[#EAE2E4] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
+                      className="group relative overflow-hidden rounded-[26px] border border-[#D1FAE5] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
                     >
                       {/* Subtle pinkish/rose glow at bottom-left corner matching reference */}
-                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#FFF0F3]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#ECFDF5]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
 
                       {/* Top Row: Chapter Badge + Topics Count */}
                       <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
+                        <span className="inline-flex items-center rounded-full bg-[#166534] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
                           Chapter {chapter.chapterNumber}
                         </span>
                         <span className="text-xs font-medium text-[#6B7280]">
@@ -2825,7 +2825,7 @@ export default function PublicPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug tracking-tight mb-1.5">
+                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#166534] transition-colors leading-snug tracking-tight mb-1.5">
                             {chapter.title}
                           </h3>
                           <p className="text-xs text-[#6B7280] leading-relaxed font-normal">
@@ -2836,7 +2836,7 @@ export default function PublicPage() {
 
                       {/* Bottom Right: Circular Dark Red Arrow Button */}
                       <div className="flex justify-end relative z-10 mt-auto pt-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7B1824] group-hover:bg-[#9B1B28] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#166534] group-hover:bg-[#15803d] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
                           <ArrowRight className="h-3.5 w-3.5" />
                         </div>
                       </div>
@@ -2873,13 +2873,13 @@ export default function PublicPage() {
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
                 <div className="max-w-3xl">
                   {/* Red TOPICS Eyebrow Tag */}
-                  <div className="inline-flex items-center rounded-full bg-[#3D0E14] border border-[#5E1620] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FF6575] mb-3 shadow-xs">
+                  <div className="inline-flex items-center rounded-full bg-[#052e16] border border-[#14532d] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#4ade80] mb-3 shadow-xs">
                     TOPICS
                   </div>
 
                   {/* Main Headline in Red */}
                   <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-black tracking-tight leading-none mb-3">
-                    <span className="text-[#DE2438]">Calculus II Topics</span>
+                    <span className="text-[#16a34a]">Calculus II Topics</span>
                   </h1>
 
                   {/* Subtitle Description */}
@@ -2902,10 +2902,10 @@ export default function PublicPage() {
 
                   return (
                     <>
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D1FAE5] pb-5">
                         <div>
                           <div className="flex items-center gap-2 mb-1.5">
-                            <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                            <span className="inline-flex items-center rounded-full bg-[#166534] px-3 py-0.5 text-[11px] font-bold text-white">
                               Chapter {selectedCalculus2Chapter}
                             </span>
                             <span className="text-xs text-[#6B7280] font-medium">
@@ -2922,7 +2922,7 @@ export default function PublicPage() {
 
                         <button
                           onClick={() => setSelectedCalculus2Chapter(null)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#D1FAE5] bg-white hover:bg-[#F0FDF4] hover:border-[#bbf7d0] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#166534] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
                         >
                           <ArrowLeft className="w-4 h-4" />
                           <span>Back to All Chapters</span>
@@ -2945,7 +2945,7 @@ export default function PublicPage() {
                                   </span>
                                 </div>
 
-                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug mt-3 mb-2">
+                                <h3 className="text-[17px] font-extrabold text-[#111827] group-hover:text-[#166534] transition-colors leading-snug mt-3 mb-2">
                                   {topic.title}
                                 </h3>
 
@@ -2955,14 +2955,14 @@ export default function PublicPage() {
                               </div>
 
                               <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between">
-                                <span className="text-xs sm:text-sm font-bold text-[#7B1824] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                                <span className="text-xs sm:text-sm font-bold text-[#166534] inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
                                   View Topic <ArrowRight className="w-3.5 h-3.5" />
                                 </span>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#EAE2E4]">
+                          <div className="col-span-full py-16 text-center text-[#6B7280] bg-white rounded-2xl border border-[#D1FAE5]">
                             No topics available in this chapter yet.
                           </div>
                         )}
@@ -2974,10 +2974,10 @@ export default function PublicPage() {
             ) : (
               /* View Mode C: EXACT REFERENCE DESIGN — 8 CHAPTER CARDS GRID (4x2 Layout) */
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAE2E4] pb-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D1FAE5] pb-5">
                   <div>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3 py-0.5 text-[11px] font-bold text-white">
+                      <span className="inline-flex items-center rounded-full bg-[#166534] px-3 py-0.5 text-[11px] font-bold text-white">
                         Curriculum
                       </span>
                       <span className="text-xs text-[#6B7280] font-medium">
@@ -2994,12 +2994,12 @@ export default function PublicPage() {
 
                   <button
                     onClick={(e) => {
-                      playNavButtonAnimation(e, { color: "rgba(139, 26, 36, 0.3)" });
+                      playNavButtonAnimation(e, { color: "rgba(22, 101, 52, 0.3)" });
                       setTopicSearch("");
                       setActiveView("categories");
                       navigate("/?tab=topics");
                     }}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#EAE2E4] bg-white hover:bg-[#FDF2F4] hover:border-[#cf9fa6] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#7B1824] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
+                    className="inline-flex items-center gap-2 rounded-xl border border-[#D1FAE5] bg-white hover:bg-[#F0FDF4] hover:border-[#bbf7d0] px-4 py-2.5 text-xs sm:text-sm font-bold text-[#166534] transition-all duration-200 cursor-pointer self-start sm:self-auto shadow-xs"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Topics</span>
@@ -3019,14 +3019,14 @@ export default function PublicPage() {
                         setSelectedCalculus2Chapter(chapter.chapterNumber);
                         setTopicSearch("");
                       }}
-                      className="group relative overflow-hidden rounded-[26px] border border-[#EAE2E4] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
+                      className="group relative overflow-hidden rounded-[26px] border border-[#D1FAE5] bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between min-h-[225px] cursor-pointer"
                     >
                       {/* Subtle pinkish/rose glow at bottom-left corner matching reference */}
-                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#FFF0F3]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-gradient-to-tr from-[#FFE4E8]/80 via-[#ECFDF5]/40 to-transparent blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
 
                       {/* Top Row: Chapter Badge + Topics Count */}
                       <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className="inline-flex items-center rounded-full bg-[#7B1824] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
+                        <span className="inline-flex items-center rounded-full bg-[#166534] px-3.5 py-1 text-[11px] font-bold text-white tracking-wide shadow-xs">
                           Chapter {chapter.chapterNumber}
                         </span>
                         <span className="text-xs font-medium text-[#6B7280]">
@@ -3041,7 +3041,7 @@ export default function PublicPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#7B1824] transition-colors leading-snug tracking-tight mb-1.5">
+                          <h3 className="text-lg font-black text-[#111827] group-hover:text-[#166534] transition-colors leading-snug tracking-tight mb-1.5">
                             {chapter.title}
                           </h3>
                           <p className="text-xs text-[#6B7280] leading-relaxed font-normal">
@@ -3052,7 +3052,7 @@ export default function PublicPage() {
 
                       {/* Bottom Right: Circular Dark Red Arrow Button */}
                       <div className="flex justify-end relative z-10 mt-auto pt-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7B1824] group-hover:bg-[#9B1B28] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#166534] group-hover:bg-[#15803d] text-white shadow-sm transition-all duration-200 group-hover:translate-x-0.5">
                           <ArrowRight className="h-3.5 w-3.5" />
                         </div>
                       </div>

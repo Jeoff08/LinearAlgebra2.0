@@ -791,13 +791,13 @@ const MatrixOperations: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="font-bold text-sm text-gray-800 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#7B1824]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#166534]"></span>
             {label}
           </h4>
           <div className="flex gap-1.5">
             <button
               onClick={() => addRow(matrixType)}
-              className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+              className="text-xs px-2.5 py-1 bg-[#F0FDF4] text-[#166534] hover:bg-[#166534] hover:text-white rounded-lg font-semibold transition cursor-pointer"
               title="Add Row"
             >
               +Row
@@ -806,7 +806,7 @@ const MatrixOperations: React.FC = () => {
               onClick={() => removeRow(matrixType)}
               className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
                 matrix.length > 1 
-                  ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer' 
+                  ? 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 cursor-pointer' 
                   : 'bg-gray-50 text-gray-300 cursor-not-allowed'
               }`}
               title="Remove Last Row"
@@ -816,7 +816,7 @@ const MatrixOperations: React.FC = () => {
             </button>
             <button
               onClick={() => addCol(matrixType)}
-              className="text-xs px-2.5 py-1 bg-[#FDF2F4] text-[#7B1824] hover:bg-[#7B1824] hover:text-white rounded-lg font-semibold transition cursor-pointer"
+              className="text-xs px-2.5 py-1 bg-[#F0FDF4] text-[#166534] hover:bg-[#166534] hover:text-white rounded-lg font-semibold transition cursor-pointer"
               title="Add Column"
             >
               +Col
@@ -825,7 +825,7 @@ const MatrixOperations: React.FC = () => {
               onClick={() => removeCol(matrixType)}
               className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition ${
                 matrix[0]?.length > 1 
-                  ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 cursor-pointer' 
+                  ? 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 cursor-pointer' 
                   : 'bg-gray-50 text-gray-300 cursor-not-allowed'
               }`}
               title="Remove Last Column"
@@ -847,7 +847,7 @@ const MatrixOperations: React.FC = () => {
                         value={getDisplayValue(val)}
                         onChange={(e) => updateMatrix(matrixType, i, j, e.target.value)}
                         onBlur={() => handleInputBlur(matrixType, i, j)}
-                        className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none transition shadow-2xs"
+                        className="w-16 sm:w-18 px-2 py-1.5 text-center font-mono font-bold text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none transition shadow-2xs"
                         placeholder="0"
                         step="any"
                       />
@@ -882,7 +882,7 @@ const MatrixOperations: React.FC = () => {
                 setOperation(e.target.value as OperationType);
                 setResult(null);
               }}
-              className="px-3.5 py-2 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-xs sm:text-sm font-semibold text-gray-800 shadow-2xs"
+              className="px-3.5 py-2 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-xs sm:text-sm font-semibold text-gray-800 shadow-2xs"
             >
               <option value="add">A + B (Addition)</option>
               <option value="subtract">A - B (Subtraction)</option>
@@ -906,7 +906,7 @@ const MatrixOperations: React.FC = () => {
                 type="number"
                 value={scalarValue}
                 onChange={(e) => setScalarValue(parseFloat(e.target.value) || 0)}
-                className="w-24 px-3 py-1.5 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-xs sm:text-sm font-bold shadow-2xs"
+                className="w-24 px-3 py-1.5 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-xs sm:text-sm font-bold shadow-2xs"
                 step="any"
               />
             </div>
@@ -919,7 +919,7 @@ const MatrixOperations: React.FC = () => {
                 type="number"
                 value={powerValue}
                 onChange={(e) => setPowerValue(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-24 px-3 py-1.5 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#7B1824]/20 focus:border-[#7B1824] outline-none text-xs sm:text-sm font-bold shadow-2xs"
+                className="w-24 px-3 py-1.5 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] outline-none text-xs sm:text-sm font-bold shadow-2xs"
                 min="0"
                 step="1"
               />
@@ -945,7 +945,7 @@ const MatrixOperations: React.FC = () => {
       <div className="flex flex-wrap gap-3">
         <button
           onClick={performOperation}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -969,11 +969,11 @@ const MatrixOperations: React.FC = () => {
       {result && (
         <div className="space-y-6">
           {/* Hero Result Card */}
-          <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-[#7B1824]"></span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#7B1824]">Computed Result</h3>
+                <span className="w-3 h-3 rounded-full bg-[#166534]"></span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Computed Result</h3>
               </div>
               <div className="flex-shrink-0">
                 <PDFExport
@@ -995,14 +995,14 @@ const MatrixOperations: React.FC = () => {
           {showSteps && result.steps.length > 0 && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-[#7B1824]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Detailed Step Breakdown</h3>
               </div>
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                 {result.steps.map((step, idx) => (
                   <div key={idx} className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition space-y-2">
                     <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#7B1824] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <div className="flex-1 font-mono text-xs sm:text-sm text-gray-800 whitespace-pre-wrap">
@@ -1012,7 +1012,7 @@ const MatrixOperations: React.FC = () => {
                     {result.stepExplanations && result.stepExplanations[idx] && (
                       <div className="pt-2 pl-8 border-t border-gray-200/60">
                         <p className="text-xs text-gray-500 italic">
-                          <span className="font-semibold text-[#7B1824] not-italic">Note: </span>
+                          <span className="font-semibold text-[#166534] not-italic">Note: </span>
                           {result.stepExplanations[idx]}
                         </p>
                       </div>
@@ -1028,7 +1028,7 @@ const MatrixOperations: React.FC = () => {
       {/* Help / Supported Operations */}
       <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
         <p className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-          <svg className="w-4 h-4 text-[#7B1824]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[#166534]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Supported Matrix Operations

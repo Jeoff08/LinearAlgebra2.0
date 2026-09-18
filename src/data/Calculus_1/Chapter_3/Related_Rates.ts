@@ -22,6 +22,8 @@ If we know dr/dt (the rate at which the radius changes), we can determine dV/dt 
 
 This is called a related rates problem.
 
+"image": "src/assets/121.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT ARE RELATED RATES?
@@ -553,14 +555,7 @@ For example:
 20. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Shape            Formula                      Related Rates Equation
-  ─────────────────────────────────────────────────────────────────────────────────
-  Circle           A = πr²                     dA/dt = 2πr(dr/dt)
-  Sphere           V = (4/3)πr³                dV/dt = 4πr²(dr/dt)
-  Cylinder         V = πr²h                    dV/dt = πr²(dh/dt) + 2πrh(dr/dt)
-  Cone             V = (1/3)πr²h               dV/dt = (1/3)πr²(dh/dt) + (2/3)πrh(dr/dt)
-  Rectangle        A = lw                      dA/dt = l(dw/dt) + w(dl/dt)
-  Pythagorean      x² + y² = z²                2x(dx/dt) + 2y(dy/dt) = 2z(dz/dt)
+"image": "src/assets/122.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -297,7 +297,7 @@ Verification: Check the solution by plugging the values back into the original e
         <div className="space-y-2.5">
           {equations.map((eq, idx) => (
             <div key={idx} className="flex items-center gap-2">
-              <div className="relative flex-1 rounded-xl border border-gray-200 bg-white p-1 focus-within:border-[#7B1824] transition shadow-2xs">
+              <div className="relative flex-1 rounded-xl border border-gray-200 bg-white p-1 focus-within:border-[#166534] transition shadow-2xs">
                 <input
                   type="text"
                   value={eq}
@@ -317,7 +317,7 @@ Verification: Check the solution by plugging the values back into the original e
               {equations.length > 1 && (
                 <button
                   onClick={() => removeEquation(idx)}
-                  className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition cursor-pointer"
+                  className="p-2.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition cursor-pointer"
                   title="Remove equation"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -332,7 +332,7 @@ Verification: Check the solution by plugging the values back into the original e
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <button
           onClick={solveSystem}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7B1824] hover:bg-[#60101B] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#7B1824]/20 transition-all active:scale-95 cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#166534] hover:bg-[#14532D] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#166534]/20 transition-all active:scale-95 cursor-pointer"
         >
           <Play className="w-4 h-4 fill-white" />
           <span>Solve System</span>
@@ -379,20 +379,20 @@ Verification: Check the solution by plugging the values back into the original e
         <div className="space-y-5">
           {/* Error Message */}
           {!result.uniqueSolution && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-5 flex items-start gap-3 text-red-900">
-              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="rounded-2xl border border-green-200 bg-green-50 p-5 flex items-start gap-3 text-green-900">
+              <AlertCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-red-900">Calculation Error</h4>
-                <p className="text-xs text-red-700 leading-relaxed">{result.steps[0]}</p>
+                <h4 className="text-sm font-bold text-green-900">Calculation Error</h4>
+                <p className="text-xs text-green-700 leading-relaxed">{result.steps[0]}</p>
               </div>
             </div>
           )}
 
           {/* Solution Hero Card */}
           {result.uniqueSolution && (
-            <div className="rounded-2xl border border-[#7B1824]/30 bg-gradient-to-br from-[#FFF8F9] to-white p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="rounded-2xl border border-[#166534]/30 bg-gradient-to-br from-[#F0FDF4] to-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#7B1824]">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#166534]">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Unique Solution Found</span>
                 </div>
@@ -409,7 +409,7 @@ Verification: Check the solution by plugging the values back into the original e
               <div className="flex flex-wrap gap-3">
                 {Object.entries(result.variables).map(([varName, value]) => (
                   <div key={varName} className="p-3.5 px-4 rounded-xl bg-white border border-[#F0D5D8] shadow-inner font-mono text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <span className="text-[#7B1824] font-black">{varName}</span>
+                    <span className="text-[#166534] font-black">{varName}</span>
                     <span className="text-gray-400">=</span>
                     <span>{value}</span>
                   </div>
@@ -423,7 +423,7 @@ Verification: Check the solution by plugging the values back into the original e
             <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#7B1824]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#166534]" />
                   <h4 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
                     Step-by-Step Solution
                   </h4>
@@ -441,7 +441,7 @@ Verification: Check the solution by plugging the values back into the original e
                 {showExplanation && (
                   <div className="lg:col-span-1 p-4 bg-gray-50/70 rounded-xl border border-gray-200 max-h-[420px] overflow-y-auto space-y-2">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
-                      <Info className="w-3.5 h-3.5 text-[#7B1824]" />
+                      <Info className="w-3.5 h-3.5 text-[#166534]" />
                       <span>Method Concept</span>
                     </div>
                     {explanationContent}
@@ -455,7 +455,7 @@ Verification: Check the solution by plugging the values back into the original e
 
       {/* Info footer */}
       <div className="text-xs text-gray-500 bg-gray-50/70 p-3.5 rounded-xl border border-gray-200 flex items-start gap-2">
-        <Info className="w-4 h-4 text-[#7B1824] shrink-0 mt-0.5" />
+        <Info className="w-4 h-4 text-[#166534] shrink-0 mt-0.5" />
         <p>
           Enter equations with standard variable names (e.g. <span className="font-mono text-gray-800 font-bold">2x + y - z = 8</span>). The system must have the same number of equations as variables for a unique solution.
         </p>

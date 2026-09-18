@@ -12,6 +12,8 @@ The most important idea is:
 
   Differentiate both sides with respect to x, remembering that y is a function of x.
 
+"image": "src/assets/115.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. EXPLICIT VS. IMPLICIT FUNCTIONS
@@ -515,18 +517,7 @@ and finally:
 21. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Expression          Derivative with respect to x
-  ────────────────────────────────────────────────────────────────────
-  y                   dy/dx
-  y²                  2y(dy/dx)
-  y³                  3y²(dy/dx)
-  yⁿ                  nyⁿ⁻¹(dy/dx)
-  xy                  x(dy/dx) + y
-  x²y                 x²(dy/dx) + 2xy
-  sin y               cos y(dy/dx)
-  cos y               -sin y(dy/dx)
-  eʸ                  eʸ(dy/dx)
-  ln y                (1/y)(dy/dx)
+"image": "src/assets/116.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

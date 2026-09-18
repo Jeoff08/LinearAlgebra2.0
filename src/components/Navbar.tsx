@@ -84,7 +84,7 @@ export default function Navbar() {
   const handleHomeClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     playNavButtonAnimation(e, {
-      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(139, 26, 36, 0.35)",
+      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(22, 101, 52, 0.35)",
     });
     setActiveTab("home");
     setMobileMenuOpen(false);
@@ -97,7 +97,7 @@ export default function Navbar() {
   const handleCalculatorsClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     playNavButtonAnimation(e, {
-      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(139, 26, 36, 0.35)",
+      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(22, 101, 52, 0.35)",
     });
     setActiveTab("calculators");
     setMobileMenuOpen(false);
@@ -112,7 +112,7 @@ export default function Navbar() {
   const handleTopicsClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     playNavButtonAnimation(e, {
-      color: isHeroPage ? "rgba(224, 82, 96, 0.45)" : "rgba(139, 26, 36, 0.35)",
+      color: isHeroPage ? "rgba(34, 197, 94, 0.45)" : "rgba(22, 101, 52, 0.35)",
     });
     setActiveTab("topics");
     setMobileMenuOpen(false);
@@ -125,7 +125,7 @@ export default function Navbar() {
   const handleDashboardClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     playNavButtonAnimation(e, {
-      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(139, 26, 36, 0.35)",
+      color: isHeroPage ? "rgba(255, 255, 255, 0.4)" : "rgba(22, 101, 52, 0.35)",
     });
     setActiveTab("dashboard");
     setMobileMenuOpen(false);
@@ -167,7 +167,7 @@ export default function Navbar() {
       activeTab === tab
         ? isHeroPage
           ? "text-white"
-          : "text-[#8B1A24]"
+          : "text-[#166534]"
         : isHeroPage
           ? "text-white/70 hover:text-white"
           : "text-[#4B5563] hover:text-[#111827]"
@@ -198,7 +198,7 @@ export default function Navbar() {
           className="group flex items-center gap-3 no-underline"
         >
           {/* Sigma icon in crimson square */}
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1824] shadow-sm transition-transform duration-200 group-hover:scale-105">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] shadow-sm transition-transform duration-200 group-hover:scale-105">
             <span className="font-serif text-xl font-bold text-white leading-none">
               Σ
             </span>
@@ -210,7 +210,7 @@ export default function Navbar() {
             >
               Math
               <span
-                className={isHeroPage ? "text-[#E05260]" : "text-[#8B1A24]"}
+                className={isHeroPage ? "text-[#22c55e]" : "text-[#166534]"}
               >
                 Workspace
               </span>
@@ -237,7 +237,7 @@ export default function Navbar() {
                 <motion.span
                   layoutId="activeNavUnderline"
                   className={`absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full ${
-                    isHeroPage ? "bg-white" : "bg-[#8B1A24]"
+                    isHeroPage ? "bg-white" : "bg-[#166534]"
                   }`}
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
@@ -256,7 +256,7 @@ export default function Navbar() {
               <motion.span
                 layoutId="activeNavUnderline"
                 className={`absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full ${
-                  isHeroPage ? "bg-white" : "bg-[#8B1A24]"
+                  isHeroPage ? "bg-white" : "bg-[#166534]"
                 }`}
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
@@ -273,7 +273,7 @@ export default function Navbar() {
             {activeTab === "topics" && (
               <motion.span
                 layoutId="activeNavUnderline"
-                className="absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full bg-[#E05260]"
+                className="absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full bg-[#22c55e]"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
             )}
@@ -290,7 +290,7 @@ export default function Navbar() {
               {activeTab === "dashboard" && (
                 <motion.span
                   layoutId="activeNavUnderline"
-                  className="absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full bg-[#E05260]"
+                  className="absolute -bottom-[1.15rem] left-0 right-0 h-[2.5px] rounded-full bg-[#22c55e]"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
@@ -318,7 +318,7 @@ export default function Navbar() {
 
               <Link
                 to="/register"
-                className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 active:scale-95"
+                className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 active:scale-95"
               >
                 <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Register</span>
@@ -336,7 +336,7 @@ export default function Navbar() {
                 </span>
                 <span
                   className={`text-[0.65rem] font-bold uppercase tracking-wider ${
-                    isHeroPage ? "text-[#E05260]" : "text-[#8B1A24]"
+                    isHeroPage ? "text-[#22c55e]" : "text-[#166534]"
                   }`}
                 >
                   {user?.role}
@@ -350,8 +350,8 @@ export default function Navbar() {
                 }}
                 className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 sm:px-3.5 sm:py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   isHeroPage
-                    ? "border-[#E05260]/60 bg-[#7B1824]/20 text-[#E05260] hover:bg-[#7B1824]/40 hover:border-[#E05260]"
-                    : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
+                    ? "border-[#22c55e]/60 bg-[#166534]/20 text-[#22c55e] hover:bg-[#166534]/40 hover:border-[#22c55e]"
+                    : "bg-green-50 border-green-200 text-green-600 hover:bg-green-100 hover:border-green-300"
                 }`}
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -388,11 +388,11 @@ export default function Navbar() {
               onClick={handleHomeClick}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 activeTab === "home"
-                  ? "bg-[#FDF2F4] text-[#7B1824] font-bold border border-[#7B1824]/20"
+                  ? "bg-[#F0FDF4] text-[#166534] font-bold border border-[#166534]/20"
                   : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827]"
               }`}
             >
-              <Home className="w-4 h-4 text-[#7B1824]" />
+              <Home className="w-4 h-4 text-[#166534]" />
               <span>Home</span>
             </Link>
           )}
@@ -403,11 +403,11 @@ export default function Navbar() {
               onClick={handleDashboardClick}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 activeTab === "dashboard"
-                  ? "bg-[#FDF2F4] text-[#7B1824] font-bold border border-[#7B1824]/20"
+                  ? "bg-[#F0FDF4] text-[#166534] font-bold border border-[#166534]/20"
                   : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827]"
               }`}
             >
-              <LayoutDashboard className="w-4 h-4 text-[#7B1824]" />
+              <LayoutDashboard className="w-4 h-4 text-[#166534]" />
               <span>Dashboard</span>
             </Link>
           )}
@@ -417,11 +417,11 @@ export default function Navbar() {
             onClick={handleCalculatorsClick}
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
               activeTab === "calculators"
-                ? "bg-[#FDF2F4] text-[#7B1824] font-bold border border-[#7B1824]/20"
+                ? "bg-[#F0FDF4] text-[#166534] font-bold border border-[#166534]/20"
                 : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827]"
             }`}
           >
-            <Calculator className="w-4 h-4 text-[#7B1824]" />
+            <Calculator className="w-4 h-4 text-[#166534]" />
             <span>Calculators</span>
           </Link>
 
@@ -430,11 +430,11 @@ export default function Navbar() {
             onClick={handleTopicsClick}
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
               activeTab === "topics"
-                ? "bg-[#FDF2F4] text-[#7B1824] font-bold border border-[#7B1824]/20"
+                ? "bg-[#F0FDF4] text-[#166534] font-bold border border-[#166534]/20"
                 : "text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#111827]"
             }`}
           >
-            <BookOpen className="w-4 h-4 text-[#7B1824]" />
+            <BookOpen className="w-4 h-4 text-[#166534]" />
             <span>Topics</span>
           </Link>
 
@@ -452,7 +452,7 @@ export default function Navbar() {
               <Link
                 to="/register"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#7B1824] hover:bg-[#60101B] text-white text-sm font-bold shadow-sm transition active:scale-95"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#166534] hover:bg-[#14532D] text-white text-sm font-bold shadow-sm transition active:scale-95"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Register</span>
@@ -469,7 +469,7 @@ export default function Navbar() {
                   await logout();
                   navigate("/login", { replace: true });
                 }}
-                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-green-600 hover:bg-green-50 transition-colors text-left cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>

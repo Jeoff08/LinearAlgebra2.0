@@ -19,6 +19,8 @@ So the same Power Rule that works for:
 also works for:
   x^(1/2), x^(3/2), x^(4/3)
 
+"image":   "src/assets/111.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. RATIONAL EXPONENTS
@@ -58,6 +60,8 @@ Then:
 Therefore:
   f'(x) = 1/(2√x)
 
+"image": "src/assets/140.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 3. EXAMPLE: x^(1/2)
@@ -79,6 +83,8 @@ Therefore:
 
 Rewrite the negative exponent:
   f'(x) = 1/(2√x)
+
+"image": "src/assets/141.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -102,6 +108,8 @@ Therefore:
 or:
   f'(x) = (3/2)√x
 
+"image": "src/assets/142.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 5. EXAMPLE: x^(2/3)
@@ -124,6 +132,8 @@ Therefore:
 Rewrite:
   f'(x) = 2/(3∛x)
 
+"image": "src/assets/143.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 6. EXAMPLE: x^(5/3)
@@ -144,6 +154,8 @@ Therefore:
 or:
   f'(x) = (5/3)∛(x²)
 
+"image": "src/assets/144.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 7. EXAMPLE: x^(7/4)
@@ -160,6 +172,8 @@ Using the Power Rule:
 
 Therefore:
   f'(x) = (7/4)x^(3/4)
+
+"image": "src/assets/145.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -310,6 +324,8 @@ Likewise:
 because:
   2/3 - 1 = 2/3 - 3/3 = -1/3
 
+"image": "src/assets/146.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 15. RATIONAL EXPONENTS AND THE CHAIN RULE
@@ -340,6 +356,8 @@ Example:
   Therefore:
     f'(x) = 3x√(x² + 1)
 
+"image": "src/assets/147.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 16. EXAMPLE WITH A RADICAL INSIDE
@@ -359,6 +377,8 @@ Apply the Chain Rule:
 Simplify:
   f'(x) = 3x/√(3x² + 2)
 
+"image": "src/assets/148.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 17. EXAMPLE WITH A CUBE ROOT
@@ -377,6 +397,8 @@ Apply the Chain Rule:
 
 Therefore:
   f'(x) = 4x/[3(2x² + 5)^(2/3)]
+
+"image": "src/assets/149.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -399,6 +421,8 @@ Notice something important:
   f(x) is defined at x = 0, but f'(0) does not exist as a finite derivative.
 
 The graph has a vertical tangent at the origin.
+
+"image": "src/assets/150.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -493,6 +517,8 @@ The two most important formulas for this topic are the rational Power Rule and i
 
   The second formula combines the Power Rule and the Chain Rule.
 
+"image": "src/assets/151.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 23. COMPLETE EXAMPLE
@@ -522,16 +548,7 @@ Therefore:
 24. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Function                  Derivative
-  ────────────────────────────────────────────────────────────────────────
-  x^(1/2)                 (1/2)x^(-1/2) = 1/(2√x)
-  x^(1/3)                 (1/3)x^(-2/3) = 1/(3∛(x²))
-  x^(2/3)                 (2/3)x^(-1/3) = 2/(3∛x)
-  x^(3/2)                 (3/2)x^(1/2) = (3/2)√x
-  x^(5/2)                 (5/2)x^(3/2)
-  x^(5/3)                 (5/3)x^(2/3)
-  x^(-1/2)                -(1/2)x^(-3/2)
-  [g(x)]^(m/n)            (m/n)[g(x)]^(m/n-1) · g'(x)
+"image": "src/assets/117.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

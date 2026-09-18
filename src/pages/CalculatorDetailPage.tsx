@@ -99,7 +99,7 @@ export default function CalculatorDetailPage() {
         <h2 className="text-lg font-bold text-[#111827]">Calculator not found</h2>
         <button
           onClick={() => navigate("/calculators")}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#60101B] transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#166534] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#14532D] transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to All Calculators
@@ -143,7 +143,7 @@ export default function CalculatorDetailPage() {
                 <span>All Math Tools</span>
               </button>
 
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#8B1A24]/60 bg-[#7B1824]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#E05260] tracking-wider shadow-xs">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#166534]/60 bg-[#166534]/30 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-[#22c55e] tracking-wider shadow-xs">
                 <Calculator className="w-3.5 h-3.5" />
                 <span>Linear Algebra Suite · 23 Solvers</span>
               </div>
@@ -152,7 +152,7 @@ export default function CalculatorDetailPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-[3.65rem] font-black tracking-tight text-white leading-[1.08]">
               <span className="text-white">Solve Smarter with</span>
               <br />
-              <span className="text-[#A31D24]">Linear Algebra Calculators</span>
+              <span className="text-[#15803d]">Linear Algebra Calculators</span>
             </h1>
 
             <p className="text-sm sm:text-base text-white/80 leading-relaxed font-normal max-w-xl">
@@ -163,7 +163,7 @@ export default function CalculatorDetailPage() {
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <button
                 onClick={() => navigate("/calculators")}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#7B1824] hover:bg-[#60101B] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#7B1824]/30 transition-all duration-200 cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#166534]/30 transition-all duration-200 cursor-pointer active:scale-95"
               >
                 <span>Browse All 23 Solvers</span>
                 <ArrowRight className="w-4 h-4" />
@@ -233,7 +233,7 @@ export default function CalculatorDetailPage() {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         autoFocus
-                        className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 text-white text-xs placeholder-gray-400 border border-white/10 outline-none focus:border-[#7B1824]"
+                        className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 text-white text-xs placeholder-gray-400 border border-white/10 outline-none focus:border-[#166534]"
                       />
                     </div>
                   </div>
@@ -244,7 +244,7 @@ export default function CalculatorDetailPage() {
                         onClick={() => handleSelectTool(t.id)}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition cursor-pointer ${
                           t.id === currentTool.id
-                            ? "bg-[#7B1824] text-white font-bold"
+                            ? "bg-[#166534] text-white font-bold"
                             : "text-gray-300 hover:bg-white/10 hover:text-white"
                         }`}
                       >
@@ -294,12 +294,12 @@ export default function CalculatorDetailPage() {
         <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-7 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 sm:gap-3.5">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#7B1824] text-white flex items-center justify-center shadow-md shadow-[#7B1824]/20 shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#166534] text-white flex items-center justify-center shadow-md shadow-[#166534]/20 shrink-0">
                 <Calculator className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#7B1824]/10 text-[#7B1824]">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#166534]/10 text-[#166534]">
                     LINEAR ALGEBRA
                   </span>
                   <span className="text-[11px] sm:text-xs text-gray-400 font-mono">
@@ -321,12 +321,12 @@ export default function CalculatorDetailPage() {
           {exampleProblem && (
             <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-[#7B1824]" />
+                <Sparkles className="w-3.5 h-3.5 text-[#166534]" />
                 <span>Example:</span>
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-[11px] sm:text-xs font-mono font-medium text-gray-800 break-all">
                 <span>{exampleProblem}</span>
-                <span className="text-[10px] text-[#7B1824] font-bold shrink-0">Use</span>
+                <span className="text-[10px] text-[#166534] font-bold shrink-0">Use</span>
               </span>
             </div>
           )}

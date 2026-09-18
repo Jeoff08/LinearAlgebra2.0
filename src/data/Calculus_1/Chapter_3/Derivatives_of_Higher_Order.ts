@@ -26,6 +26,8 @@ The fourth derivative is:
 And in general, the n-th derivative is written as:
   f⁽ⁿ⁾(x)
 
+"image": "src/assets/112.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. FIRST DERIVATIVE
@@ -156,6 +158,8 @@ For example:
   f''(x) > 0 usually means the graph is concave upward.
   f''(x) < 0 usually means the graph is concave downward.
 
+"image": "src/assets/152.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 8. CONCAVITY AND THE SECOND DERIVATIVE
@@ -176,6 +180,8 @@ Since f''(x) > 0 everywhere, the graph is concave upward.
 
 This agrees with the shape of y = x², which curves upward like a bowl.
 
+"image": "src/assets/153.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 9. EXAMPLE OF CONCAVE DOWNWARD
@@ -195,6 +201,8 @@ Second derivative:
 Since f''(x) < 0, the graph is concave downward.
 
 This agrees with the graph of y = -x², which curves downward.
+
+"image": "src/assets/154.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -412,6 +420,8 @@ If f''(x) < 0, the graph is concave downward.
 
 If the concavity changes at a point, that point may be an inflection point.
 
+"image": "src/assets/155.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 19. EXAMPLE: INFLECTION POINT
@@ -438,6 +448,8 @@ For x > 0:
   f''(x) > 0, so the function is concave up.
 
 Therefore, (0, 0) is an inflection point.
+
+"image": "src/assets/156.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -484,11 +496,7 @@ This demonstrates that higher-order derivatives can become increasingly complica
 
 You should recognise all of these notations for higher-order derivatives. The prime notation is compact and commonly used, especially in textbooks and for derivatives up to the third order. Beyond that, the superscript in parentheses, such as f⁽⁴⁾(x), is preferred to avoid confusion with exponents. The Leibniz notation, dⁿy/dxⁿ, is often used in physics and engineering, especially when dealing with differential equations. Both notations are standard, and being able to read and write them is essential. For example, the second derivative of y with respect to x can be written as f''(x), d²y/dx², or y''. In this course, we will use all of these notations interchangeably.
 
-  First derivative:     f'(x) or dy/dx
-  Second derivative:    f''(x) or d²y/dx²
-  Third derivative:     f'''(x) or d³y/dx³
-  Fourth derivative:    f⁽⁴⁾(x) or d⁴y/dx⁴
-  n-th derivative:      f⁽ⁿ⁾(x) or dⁿy/dxⁿ
+"image": "src/assets/157.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -572,13 +580,7 @@ Therefore:
 26. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Order             Notation            Physical Meaning (Motion)
-  ──────────────────────────────────────────────────────────────────────
-  1st derivative    f'(x) or dy/dx      Velocity
-  2nd derivative    f''(x) or d²y/dx²   Acceleration
-  3rd derivative    f'''(x) or d³y/dx³  Jerk
-  4th derivative    f⁽⁴⁾(x) or d⁴y/dx⁴  Snap
-  n-th derivative   f⁽ⁿ⁾(x) or dⁿy/dxⁿ  Higher-order motion terms
+"image": "src/assets/118.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

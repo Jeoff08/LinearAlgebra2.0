@@ -4,6 +4,8 @@ export type PublicUser = {
   id: string
   email: string
   name: string
+  block?: string
+  avatar_url?: string
   role: UserRole
   created_at: string
 }

@@ -16,6 +16,8 @@ However:
 
 In other words, every differentiable function is continuous, but not every continuous function is differentiable.
 
+"image": "src/assets/113.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT IS CONTINUITY?
@@ -220,6 +222,8 @@ The most common are:
 4. Discontinuities:
   A function with a hole, jump, or asymptote cannot be differentiable at that point.
 
+"image": "src/assets/158.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 9. CORNER EXAMPLE
@@ -308,6 +312,8 @@ On the other hand:
 has a sharp corner at x = 0.
 
 Therefore, it is not differentiable there.
+
+"image": "src/assets/159.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -466,13 +472,7 @@ Therefore, the derivative depends fundamentally on the concept of limits.
 19. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Concept                       Condition
-  ───────────────────────────────────────────────────────────────────────────
-  Continuous at a           lim(x→a) f(x) = f(a)
-  Differentiable at a       f'(a) exists
-  Left-hand derivative      f'_-(a) = lim(h→0⁻) (f(a+h) - f(a))/h
-  Right-hand derivative     f'_+(a) = lim(h→0⁺) (f(a+h) - f(a))/h
-  Differentiable            f'_-(a) = f'_+(a)
+"image": "src/assets/114.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

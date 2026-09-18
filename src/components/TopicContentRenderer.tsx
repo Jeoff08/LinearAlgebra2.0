@@ -145,20 +145,20 @@ export function TopicImage({
           className={`group relative w-full ${sizeCfg.container} overflow-hidden rounded-2xl border transition-all duration-200 shadow-sm hover:shadow-md ${
             isDark
               ? "border-white/20 bg-[#0F172A] hover:border-white/40"
-              : "border-[#FFD0D8] bg-white hover:border-[#7B1824]/50"
+              : "border-[#BBF7D0] bg-white hover:border-[#166534]/50"
           }`}
         >
           {loadError ? (
             <div
               className={`p-5 sm:p-6 text-center flex flex-col items-center justify-center space-y-3 ${
-                isDark ? "bg-white/5" : "bg-[#FFF8F9]"
+                isDark ? "bg-white/5" : "bg-[#F0FDF4]"
               }`}
             >
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-xs ${
                   isDark
                     ? "bg-white/10 text-white/80"
-                    : "bg-[#FFE2E6] text-[#7B1824]"
+                    : "bg-[#DCFCE7] text-[#166534]"
                 }`}
               >
                 <FileText className="w-5 h-5" />
@@ -166,7 +166,7 @@ export function TopicImage({
               <div className="space-y-1">
                 <p
                   className={`text-sm font-bold ${
-                    isDark ? "text-white" : "text-[#7B1824]"
+                    isDark ? "text-white" : "text-[#166534]"
                   }`}
                 >
                   Topic Diagram: {alt}
@@ -175,7 +175,7 @@ export function TopicImage({
                   className={`text-xs font-mono px-2 py-0.5 rounded inline-block ${
                     isDark
                       ? "bg-black/50 text-gray-300"
-                      : "bg-[#7B1824]/5 text-[#7B1824] border border-[#7B1824]/20"
+                      : "bg-[#166534]/5 text-[#166534] border border-[#166534]/20"
                   }`}
                 >
                   {src}
