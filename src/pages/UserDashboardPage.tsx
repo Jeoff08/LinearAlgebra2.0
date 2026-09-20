@@ -44,8 +44,11 @@ import {
   Mail,
   Shield,
   Save,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
 
 // Linear Algebra Real Interactive Calculators (All 23 Solvers)
@@ -466,6 +469,7 @@ const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
 
 export default function UserDashboardPage() {
   const { user, logout, refreshUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   // Navigation State
@@ -512,15 +516,17 @@ export default function UserDashboardPage() {
   // Calculator Filter Category ("all" | "linear-algebra" | "calculus-1" | "calculus-2")
   const [calcCategoryFilter, setCalcCategoryFilter] = useState<
     "all" | "linear-algebra" | "calculus-1" | "calculus-2"
-  >("all");
+  >("linear-algebra");
   const [activeCalculator, setActiveCalculator] =
     useState<CalculatorCardMeta | null>(null);
+  const [calcSearchQuery, setCalcSearchQuery] = useState("");
 
   // Topics Filter Category ("all" | "linear-algebra" | "calculus-1" | "calculus-2")
   const [topicCategoryFilter, setTopicCategoryFilter] = useState<
     "all" | "linear-algebra" | "calculus-1" | "calculus-2"
-  >("all");
+  >("linear-algebra");
   const [activeTopic, setActiveTopic] = useState<UnifiedTopicItem | null>(null);
+  const [topicSearchQuery, setTopicSearchQuery] = useState("");
 
   // Chapter sub-filter for Topics
   const [selectedChapterFilter, setSelectedChapterFilter] =
@@ -557,6 +563,9 @@ export default function UserDashboardPage() {
   const [profileSaveSuccessMsg, setProfileSaveSuccessMsg] = useState<string | null>(null);
   const [profileSaveErrorMsg, setProfileSaveErrorMsg] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [showProfileConfirmModal, setShowProfileConfirmModal] = useState(false);
+  const [showProfileSuccessModal, setShowProfileSuccessModal] = useState(false);
+  const [savedChangeType, setSavedChangeType] = useState<"name" | "photo" | "both">("both");
 
   // Sync profile editing fields when user changes
   useEffect(() => {
@@ -651,7 +660,7 @@ export default function UserDashboardPage() {
     return allCombinedCalculators.filter((calc) => {
       const matchesCategory =
         calcCategoryFilter === "all" || calc.category === calcCategoryFilter;
-      const query = searchQuery.toLowerCase().trim();
+      const query = (calcSearchQuery || searchQuery).toLowerCase().trim();
       if (!query) return matchesCategory;
       return (
         matchesCategory &&
@@ -662,7 +671,7 @@ export default function UserDashboardPage() {
           calc.categoryLabel.toLowerCase().includes(query))
       );
     });
-  }, [allCombinedCalculators, calcCategoryFilter, searchQuery]);
+  }, [allCombinedCalculators, calcCategoryFilter, calcSearchQuery, searchQuery]);
 
   // Combined Topics Registry (All Linear Algebra, Calculus 1 & Calculus 2 topics)
   const allCombinedTopics = useMemo<UnifiedTopicItem[]>(() => {
@@ -749,7 +758,7 @@ export default function UserDashboardPage() {
         selectedChapterFilter === "all" ||
         top.chapter === selectedChapterFilter;
 
-      const query = searchQuery.toLowerCase().trim();
+      const query = (topicSearchQuery || searchQuery).toLowerCase().trim();
       if (!query) return matchesCategory && matchesChapter;
 
       return (
@@ -766,6 +775,7 @@ export default function UserDashboardPage() {
     allCombinedTopics,
     topicCategoryFilter,
     selectedChapterFilter,
+    topicSearchQuery,
     searchQuery,
   ]);
 
@@ -781,6 +791,17 @@ export default function UserDashboardPage() {
   }, [allCombinedTopics, topicCategoryFilter]);
 
   const handleNavClick = (navKey: typeof activeNav) => {
+    // Temporarily disable ALL CSS transitions during nav switch.
+    // The global `* { transition: background-color 400ms !important }` rule
+    // causes newly mounted elements to animate from transparent→white,
+    // interpolating through dark intermediate colors (black flash).
+    document.documentElement.classList.add("no-transitions");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove("no-transitions");
+      });
+    });
+
     setActiveNav(navKey);
     setActiveCalculator(null);
     setActiveTopic(null);
@@ -1418,10 +1439,36 @@ export default function UserDashboardPage() {
     reader.readAsDataURL(file);
   };
 
-  // Handle saving profile changes (name and avatar_url to Supabase)
-  const handleSaveProfile = async (e: React.FormEvent) => {
+  // Open confirmation modal before saving
+  const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    const trimmedName = profileNameInput.trim();
+    if (!trimmedName) {
+      setProfileSaveErrorMsg("Name cannot be empty.");
+      return;
+    }
+
+    const isNameChanged = trimmedName !== (user.name || "").trim();
+    const isPhotoChanged = profileAvatarUrl !== (user.avatar_url || "");
+
+    if (isNameChanged && isPhotoChanged) {
+      setSavedChangeType("both");
+    } else if (isNameChanged) {
+      setSavedChangeType("name");
+    } else {
+      setSavedChangeType("photo");
+    }
+
+    setProfileSaveErrorMsg(null);
+    setShowProfileConfirmModal(true);
+  };
+
+  // Actually save profile changes (name and avatar_url to Supabase) after confirmation
+  const executeSaveProfile = async () => {
+    if (!user) return;
+    setShowProfileConfirmModal(false);
 
     const trimmedName = profileNameInput.trim();
     if (!trimmedName) {
@@ -1453,10 +1500,21 @@ export default function UserDashboardPage() {
 
       await refreshUser();
 
-      setProfileSaveSuccessMsg("Profile updated successfully!");
+      if (savedChangeType === "name") {
+        setProfileSaveSuccessMsg(`Name successfully updated to "${trimmedName}"!`);
+      } else if (savedChangeType === "photo") {
+        setProfileSaveSuccessMsg("Profile photo updated successfully!");
+      } else {
+        setProfileSaveSuccessMsg("Profile photo and name updated successfully!");
+      }
+
+      setShowProfileSuccessModal(true);
       setTimeout(() => {
         setProfileSaveSuccessMsg(null);
       }, 3500);
+      setTimeout(() => {
+        setShowProfileSuccessModal(false);
+      }, 2800);
     } catch (err: any) {
       console.error("Profile save error:", err);
       setProfileSaveErrorMsg(err?.message || "An unexpected error occurred.");
@@ -1584,7 +1642,7 @@ export default function UserDashboardPage() {
             {/* Dashboard Link (Active Maroon Pill) */}
             <button
               onClick={() => handleNavClick("dashboard")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+              className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "dashboard"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -1607,7 +1665,7 @@ export default function UserDashboardPage() {
             {/* Calculators Link */}
             <button
               onClick={() => handleNavClick("calculators")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+              className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "calculators"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -1623,7 +1681,7 @@ export default function UserDashboardPage() {
             {/* Topics Link */}
             <button
               onClick={() => handleNavClick("topics")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+              className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "topics"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -1648,7 +1706,7 @@ export default function UserDashboardPage() {
             {/* Quizzes */}
             <button
               onClick={() => handleNavClick("quizzes")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+              className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "quizzes"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -1662,7 +1720,7 @@ export default function UserDashboardPage() {
             {/* Quizzes History */}
             <button
               onClick={() => handleNavClick("quizzes-history")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+              className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "quizzes-history"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -1685,7 +1743,7 @@ export default function UserDashboardPage() {
             {/* Profile Link */}
             <button
               onClick={() => handleNavClick("profile")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+              className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                 activeNav === "profile"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                   : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -1750,7 +1808,7 @@ export default function UserDashboardPage() {
               <nav className="flex flex-col gap-1">
                 <button
                   onClick={() => handleNavClick("dashboard")}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm ${
+                  className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm ${
                     activeNav === "dashboard"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
@@ -1768,7 +1826,7 @@ export default function UserDashboardPage() {
 
                 <button
                   onClick={() => handleNavClick("calculators")}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm ${
+                  className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "calculators"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
@@ -1782,7 +1840,7 @@ export default function UserDashboardPage() {
 
                 <button
                   onClick={() => handleNavClick("topics")}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm ${
+                  className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "topics"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
@@ -1802,7 +1860,7 @@ export default function UserDashboardPage() {
 
                 <button
                   onClick={() => handleNavClick("quizzes")}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
+                  className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "quizzes"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
@@ -1814,7 +1872,7 @@ export default function UserDashboardPage() {
 
                 <button
                   onClick={() => handleNavClick("quizzes-history")}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
+                  className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "quizzes-history"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
@@ -1832,7 +1890,7 @@ export default function UserDashboardPage() {
 
                 <button
                   onClick={() => handleNavClick("profile")}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
+                  className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "profile"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                       : "text-[#4B5565] hover:bg-[#F4F5F7]"
@@ -2069,18 +2127,18 @@ export default function UserDashboardPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl border border-[#EAEBED] shadow-xl p-1.5 z-50 flex flex-col gap-1"
+                    className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#1E293B] rounded-2xl border border-[#EAEBED] dark:border-slate-700 shadow-xl p-1.5 z-50 flex flex-col gap-1"
                   >
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-xs font-bold text-gray-800">
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-slate-750">
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-100">
                         {displayName}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <p className="text-[11px] text-gray-500 truncate">
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
                           {user?.email || "student@mathworkspace.edu"}
                         </p>
                         {user?.block && (
-                          <span className="inline-flex items-center shrink-0 rounded-md bg-[#166534]/10 border border-[#166534]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#166534] leading-none">
+                          <span className="inline-flex items-center shrink-0 rounded-md bg-[#166534]/10 border border-[#166534]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#166534] dark:text-emerald-400 leading-none">
                             Block {user.block.trim().toUpperCase()}
                           </span>
                         )}
@@ -2092,10 +2150,10 @@ export default function UserDashboardPage() {
                         setIsUserDropdownOpen(false);
                         handleNavClick("profile");
                       }}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-100 text-left cursor-pointer"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer transition-colors"
                     >
-                      <User className="w-4 h-4 text-[#166534]" />
-                      <span className="font-semibold text-gray-900">My Profile</span>
+                      <User className="w-4 h-4 text-[#166534] dark:text-emerald-400" />
+                      <span className="font-semibold text-gray-900 dark:text-white">My Profile</span>
                     </button>
 
                     <button
@@ -2103,9 +2161,9 @@ export default function UserDashboardPage() {
                         setIsUserDropdownOpen(false);
                         navigate("/?tab=home");
                       }}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-100 text-left cursor-pointer"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer transition-colors"
                     >
-                      <GraduationCap className="w-4 h-4 text-gray-500" />
+                      <GraduationCap className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span>Public Home</span>
                     </button>
 
@@ -2114,9 +2172,9 @@ export default function UserDashboardPage() {
                         setIsUserDropdownOpen(false);
                         handleNavClick("topics");
                       }}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-100 text-left cursor-pointer"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer transition-colors"
                     >
-                      <BookOpen className="w-4 h-4 text-gray-500" />
+                      <BookOpen className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span>Browse Curriculum</span>
                     </button>
 
@@ -2125,13 +2183,36 @@ export default function UserDashboardPage() {
                         setIsUserDropdownOpen(false);
                         handleNavClick("calculators");
                       }}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-100 text-left cursor-pointer"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer transition-colors"
                     >
-                      <Calculator className="w-4 h-4 text-gray-500" />
+                      <Calculator className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span>Math Calculators</span>
                     </button>
 
-                    <div className="h-[1px] bg-gray-100 my-0.5" />
+                    {/* Light / Dark Mode Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleTheme();
+                      }}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {theme === "dark" ? (
+                          <Moon className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <Sun className="w-4 h-4 text-amber-500" />
+                        )}
+                        <span className="font-semibold">
+                          {theme === "dark" ? "Dark Mode" : "Light Mode"}
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        {theme === "dark" ? "On" : "Off"}
+                      </span>
+                    </button>
+
+                    <div className="h-[1px] bg-gray-100 dark:bg-gray-800 my-0.5" />
 
                     <button
                       onClick={async () => {
@@ -2139,7 +2220,7 @@ export default function UserDashboardPage() {
                         await logout();
                         navigate("/login", { replace: true });
                       }}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-50 text-left cursor-pointer"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 text-left cursor-pointer transition-colors"
                     >
                       <LogOut className="w-4 h-4 text-red-600" />
                       <span>Sign Out</span>
@@ -2284,7 +2365,7 @@ export default function UserDashboardPage() {
                           cx="50"
                           cy="50"
                           r="40"
-                          className="stroke-[#EAEBED]"
+                          className="stroke-[#EAEBED] dark:stroke-slate-700/60"
                           strokeWidth="10"
                           fill="none"
                         />
@@ -2292,7 +2373,7 @@ export default function UserDashboardPage() {
                           cx="50"
                           cy="50"
                           r="40"
-                          className="stroke-[#166534] transition-all duration-1000"
+                          className="stroke-[#166534] dark:stroke-emerald-500 transition-all duration-1000"
                           strokeWidth="10"
                           strokeDasharray="251.2"
                           strokeDashoffset={
@@ -2303,10 +2384,10 @@ export default function UserDashboardPage() {
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-xl sm:text-2xl font-extrabold text-[#1F242D] leading-none">
+                        <span className="text-xl sm:text-2xl font-extrabold text-[#1F242D] dark:text-slate-100 leading-none">
                           {studentAverageScore} pts
                         </span>
-                        <span className="text-[10px] font-semibold text-[#8C93A0] mt-1">
+                        <span className="text-[10px] font-semibold text-[#8C93A0] dark:text-slate-400 mt-1">
                           Overall Progress
                         </span>
                       </div>
@@ -2622,127 +2703,166 @@ export default function UserDashboardPage() {
               ) : (
                 /* Calculators List & Filter */
                 <div className="flex flex-col gap-6">
-                  {/* Header Banner */}
-                  <div className="bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#166534]" />
-                        <h2 className="text-xl font-extrabold text-[#1F242D]">
-                          All Math Calculators ({allCombinedCalculators.length})
-                        </h2>
-                      </div>
-                      <p className="text-xs sm:text-sm text-[#6B7280]">
-                        Full suite of 52+ solvers for Linear Algebra (23),
-                        Calculus 1 (17), and Calculus 2 (12).
-                      </p>
+                  {/* Header Banner for Calculators Hub matching Admin Layout */}
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="max-w-xl">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] dark:text-slate-100 tracking-tight">
+                        Mathematical Solvers & Tools
+                      </h2>
                     </div>
 
-                    {/* Category Selector Tabs with Count Badges */}
-                    <div className="flex flex-wrap items-center p-1 bg-[#F4F5F7] rounded-xl border border-[#EAEBED] gap-1">
-                      <button
-                        onClick={() => setCalcCategoryFilter("all")}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                          calcCategoryFilter === "all"
-                            ? "bg-[#166534] text-white shadow-xs"
-                            : "text-[#4B5565] hover:text-[#1F242D]"
-                        }`}
-                      >
-                        <span>All</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${calcCategoryFilter === "all" ? "bg-white/20 text-white" : "bg-gray-200/80 text-gray-600"}`}
-                        >
-                          {allCombinedCalculators.length}
-                        </span>
-                      </button>
-
-                      <button
-                        onClick={() => setCalcCategoryFilter("linear-algebra")}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                          calcCategoryFilter === "linear-algebra"
-                            ? "bg-[#166534] text-white shadow-xs"
-                            : "text-[#4B5565] hover:text-[#1F242D]"
-                        }`}
-                      >
-                        <span>Linear Algebra</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${calcCategoryFilter === "linear-algebra" ? "bg-white/20 text-white" : "bg-gray-200/80 text-gray-600"}`}
-                        >
-                          {laCalcCount}
-                        </span>
-                      </button>
-
-                      <button
-                        onClick={() => setCalcCategoryFilter("calculus-1")}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                          calcCategoryFilter === "calculus-1"
-                            ? "bg-[#166534] text-white shadow-xs"
-                            : "text-[#4B5565] hover:text-[#1F242D]"
-                        }`}
-                      >
-                        <span>Calculus 1</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${calcCategoryFilter === "calculus-1" ? "bg-white/20 text-white" : "bg-gray-200/80 text-gray-600"}`}
-                        >
-                          {c1CalcCount}
-                        </span>
-                      </button>
-
-                      <button
-                        onClick={() => setCalcCategoryFilter("calculus-2")}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                          calcCategoryFilter === "calculus-2"
-                            ? "bg-[#166534] text-white shadow-xs"
-                            : "text-[#4B5565] hover:text-[#1F242D]"
-                        }`}
-                      >
-                        <span>Calculus 2</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${calcCategoryFilter === "calculus-2" ? "bg-white/20 text-white" : "bg-gray-200/80 text-gray-600"}`}
-                        >
-                          {c2CalcCount}
-                        </span>
-                      </button>
+                    {/* Calculator Quick Search */}
+                    <div className="w-full lg:w-72 relative">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0] pointer-events-none" />
+                      <input
+                        type="text"
+                        value={calcSearchQuery}
+                        onChange={(e) => setCalcSearchQuery(e.target.value)}
+                        placeholder="Filter calculators..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-[#F9FAFB] dark:bg-slate-800 border border-[#E2E4E8] dark:border-slate-700 text-[#111827] dark:text-slate-100 placeholder:text-[#9AA1B0] dark:placeholder:text-slate-500 rounded-xl text-sm focus:outline-none focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
+                      />
                     </div>
                   </div>
 
-                  {/* Calculator Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {/* Category Switcher Buttons (Linear Algebra, Calculus 1, Calculus 2) matching Admin */}
+                  <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-[#161F30] p-2 rounded-2xl border border-[#EAEBED] dark:border-slate-700 shadow-xs">
+                    <button
+                      type="button"
+                      onClick={() => setCalcCategoryFilter("linear-algebra")}
+                      className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
+                        calcCategoryFilter === "linear-algebra"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
+                          : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F3F4F6] dark:hover:bg-slate-700 hover:text-[#111827] dark:hover:text-slate-100"
+                      }`}
+                    >
+                      <Layers className="w-4 h-4" />
+                      <span>Linear Algebra Calculators</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          calcCategoryFilter === "linear-algebra"
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
+                        }`}
+                      >
+                        {laCalcCount}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCalcCategoryFilter("calculus-1")}
+                      className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
+                        calcCategoryFilter === "calculus-1"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
+                          : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F3F4F6] dark:hover:bg-slate-700 hover:text-[#111827] dark:hover:text-slate-100"
+                      }`}
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Calculus 1 Calculators</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          calcCategoryFilter === "calculus-1"
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
+                        }`}
+                      >
+                        {c1CalcCount}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCalcCategoryFilter("calculus-2")}
+                      className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
+                        calcCategoryFilter === "calculus-2"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
+                          : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F3F4F6] dark:hover:bg-slate-700 hover:text-[#111827] dark:hover:text-slate-100"
+                      }`}
+                    >
+                      <Zap className="w-4 h-4" />
+                      <span>Calculus 2 Calculators</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          calcCategoryFilter === "calculus-2"
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
+                        }`}
+                      >
+                        {c2CalcCount}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Calculators Cards Grid matching Admin */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {filteredCalculators.map((calc) => (
-                      <div
+                      <motion.div
                         key={calc.id}
-                        onClick={() => setActiveCalculator(calc)}
-                        className="bg-white border border-[#EAEBED] hover:border-[#166534]/40 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                        layout
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#166534]/40 hover:shadow-md transition-all duration-200 group"
                       >
                         <div>
+                          {/* Header with badge */}
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-[11px] font-bold text-[#166534] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
+                            <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md truncate max-w-[200px]">
                               {calc.badge}
                             </span>
-                            <span className="text-[11px] font-medium text-[#8C93A0]">
-                              {calc.categoryLabel}
-                            </span>
+                            <div className="w-8 h-8 rounded-lg bg-[#F8F9FA] flex items-center justify-center text-[#4B5563] group-hover:bg-[#166534] group-hover:text-white transition-colors shrink-0">
+                              <Calculator className="w-4 h-4" />
+                            </div>
                           </div>
 
-                          <h3 className="text-base font-bold text-[#1F242D] group-hover:text-[#166534] transition">
+                          {/* Title */}
+                          <h3 className="text-base font-bold text-[#111827] group-hover:text-[#166534] transition-colors line-clamp-1">
                             {calc.title}
                           </h3>
 
-                          <p className="text-xs text-[#6B7280] line-clamp-2 my-2">
+                          {/* Formula Pill */}
+                          <div className="my-2.5 p-2 bg-[#F9FAFB] border border-[#F0F1F3] rounded-xl font-serif text-xs text-[#1F242D] text-center overflow-x-auto">
+                            <code>{calc.formula}</code>
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-xs text-[#6B7280] leading-relaxed line-clamp-3">
                             {calc.description}
                           </p>
-
-                          <div className="bg-[#F8F9FA] rounded-xl p-2.5 text-xs font-mono text-[#166534] border border-[#EAEBED] truncate my-2">
-                            {calc.formula}
-                          </div>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#166534]">
-                          <span>Launch Solver</span>
-                          <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                        {/* Actions */}
+                        <div className="mt-5 pt-3.5 border-t border-[#F3F4F6] flex items-center justify-between">
+                          <span className="text-[0.72rem] font-semibold text-[#9CA3AF]">
+                            Full Page Solver
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setActiveCalculator(calc)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#166534] hover:bg-[#14532d] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95 group/btn"
+                          >
+                            <span>Open Calculator</span>
+                            <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                          </button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
+
+                  {filteredCalculators.length === 0 && (
+                    <div className="bg-white border border-[#EAEBED] rounded-2xl p-12 text-center flex flex-col items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-green-50 text-[#166534] flex items-center justify-center mb-3">
+                        <Search className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-base font-bold text-[#111827]">
+                        No calculators match your search.
+                      </h4>
+                      <p className="text-xs text-[#6B7280] mt-1">
+                        Try searching for another formula, term, or clear the search filter.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -3025,100 +3145,103 @@ export default function UserDashboardPage() {
               ) : (
                 /* Topics List & Category/Chapter Filter */
                 <div className="flex flex-col gap-6">
-                  {/* Header Banner */}
-                  <div className="bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#166534]" />
-                        <h2 className="text-xl font-extrabold text-[#1F242D]">
-                          All Curriculum Topics ({allCombinedTopics.length})
-                        </h2>
-                      </div>
-                      <p className="text-xs sm:text-sm text-[#6B7280]">
-                        Complete mathematical lessons for Linear Algebra,
-                        Calculus 1 (Chapters 1-8), and Calculus 2 (Chapters
-                        9-16).
-                      </p>
+                  {/* Header Banner for Topics Hub matching Admin Layout */}
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="max-w-xl">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] dark:text-slate-100 tracking-tight">
+                        Curriculum Topics & Modules
+                      </h2>
                     </div>
 
-                    {/* Category Selector Tabs */}
-                    <div className="flex flex-wrap items-center p-1 bg-[#F4F5F7] rounded-xl border border-[#EAEBED] gap-1">
-                      <button
-                        onClick={() => {
-                          setTopicCategoryFilter("all");
-                          setSelectedChapterFilter("all");
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                          topicCategoryFilter === "all"
-                            ? "bg-[#166534] text-white shadow-xs"
-                            : "text-[#4B5565] hover:text-[#1F242D]"
-                        }`}
-                      >
-                        <span>All</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${topicCategoryFilter === "all" ? "bg-white/20 text-white" : "bg-gray-200/80 text-gray-600"}`}
-                        >
-                          {allCombinedTopics.length}
-                        </span>
-                      </button>
+                    {/* Topic Search Box */}
+                    <div className="w-full lg:w-72 relative">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B0] pointer-events-none" />
+                      <input
+                        type="text"
+                        value={topicSearchQuery}
+                        onChange={(e) => setTopicSearchQuery(e.target.value)}
+                        placeholder="Search all topics & lessons..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-[#F9FAFB] dark:bg-slate-800 border border-[#E2E4E8] dark:border-slate-700 text-[#111827] dark:text-slate-100 placeholder:text-[#9AA1B0] dark:placeholder:text-slate-500 rounded-xl text-sm focus:outline-none focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
+                      />
+                    </div>
+                  </div>
 
-                      <button
-                        onClick={() => {
-                          setTopicCategoryFilter("linear-algebra");
-                          setSelectedChapterFilter("all");
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                  {/* Category Switcher Buttons matching Admin */}
+                  <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-[#161F30] p-2 rounded-2xl border border-[#EAEBED] dark:border-slate-700 shadow-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTopicCategoryFilter("linear-algebra");
+                        setSelectedChapterFilter("all");
+                      }}
+                      className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
+                        topicCategoryFilter === "linear-algebra"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
+                          : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F3F4F6] dark:hover:bg-slate-700 hover:text-[#111827] dark:hover:text-slate-100"
+                      }`}
+                    >
+                      <Layers className="w-4 h-4" />
+                      <span>Linear Algebra Topics</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                           topicCategoryFilter === "linear-algebra"
-                            ? "bg-[#166534] text-white shadow-xs"
-                            : "text-[#4B5565] hover:text-[#1F242D]"
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
                         }`}
                       >
-                        <span>Linear Algebra</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${topicCategoryFilter === "linear-algebra" ? "bg-white/20 text-white" : "bg-gray-200/80 text-gray-600"}`}
-                        >
-                          {laTopicCount}
-                        </span>
-                      </button>
+                        {laTopicCount}
+                      </span>
+                    </button>
 
-                      <button
-                        onClick={() => {
-                          setTopicCategoryFilter("calculus-1");
-                          setSelectedChapterFilter("all");
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTopicCategoryFilter("calculus-1");
+                        setSelectedChapterFilter("all");
+                      }}
+                      className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
+                        topicCategoryFilter === "calculus-1"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
+                          : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F3F4F6] dark:hover:bg-slate-700 hover:text-[#111827] dark:hover:text-slate-100"
+                      }`}
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Calculus 1 Topics</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                           topicCategoryFilter === "calculus-1"
-                            ? "bg-[#166534] text-white shadow-xs"
-                            : "text-[#4B5565] hover:text-[#1F242D]"
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
                         }`}
                       >
-                        <span>Calculus 1</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${topicCategoryFilter === "calculus-1" ? "bg-white/20 text-white" : "bg-gray-200/80 text-gray-600"}`}
-                        >
-                          {c1TopicCount}
-                        </span>
-                      </button>
+                        {c1TopicCount}
+                      </span>
+                    </button>
 
-                      <button
-                        onClick={() => {
-                          setTopicCategoryFilter("calculus-2");
-                          setSelectedChapterFilter("all");
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTopicCategoryFilter("calculus-2");
+                        setSelectedChapterFilter("all");
+                      }}
+                      className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
+                        topicCategoryFilter === "calculus-2"
+                          ? "bg-[#166534] text-white shadow-md shadow-[#166534]/25"
+                          : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F3F4F6] dark:hover:bg-slate-700 hover:text-[#111827] dark:hover:text-slate-100"
+                      }`}
+                    >
+                      <Zap className="w-4 h-4" />
+                      <span>Calculus 2 Topics</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                           topicCategoryFilter === "calculus-2"
-                            ? "bg-[#166534] text-white shadow-xs"
-                            : "text-[#4B5565] hover:text-[#1F242D]"
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
                         }`}
                       >
-                        <span>Calculus 2</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${topicCategoryFilter === "calculus-2" ? "bg-white/20 text-white" : "bg-gray-200/80 text-gray-600"}`}
-                        >
-                          {c2TopicCount}
-                        </span>
-                      </button>
-                    </div>
+                        {c2TopicCount}
+                      </span>
+                    </button>
                   </div>
 
                   {/* Active Chapter Filter Alert & Back Button */}
@@ -3126,13 +3249,13 @@ export default function UserDashboardPage() {
                     <div className="flex items-center justify-between bg-white border border-[#EAEBED] rounded-2xl px-5 py-3 shadow-xs">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-[#6B7280]">Filtered by Chapter:</span>
-                        <span className="text-xs font-bold text-[#166534] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
+                        <span className="text-xs font-bold text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md">
                           {selectedChapterFilter}
                         </span>
                       </div>
                       <button
                         onClick={() => setSelectedChapterFilter("all")}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#166534] hover:bg-[#FCE8EB] px-3 py-1.5 rounded-xl transition cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#166534] hover:bg-green-50 px-3 py-1.5 rounded-xl transition cursor-pointer"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" />
                         <span>Back to All Chapters</span>
@@ -3140,31 +3263,37 @@ export default function UserDashboardPage() {
                     </div>
                   )}
 
-                  {/* Topics Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {/* Topics Cards Grid matching Admin */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {filteredTopics.map((top) => (
-                      <div
+                      <motion.div
                         key={top.id}
-                        onClick={() => setActiveTopic(top)}
-                        className="bg-white border border-[#EAEBED] hover:border-[#166534]/40 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                        layout
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-white border border-[#EAEBED] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#166534]/40 hover:shadow-md transition-all duration-200 group"
                       >
                         <div>
+                          {/* Header with chapter badge */}
                           <div className="flex items-center justify-between mb-3">
-                            <span 
+                            <span
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedChapterFilter(top.chapter);
                               }}
                               title="Click to filter by this chapter"
-                              className="text-[11px] font-bold text-[#166534] bg-[#FCE8EB] hover:bg-[#166534] hover:text-white transition-colors px-2.5 py-0.5 rounded-full cursor-pointer"
+                              className="text-[0.68rem] font-bold text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md truncate max-w-[200px] cursor-pointer hover:bg-[#166534] hover:text-white transition-colors"
                             >
                               {top.chapter}
                             </span>
-                            <span className="text-[11px] font-medium text-[#8C93A0]">
-                              {top.categoryLabel}
-                            </span>
+                            <div className="w-8 h-8 rounded-lg bg-[#F8F9FA] flex items-center justify-center text-[#4B5563] group-hover:bg-[#166534] group-hover:text-white transition-colors shrink-0">
+                              <BookOpen className="w-4 h-4" />
+                            </div>
                           </div>
 
+                          {/* Topic Image Thumbnail */}
                           {top.image && (
                             <div className="w-full h-36 rounded-xl overflow-hidden mb-3 bg-gray-50">
                               <img
@@ -3175,20 +3304,36 @@ export default function UserDashboardPage() {
                             </div>
                           )}
 
-                          <h3 className="text-base font-bold text-[#1F242D] group-hover:text-[#166534] transition">
+                          {/* Title */}
+                          <h3 className="text-base font-bold text-[#111827] group-hover:text-[#166534] transition-colors line-clamp-2">
                             {top.title}
                           </h3>
 
-                          <p className="text-xs text-[#6B7280] line-clamp-3 my-2.5">
+                          {/* Summary */}
+                          <p className="text-xs text-[#6B7280] leading-relaxed mt-2 line-clamp-3">
                             {top.summary}
                           </p>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#166534]">
-                          <span>Read Module</span>
-                          <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                        {/* Actions */}
+                        <div className="mt-5 pt-3.5 border-t border-[#F3F4F6] flex items-center justify-between">
+                          <span className="text-[0.72rem] font-semibold text-[#9CA3AF]">
+                            {top.examples.length > 0
+                              ? `${top.examples.length} Example${
+                                  top.examples.length > 1 ? "s" : ""
+                                }`
+                              : "Theory & Practice"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setActiveTopic(top)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#166534] hover:bg-[#14532d] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95 group/btn"
+                          >
+                            <span>Explore Topic</span>
+                            <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                          </button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
@@ -3202,8 +3347,8 @@ export default function UserDashboardPage() {
           {activeTakingQuiz && !submittedResult && (
             <div className="w-full max-w-[1440px] mx-auto flex flex-col gap-6 pb-24">
               {/* Top Sticky/Header HUD Card */}
-              <div className="relative overflow-hidden bg-white/95 backdrop-blur-md border border-[#EAEBED] rounded-[28px] p-5 sm:p-7 shadow-sm">
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gray-100">
+              <div className="relative overflow-hidden bg-white/95 dark:bg-[#161F30]/95 backdrop-blur-md border border-[#EAEBED] dark:border-[#1E2D45] rounded-[28px] p-5 sm:p-7 shadow-sm">
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gray-100 dark:bg-[#1E2D45]">
                   <motion.div
                     className="h-full bg-gradient-to-r from-[#15803d] via-[#166534] to-[#14532d]"
                     initial={{ width: 0 }}
@@ -3222,17 +3367,17 @@ export default function UserDashboardPage() {
                 <div className="flex items-center justify-between gap-4 pt-1 mb-4">
                   <button
                     onClick={handleExitQuiz}
-                    className="group flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:text-green-700 hover:border-green-200 hover:bg-green-50/50 transition-all cursor-pointer"
+                    className="group flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-[#263347] text-xs font-bold text-gray-600 dark:text-[#94A3B8] hover:text-green-700 dark:hover:text-[#4ADE80] hover:border-green-200 dark:hover:border-[#166534]/50 hover:bg-green-50/50 dark:hover:bg-[#166534]/20 transition-all cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
                     <span>Exit Quiz</span>
                   </button>
 
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-extrabold uppercase tracking-wider bg-[#166534]/10 text-[#166534] border border-[#166534]/20 px-3 py-1 rounded-full">
+                    <span className="text-xs font-extrabold uppercase tracking-wider bg-[#166534]/10 dark:bg-[#166534]/25 text-[#166534] dark:text-[#4ADE80] border border-[#166534]/20 dark:border-[#166534]/40 px-3 py-1 rounded-full">
                       {activeTakingQuiz.topic}
                     </span>
-                    <div className="flex items-center gap-1.5 bg-[#1F242D] text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs">
+                    <div className="flex items-center gap-1.5 bg-[#1F242D] dark:bg-[#0B0F19] text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs border border-transparent dark:border-[#263347]">
                       <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
                       <span className="tracking-wide font-mono">
                         {formatSeconds(quizTimerSeconds)}
@@ -3242,18 +3387,18 @@ export default function UserDashboardPage() {
                 </div>
 
                 {/* Title & Stats Summary */}
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-gray-100 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-gray-100 dark:border-[#1E2D45] pb-4">
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-[#111827] tracking-tight">
+                    <h2 className="text-xl sm:text-2xl font-black text-[#111827] dark:text-[#F1F5F9] tracking-tight">
                       {activeTakingQuiz.title}
                     </h2>
-                    <div className="flex items-center gap-2 mt-1 text-xs font-semibold text-gray-500">
+                    <div className="flex items-center gap-2 mt-1 text-xs font-semibold text-gray-500 dark:text-[#94A3B8]">
                       <span>
                         Question {currentQuestionIndex + 1} of{" "}
                         {activeTakingQuiz.questions.length}
                       </span>
                       <span>•</span>
-                      <span className="capitalize text-gray-600 font-bold">
+                      <span className="capitalize text-gray-600 dark:text-[#CBD5E1] font-bold">
                         {(
                           activeTakingQuiz.questions[currentQuestionIndex]
                             ?.questionType || "multiple_choice"
@@ -3263,8 +3408,8 @@ export default function UserDashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-2 sm:self-end">
-                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-xl text-xs font-bold">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-[#166534]/20 border border-emerald-200 dark:border-[#166534]/40 text-emerald-800 dark:text-[#4ADE80] px-3 py-1 rounded-xl text-xs font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-[#4ADE80]" />
                       <span>
                         {Object.keys(selectedAnswers).length} /{" "}
                         {activeTakingQuiz.questions.length} Answered
@@ -3275,7 +3420,7 @@ export default function UserDashboardPage() {
 
                 {/* Interactive Question Stepper Ribbon */}
                 <div className="pt-3">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  <p className="text-[11px] font-bold text-gray-400 dark:text-[#64748B] uppercase tracking-wider mb-2">
                     Jump to Question
                   </p>
                   <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
@@ -3290,15 +3435,15 @@ export default function UserDashboardPage() {
                           onClick={() => setCurrentQuestionIndex(idx)}
                           className={`relative w-9 h-9 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center cursor-pointer shrink-0 ${
                             isCurrent
-                              ? "bg-gradient-to-br from-[#15803d] to-[#166534] text-white shadow-md shadow-[#166534]/30 ring-2 ring-[#166534] ring-offset-2"
+                              ? "bg-gradient-to-br from-[#15803d] to-[#166534] text-white shadow-md shadow-[#166534]/30 ring-2 ring-[#166534] ring-offset-2 dark:ring-offset-[#161F30]"
                               : isAnswered
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-black shadow-xs"
-                              : "bg-gray-100/90 text-gray-500 hover:bg-gray-200 hover:text-gray-800 border border-transparent"
+                              ? "bg-emerald-50 dark:bg-[#166534]/25 text-emerald-700 dark:text-[#4ADE80] border border-emerald-300 dark:border-[#166534]/50 font-black shadow-xs"
+                              : "bg-gray-100/90 dark:bg-[#1E2D45] text-gray-500 dark:text-[#94A3B8] hover:bg-gray-200 dark:hover:bg-[#263347] hover:text-gray-800 dark:hover:text-[#F1F5F9] border border-transparent"
                           }`}
                         >
                           {idx + 1}
                           {isAnswered && !isCurrent && (
-                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white" />
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-[#161F30]" />
                           )}
                         </motion.button>
                       );
@@ -3314,7 +3459,7 @@ export default function UserDashboardPage() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25, ease: "easeOut" }}
-                  className="bg-white border border-[#EAEBED] rounded-[32px] p-6 sm:p-9 shadow-sm flex flex-col gap-6"
+                  className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-[#1E2D45] rounded-[32px] p-6 sm:p-9 shadow-sm flex flex-col gap-6"
                 >
                   {/* Question Header & Points Badge */}
                   <div className="flex items-center justify-between gap-3">
@@ -3322,12 +3467,12 @@ export default function UserDashboardPage() {
                       <span className="inline-flex items-center rounded-xl bg-gradient-to-r from-[#15803d] to-[#166534] text-white text-xs font-extrabold px-3.5 py-1.5 shadow-xs">
                         Question {currentQuestionIndex + 1}
                       </span>
-                      <span className="text-xs font-bold text-gray-400">
+                      <span className="text-xs font-bold text-gray-400 dark:text-[#64748B]">
                         of {activeTakingQuiz.questions.length}
                       </span>
                     </div>
 
-                    <span className="text-xs font-extrabold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl">
+                    <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 px-3 py-1 rounded-xl">
                       ★ {activeTakingQuiz.pointsPerItem || 1}{" "}
                       {(activeTakingQuiz.pointsPerItem || 1) === 1
                         ? "Point"
@@ -3336,7 +3481,7 @@ export default function UserDashboardPage() {
                   </div>
 
                   {/* Question Prompt */}
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-[#111827] leading-relaxed tracking-tight">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-[#111827] dark:text-[#F1F5F9] leading-relaxed tracking-tight">
                     {activeTakingQuiz.questions[currentQuestionIndex].prompt}
                   </h3>
 
@@ -3344,7 +3489,7 @@ export default function UserDashboardPage() {
                   {activeTakingQuiz.questions[currentQuestionIndex]
                     .questionType === "identification" && (
                     <div className="space-y-2.5 pt-2">
-                      <label className="text-xs font-bold text-gray-600 block uppercase tracking-wider">
+                      <label className="text-xs font-bold text-gray-600 dark:text-[#94A3B8] block uppercase tracking-wider">
                         Your Identification Answer:
                       </label>
                       <input
@@ -3361,7 +3506,7 @@ export default function UserDashboardPage() {
                             e.target.value
                           )
                         }
-                        className="w-full px-5 py-4 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition-all shadow-inner"
+                        className="w-full px-5 py-4 bg-[#F8F9FA] dark:bg-[#1E2D45] border border-gray-200 dark:border-[#263347] rounded-2xl text-base font-semibold text-gray-900 dark:text-[#F1F5F9] placeholder:text-gray-400 dark:placeholder:text-[#4B6080] focus:outline-none focus:ring-2 focus:ring-[#166534] dark:focus:ring-[#22C55E] focus:bg-white dark:focus:bg-[#1E2D45] transition-all shadow-inner"
                       />
                     </div>
                   )}
@@ -3370,7 +3515,7 @@ export default function UserDashboardPage() {
                   {activeTakingQuiz.questions[currentQuestionIndex]
                     .questionType === "enumeration" && (
                     <div className="space-y-2.5 pt-2">
-                      <label className="text-xs font-bold text-gray-600 block uppercase tracking-wider">
+                      <label className="text-xs font-bold text-gray-600 dark:text-[#94A3B8] block uppercase tracking-wider">
                         List items (separated by commas or on separate lines):
                       </label>
                       <textarea
@@ -3387,7 +3532,7 @@ export default function UserDashboardPage() {
                             e.target.value
                           )
                         }
-                        className="w-full px-5 py-3.5 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition-all shadow-inner resize-y"
+                        className="w-full px-5 py-3.5 bg-[#F8F9FA] dark:bg-[#1E2D45] border border-gray-200 dark:border-[#263347] rounded-2xl text-base font-semibold text-gray-900 dark:text-[#F1F5F9] placeholder:text-gray-400 dark:placeholder:text-[#4B6080] focus:outline-none focus:ring-2 focus:ring-[#166534] dark:focus:ring-[#22C55E] focus:bg-white dark:focus:bg-[#1E2D45] transition-all shadow-inner resize-y"
                       />
                     </div>
                   )}
@@ -3396,7 +3541,7 @@ export default function UserDashboardPage() {
                   {activeTakingQuiz.questions[currentQuestionIndex]
                     .questionType === "problem_solving" && (
                     <div className="space-y-2.5 pt-2">
-                      <label className="text-xs font-bold text-gray-600 block uppercase tracking-wider">
+                      <label className="text-xs font-bold text-gray-600 dark:text-[#94A3B8] block uppercase tracking-wider">
                         Final Solved Answer:
                       </label>
                       <input
@@ -3413,7 +3558,7 @@ export default function UserDashboardPage() {
                             e.target.value
                           )
                         }
-                        className="w-full px-5 py-4 bg-[#F8F9FA] border border-gray-200 rounded-2xl text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition-all shadow-inner"
+                        className="w-full px-5 py-4 bg-[#F8F9FA] dark:bg-[#1E2D45] border border-gray-200 dark:border-[#263347] rounded-2xl text-base font-bold text-gray-900 dark:text-[#F1F5F9] placeholder:text-gray-400 dark:placeholder:text-[#4B6080] focus:outline-none focus:ring-2 focus:ring-[#166534] dark:focus:ring-[#22C55E] focus:bg-white dark:focus:bg-[#1E2D45] transition-all shadow-inner"
                       />
                     </div>
                   )}
@@ -3464,8 +3609,8 @@ export default function UserDashboardPage() {
                             }
                             className={`group w-full text-left p-4 sm:p-5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer ${
                               isSelected
-                                ? "border-[#166534] bg-gradient-to-r from-[#FCE8EB]/80 to-[#FCE8EB]/40 shadow-sm ring-2 ring-[#166534]/20"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 bg-white"
+                                ? "border-[#166534] dark:border-[#22C55E] bg-gradient-to-r from-[#FCE8EB]/80 to-[#FCE8EB]/40 dark:from-[#166534]/30 dark:to-[#166534]/15 shadow-sm ring-2 ring-[#166534]/20 dark:ring-[#22C55E]/20"
+                                : "border-gray-200 dark:border-[#1E2D45] hover:border-gray-300 dark:hover:border-[#263347] hover:bg-gray-50/80 dark:hover:bg-[#1E2D45]/40 bg-white dark:bg-[#161F30]"
                             }`}
                           >
                             <div className="flex items-center gap-4 min-w-0">
@@ -3473,7 +3618,7 @@ export default function UserDashboardPage() {
                                 className={`w-9 h-9 rounded-xl font-black text-xs flex items-center justify-center shrink-0 transition-all ${
                                   isSelected
                                     ? "bg-[#166534] text-white shadow-xs"
-                                    : "bg-gray-100 text-gray-700 group-hover:bg-gray-200"
+                                    : "bg-gray-100 dark:bg-[#1E2D45] text-gray-700 dark:text-[#CBD5E1] group-hover:bg-gray-200 dark:group-hover:bg-[#263347]"
                                 }`}
                               >
                                 {choice}
@@ -3481,8 +3626,8 @@ export default function UserDashboardPage() {
                               <span
                                 className={`text-base font-semibold leading-relaxed transition-colors ${
                                   isSelected
-                                    ? "text-[#111827] font-bold"
-                                    : "text-[#374151] group-hover:text-[#111827]"
+                                    ? "text-[#111827] dark:text-[#F1F5F9] font-bold"
+                                    : "text-[#374151] dark:text-[#CBD5E1] group-hover:text-[#111827] dark:group-hover:text-white"
                                 }`}
                               >
                                 {text}
@@ -3493,8 +3638,8 @@ export default function UserDashboardPage() {
                               <div
                                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                                   isSelected
-                                    ? "border-[#166534] bg-[#166534] text-white scale-105"
-                                    : "border-gray-300 bg-white group-hover:border-gray-400"
+                                    ? "border-[#166534] dark:border-[#22C55E] bg-[#166534] dark:bg-[#22C55E] text-white scale-105"
+                                    : "border-gray-300 dark:border-[#263347] bg-white dark:bg-[#1E2D45] group-hover:border-gray-400 dark:group-hover:border-[#334155]"
                                 }`}
                               >
                                 {isSelected && (
@@ -3515,14 +3660,14 @@ export default function UserDashboardPage() {
                   )}
 
                   {/* Bottom Navigation Toolbar */}
-                  <div className="flex items-center justify-between pt-6 border-t border-gray-100 gap-3">
+                  <div className="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-[#1E2D45] gap-3">
                     <button
                       type="button"
                       disabled={currentQuestionIndex === 0}
                       onClick={() =>
                         setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))
                       }
-                      className="px-5 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-2 cursor-pointer"
+                      className="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-[#263347] text-xs font-bold text-gray-700 dark:text-[#CBD5E1] hover:bg-gray-50 dark:hover:bg-[#1E2D45] disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-2 cursor-pointer"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       <span>Previous</span>
@@ -3581,18 +3726,18 @@ export default function UserDashboardPage() {
           {submittedResult && (
             <div className="w-full max-w-[1440px] mx-auto flex flex-col gap-6 pb-24">
               {/* Celebratory Hero Banner */}
-              <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative">
+              <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-[#1E2D45] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative">
                 <div className="flex flex-col items-center sm:items-start text-center sm:text-left z-10">
-                  <div className="inline-flex items-center gap-1.5 bg-[#166534]/10 text-[#166534] px-3 py-1 rounded-full text-xs font-bold mb-2">
+                  <div className="inline-flex items-center gap-1.5 bg-[#166534]/10 dark:bg-[#166534]/25 text-[#166534] dark:text-[#4ADE80] px-3 py-1 rounded-full text-xs font-bold mb-2">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Quiz Complete</span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827]">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] dark:text-[#F1F5F9]">
                     {submittedResult.quizTitle}
                   </h2>
-                  <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
+                  <p className="text-xs sm:text-sm text-[#6B7280] dark:text-[#94A3B8] mt-1">
                     Submitted on {submittedResult.submittedAt} • Topic:{" "}
-                    <span className="font-semibold text-gray-800">
+                    <span className="font-semibold text-gray-800 dark:text-[#CBD5E1]">
                       {submittedResult.topic}
                     </span>
                   </p>
@@ -3601,15 +3746,15 @@ export default function UserDashboardPage() {
                     <span
                       className={`text-xs font-extrabold px-3 py-1 rounded-full ${
                         submittedResult.passed
-                          ? "bg-green-100 text-green-800 border border-green-200"
-                          : "bg-green-100 text-green-800 border border-green-200"
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800/40"
+                          : "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40"
                       }`}
                     >
                       {submittedResult.passed
                         ? "🎉 Passed Quiz"
                         : "Needs More Practice"}
                     </span>
-                    <span className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                    <span className="text-xs font-semibold bg-gray-100 dark:bg-[#1E2D45] text-gray-700 dark:text-[#CBD5E1] px-3 py-1 rounded-full">
                       Time: {formatSeconds(submittedResult.timeSpentSeconds)}
                     </span>
                   </div>
@@ -3617,11 +3762,11 @@ export default function UserDashboardPage() {
 
                 {/* Circular Score Badge */}
                 <div className="flex flex-col items-center justify-center shrink-0">
-                  <div className="w-32 h-32 rounded-full border-8 border-[#166534] bg-[#FCE8EB] flex flex-col items-center justify-center text-center shadow-inner">
-                    <span className="text-2xl sm:text-3xl font-black text-[#166534] leading-none">
+                  <div className="w-32 h-32 rounded-full border-8 border-[#166534] dark:border-[#22C55E] bg-[#FCE8EB] dark:bg-[#166534]/20 flex flex-col items-center justify-center text-center shadow-inner">
+                    <span className="text-2xl sm:text-3xl font-black text-[#166534] dark:text-[#4ADE80] leading-none">
                       {submittedResult.score} / {submittedResult.totalQuestions}
                     </span>
-                    <span className="text-[11px] font-bold text-gray-600 mt-1">
+                    <span className="text-[11px] font-bold text-gray-600 dark:text-[#94A3B8] mt-1">
                       Points Scored
                     </span>
                   </div>
@@ -3629,10 +3774,10 @@ export default function UserDashboardPage() {
               </div>
 
               {/* Action Buttons Strip */}
-              <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-[#EAEBED] rounded-2xl p-4 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-[#1E2D45] rounded-2xl p-4 shadow-xs">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-[#166534]/20 border border-emerald-200 dark:border-[#166534]/40 text-emerald-700 dark:text-[#4ADE80] text-xs font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-[#4ADE80]" />
                     <span>Result Recorded (1 Attempt Allowed)</span>
                   </span>
                 </div>
@@ -3644,7 +3789,7 @@ export default function UserDashboardPage() {
                       setActiveTakingQuiz(null);
                       handleNavClick("quizzes-history");
                     }}
-                    className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-2.5 bg-gray-100 dark:bg-[#1E2D45] hover:bg-gray-200 dark:hover:bg-[#263347] text-gray-800 dark:text-[#F1F5F9] text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
                   >
                     <History className="w-3.5 h-3.5" />
                     <span>View History</span>
@@ -3656,7 +3801,7 @@ export default function UserDashboardPage() {
                       setActiveTakingQuiz(null);
                       handleNavClick("quizzes");
                     }}
-                    className="px-4 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                    className="px-4 py-2.5 border border-gray-200 dark:border-[#263347] hover:bg-gray-50 dark:hover:bg-[#1E2D45] text-gray-700 dark:text-[#CBD5E1] text-xs font-bold rounded-xl transition cursor-pointer"
                   >
                     All Quizzes
                   </button>
@@ -3664,12 +3809,12 @@ export default function UserDashboardPage() {
               </div>
 
               {/* Detailed Question Review Breakdown */}
-              <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-5">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <h3 className="text-base font-bold text-[#111827]">
+              <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-[#1E2D45] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-5">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#1E2D45]">
+                  <h3 className="text-base font-bold text-[#111827] dark:text-[#F1F5F9]">
                     Question by Question Breakdown
                   </h3>
-                  <span className="text-xs font-semibold text-gray-500">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-[#94A3B8]">
                     {submittedResult.answers.length} Questions
                   </span>
                 </div>
@@ -3680,53 +3825,43 @@ export default function UserDashboardPage() {
                       key={ans.questionId || idx}
                       className={`p-5 rounded-2xl border transition ${
                         ans.isCorrect
-                          ? "border-green-200 bg-green-50/40"
-                          : "border-green-200 bg-green-50/40"
+                          ? "border-green-200 dark:border-green-900/50 bg-green-50/40 dark:bg-green-950/20"
+                          : "border-red-200 dark:border-red-900/50 bg-red-50/40 dark:bg-red-950/20"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3 mb-2.5">
                         <span
                           className={`text-xs font-bold px-2.5 py-0.5 rounded-md ${
                             ans.isCorrect
-                              ? "bg-green-200 text-green-900"
-                              : "bg-green-200 text-green-900"
+                              ? "bg-green-200 dark:bg-green-900/50 text-green-900 dark:text-green-300"
+                              : "bg-red-200 dark:bg-red-900/50 text-red-900 dark:text-red-300"
                           }`}
                         >
                           Question {idx + 1} • {ans.isCorrect ? "Correct (+1)" : "Incorrect (0)"}
                         </span>
-                        <span className="text-xs font-semibold text-gray-600">
-                          Correct Answer:{" "}
-                          <strong className="text-green-800">{ans.correct}</strong>
-                        </span>
+
                       </div>
 
-                      <h4 className="text-sm font-bold text-[#111827] mb-3">
+                      <h4 className="text-sm font-bold text-[#111827] dark:text-[#F1F5F9] mb-3">
                         {ans.prompt}
                       </h4>
 
                       {ans.questionType && ans.questionType !== "multiple_choice" ? (
                         <div className="space-y-2.5 text-xs pt-1">
-                          <div className="p-3 bg-white border border-gray-200 rounded-xl">
-                            <span className="font-bold text-gray-500 block text-[11px] uppercase tracking-wide">
+                          <div className="p-3 bg-white dark:bg-[#1E2D45] border border-gray-200 dark:border-[#263347] rounded-xl">
+                            <span className="font-bold text-gray-500 dark:text-[#94A3B8] block text-[11px] uppercase tracking-wide">
                               Your Answer:
                             </span>
-                            <p className="font-semibold text-gray-800 mt-0.5 whitespace-pre-line">
+                            <p className="font-semibold text-gray-800 dark:text-[#F1F5F9] mt-0.5 whitespace-pre-line">
                               {ans.selected || "(No answer entered)"}
                             </p>
                           </div>
 
-                          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                            <span className="font-bold text-emerald-800 block text-[11px] uppercase tracking-wide">
-                              Correct Answer Key:
-                            </span>
-                            <p className="font-semibold text-emerald-950 mt-0.5 whitespace-pre-line">
-                              {ans.correctAnswerText || ans.correct}
-                            </p>
-                          </div>
+
 
                           {ans.explanation && (
-                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600">
-                              <span className="font-bold text-gray-700">Solution Explanation: </span>
+                            <div className="p-3 bg-gray-50 dark:bg-[#161F30] border border-gray-200 dark:border-[#263347] rounded-xl text-gray-600 dark:text-[#CBD5E1]">
+                              <span className="font-bold text-gray-700 dark:text-[#F1F5F9]">Solution Explanation: </span>
                               <span className="whitespace-pre-line">{ans.explanation}</span>
                             </div>
                           )}
@@ -3737,18 +3872,14 @@ export default function UserDashboardPage() {
                             const optionText =
                               ans.options?.[optKey] || `Option ${optKey}`;
                             const wasSelected = ans.selected === optKey;
-                            const isTheCorrectAnswer = ans.correct === optKey;
 
-                            let bgClass = "bg-white border-gray-200 text-gray-700";
+                            let bgClass = "bg-white dark:bg-[#1E2D45] border-gray-200 dark:border-[#263347] text-gray-700 dark:text-[#CBD5E1]";
                             if (wasSelected && ans.isCorrect) {
                               bgClass =
-                                "bg-green-100 border-green-400 text-green-900 font-bold";
+                                "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300 font-bold";
                             } else if (wasSelected && !ans.isCorrect) {
                               bgClass =
-                                "bg-green-100 border-green-400 text-green-900 font-bold";
-                            } else if (isTheCorrectAnswer) {
-                              bgClass =
-                                "bg-green-50 border-green-300 text-green-800 font-bold";
+                                "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300 font-bold";
                             }
 
                             return (
@@ -3760,13 +3891,8 @@ export default function UserDashboardPage() {
                                   <strong>{optKey}:</strong> {optionText}
                                 </span>
                                 {wasSelected && (
-                                  <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-black/10 shrink-0 ml-1">
+                                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 shrink-0 ml-1">
                                     Your Choice
-                                  </span>
-                                )}
-                                {isTheCorrectAnswer && !wasSelected && (
-                                  <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-green-200 text-green-900 shrink-0 ml-1">
-                                    Correct
                                   </span>
                                 )}
                               </div>
@@ -3789,17 +3915,17 @@ export default function UserDashboardPage() {
             activeNav === "quizzes" && (
               <div className="flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
                 {/* Header Banner */}
-                <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-xs">
+                <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-[#1E2D45] rounded-3xl p-6 sm:p-8 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3.5">
                       <div className="w-11 h-11 rounded-2xl bg-[#166534] flex items-center justify-center text-white shrink-0 shadow-xs">
                         <HelpCircle className="w-5 h-5" />
                       </div>
                       <div>
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] dark:text-[#F1F5F9] tracking-tight">
                           Practice Quizzes Catalog
                         </h2>
-                        <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
+                        <p className="text-xs sm:text-sm text-[#6B7280] dark:text-[#94A3B8] mt-1">
                           Test your understanding of Linear Algebra, Calculus, and more with interactive quizzes created by instructors.
                         </p>
                       </div>
@@ -3812,7 +3938,7 @@ export default function UserDashboardPage() {
                   </div>
 
                   {/* Filter Tabs & Search */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 pt-5 border-t border-gray-100">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 pt-5 border-t border-gray-100 dark:border-[#1E2D45]">
                     <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
                       {[
                         ["all", "All Topics"],
@@ -3827,7 +3953,7 @@ export default function UserDashboardPage() {
                           className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                             quizFilterTopic === topicKey
                               ? "bg-[#166534] text-white shadow-xs"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              : "bg-gray-100 dark:bg-[#1E2D45] text-gray-700 dark:text-[#94A3B8] hover:bg-gray-200 dark:hover:bg-[#263347]"
                           }`}
                         >
                           {label}
@@ -3842,7 +3968,7 @@ export default function UserDashboardPage() {
                         value={quizSearchTerm}
                         onChange={(e) => setQuizSearchTerm(e.target.value)}
                         placeholder="Search quizzes..."
-                        className="w-full pl-9 pr-3 py-1.5 bg-[#F9FAFB] border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#166534]"
+                        className="w-full pl-9 pr-3 py-1.5 bg-[#F9FAFB] dark:bg-[#1E2D45] border border-gray-200 dark:border-[#263347] rounded-xl text-xs text-[#111827] dark:text-[#E2E8F0] placeholder:text-gray-400 dark:placeholder:text-[#4B6080] focus:outline-none focus:border-[#166534] dark:focus:border-[#22C55E]"
                       />
                     </div>
                   </div>
@@ -3857,14 +3983,14 @@ export default function UserDashboardPage() {
                     </p>
                   </div>
                 ) : filteredAvailableQuizzes.length === 0 ? (
-                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center justify-center">
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-[#1E2D45] rounded-3xl p-12 text-center flex flex-col items-center justify-center">
                     <div className="w-16 h-16 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-4">
                       <HelpCircle className="w-8 h-8 stroke-[1.8]" />
                     </div>
                     <h3 className="text-base font-bold text-[#111827]">
                       No Quizzes Found
                     </h3>
-                    <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                    <p className="text-xs text-[#6B7280] dark:text-[#94A3B8] mt-1 max-w-sm">
                       {quizSearchTerm || quizFilterTopic !== "all"
                         ? "No quizzes match your search filter. Try clearing the filter."
                         : "There are currently no quizzes published by the admin. Check back soon!"}
@@ -3875,23 +4001,23 @@ export default function UserDashboardPage() {
                     {filteredAvailableQuizzes.map((quiz) => (
                       <div
                         key={quiz.id}
-                        className="bg-white border border-[#EAEBED] hover:border-[#166534]/40 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+                        className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-[#1E2D45] hover:border-[#166534]/40 dark:hover:border-[#22C55E]/40 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
                       >
                         <div>
                           <div className="flex items-center justify-between gap-2 mb-3">
-                            <span className="text-[11px] font-bold text-[#166534] bg-[#FCE8EB] px-2.5 py-0.5 rounded-full">
+                            <span className="text-[11px] font-bold text-[#166534] dark:text-[#4ADE80] bg-[#FCE8EB] dark:bg-[#166534]/20 px-2.5 py-0.5 rounded-full">
                               {quiz.topic}
                             </span>
-                            <span className="text-[11px] text-gray-400 font-medium">
+                            <span className="text-[11px] text-gray-400 dark:text-[#4B6080] font-medium">
                               {quiz.createdAt}
                             </span>
                           </div>
 
-                          <h3 className="text-base font-extrabold text-[#111827] group-hover:text-[#166534] transition line-clamp-2">
+                          <h3 className="text-base font-extrabold text-[#111827] dark:text-[#F1F5F9] group-hover:text-[#166534] dark:group-hover:text-[#4ADE80] transition line-clamp-2">
                             {quiz.title}
                           </h3>
 
-                          <div className="flex items-center gap-3 mt-4 text-xs text-gray-600">
+                          <div className="flex items-center gap-3 mt-4 text-xs text-gray-600 dark:text-[#94A3B8]">
                             <div className="flex items-center gap-1">
                               <FileText className="w-3.5 h-3.5 text-gray-400" />
                               <span>{quiz.questionsCount} Questions</span>
@@ -3905,8 +4031,8 @@ export default function UserDashboardPage() {
                           </div>
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
-                          <span className="text-xs text-gray-500 font-medium">
+                        <div className="mt-6 pt-4 border-t border-gray-100 dark:border-[#1E2D45] flex items-center justify-between">
+                          <span className="text-xs text-gray-500 dark:text-[#4B6080] font-medium">
                             {quiz.attemptsCount > 0 ? (
                               <span className="text-emerald-700 font-bold flex items-center gap-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Completed
@@ -4041,7 +4167,6 @@ export default function UserDashboardPage() {
                             <th className="pb-3 px-3">Quiz Title</th>
                             <th className="pb-3 px-3">Topic</th>
                             <th className="pb-3 px-3">Points</th>
-                            <th className="pb-3 px-3">Status</th>
                             <th className="pb-3 px-3">Time</th>
                             <th className="pb-3 px-3">Submitted</th>
                             <th className="pb-3 px-3 text-right">Actions</th>
@@ -4063,17 +4188,6 @@ export default function UserDashboardPage() {
                               </td>
                               <td className="py-3.5 px-3 text-xs font-bold text-[#166534]">
                                 {att.score} / {att.totalQuestions} pts
-                              </td>
-                              <td className="py-3.5 px-3">
-                                <span
-                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                                    att.passed
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-green-100 text-green-700"
-                                  }`}
-                                >
-                                  {att.passed ? "Passed" : "Needs Review"}
-                                </span>
                               </td>
                               <td className="py-3.5 px-3 text-xs text-[#6B7280]">
                                 {formatSeconds(att.timeSpentSeconds)}
@@ -4295,6 +4409,196 @@ export default function UserDashboardPage() {
           )}
 
           {/* ========================================================================= */}
+          {/* PROFILE SAVE CONFIRMATION MODAL                                           */}
+          {/* ========================================================================= */}
+          <AnimatePresence>
+            {showProfileConfirmModal && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.92, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: 15 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                  className="w-full max-w-md bg-white rounded-[28px] p-6 sm:p-7 shadow-2xl border border-gray-100 flex flex-col items-center text-center"
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#166534] flex items-center justify-center mb-4 shadow-inner">
+                    {savedChangeType === "name" ? (
+                      <User className="w-8 h-8 text-[#166534]" />
+                    ) : (
+                      <Camera className="w-8 h-8 text-[#166534]" />
+                    )}
+                  </div>
+
+                  <h3 className="text-xl font-black text-[#1F242D] tracking-tight">
+                    {savedChangeType === "name"
+                      ? "Change Display Name?"
+                      : savedChangeType === "both"
+                      ? "Update Name & Photo?"
+                      : "Save Profile Changes?"}
+                  </h3>
+
+                  <p className="text-xs text-gray-500 mt-2 mb-6 leading-relaxed max-w-xs">
+                    {savedChangeType === "name" ? (
+                      <>
+                        Are you sure you want to change your name to{" "}
+                        <span className="font-bold text-[#166534]">
+                          "{profileNameInput.trim()}"
+                        </span>
+                        ? This new name will appear on your dashboard, greetings, and student records.
+                      </>
+                    ) : savedChangeType === "both" ? (
+                      <>
+                        Are you sure you want to change your name to{" "}
+                        <span className="font-bold text-[#166534]">
+                          "{profileNameInput.trim()}"
+                        </span>{" "}
+                        and update your profile photo?
+                      </>
+                    ) : (
+                      "Are you sure you want to update your profile photo? This photo will be visible across the app."
+                    )}
+                  </p>
+
+                  <div className="flex items-center gap-3 w-full">
+                    <button
+                      type="button"
+                      onClick={() => setShowProfileConfirmModal(false)}
+                      className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={executeSaveProfile}
+                      disabled={isSavingProfile}
+                      className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] hover:from-[#166534] hover:to-[#052e16] text-white text-xs font-bold shadow-md shadow-[#166534]/25 transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      {isSavingProfile ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <span>
+                          {savedChangeType === "name" ? "Yes, Change Name" : "Yes, Save"}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* ========================================================================= */}
+          {/* PROFILE SAVE SUCCESS MODAL WITH ANIMATED CHECK ICON                        */}
+          {/* ========================================================================= */}
+          <AnimatePresence>
+            {showProfileSuccessModal && (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.85, y: -10 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  className="w-full max-w-sm bg-white rounded-[28px] p-7 shadow-2xl border border-emerald-100 flex flex-col items-center text-center relative overflow-hidden"
+                >
+                  {/* Subtle celebratory background pulse */}
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0.5 }}
+                    animate={{ scale: [0, 1.4, 1.2], opacity: [0.5, 0.2, 0] }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                    className="absolute w-44 h-44 rounded-full bg-emerald-400 pointer-events-none -z-0"
+                  />
+
+                  {/* Animated checkmark container */}
+                  <motion.div
+                    initial={{ scale: 0, rotate: -30 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 450,
+                      damping: 18,
+                      delay: 0.1,
+                    }}
+                    className="w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-600 to-green-400 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 mb-4 z-10"
+                  >
+                    <motion.svg
+                      className="w-10 h-10 text-white stroke-current"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      strokeWidth={3.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <motion.path
+                        d="M5 13l4 4L19 7"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 1 }}
+                        transition={{
+                          pathLength: { delay: 0.25, duration: 0.5, ease: "easeOut" },
+                          opacity: { delay: 0.2, duration: 0.2 },
+                        }}
+                      />
+                    </motion.svg>
+                  </motion.div>
+
+                  <motion.h3
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-lg font-black text-[#1F242D] tracking-tight z-10"
+                  >
+                    {savedChangeType === "name"
+                      ? "Name Changed!"
+                      : savedChangeType === "both"
+                      ? "Profile & Name Updated!"
+                      : "Profile Updated!"}
+                  </motion.h3>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-xs text-gray-500 mt-1 mb-5 z-10 leading-relaxed"
+                  >
+                    {savedChangeType === "name" ? (
+                      <>
+                        Your name has been updated to{" "}
+                        <span className="font-bold text-[#166534]">
+                          "{profileNameInput.trim()}"
+                        </span>
+                        .
+                      </>
+                    ) : savedChangeType === "both" ? (
+                      <>
+                        Your name has been updated to{" "}
+                        <span className="font-bold text-[#166534]">
+                          "{profileNameInput.trim()}"
+                        </span>{" "}
+                        and your new photo was saved.
+                      </>
+                    ) : (
+                      "Your profile photo has been successfully saved."
+                    )}
+                  </motion.p>
+
+                  <motion.button
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.45 }}
+                    type="button"
+                    onClick={() => setShowProfileSuccessModal(false)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm cursor-pointer z-10"
+                  >
+                    Done
+                  </motion.button>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* ========================================================================= */}
           {/* CUSTOM INTERACTIVE EXIT QUIZ CONFIRMATION MODAL                            */}
           {/* ========================================================================= */}
           <AnimatePresence>
@@ -4305,18 +4609,18 @@ export default function UserDashboardPage() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: 15 }}
                   transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                  className="w-full max-w-md bg-white rounded-[28px] p-6 sm:p-7 shadow-2xl border border-gray-100 flex flex-col items-center text-center"
+                  className="w-full max-w-md bg-white dark:bg-[#161F30] rounded-[28px] p-6 sm:p-7 shadow-2xl border border-gray-100 dark:border-[#1E2D45] flex flex-col items-center text-center"
                 >
                   {/* Warning Badge Icon */}
-                  <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600 mb-4 shadow-xs">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-700/30 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-xs">
                     <AlertCircle className="w-8 h-8" />
                   </div>
 
-                  <h3 className="text-xl font-extrabold text-[#111827] tracking-tight">
+                  <h3 className="text-xl font-extrabold text-[#111827] dark:text-[#F1F5F9] tracking-tight">
                     Exit Quiz?
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-2 leading-relaxed max-w-xs">
-                    Are you sure you want to exit? Your progress on this quiz will <strong className="text-green-600 font-bold">not be saved</strong>.
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-[#94A3B8] mt-2 leading-relaxed max-w-xs">
+                    Are you sure you want to exit? Your progress on this quiz will <strong className="text-green-600 dark:text-[#4ADE80] font-bold">not be saved</strong>.
                   </p>
 
                   {/* Actions */}
@@ -4324,7 +4628,7 @@ export default function UserDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setShowExitConfirmModal(false)}
-                      className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-xs sm:text-sm font-bold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
+                      className="flex-1 py-3 px-4 rounded-xl border border-gray-200 dark:border-[#263347] text-xs sm:text-sm font-bold text-gray-700 dark:text-[#CBD5E1] hover:bg-gray-50 dark:hover:bg-[#1E2D45] transition cursor-pointer"
                     >
                       Continue Quiz
                     </button>
@@ -4351,14 +4655,14 @@ export default function UserDashboardPage() {
                   initial={{ opacity: 0, scale: 0.95, y: 15 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                  className="w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl border border-[#EAEBED] max-h-[92vh] sm:max-h-[85vh] flex flex-col"
+                  className="w-full max-w-3xl bg-white dark:bg-[#161F30] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl border border-[#EAEBED] dark:border-[#1E2D45] max-h-[92vh] sm:max-h-[85vh] flex flex-col"
                 >
-                  <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 shrink-0">
+                  <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 dark:border-[#1E2D45] shrink-0">
                     <div className="min-w-0 pr-2">
-                      <h3 className="text-base sm:text-lg font-bold text-[#111827] truncate">
+                      <h3 className="text-base sm:text-lg font-bold text-[#111827] dark:text-[#F1F5F9] truncate">
                         {reviewingAttempt.quizTitle}
                       </h3>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-gray-500 dark:text-[#94A3B8] mt-0.5">
                         Score: {reviewingAttempt.score} /{" "}
                         {reviewingAttempt.totalQuestions} pts • Submitted:{" "}
                         {reviewingAttempt.submittedAt}
@@ -4367,7 +4671,7 @@ export default function UserDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setReviewingAttempt(null)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer shrink-0"
+                      className="p-1.5 rounded-lg text-gray-400 dark:text-[#94A3B8] hover:text-gray-600 dark:hover:text-[#F1F5F9] hover:bg-gray-100 dark:hover:bg-[#1E2D45] cursor-pointer shrink-0"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -4375,7 +4679,7 @@ export default function UserDashboardPage() {
 
                   <div className="overflow-y-auto py-3 sm:py-4 flex-1 space-y-3 sm:space-y-4">
                     {reviewingAttempt.answers.length === 0 ? (
-                      <p className="text-xs text-gray-500 text-center py-6">
+                      <p className="text-xs text-gray-500 dark:text-[#94A3B8] text-center py-6">
                         No question breakdown recorded for this attempt.
                       </p>
                     ) : (
@@ -4384,29 +4688,25 @@ export default function UserDashboardPage() {
                           key={ans.questionId || idx}
                           className={`p-3.5 sm:p-4 rounded-2xl border ${
                             ans.isCorrect
-                              ? "border-green-200 bg-green-50/40"
-                              : "border-green-200 bg-green-50/40"
+                              ? "border-green-200 dark:border-green-900/50 bg-green-50/40 dark:bg-green-950/20"
+                              : "border-red-200 dark:border-red-900/50 bg-red-50/40 dark:bg-red-950/20"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3 mb-2">
                             <span
                               className={`text-xs font-bold px-2 py-0.5 rounded-md ${
                                 ans.isCorrect
-                                  ? "bg-green-200 text-green-900"
-                                  : "bg-green-200 text-green-900"
+                                  ? "bg-green-200 dark:bg-green-900/50 text-green-900 dark:text-green-300"
+                                  : "bg-red-200 dark:bg-red-900/50 text-red-900 dark:text-red-300"
                               }`}
                             >
                               Question {idx + 1} •{" "}
                               {ans.isCorrect ? "Correct" : "Incorrect"}
                             </span>
-                            {ans.questionType !== "problem_solving" && (
-                              <span className="text-xs font-semibold text-gray-600">
-                                Correct: <strong>{ans.correct}</strong>
-                              </span>
-                            )}
+
                           </div>
 
-                          <h4 className="text-xs sm:text-sm font-bold text-[#111827] mb-2.5 leading-snug">
+                          <h4 className="text-xs sm:text-sm font-bold text-[#111827] dark:text-[#F1F5F9] mb-2.5 leading-snug">
                             {ans.prompt}
                           </h4>
 
@@ -4416,8 +4716,8 @@ export default function UserDashboardPage() {
                               {/* Your answer */}
                               <div className={`flex items-start gap-2 p-3 rounded-xl border text-xs font-semibold ${
                                 ans.isCorrect
-                                  ? "bg-green-100 border-green-400 text-green-900"
-                                  : "bg-green-100 border-green-400 text-green-900"
+                                  ? "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300"
+                                  : "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300"
                               }`}>
                                 <span className="shrink-0 mt-0.5">{ans.isCorrect ? "✓" : "✗"}</span>
                                 <div className="break-all">
@@ -4426,16 +4726,7 @@ export default function UserDashboardPage() {
                                 </div>
                               </div>
 
-                              {/* Correct answer */}
-                              {!ans.isCorrect && (
-                                <div className="flex items-start gap-2 p-3 rounded-xl border border-green-300 bg-green-50 text-xs text-green-900 font-semibold">
-                                  <span className="shrink-0 mt-0.5">✓</span>
-                                  <div className="break-all">
-                                    <span className="uppercase tracking-wide text-[10px] opacity-70 block mb-0.5">Correct Answer</span>
-                                    {ans.correctAnswerText || ans.correct}
-                                  </div>
-                                </div>
-                              )}
+
 
                               {/* Step-by-step solution — interactive reveal */}
                               {ans.explanation && (() => {
@@ -4445,7 +4736,7 @@ export default function UserDashboardPage() {
                                 const allDone = revealed >= steps.length;
 
                                 return (
-                                  <div className="rounded-2xl border border-[#166534]/20 bg-gradient-to-b from-[#F0FDF4] to-white overflow-hidden shadow-xs">
+                                  <div className="rounded-2xl border border-[#166534]/20 dark:border-[#166534]/40 bg-gradient-to-b from-[#F0FDF4] to-white dark:from-[#161F30] dark:to-[#1E2D45] overflow-hidden shadow-xs">
                                     {/* Header */}
                                     <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 bg-[#166534] text-white">
                                       <span className="text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5">
@@ -4457,9 +4748,9 @@ export default function UserDashboardPage() {
                                     </div>
 
                                     {/* Progress bar */}
-                                    <div className="h-1 bg-[#F0FDF4]">
+                                    <div className="h-1 bg-[#F0FDF4] dark:bg-[#1E2D45]">
                                       <motion.div
-                                        className="h-full bg-[#166534] origin-left"
+                                        className="h-full bg-[#166534] dark:bg-[#22C55E] origin-left"
                                         animate={{ scaleX: steps.length > 0 ? Math.min(revealed, steps.length) / steps.length : 0 }}
                                         transition={{ type: "spring", stiffness: 200, damping: 22 }}
                                         style={{ transformOrigin: "left" }}
@@ -4480,12 +4771,12 @@ export default function UserDashboardPage() {
                                             <span className={`shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shadow-xs ${
                                               si === revealed - 1
                                                 ? "bg-[#166534] text-white ring-2 ring-[#166534]/30"
-                                                : "bg-[#F0FDF4] text-[#166534]"
+                                                : "bg-[#F0FDF4] dark:bg-[#166534]/20 text-[#166534] dark:text-[#4ADE80]"
                                             }`}>
                                               {si + 1}
                                             </span>
                                             <span className={`text-xs leading-relaxed pt-0.5 ${
-                                              si === revealed - 1 ? "text-[#111827] font-semibold" : "text-gray-700"
+                                              si === revealed - 1 ? "text-[#111827] dark:text-[#F1F5F9] font-semibold" : "text-gray-700 dark:text-[#CBD5E1]"
                                             }`}>
                                               {step}
                                             </span>
@@ -4495,7 +4786,7 @@ export default function UserDashboardPage() {
 
                                       {/* Placeholder while no steps revealed */}
                                       {revealed === 0 && (
-                                        <p className="text-xs text-[#166534]/70 italic text-center py-2">
+                                        <p className="text-xs text-[#166534]/70 dark:text-[#4ADE80]/80 italic text-center py-2">
                                           Press "Show Next Step" to start the walkthrough →
                                         </p>
                                       )}
@@ -4523,7 +4814,7 @@ export default function UserDashboardPage() {
                                               onClick={() =>
                                                 setRevealedSteps((prev) => ({ ...prev, [stepKey]: steps.length }))
                                               }
-                                              className="py-2 px-3 rounded-xl border border-[#166534]/30 text-[#166534] hover:bg-[#F0FDF4] text-xs font-semibold transition cursor-pointer"
+                                              className="py-2 px-3 rounded-xl border border-[#166534]/30 dark:border-[#166534]/50 text-[#166534] dark:text-[#4ADE80] hover:bg-[#F0FDF4] dark:hover:bg-[#166534]/20 text-xs font-semibold transition cursor-pointer"
                                             >
                                               Show All
                                             </button>
@@ -4532,7 +4823,7 @@ export default function UserDashboardPage() {
                                           <motion.div
                                             initial={{ opacity: 0, scale: 0.9 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            className="w-full py-2 px-4 rounded-xl bg-green-100 border border-green-300 text-green-800 text-xs font-bold text-center flex items-center justify-center gap-1.5"
+                                            className="w-full py-2 px-4 rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 text-green-800 dark:text-green-300 text-xs font-bold text-center flex items-center justify-center gap-1.5"
                                           >
                                             <span>✓</span> All steps complete!
                                           </motion.div>
@@ -4543,7 +4834,7 @@ export default function UserDashboardPage() {
                                             onClick={() =>
                                               setRevealedSteps((prev) => ({ ...prev, [stepKey]: 0 }))
                                             }
-                                            className="py-2 px-3 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-xs font-semibold transition cursor-pointer"
+                                            className="py-2 px-3 rounded-xl border border-gray-200 dark:border-[#263347] text-gray-500 dark:text-[#94A3B8] hover:bg-gray-50 dark:hover:bg-[#1E2D45] text-xs font-semibold transition cursor-pointer"
                                           >
                                             Reset
                                           </button>
@@ -4561,18 +4852,13 @@ export default function UserDashboardPage() {
                                 const optionText =
                                   ans.options?.[optKey] || `Choice ${optKey}`;
                                 const wasSelected = ans.selected === optKey;
-                                const isTheCorrect = ans.correct === optKey;
-
-                                let style = "bg-white border-gray-200 text-gray-700";
+                                let style = "bg-white dark:bg-[#1E2D45] border-gray-200 dark:border-[#263347] text-gray-700 dark:text-[#CBD5E1]";
                                 if (wasSelected && ans.isCorrect) {
                                   style =
-                                    "bg-green-100 border-green-400 text-green-900 font-bold";
+                                    "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300 font-bold";
                                 } else if (wasSelected && !ans.isCorrect) {
                                   style =
-                                    "bg-green-100 border-green-400 text-green-900 font-bold";
-                                } else if (isTheCorrect) {
-                                  style =
-                                    "bg-green-50 border-green-300 text-green-800 font-bold";
+                                    "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300 font-bold";
                                 }
 
                                 return (
@@ -4584,13 +4870,8 @@ export default function UserDashboardPage() {
                                       <strong>{optKey}:</strong> {optionText}
                                     </span>
                                     {wasSelected && (
-                                      <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-black/10 shrink-0 ml-1">
+                                      <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 shrink-0 ml-1">
                                         Your Choice
-                                      </span>
-                                    )}
-                                    {isTheCorrect && !wasSelected && (
-                                      <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-green-200 text-green-900 shrink-0 ml-1">
-                                        Correct
                                       </span>
                                     )}
                                   </div>
@@ -4603,7 +4884,7 @@ export default function UserDashboardPage() {
                     )}
                   </div>
 
-                  <div className="flex justify-end pt-4 border-t border-gray-100 shrink-0">
+                  <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-[#1E2D45] shrink-0">
                     <button
                       type="button"
                       onClick={() => setReviewingAttempt(null)}

@@ -58,8 +58,11 @@ import {
   ArrowRightLeft,
   Sliders,
   Settings,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
 import adminLogo from "../assets/Admin logo.png";
 import quizLoaderLogo from "../assets/Logo(2).png";
@@ -483,6 +486,7 @@ const LINEAR_ALGEBRA_ALL_CALCULATORS: CalculatorCardMeta[] = [
 export default function AdminDashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   // Navigation State
   const [activeNav, setActiveNav] = useState<
@@ -580,6 +584,13 @@ export default function AdminDashboardPage() {
   const [isShowingGenerateLoader, setIsShowingGenerateLoader] = useState(false);
   const [showPublishedSuccess, setShowPublishedSuccess] = useState(false);
   const publishedGSAPRef = useRef<HTMLDivElement | null>(null);
+  // Multi-section: each section has a question type, item count, and points per item
+  interface QuizSection {
+    type: QuizQuestionType;
+    itemCount: number;
+    pointsPerItem: number;
+  }
+  const [questionTypeSections, setQuestionTypeSections] = useState<QuizSection[]>([]);
 
   useEffect(() => {
     if (showPublishedSuccess && publishedGSAPRef.current) {
@@ -1338,6 +1349,14 @@ export default function AdminDashboardPage() {
   }, []);
 
   const handleNavClick = (navKey: typeof activeNav) => {
+    // Temporarily disable ALL CSS transitions during nav switch to prevent black flash.
+    document.documentElement.classList.add("no-transitions");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove("no-transitions");
+      });
+    });
+
     if (navKey === "student-overview" || navKey === "student-quizzes") {
       setIsStudentViewMode(true);
     } else if (
@@ -1420,30 +1439,44 @@ export default function AdminDashboardPage() {
             ? topicsInCat.filter((t) => selectedTopicIds.includes(t.id))
             : topicsInCat;
 
-        const effectiveItemCount = typeof generatorItemCount === "number" && generatorItemCount > 0 ? generatorItemCount : 5;
-        const generated = generateQuizQuestions(
-          chosenTopics,
-          generatorCategory,
-          effectiveItemCount,
-          generatorQuestionType
-        );
+        // Build the list of sections to generate from
+        // If no sections saved, use the current config as a single section
+        const effectiveSections: Array<{ type: QuizQuestionType; itemCount: number; pointsPerItem: number }> =
+          questionTypeSections.length > 0
+            ? questionTypeSections
+            : [{
+                type: generatorQuestionType,
+                itemCount: typeof generatorItemCount === "number" && generatorItemCount > 0 ? generatorItemCount : 5,
+                pointsPerItem: typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1,
+              }];
 
-        const drafts: QuizQuestionDraft[] = generated.map((g) => ({
-          id: g.id,
-          prompt: g.prompt,
-          questionType: g.questionType,
-          optionA: g.optionA,
-          optionB: g.optionB,
-          optionC: g.optionC,
-          optionD: g.optionD,
-          correct: g.correct,
-          correctAnswerText: g.correctAnswerText,
-          explanation: g.explanation,
-          topicTitle: g.topicTitle,
-        }));
+        const allDrafts: QuizQuestionDraft[] = [];
+        effectiveSections.forEach((sec) => {
+          const generated = generateQuizQuestions(
+            chosenTopics,
+            generatorCategory,
+            sec.itemCount,
+            sec.type
+          );
+          generated.forEach((g) => {
+            allDrafts.push({
+              id: g.id,
+              prompt: g.prompt,
+              questionType: g.questionType,
+              optionA: g.optionA,
+              optionB: g.optionB,
+              optionC: g.optionC,
+              optionD: g.optionD,
+              correct: g.correct,
+              correctAnswerText: g.correctAnswerText,
+              explanation: g.explanation,
+              topicTitle: g.topicTitle,
+            });
+          });
+        });
 
-        setNewQuizQuestionDrafts(drafts);
-        setNewQuizQuestions(String(drafts.length));
+        setNewQuizQuestionDrafts(allDrafts);
+        setNewQuizQuestions(String(allDrafts.length));
 
         // Category label for quiz
         const catLabel =
@@ -1454,15 +1487,18 @@ export default function AdminDashboardPage() {
             : "Calculus 2";
         setNewQuizTopic(catLabel);
 
-        // Auto-suggest title if not manually set
-        const typeLabel =
-          generatorQuestionType === "multiple_choice"
+        // Auto-suggest title based on section types
+        const getTypeLabel = (t: QuizQuestionType) =>
+          t === "multiple_choice"
             ? "Multiple Choice"
-            : generatorQuestionType === "identification"
+            : t === "identification"
             ? "Identification"
-            : generatorQuestionType === "enumeration"
+            : t === "enumeration"
             ? "Enumeration"
             : "Problem Solving";
+
+        const typeLabels = [...new Set(effectiveSections.map((s) => getTypeLabel(s.type)))];
+        const typeLabelStr = typeLabels.length === 1 ? typeLabels[0] : "Mixed";
 
         const topicFocus =
           chosenTopics.length === 1
@@ -1471,7 +1507,7 @@ export default function AdminDashboardPage() {
             ? chosenTopics.map((t) => t.title).join(" & ")
             : `${catLabel} Comprehensive`;
 
-        setNewQuizTitle(`${topicFocus} - ${typeLabel} Quiz`);
+        setNewQuizTitle(`${topicFocus} - ${typeLabelStr} Quiz`);
         setGeneratorStep(2); // Advance to Review & Publish step
       } catch (err) {
         console.error("Failed to generate quiz:", err);
@@ -1659,8 +1695,12 @@ export default function AdminDashboardPage() {
       setGeneratorStep(1);
       setNewQuizQuestions("5");
       setNewQuizQuestionDrafts(createEmptyQuestions(5));
+      setQuestionTypeSections([]);
+      setGeneratorItemCount(5);
+      setGeneratorPointsPerItem(1);
+      setGeneratorQuestionType("multiple_choice");
       setShowPublishedSuccess(true);
-      setTimeout(() => setShowPublishedSuccess(false), 2500);
+      setTimeout(() => setShowPublishedSuccess(false), 3000);
     } catch (err: any) {
       console.error("Error creating quiz:", err);
       alert("Error publishing quiz: " + (err.message || "Unknown error"));
@@ -2000,7 +2040,7 @@ export default function AdminDashboardPage() {
                   {/* Dashboard (Student Overview) */}
                   <button
                     onClick={() => handleNavClick("student-overview")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "student-overview"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2023,7 +2063,7 @@ export default function AdminDashboardPage() {
                   {/* Calculators */}
                   <button
                     onClick={() => handleNavClick("calculators")}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "calculators"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2039,7 +2079,7 @@ export default function AdminDashboardPage() {
                   {/* Topics */}
                   <button
                     onClick={() => handleNavClick("topics")}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "topics"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2064,7 +2104,7 @@ export default function AdminDashboardPage() {
                   {/* Quizzes */}
                   <button
                     onClick={() => handleNavClick("student-quizzes")}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "student-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2080,7 +2120,7 @@ export default function AdminDashboardPage() {
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
                           activeNav === "student-quizzes"
                             ? "bg-white/20 text-white"
-                            : "bg-[#F0F1F3] text-[#6B7280]"
+                            : "bg-[#E4E7EC] dark:bg-slate-700 text-[#6B7280] dark:text-slate-300"
                         }`}
                       >
                         {quizzes.length}
@@ -2091,7 +2131,7 @@ export default function AdminDashboardPage() {
                   {/* Quizzes History */}
                   <button
                     onClick={() => handleNavClick("history-quizzes")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "history-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2105,7 +2145,7 @@ export default function AdminDashboardPage() {
                   {/* Quiz Results */}
                   <button
                     onClick={() => handleNavClick("quiz-results")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "quiz-results"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2129,7 +2169,7 @@ export default function AdminDashboardPage() {
                   {/* Dashboard Link */}
                   <button
                     onClick={() => handleNavClick("dashboard")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "dashboard"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2143,7 +2183,7 @@ export default function AdminDashboardPage() {
                   {/* Calculators Link */}
                   <button
                     onClick={() => handleNavClick("calculators")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "calculators"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2157,7 +2197,7 @@ export default function AdminDashboardPage() {
                   {/* Topics Link */}
                   <button
                     onClick={() => handleNavClick("topics")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "topics"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2180,7 +2220,7 @@ export default function AdminDashboardPage() {
                   {/* Add Quiz */}
                   <button
                     onClick={() => handleNavClick("add-quiz")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "add-quiz"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2194,7 +2234,7 @@ export default function AdminDashboardPage() {
                   {/* Quiz Results */}
                   <button
                     onClick={() => handleNavClick("quiz-results")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "quiz-results"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2208,7 +2248,7 @@ export default function AdminDashboardPage() {
                   {/* History Quizzes */}
                   <button
                     onClick={() => handleNavClick("history-quizzes")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "history-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2231,7 +2271,7 @@ export default function AdminDashboardPage() {
                   {/* View Students */}
                   <button
                     onClick={() => handleNavClick("view-students")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "view-students"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2245,7 +2285,7 @@ export default function AdminDashboardPage() {
                   {/* Student Overview */}
                   <button
                     onClick={() => handleNavClick("student-overview")}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${isTopicCalculatorOpen ? "justify-center !px-0" : ""} ${
                       activeNav === "student-overview"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
                         : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
@@ -2269,14 +2309,14 @@ export default function AdminDashboardPage() {
               animate={{ opacity: 1, y: 0, height: "auto" }}
               exit={{ opacity: 0, y: 12, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="pt-3 pb-1 border-t border-[#F0F1F3] overflow-hidden"
+              className="pt-3 pb-1 border-t border-[#F0F1F3] dark:border-slate-700 overflow-hidden"
             >
               <button
                 onClick={() => {
                   setIsStudentViewMode(false);
                   setActiveNav("dashboard");
                 }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-[#166534]/30 bg-[#F0FDF4] text-[#166534] font-bold text-xs hover:bg-[#FCE8EB] transition shadow-xs cursor-pointer active:scale-98"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-[#166534]/30 bg-[#F0FDF4] dark:bg-[#166534]/20 dark:border-[#166534]/40 text-[#166534] dark:text-emerald-400 font-bold text-xs hover:bg-[#dcfce7] dark:hover:bg-[#166534]/30 transition shadow-xs cursor-pointer active:scale-98"
                 title="Return to Admin Dashboard"
               >
                 <ArrowLeft className="w-4 h-4 shrink-0" />
@@ -2568,7 +2608,7 @@ export default function AdminDashboardPage() {
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto bg-[#F8F9FA]">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-20 bg-[#F8F9FA]/95 backdrop-blur-md px-6 py-4 flex items-center justify-between gap-4 border-b border-[#EAEBED]">
+        <header className="sticky top-0 z-20 bg-[#F8F9FA]/95 dark:bg-[#0E1726]/95 backdrop-blur-md px-6 py-4 flex items-center justify-between gap-4 border-b border-[#EAEBED] dark:border-slate-800 transition-colors">
           {/* Floating Realtime Submission Alert Toast */}
           <AnimatePresence>
             {recentSubmissionToast && (
@@ -2581,24 +2621,24 @@ export default function AdminDashboardPage() {
                   setRecentSubmissionToast(null);
                   handleNavClick("history-quizzes");
                 }}
-                className="fixed top-5 right-6 z-[120] bg-white border border-[#166534]/20 rounded-2xl shadow-xl p-4 flex items-center gap-3.5 max-w-sm cursor-pointer hover:shadow-2xl transition"
+                className="fixed top-5 right-6 z-[120] bg-white dark:bg-[#161F30] border border-[#166534]/20 dark:border-slate-700 rounded-2xl shadow-xl p-4 flex items-center gap-3.5 max-w-sm cursor-pointer hover:shadow-2xl transition"
               >
                 <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs animate-bounce">
                   <Bell className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold text-[#166534] uppercase tracking-wide">
+                    <span className="text-[11px] font-extrabold text-[#166534] dark:text-emerald-400 uppercase tracking-wide">
                       New Quiz Submission!
                     </span>
-                    <span className="text-[10px] text-gray-400">Just now</span>
+                    <span className="text-[10px] text-gray-400 dark:text-slate-500">Just now</span>
                   </div>
-                  <p className="text-xs font-bold text-gray-900 truncate">
+                  <p className="text-xs font-bold text-gray-900 dark:text-slate-100 truncate">
                     {recentSubmissionToast.studentName}
                   </p>
-                  <p className="text-[11px] text-gray-500 truncate">
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate">
                     {recentSubmissionToast.quizTitle} • Score:{" "}
-                    <span className="font-bold text-[#166534]">
+                    <span className="font-bold text-[#166534] dark:text-emerald-400">
                       {recentSubmissionToast.score}/{recentSubmissionToast.totalQuestions}
                     </span>
                   </p>
@@ -2609,7 +2649,7 @@ export default function AdminDashboardPage() {
                     e.stopPropagation();
                     setRecentSubmissionToast(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600 p-1"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -2619,7 +2659,7 @@ export default function AdminDashboardPage() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileSidebarOpen(true)}
-            className="lg:hidden p-2 rounded-xl border border-[#E2E4E8] bg-white text-[#4B5565]"
+            className="lg:hidden p-2 rounded-xl border border-[#E2E4E8] dark:border-slate-700 bg-white dark:bg-[#161F30] text-[#4B5565] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -2634,12 +2674,12 @@ export default function AdminDashboardPage() {
                   setIsNotificationsOpen(!isNotificationsOpen);
                   setIsAdminDropdownOpen(false);
                 }}
-                className="relative p-2.5 rounded-xl text-gray-600 hover:text-[#166534] hover:bg-gray-100/80 transition cursor-pointer border border-gray-200 shadow-2xs"
+                className="relative p-2.5 rounded-xl text-gray-600 dark:text-slate-300 hover:text-[#166534] dark:hover:text-emerald-400 hover:bg-gray-100/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer border border-gray-200 dark:border-slate-700/80 shadow-2xs"
                 title="Student Submission Notifications"
               >
                 <Bell className="w-4 h-4" />
                 {unreadActivities.length > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#166534] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#166534] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-[#0E1726] shadow-xs">
                     {unreadActivities.length > 9 ? "9+" : unreadActivities.length}
                   </span>
                 )}
@@ -2652,18 +2692,18 @@ export default function AdminDashboardPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-[#EAEBED] rounded-2xl shadow-xl z-40 overflow-hidden"
+                    className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-2xl shadow-xl z-40 overflow-hidden"
                   >
-                    <div className="p-3.5 border-b border-gray-100 flex items-center justify-between bg-[#FAFBFD]">
+                    <div className="p-3.5 border-b border-gray-100 dark:border-slate-700/80 flex items-center justify-between bg-[#FAFBFD] dark:bg-slate-800/60">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-green-50 text-[#166534] flex items-center justify-center">
+                        <div className="w-7 h-7 rounded-lg bg-green-50 dark:bg-emerald-950/50 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
                           <Bell className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-xs font-bold text-gray-900">
+                        <span className="text-xs font-bold text-gray-900 dark:text-slate-100">
                           Student Submissions
                         </span>
                         {unreadActivities.length > 0 && (
-                          <span className="px-2 py-0.5 bg-green-100 text-[#166534] text-[10px] font-extrabold rounded-full">
+                          <span className="px-2 py-0.5 bg-green-100 dark:bg-emerald-900/50 text-[#166534] dark:text-emerald-400 text-[10px] font-extrabold rounded-full">
                             {unreadActivities.length} new
                           </span>
                         )}
@@ -2673,7 +2713,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={markAllAdminNotificationsAsRead}
-                            className="text-[11px] font-bold text-[#166534] hover:underline cursor-pointer"
+                            className="text-[11px] font-bold text-[#166534] dark:text-emerald-400 hover:underline cursor-pointer"
                           >
                             Mark all read
                           </button>
@@ -2682,7 +2722,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={handleDeleteAllAdminNotifications}
-                            className="text-[11px] font-semibold text-gray-400 hover:text-green-600 transition cursor-pointer"
+                            className="text-[11px] font-semibold text-gray-400 dark:text-slate-400 hover:text-green-600 dark:hover:text-emerald-400 transition cursor-pointer"
                             title="Clear all notifications"
                           >
                             Clear all
@@ -2691,9 +2731,9 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700/60">
                       {activeAdminNotifications.length === 0 ? (
-                        <div className="p-8 text-center text-gray-400 text-xs">
+                        <div className="p-8 text-center text-gray-400 dark:text-slate-500 text-xs">
                           No notifications right now.
                         </div>
                       ) : (
@@ -2703,8 +2743,10 @@ export default function AdminDashboardPage() {
                             <div
                               key={act.id}
                               onClick={() => handleAdminNotificationClick(act.id)}
-                              className={`group/notif relative w-full text-left p-3.5 hover:bg-gray-50 transition cursor-pointer flex items-start gap-3 ${
-                                isUnread ? "bg-[#FFF8F8]" : "bg-white"
+                              className={`group/notif relative w-full text-left p-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition cursor-pointer flex items-start gap-3 ${
+                                isUnread
+                                  ? "bg-[#FFF8F8] dark:bg-slate-800/30"
+                                  : "bg-white dark:bg-[#161F30]"
                               }`}
                             >
                               <div className="w-8 h-8 rounded-xl bg-[#166534] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-2xs">
@@ -2712,18 +2754,18 @@ export default function AdminDashboardPage() {
                               </div>
                               <div className="flex-1 min-w-0 pr-6">
                                 <div className="flex items-center justify-between gap-1">
-                                  <p className="text-xs font-bold text-gray-900 truncate">
+                                  <p className="text-xs font-bold text-gray-900 dark:text-slate-100 truncate">
                                     {act.studentName}
                                   </p>
                                   {isUnread && (
-                                    <span className="w-2 h-2 rounded-full bg-[#166534] shrink-0" />
+                                    <span className="w-2 h-2 rounded-full bg-[#166534] dark:bg-emerald-400 shrink-0" />
                                   )}
                                 </div>
-                                <p className="text-[11px] text-gray-600 truncate mt-0.5">
-                                  Submitted <span className="font-semibold text-gray-900">{act.quizTitle}</span>
+                                <p className="text-[11px] text-gray-600 dark:text-slate-300 truncate mt-0.5">
+                                  Submitted <span className="font-semibold text-gray-900 dark:text-slate-100">{act.quizTitle}</span>
                                 </p>
-                                <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400">
-                                  <span className="font-bold text-[#166534]">
+                                <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400 dark:text-slate-500">
+                                  <span className="font-bold text-[#166534] dark:text-emerald-400">
                                     {act.score} / {act.totalQuestions} pts
                                   </span>
                                   <span>{act.submittedAt}</span>
@@ -2733,7 +2775,7 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={(e) => handleDeleteAdminNotification(act.id, e)}
-                                className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all shrink-0 cursor-pointer"
+                                className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 dark:text-slate-400 hover:text-green-600 dark:hover:text-emerald-400 hover:bg-green-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all shrink-0 cursor-pointer"
                                 title="Delete notification"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -2745,14 +2787,14 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {activities.length > 0 && (
-                      <div className="p-2.5 bg-gray-50/70 border-t border-gray-100 text-center">
+                      <div className="p-2.5 bg-gray-50/70 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 text-center">
                         <button
                           type="button"
                           onClick={() => {
                             setIsNotificationsOpen(false);
                             handleNavClick("history-quizzes");
                           }}
-                          className="text-xs font-bold text-[#166534] hover:underline cursor-pointer"
+                          className="text-xs font-bold text-[#166534] dark:text-emerald-400 hover:underline cursor-pointer"
                         >
                           View All in History →
                         </button>
@@ -2772,20 +2814,20 @@ export default function AdminDashboardPage() {
                   setIsAdminDropdownOpen(!isAdminDropdownOpen);
                   setIsNotificationsOpen(false);
                 }}
-                className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-white/80 transition-colors cursor-pointer"
+                className="flex items-center gap-2.5 py-1 px-2 rounded-2xl hover:bg-gray-100/70 dark:hover:bg-slate-800/60 transition-colors cursor-pointer group"
               >
                 <div className="hidden sm:flex flex-col text-right leading-tight">
-                  <span className="text-sm font-bold text-[#1F242D]">
+                  <span className="text-sm font-bold text-[#1F242D] dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
                     {isStudentViewMode ? "Student Learner" : (user?.name || "User")}
                   </span>
-                  <span className="text-[0.72rem] font-medium text-[#8C93A0]">
+                  <span className="text-[0.72rem] font-medium text-[#8C93A0] dark:text-slate-400">
                     {isStudentViewMode ? "Learner View (Preview)" : "Administrator"}
                   </span>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[#166534]/25 border border-white/20">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[#166534]/25 border border-white/20 dark:border-slate-700 shrink-0">
                   {isStudentViewMode ? "S" : (user?.name ? user.name.charAt(0).toUpperCase() : "U")}
                 </div>
-                <ChevronDown className="w-4 h-4 text-[#717A8A]" />
+                <ChevronDown className="w-4 h-4 text-[#717A8A] dark:text-slate-400 group-hover:text-[#1F242D] dark:group-hover:text-slate-200 transition-colors" />
               </button>
 
               {/* Admin Dropdown Menu */}
@@ -2796,18 +2838,18 @@ export default function AdminDashboardPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-56 bg-white border border-[#EAEBED] rounded-2xl shadow-xl py-2 z-30"
+                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-2xl shadow-xl py-2 z-30"
                   >
-                    <div className="px-4 py-2 border-b border-[#F0F1F3]">
-                      <p className="text-xs font-bold text-[#1F242D]">
+                    <div className="px-4 py-2 border-b border-[#F0F1F3] dark:border-slate-700/80">
+                      <p className="text-xs font-bold text-[#1F242D] dark:text-slate-100">
                         {isStudentViewMode ? "Student Learner" : (user?.name || "User")}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <p className="text-[0.72rem] text-[#8C93A0] truncate">
+                        <p className="text-[0.72rem] text-[#8C93A0] dark:text-slate-400 truncate">
                           {isStudentViewMode ? "learner.preview@workspace.local" : (user?.email || "admin@gmail.com")}
                         </p>
                         {user?.block && (
-                          <span className="inline-flex items-center shrink-0 rounded-md bg-[#166534]/10 border border-[#166534]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#166534] leading-none">
+                          <span className="inline-flex items-center shrink-0 rounded-md bg-[#166534]/10 dark:bg-emerald-950/40 border border-[#166534]/20 dark:border-emerald-700/50 px-1.5 py-0.5 text-[10px] font-bold text-[#166534] dark:text-emerald-400 leading-none">
                             Block {user.block.trim().toUpperCase()}
                           </span>
                         )}
@@ -2820,61 +2862,81 @@ export default function AdminDashboardPage() {
                           setIsStudentViewMode(false);
                           handleNavClick("dashboard");
                         }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#166534] hover:bg-[#F0FDF4] text-left cursor-pointer"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#166534] dark:text-emerald-400 hover:bg-[#F0FDF4] dark:hover:bg-slate-800/60 text-left cursor-pointer transition-colors"
                       >
-                        <ArrowLeft className="w-4 h-4 text-[#166534]" />
+                        <ArrowLeft className="w-4 h-4 text-[#166534] dark:text-emerald-400" />
                         <span>Return to Admin Dashboard</span>
                       </button>
                     ) : (
                       <>
                         <button
                           onClick={() => handleNavClick("dashboard")}
-                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#F6F7F9] text-left cursor-pointer ${
+                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#F6F7F9] dark:hover:bg-slate-800/60 text-left cursor-pointer transition-colors ${
                             activeNav === "dashboard"
-                              ? "text-[#166534] font-bold bg-[#F0FDF4]"
-                              : "text-[#4B5565]"
+                              ? "text-[#166534] dark:text-emerald-400 font-bold bg-[#F0FDF4] dark:bg-slate-800"
+                              : "text-[#4B5565] dark:text-slate-300"
                           }`}
                         >
-                          <LayoutDashboard className="w-4 h-4 text-[#717A8A]" />
+                          <LayoutDashboard className="w-4 h-4 text-[#717A8A] dark:text-slate-400" />
                           <span>Admin Overview</span>
                         </button>
                         <button
                           onClick={() => handleNavClick("student-overview")}
-                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#F6F7F9] text-left cursor-pointer ${
+                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#F6F7F9] dark:hover:bg-slate-800/60 text-left cursor-pointer transition-colors ${
                             activeNav === "student-overview"
-                              ? "text-[#166534] font-bold bg-[#F0FDF4]"
-                              : "text-[#4B5565]"
+                              ? "text-[#166534] dark:text-emerald-400 font-bold bg-[#F0FDF4] dark:bg-slate-800"
+                              : "text-[#4B5565] dark:text-slate-300"
                           }`}
                         >
-                          <GraduationCap className="w-4 h-4 text-[#717A8A]" />
+                          <GraduationCap className="w-4 h-4 text-[#717A8A] dark:text-slate-400" />
                           <span>Student Overview</span>
                         </button>
                       </>
                     )}
                     <button
                       onClick={() => handleNavClick("calculators")}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#4B5565] hover:bg-[#F6F7F9] text-left cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#4B5565] dark:text-slate-300 hover:bg-[#F6F7F9] dark:hover:bg-slate-800/60 text-left cursor-pointer transition-colors"
                     >
-                      <Calculator className="w-4 h-4 text-[#717A8A]" />
+                      <Calculator className="w-4 h-4 text-[#717A8A] dark:text-slate-400" />
                       <span>Calculators Hub</span>
                     </button>
                     <button
                       onClick={() => handleNavClick("topics")}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#4B5565] hover:bg-[#F6F7F9] text-left cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#4B5565] dark:text-slate-300 hover:bg-[#F6F7F9] dark:hover:bg-slate-800/60 text-left cursor-pointer transition-colors"
                     >
-                      <BookOpen className="w-4 h-4 text-[#717A8A]" />
+                      <BookOpen className="w-4 h-4 text-[#717A8A] dark:text-slate-400" />
                       <span>Curriculum Topics</span>
                     </button>
-                    <div className="my-1 border-t border-[#F0F1F3]" />
+                    {/* Light / Dark Mode Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => toggleTheme()}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-[#4B5565] dark:text-slate-300 hover:bg-[#F6F7F9] dark:hover:bg-slate-800/60 text-left cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {theme === "dark" ? (
+                          <Moon className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <Sun className="w-4 h-4 text-amber-500" />
+                        )}
+                        <span className="font-semibold">
+                          {theme === "dark" ? "Dark Mode" : "Light Mode"}
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300">
+                        {theme === "dark" ? "On" : "Off"}
+                      </span>
+                    </button>
+                    <div className="my-1 border-t border-[#F0F1F3] dark:border-slate-700/80" />
                     <button
                       onClick={async () => {
                         setIsAdminDropdownOpen(false);
                         await logout();
                         navigate("/login", { replace: true });
                       }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 text-left cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left cursor-pointer transition-colors"
                     >
-                      <LogOut className="w-4 h-4 text-red-600" />
+                      <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
                       <span>Sign Out</span>
                     </button>
                   </motion.div>
@@ -4455,56 +4517,67 @@ export default function AdminDashboardPage() {
             </section>
 
             {/* 6. RECENT QUIZ TAKERS */}
-            <section className="bg-white border border-[#EAEBED] rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+            <section className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold text-[#111827]">
+                <h3 className="text-base font-bold text-[#111827] dark:text-slate-100">
                   Recent Quiz Takers
                 </h3>
                 <button
                   type="button"
                   onClick={() => handleNavClick("quiz-results")}
-                  className="text-xs font-bold text-[#166534] hover:underline cursor-pointer"
+                  className="text-xs font-bold text-[#166534] dark:text-emerald-400 hover:underline cursor-pointer"
                 >
                   View All
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 text-xs font-semibold text-[#9CA3AF] py-2 border-b border-[#F3F4F6]">
-                <span>Name</span>
-                <span>Quiz</span>
-                <span className="text-right">Submitted</span>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[#EAEBED] dark:border-slate-700 text-xs font-bold uppercase text-[#6B7280] dark:text-slate-400">
+                      <th className="pb-3 px-3">Name</th>
+                      <th className="pb-3 px-3">Quiz</th>
+                      <th className="pb-3 px-3 text-right">Submitted</th>
+                    </tr>
+                  </thead>
+                  {activities.length === 0 ? (
+                    <tbody>
+                      <tr>
+                        <td colSpan={3} className="py-10 text-center">
+                          <div className="flex flex-col items-center">
+                            <Users className="w-8 h-8 text-[#166534] dark:text-emerald-400 mb-3" />
+                            <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
+                              No quiz takers yet.
+                            </h4>
+                            <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-1">
+                              Recent quiz takers will appear here.
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  ) : (
+                    <tbody className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60">
+                      {activities.slice(0, 10).map((act) => (
+                        <tr
+                          key={act.id}
+                          className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors duration-150"
+                        >
+                          <td className="py-3.5 px-3 font-semibold text-[#111827] dark:text-slate-100">
+                            {act.studentName}
+                          </td>
+                          <td className="py-3.5 px-3 text-xs text-[#4B5563] dark:text-slate-300">
+                            {act.quizTitle}
+                          </td>
+                          <td className="py-3.5 px-3 text-right text-xs text-[#6B7280] dark:text-slate-400">
+                            {act.submittedAt}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  )}
+                </table>
               </div>
-
-              {activities.length === 0 ? (
-                <div className="flex flex-col items-center py-10 text-center">
-                  <Users className="w-8 h-8 text-[#166534] mb-3" />
-                  <h4 className="text-sm font-bold text-[#111827]">
-                    No quiz takers yet.
-                  </h4>
-                  <p className="text-xs text-[#6B7280] mt-1">
-                    Recent quiz takers will appear here.
-                  </p>
-                </div>
-              ) : (
-                <div className="w-full flex flex-col divide-y divide-[#F3F4F6]">
-                  {activities.slice(0, 10).map((act) => (
-                    <div
-                      key={act.id}
-                      className="grid grid-cols-3 text-xs py-3 items-center"
-                    >
-                      <span className="font-bold text-[#111827] truncate">
-                        {act.studentName}
-                      </span>
-                      <span className="text-[#4B5563] truncate">
-                        {act.quizTitle}
-                      </span>
-                      <span className="text-right text-[11px] text-[#6B7280]">
-                        {act.submittedAt}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </section>
             </motion.div>
           )}
@@ -4529,18 +4602,9 @@ export default function AdminDashboardPage() {
                   {/* Header Banner for Calculators Hub */}
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="max-w-xl">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#166534]/10 border border-[#166534]/20 text-[#166534] text-xs font-bold uppercase tracking-wider mb-2">
-                        <Calculator className="w-3.5 h-3.5" />
-                        <span>Admin Calculator Suite</span>
-                      </div>
                       <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
-                        Complete Mathematical Solvers & Tools
+                        Mathematical Solvers & Tools
                       </h2>
-                      <p className="text-sm text-[#6B7280] mt-1.5 leading-relaxed">
-                        Access all 52+ solvers across Linear Algebra, Calculus
-                        1, and Calculus 2 with real-time computations and
-                        step-by-step steps.
-                      </p>
                     </div>
 
                     {/* Calculator Quick Search */}
@@ -4815,18 +4879,9 @@ export default function AdminDashboardPage() {
                   {/* Header Banner for Topics Hub */}
                   <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="max-w-xl">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#166534]/10 border border-[#166534]/20 text-[#166534] text-xs font-bold uppercase tracking-wider mb-2">
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>Curriculum Management</span>
-                      </div>
                       <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
-                        Complete Course Topics & Modules
+                        Course Topics & Modules
                       </h2>
-                      <p className="text-sm text-[#6B7280] mt-1.5 leading-relaxed">
-                        Explore, review, and manage all curriculum modules,
-                        formulas, theorems, and example exercises across Linear
-                        Algebra, Calculus 1, and Calculus 2.
-                      </p>
                     </div>
 
                     {/* Topic Search Box */}
@@ -5321,20 +5376,9 @@ export default function AdminDashboardPage() {
                     <Wand2 className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-md">
-                        Admin Quiz Generator
-                      </span>
-                      <span className="text-xs text-gray-500 font-medium">
-                        1 Attempt Only • Admin Answer Key
-                      </span>
-                    </div>
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
                       Generate & Publish Quiz
                     </h2>
-                    <p className="text-xs sm:text-sm text-[#6B7280] mt-1 max-w-2xl leading-relaxed">
-                      Choose from Linear Algebra, Calculus 1, or Calculus 2 topics. Select the question type (Multiple Choice, Identification, Enumeration, or Problem Solving), preview with the answer key, and publish live to students.
-                    </p>
                   </div>
                 </div>
 
@@ -5412,13 +5456,13 @@ export default function AdminDashboardPage() {
               {generatorStep === 1 && (
                 <div className="space-y-6">
                   {/* Category Selection Cards */}
-                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-base font-bold text-[#111827]">
+                        <h3 className="text-base font-bold text-[#111827] dark:text-slate-100">
                           Step 1: Select Math Category
                         </h3>
-                        <p className="text-xs text-[#6B7280] mt-0.5">
+                        <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-0.5">
                           Pick the primary course domain to load all associated curriculum topics.
                         </p>
                       </div>
@@ -5434,22 +5478,22 @@ export default function AdminDashboardPage() {
                         }}
                         className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                           generatorCategory === "linear-algebra"
-                            ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534] shadow-xs"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
+                            ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
+                            : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 text-[#166534] flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
                             <Layers className="w-5 h-5" />
                           </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
                             28 Topics
                           </span>
                         </div>
-                        <h4 className="text-sm font-bold text-[#111827]">
+                        <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
                           Linear Algebra
                         </h4>
-                        <p className="text-[11px] text-gray-500 mt-1 leading-snug">
+                        <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-snug">
                           Matrices, determinants, eigenvalues, vector spaces, and transformations.
                         </p>
                       </button>
@@ -5463,22 +5507,22 @@ export default function AdminDashboardPage() {
                         }}
                         className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                           generatorCategory === "calculus-1"
-                            ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534] shadow-xs"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
+                            ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
+                            : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 text-[#166534] flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
                             <TrendingUp className="w-5 h-5" />
                           </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
                             30+ Topics
                           </span>
                         </div>
-                        <h4 className="text-sm font-bold text-[#111827]">
+                        <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
                           Calculus 1
                         </h4>
-                        <p className="text-[11px] text-gray-500 mt-1 leading-snug">
+                        <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-snug">
                           Limits, continuity, derivatives, optimization, and definite integrals.
                         </p>
                       </button>
@@ -5492,22 +5536,22 @@ export default function AdminDashboardPage() {
                         }}
                         className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                           generatorCategory === "calculus-2"
-                            ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534] shadow-xs"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 bg-white"
+                            ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
+                            : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 text-[#166534] flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-xl bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
                             <Zap className="w-5 h-5" />
                           </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
                             30+ Topics
                           </span>
                         </div>
-                        <h4 className="text-sm font-bold text-[#111827]">
+                        <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
                           Calculus 2
                         </h4>
-                        <p className="text-[11px] text-gray-500 mt-1 leading-snug">
+                        <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-snug">
                           Integration techniques, polar coordinates, conics, and infinite series.
                         </p>
                       </button>
@@ -5599,111 +5643,94 @@ export default function AdminDashboardPage() {
                   </div>
 
                   {/* Quiz Settings: Question Type and Count */}
-                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-5">
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-5">
                     <div>
-                      <h3 className="text-base font-bold text-[#111827]">
-                        Step 3: Question Type & Settings
+                      <h3 className="text-base font-bold text-[#111827] dark:text-slate-100">
+                        Step 3: Question Sections
                       </h3>
-                      <p className="text-xs text-[#6B7280] mt-0.5">
-                        Select the question format and the number of questions to generate.
+                      <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-0.5">
+                        Configure each question type section. Set the items and points, pick a type, then click
+                        <span className="font-semibold text-[#166534]"> + Add Section</span>. Add as many sections as you like!
                       </p>
                     </div>
 
-                    {/* Question Type 4-card selector */}
-                    <div>
-                      <label className="block text-xs font-bold text-[#374151] mb-2 uppercase tracking-wide">
-                        Question Type
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {/* Option 1: Multiple Choice */}
-                        <button
-                          type="button"
-                          onClick={() => setGeneratorQuestionType("multiple_choice")}
-                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                            generatorQuestionType === "multiple_choice"
-                              ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534]"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 text-[#166534] flex items-center justify-center mb-2">
-                            <FileQuestion className="w-4 h-4" />
-                          </div>
-                          <h5 className="text-xs font-bold text-[#111827]">
-                            Multiple Choice
-                          </h5>
-                          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                            4 choices A, B, C, D with 1 correct option.
+                    {/* ── Saved Sections List ── */}
+                    {questionTypeSections.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-[#374151] uppercase tracking-wide">Saved Sections ({questionTypeSections.length})</p>
+                          <button
+                            type="button"
+                            onClick={() => setQuestionTypeSections([])}
+                            className="text-[10px] font-semibold text-red-500 hover:text-red-700 transition cursor-pointer"
+                          >
+                            Clear All
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {questionTypeSections.map((sec, idx) => {
+                            const typeIcons: Record<string, React.ReactNode> = {
+                              multiple_choice: <FileQuestion className="w-3.5 h-3.5" />,
+                              identification: <Lightbulb className="w-3.5 h-3.5" />,
+                              enumeration: <ListOrdered className="w-3.5 h-3.5" />,
+                              problem_solving: <Calculator className="w-3.5 h-3.5" />,
+                            };
+                            const typeLabels: Record<string, string> = {
+                              multiple_choice: "Multiple Choice",
+                              identification: "Identification",
+                              enumeration: "Enumeration",
+                              problem_solving: "Problem Solving",
+                            };
+                            const sectionTotal = sec.itemCount * sec.pointsPerItem;
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-3 bg-gradient-to-r from-[#f0fdf4] to-[#dcfce7] border border-[#bbf7d0] rounded-2xl px-4 py-2.5"
+                              >
+                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center">
+                                  {idx + 1}
+                                </span>
+                                <div className="text-[#166534] flex-shrink-0">{typeIcons[sec.type]}</div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-bold text-[#166534] truncate">{typeLabels[sec.type]}</p>
+                                  <p className="text-[10px] text-[#15803d]/70">{sec.itemCount} items · {sec.pointsPerItem} {sec.pointsPerItem === 1 ? "pt" : "pts"}/item · {sectionTotal} pts total</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setQuestionTypeSections((prev) => prev.filter((_, i) => i !== idx))}
+                                  className="flex-shrink-0 p-1 rounded-lg hover:bg-red-100 text-red-400 hover:text-red-600 transition cursor-pointer"
+                                  title="Remove section"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {/* Overall total */}
+                        <div className="flex items-center justify-between px-1 pt-1">
+                          <p className="text-xs text-gray-500">
+                            Total: <span className="font-bold text-[#111827]">{questionTypeSections.reduce((s, sec) => s + sec.itemCount, 0)} questions</span>
                           </p>
-                        </button>
-
-                        {/* Option 2: Identification */}
-                        <button
-                          type="button"
-                          onClick={() => setGeneratorQuestionType("identification")}
-                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                            generatorQuestionType === "identification"
-                              ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534]"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 text-[#166534] flex items-center justify-center mb-2">
-                            <Lightbulb className="w-4 h-4" />
-                          </div>
-                          <h5 className="text-xs font-bold text-[#111827]">
-                            Identification
-                          </h5>
-                          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                            Identify the exact mathematical term or formula.
+                          <p className="text-xs text-gray-500">
+                            Grand Total: <span className="font-bold text-[#166534]">{questionTypeSections.reduce((s, sec) => s + sec.itemCount * sec.pointsPerItem, 0)} pts</span>
                           </p>
-                        </button>
-
-                        {/* Option 3: Enumeration */}
-                        <button
-                          type="button"
-                          onClick={() => setGeneratorQuestionType("enumeration")}
-                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                            generatorQuestionType === "enumeration"
-                              ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534]"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 text-[#166534] flex items-center justify-center mb-2">
-                            <ListOrdered className="w-4 h-4" />
-                          </div>
-                          <h5 className="text-xs font-bold text-[#111827]">
-                            Enumeration
-                          </h5>
-                          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                            List key properties, theorems, or steps.
-                          </p>
-                        </button>
-
-                        {/* Option 4: Problem Solving */}
-                        <button
-                          type="button"
-                          onClick={() => setGeneratorQuestionType("problem_solving")}
-                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                            generatorQuestionType === "problem_solving"
-                              ? "border-[#166534] bg-[#FCE8EB]/30 ring-2 ring-[#166534]"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 text-[#166534] flex items-center justify-center mb-2">
-                            <Calculator className="w-4 h-4" />
-                          </div>
-                          <h5 className="text-xs font-bold text-[#111827]">
-                            Problem Solving
-                          </h5>
-                          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                            Problem only and then solve with full steps.
-                          </p>
-                        </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* ── Divider when sections exist ── */}
+                    {questionTypeSections.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-px bg-gray-200" />
+                        <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Add Another Section</span>
+                        <div className="flex-1 h-px bg-gray-200" />
+                      </div>
+                    )}
 
                     {/* Number of Items Selector */}
                     <div>
-                      <label className="block text-xs font-bold text-[#374151] mb-2 uppercase tracking-wide">
+                      <label className="block text-xs font-bold text-[#374151] dark:text-slate-300 mb-2 uppercase tracking-wide">
                         Number of Items (Questions)
                       </label>
                       <div className="flex flex-wrap items-center gap-3">
@@ -5715,7 +5742,7 @@ export default function AdminDashboardPage() {
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                               generatorItemCount === cnt
                                 ? "bg-[#166534] text-white shadow-xs"
-                                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                : "bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200"
                             }`}
                           >
                             {cnt} Items
@@ -5723,7 +5750,7 @@ export default function AdminDashboardPage() {
                         ))}
 
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 font-medium">Custom:</span>
+                          <span className="text-xs text-gray-500 dark:text-slate-400 font-medium">Custom:</span>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -5743,7 +5770,7 @@ export default function AdminDashboardPage() {
                                 setGeneratorItemCount(1);
                               }
                             }}
-                            className="w-20 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition"
+                            className="w-20 px-3 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl text-xs font-bold text-gray-800 dark:text-slate-100 text-center focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white dark:focus:bg-slate-700 transition"
                           />
                         </div>
                       </div>
@@ -5752,11 +5779,11 @@ export default function AdminDashboardPage() {
                     {/* Points Per Item Selector */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-bold text-[#374151] uppercase tracking-wide">
+                        <label className="block text-xs font-bold text-[#374151] dark:text-slate-300 uppercase tracking-wide">
                           Points Per Item
                         </label>
                         <span className="text-xs font-semibold text-[#166534] bg-green-50 px-2.5 py-0.5 rounded-full border border-green-100">
-                          Total: {(typeof generatorItemCount === "number" ? generatorItemCount : 1) * (typeof generatorPointsPerItem === "number" ? generatorPointsPerItem : 1)} pts
+                          Section Total: {(typeof generatorItemCount === "number" ? generatorItemCount : 1) * (typeof generatorPointsPerItem === "number" ? generatorPointsPerItem : 1)} pts
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
@@ -5768,7 +5795,7 @@ export default function AdminDashboardPage() {
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                               generatorPointsPerItem === pts
                                 ? "bg-[#166534] text-white shadow-xs"
-                                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                : "bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200"
                             }`}
                           >
                             {pts} {pts === 1 ? "pt" : "pts"}
@@ -5776,7 +5803,7 @@ export default function AdminDashboardPage() {
                         ))}
 
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 font-medium">Custom:</span>
+                          <span className="text-xs text-gray-500 dark:text-slate-400 font-medium">Custom:</span>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -5796,11 +5823,124 @@ export default function AdminDashboardPage() {
                                 setGeneratorPointsPerItem(1);
                               }
                             }}
-                            className="w-20 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition"
+                            className="w-20 px-3 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl text-xs font-bold text-gray-800 dark:text-slate-100 text-center focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white dark:focus:bg-slate-700 transition"
                           />
                         </div>
                       </div>
                     </div>
+
+                    {/* Question Type 4-card selector */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#374151] dark:text-slate-300 mb-2 uppercase tracking-wide">
+                        Question Type for This Section
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* Option 1: Multiple Choice */}
+                        <button
+                          type="button"
+                          onClick={() => setGeneratorQuestionType("multiple_choice")}
+                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                            generatorQuestionType === "multiple_choice"
+                              ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534]"
+                              : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 bg-white dark:bg-slate-800/60 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center mb-2">
+                            <FileQuestion className="w-4 h-4" />
+                          </div>
+                          <h5 className="text-xs font-bold text-[#111827] dark:text-slate-100">
+                            Multiple Choice
+                          </h5>
+                          <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-snug">
+                            4 choices A, B, C, D with 1 correct option.
+                          </p>
+                        </button>
+
+                        {/* Option 2: Identification */}
+                        <button
+                          type="button"
+                          onClick={() => setGeneratorQuestionType("identification")}
+                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                            generatorQuestionType === "identification"
+                              ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534]"
+                              : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 bg-white dark:bg-slate-800/60 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center mb-2">
+                            <Lightbulb className="w-4 h-4" />
+                          </div>
+                          <h5 className="text-xs font-bold text-[#111827] dark:text-slate-100">
+                            Identification
+                          </h5>
+                          <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-snug">
+                            Identify the exact mathematical term or formula.
+                          </p>
+                        </button>
+
+                        {/* Option 3: Enumeration */}
+                        <button
+                          type="button"
+                          onClick={() => setGeneratorQuestionType("enumeration")}
+                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                            generatorQuestionType === "enumeration"
+                              ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534]"
+                              : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 bg-white dark:bg-slate-800/60 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center mb-2">
+                            <ListOrdered className="w-4 h-4" />
+                          </div>
+                          <h5 className="text-xs font-bold text-[#111827] dark:text-slate-100">
+                            Enumeration
+                          </h5>
+                          <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-snug">
+                            List key properties, theorems, or steps.
+                          </p>
+                        </button>
+
+                        {/* Option 4: Problem Solving */}
+                        <button
+                          type="button"
+                          onClick={() => setGeneratorQuestionType("problem_solving")}
+                          className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                            generatorQuestionType === "problem_solving"
+                              ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534]"
+                              : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 bg-white dark:bg-slate-800/60 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center mb-2">
+                            <Calculator className="w-4 h-4" />
+                          </div>
+                          <h5 className="text-xs font-bold text-[#111827] dark:text-slate-100">
+                            Problem Solving
+                          </h5>
+                          <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-snug">
+                            Problem only and then solve with full steps.
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Add Section Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const count = typeof generatorItemCount === "number" && generatorItemCount > 0 ? generatorItemCount : 5;
+                        const pts = typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1;
+                        setQuestionTypeSections((prev) => [
+                          ...prev,
+                          { type: generatorQuestionType, itemCount: count, pointsPerItem: pts },
+                        ]);
+                        // Reset to defaults for next section
+                        setGeneratorItemCount(5);
+                        setGeneratorPointsPerItem(1);
+                        setGeneratorQuestionType("multiple_choice");
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl border-2 border-dashed border-[#166534]/40 hover:border-[#166534] hover:bg-green-50 dark:hover:bg-[#166534]/10 text-[#166534] dark:text-emerald-400 text-xs font-bold transition cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Section
+                    </button>
 
                     {/* === Published Success Overlay === */}
                     <AnimatePresence>
@@ -5808,11 +5948,14 @@ export default function AdminDashboardPage() {
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/85 backdrop-blur-md"
+                          exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.5, ease: "easeInOut" } }}
+                          className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/90 backdrop-blur-md"
                         >
-                          <div
+                          <motion.div
                             ref={publishedGSAPRef}
+                            initial={{ scale: 0.85, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1, transition: { duration: 0.4, ease: "backOut" } }}
+                            exit={{ scale: 0.75, opacity: 0, transition: { duration: 0.45, ease: "easeIn" } }}
                             className="flex flex-col items-center gap-4"
                           >
                             {/* Green Check Circle */}
@@ -5827,7 +5970,8 @@ export default function AdminDashboardPage() {
                             <p className="gsap-publish-text text-emerald-600/80 text-sm text-center max-w-[240px]">
                               Quiz is now live for students.
                             </p>
-                          </div>
+                            <p className="text-[11px] text-emerald-500/60 mt-1">This message will close automatically...</p>
+                          </motion.div>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -5885,14 +6029,20 @@ export default function AdminDashboardPage() {
                           <>
                             <Sparkles className="w-4 h-4" />
                             <span>
-                              Generate {generatorItemCount || 1}-Item Quiz with Answers
+                              Generate{
+                                questionTypeSections.length > 0
+                                  ? ` ${questionTypeSections.reduce((s, sec) => s + sec.itemCount, 0)}-Item Mixed`
+                                  : ` ${generatorItemCount || 1}-Item`
+                              } Quiz with Answers
                             </span>
                             <ArrowRight className="w-4 h-4" />
                           </>
                         )}
                       </button>
                       <p className="text-[11px] text-center text-gray-400 mt-2">
-                        Questions will be generated with full answers displayed for admin verification.
+                        {questionTypeSections.length > 0
+                          ? `${questionTypeSections.length} section${questionTypeSections.length > 1 ? "s" : ""} · ${questionTypeSections.reduce((s, sec) => s + sec.itemCount * sec.pointsPerItem, 0)} total pts · Questions generated with full answers for admin verification.`
+                          : "Questions will be generated with full answers displayed for admin verification."}
                       </p>
                     </div>
                   </div>
@@ -6509,30 +6659,27 @@ export default function AdminDashboardPage() {
         {activeNav === "quiz-results" && (
           <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
             {/* Header Banner */}
-            <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+            <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5">
                   <div className="w-11 h-11 rounded-2xl bg-[#166534] flex items-center justify-center text-white shrink-0 shadow-sm shadow-[#166534]/20">
                     <BarChart3 className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] dark:text-slate-100 tracking-tight">
                       Quiz Results & Student Performance
                     </h2>
-                    <p className="text-sm text-[#6B7280] mt-1">
-                      View live student quiz submissions, individual student names, scores, and class performance analytics.
-                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={fetchQuizzesAndStats}
-                    className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer border border-transparent dark:border-slate-700"
                     title="Refresh submissions"
                   >
                     <RefreshCw
                       className={`w-3.5 h-3.5 ${
-                        isLoadingQuizzes ? "animate-spin text-[#166534]" : ""
+                        isLoadingQuizzes ? "animate-spin text-[#166534] dark:text-emerald-400" : ""
                       }`}
                     />
                     <span>Refresh</span>
@@ -6549,14 +6696,14 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* View Switcher & Controls */}
-            <div className="bg-white border border-[#EAEBED] rounded-2xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl">
+            <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-transparent dark:border-slate-700">
                 <button
                   onClick={() => setResultsViewMode("students")}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                     resultsViewMode === "students"
-                      ? "bg-white text-[#166534] shadow-xs"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "bg-white dark:bg-slate-700 text-[#166534] dark:text-emerald-400 shadow-xs"
+                      : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                   }`}
                 >
                   Student Results ({studentSubmissions.length})
@@ -6565,8 +6712,8 @@ export default function AdminDashboardPage() {
                   onClick={() => setResultsViewMode("quizzes")}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                     resultsViewMode === "quizzes"
-                      ? "bg-white text-[#166534] shadow-xs"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "bg-white dark:bg-slate-700 text-[#166534] dark:text-emerald-400 shadow-xs"
+                      : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                   }`}
                 >
                   Quizzes Summary ({quizzes.length})
@@ -6576,20 +6723,20 @@ export default function AdminDashboardPage() {
               {resultsViewMode === "students" && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Search className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
                       placeholder="Search student name, email, or quiz..."
                       value={resultsSearchQuery}
                       onChange={(e) => setResultsSearchQuery(e.target.value)}
-                      className="pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#166534] w-full sm:w-64"
+                      className="pl-9 pr-3 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#166534] dark:focus:ring-emerald-500 w-full sm:w-64"
                     />
                   </div>
 
                   <select
                     value={resultsTopicFilter}
                     onChange={(e) => setResultsTopicFilter(e.target.value)}
-                    className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#166534] cursor-pointer"
+                    className="px-3 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-medium text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#166534] dark:focus:ring-emerald-500 cursor-pointer"
                   >
                     <option value="all">All Topics</option>
                     <option value="Linear Algebra">Linear Algebra</option>
@@ -6604,109 +6751,83 @@ export default function AdminDashboardPage() {
             {resultsViewMode === "students" && (
               <>
                 {filteredSubmissions.length === 0 ? (
-                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center shadow-xs">
-                    <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-3">
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-12 text-center flex flex-col items-center shadow-xs">
+                    <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center text-[#166534] dark:text-emerald-400 mb-3">
                       <GraduationCap className="w-6 h-6 stroke-[1.8]" />
                     </div>
-                    <h4 className="text-base font-bold text-[#111827]">
+                    <h4 className="text-base font-bold text-[#111827] dark:text-slate-100">
                       {studentSubmissions.length === 0
                         ? "No Student Quiz Results Recorded Yet"
                         : "No Matching Submissions Found"}
                     </h4>
-                    <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                    <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-1 max-w-sm">
                       {studentSubmissions.length === 0
                         ? "When students take and submit a quiz, their names, scores, and submission details will appear here automatically."
                         : "Try clearing your search query or topic filter."}
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
-                          <tr className="border-b border-[#EAEBED] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                          <tr className="border-b border-[#EAEBED] dark:border-slate-700 text-xs font-bold uppercase text-[#6B7280] dark:text-slate-400">
                             <th className="pb-3 px-3">Student Name</th>
                             <th className="pb-3 px-3">Quiz Title</th>
                             <th className="pb-3 px-3">Topic</th>
                             <th className="pb-3 px-3">Score</th>
-                            <th className="pb-3 px-3">Percentage</th>
-                            <th className="pb-3 px-3">Status</th>
                             <th className="pb-3 px-3">Time Spent</th>
                             <th className="pb-3 px-3">Submitted At</th>
                             <th className="pb-3 px-3 text-right">Details</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F3F4F6]">
+                        <tbody className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60">
                           {filteredSubmissions.map((sub) => (
                             <tr
                               key={sub.id}
-                              className="hover:bg-[#F9FAFB] transition group"
+                              className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors duration-150 group"
                             >
                               <td className="py-3.5 px-3">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="w-8 h-8 rounded-full bg-[#166534] text-white flex items-center justify-center text-xs font-bold uppercase shrink-0">
+                                  <div className="w-8 h-8 rounded-full bg-[#166534] text-white flex items-center justify-center text-xs font-bold uppercase shrink-0 shadow-xs">
                                     {sub.studentName.slice(0, 2)}
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="font-bold text-[#111827] text-sm truncate">
+                                    <p className="font-semibold text-[#111827] dark:text-slate-100 text-sm truncate">
                                       {sub.studentName}
                                     </p>
-                                    <p className="text-[11px] text-[#6B7280] truncate">
+                                    <p className="text-[11px] text-[#6B7280] dark:text-slate-400 truncate">
                                       {sub.studentEmail || "No email"}
                                     </p>
                                   </div>
                                 </div>
                               </td>
-                              <td className="py-3.5 px-3 font-semibold text-[#111827] text-xs max-w-xs truncate">
+                              <td className="py-3.5 px-3 font-normal text-[#111827] dark:text-slate-200 text-xs max-w-xs truncate">
                                 {sub.quizTitle}
                               </td>
                               <td className="py-3.5 px-3 text-xs">
-                                <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium text-[11px]">
+                                <span className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-transparent dark:border-slate-700 px-2 py-0.5 rounded-md font-medium text-[11px]">
                                   {sub.topic}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 font-bold text-xs text-[#111827]">
+                              <td className="py-3.5 px-3 font-bold text-xs text-[#166534] dark:text-emerald-400">
                                 {sub.score} / {sub.totalQuestions}
                               </td>
-                              <td className="py-3.5 px-3">
-                                <span
-                                  className={`text-xs font-extrabold px-2.5 py-0.5 rounded-md ${
-                                    sub.percentage >= 75
-                                      ? "bg-emerald-100 text-emerald-700"
-                                      : sub.percentage >= 60
-                                      ? "bg-amber-100 text-amber-800"
-                                      : "bg-green-100 text-green-700"
-                                  }`}
-                                >
-                                  {sub.percentage}%
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-3">
-                                <span
-                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                                    sub.passed
-                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                      : "bg-green-50 text-green-700 border border-green-200"
-                                  }`}
-                                >
-                                  {sub.passed ? "Passed" : "Needs Review"}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                              <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400">
                                 {sub.timeSpentSeconds > 0
                                   ? `${Math.floor(sub.timeSpentSeconds / 60)}m ${
                                       sub.timeSpentSeconds % 60
                                     }s`
                                   : "—"}
                               </td>
-                              <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                              <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400">
                                 {sub.submittedAt}
                               </td>
                               <td className="py-3.5 px-3 text-right">
                                 <button
                                   type="button"
                                   onClick={() => setSelectedSubmissionForReview(sub)}
-                                  className="px-2.5 py-1.5 bg-gray-100 hover:bg-[#166534] hover:text-white text-gray-700 text-xs font-bold rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
+                                  className="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/80 hover:bg-[#166534] dark:hover:bg-emerald-950/60 hover:text-white dark:hover:text-emerald-300 text-gray-700 dark:text-slate-300 border border-transparent dark:border-slate-700 hover:border-emerald-600/50 text-xs font-semibold rounded-xl transition-all duration-150 inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
                                   title="Inspect student quiz responses"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
@@ -6727,29 +6848,29 @@ export default function AdminDashboardPage() {
             {resultsViewMode === "quizzes" && (
               <>
                 {quizzes.length === 0 ? (
-                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center shadow-xs">
-                    <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-3">
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-12 text-center flex flex-col items-center shadow-xs">
+                    <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center text-[#166534] dark:text-emerald-400 mb-3">
                       <BarChart3 className="w-6 h-6 stroke-[1.8]" />
                     </div>
-                    <h4 className="text-base font-bold text-[#111827]">
+                    <h4 className="text-base font-bold text-[#111827] dark:text-slate-100">
                       No Quizzes Available
                     </h4>
-                    <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                    <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-1 max-w-sm">
                       Create and publish a quiz to start tracking student scores and analytics.
                     </p>
                     <button
                       onClick={() => handleNavClick("add-quiz")}
-                      className="mt-4 px-4 py-2 bg-[#166534] text-white text-xs font-bold rounded-xl cursor-pointer"
+                      className="mt-4 px-4 py-2 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-xl cursor-pointer"
                     >
                       Add Your First Quiz
                     </button>
                   </div>
                 ) : (
-                  <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                  <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
-                          <tr className="border-b border-[#EAEBED] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                          <tr className="border-b border-[#EAEBED] dark:border-slate-700 text-xs font-bold uppercase text-[#6B7280] dark:text-slate-400">
                             <th className="pb-3 px-3">Quiz Title</th>
                             <th className="pb-3 px-3">Topic</th>
                             <th className="pb-3 px-3">Questions</th>
@@ -6759,22 +6880,22 @@ export default function AdminDashboardPage() {
                             <th className="pb-3 px-3 text-right">Actions</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F3F4F6]">
+                        <tbody className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60">
                           {quizzes.map((quiz) => (
-                            <tr key={quiz.id} className="hover:bg-[#F9FAFB] transition">
-                              <td className="py-3.5 px-3 font-semibold text-[#111827]">
+                            <tr key={quiz.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors duration-150">
+                              <td className="py-3.5 px-3 font-semibold text-[#111827] dark:text-slate-100">
                                 {quiz.title}
                               </td>
-                              <td className="py-3.5 px-3 text-xs text-[#6B7280]">
-                                <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">
+                              <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400">
+                                <span className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-transparent dark:border-slate-700 px-2 py-0.5 rounded-md font-medium">
                                   {quiz.topic}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 text-xs text-[#4B5563]">
+                              <td className="py-3.5 px-3 text-xs text-[#4B5563] dark:text-slate-300">
                                 {quiz.questionsCount}
                               </td>
-                              <td className="py-3.5 px-3 text-xs font-medium text-[#111827]">
-                                <span className="font-bold text-[#166534]">
+                              <td className="py-3.5 px-3 text-xs font-medium text-[#111827] dark:text-slate-100">
+                                <span className="font-bold text-[#166534] dark:text-emerald-400">
                                   {quiz.attempts}
                                 </span>{" "}
                                 student{quiz.attempts === 1 ? "" : "s"}
@@ -6783,25 +6904,25 @@ export default function AdminDashboardPage() {
                                 <span
                                   className={`text-xs font-bold px-2 py-0.5 rounded-md ${
                                     quiz.averageScore >= 75
-                                      ? "bg-green-100 text-green-700"
+                                      ? "bg-green-100 dark:bg-emerald-950/60 text-green-700 dark:text-emerald-300 border border-transparent dark:border-emerald-800"
                                       : quiz.averageScore >= 50
-                                      ? "bg-yellow-100 text-yellow-800"
+                                      ? "bg-yellow-100 dark:bg-amber-950/60 text-yellow-800 dark:text-amber-300 border border-transparent dark:border-amber-800"
                                       : quiz.averageScore > 0
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-gray-100 text-gray-500"
+                                      ? "bg-green-100 dark:bg-emerald-950/60 text-green-700 dark:text-emerald-300 border border-transparent dark:border-emerald-800"
+                                      : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-transparent dark:border-slate-700"
                                   }`}
                                 >
                                   {quiz.attempts > 0 ? `${quiz.averageScore} pts` : "No submissions"}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                              <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400">
                                 {quiz.createdAt}
                               </td>
                               <td className="py-3.5 px-3 text-right">
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteQuiz(quiz.id)}
-                                  className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition cursor-pointer"
+                                  className="p-1.5 rounded-xl text-gray-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-transparent dark:border-slate-700/60 transition cursor-pointer"
                                   title="Delete Quiz"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -6858,31 +6979,31 @@ export default function AdminDashboardPage() {
           return (
             <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
               {/* Header Banner & Tabs */}
-              <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-5">
+              <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
                     <div className="w-11 h-11 rounded-xl bg-[#166534] flex items-center justify-center text-white shrink-0 shadow-xs">
                       <History className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] dark:text-slate-100 tracking-tight">
                         Quiz Submission History
                       </h2>
-                      <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
+                      <p className="text-xs sm:text-sm text-[#6B7280] dark:text-slate-400 mt-1">
                         Chronological record of student quiz attempts with archive & deletion controls.
                       </p>
                     </div>
                   </div>
 
                   {/* Active / Archived Tab Selector */}
-                  <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-2xl border border-gray-200 self-start sm:self-center">
+                  <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 self-start sm:self-center">
                     <button
                       type="button"
                       onClick={() => setHistoryTab("active")}
                       className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                         historyTab === "active"
-                          ? "bg-white text-[#166534] shadow-xs"
-                          : "text-gray-600 hover:text-gray-900"
+                          ? "bg-white dark:bg-slate-700 text-[#166534] dark:text-emerald-400 shadow-xs"
+                          : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                       }`}
                     >
                       <span>Active</span>
@@ -6890,7 +7011,7 @@ export default function AdminDashboardPage() {
                         className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                           historyTab === "active"
                             ? "bg-[#166534] text-white"
-                            : "bg-gray-200 text-gray-700"
+                            : "bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-300"
                         }`}
                       >
                         {activeActivities.length}
@@ -6902,8 +7023,8 @@ export default function AdminDashboardPage() {
                       onClick={() => setHistoryTab("archived")}
                       className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                         historyTab === "archived"
-                          ? "bg-white text-[#166534] shadow-xs"
-                          : "text-gray-600 hover:text-gray-900"
+                          ? "bg-white dark:bg-slate-700 text-[#166534] dark:text-emerald-400 shadow-xs"
+                          : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                       }`}
                     >
                       <Archive className="w-3.5 h-3.5" />
@@ -6912,7 +7033,7 @@ export default function AdminDashboardPage() {
                         className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                           historyTab === "archived"
                             ? "bg-[#166534] text-white"
-                            : "bg-gray-200 text-gray-700"
+                            : "bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-300"
                         }`}
                       >
                         {archivedActivities.length}
@@ -6926,68 +7047,49 @@ export default function AdminDashboardPage() {
               {historyTab === "active" && (
                 <>
                   {activeActivities.length === 0 ? (
-                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
-                      <div className="w-14 h-14 rounded-full bg-[#FFF1F2] border border-[#FFE4E6] flex items-center justify-center text-[#166534] mb-3">
+                    <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-12 text-center flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center text-[#166534] dark:text-emerald-400 mb-3">
                         <History className="w-6 h-6 stroke-[1.8]" />
                       </div>
-                      <h4 className="text-base font-bold text-[#111827]">
+                      <h4 className="text-base font-bold text-[#111827] dark:text-slate-100">
                         No Active Submissions
                       </h4>
-                      <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                      <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-1 max-w-sm">
                         {archivedActivities.length > 0
                           ? "All submissions have been archived. You can view them in the Archived tab."
                           : "Student quiz attempts and scores will automatically appear here as they take quizzes."}
                       </p>
                     </div>
                   ) : (
-                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                    <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                           <thead>
-                            <tr className="border-b border-[#EAEBED] text-xs font-bold uppercase text-[#6B7280]">
+                            <tr className="border-b border-[#EAEBED] dark:border-slate-700 text-xs font-bold uppercase text-[#6B7280] dark:text-slate-400">
                               <th className="pb-3 px-3">Student</th>
                               <th className="pb-3 px-3">Quiz Title</th>
                               <th className="pb-3 px-3">Points Earned</th>
-                              <th className="pb-3 px-3">Status</th>
                               <th className="pb-3 px-3">Submitted At</th>
                               <th className="pb-3 px-3 text-right">Actions</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-[#F3F4F6]">
+                          <tbody className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60">
                             {activeActivities.map((act) => {
-                              const pct =
-                                act.totalQuestions > 0
-                                  ? Math.round(
-                                      (act.score / act.totalQuestions) * 100
-                                    )
-                                  : 0;
-                              const passed = pct >= 60;
                               return (
                                 <tr
                                   key={act.id}
-                                  className="hover:bg-[#F9FAFB] transition"
+                                  className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors duration-150"
                                 >
-                                  <td className="py-3.5 px-3 font-semibold text-[#111827]">
+                                  <td className="py-3.5 px-3 font-semibold text-[#111827] dark:text-slate-100">
                                     {act.studentName}
                                   </td>
-                                  <td className="py-3.5 px-3 text-xs text-[#4B5563]">
+                                  <td className="py-3.5 px-3 text-xs text-[#4B5563] dark:text-slate-300">
                                     {act.quizTitle}
                                   </td>
-                                  <td className="py-3.5 px-3 text-xs font-bold text-[#166534]">
+                                  <td className="py-3.5 px-3 text-xs font-bold text-[#166534] dark:text-emerald-400">
                                     {act.score} / {act.totalQuestions} pts
                                   </td>
-                                  <td className="py-3.5 px-3">
-                                    <span
-                                      className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                                        passed
-                                          ? "bg-green-100 text-green-700"
-                                          : "bg-green-100 text-green-700"
-                                      }`}
-                                    >
-                                      {passed ? "Passed" : "Needs Review"}
-                                    </span>
-                                  </td>
-                                  <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                                  <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400">
                                     {act.submittedAt}
                                   </td>
                                   <td className="py-3.5 px-3 text-right">
@@ -6998,7 +7100,7 @@ export default function AdminDashboardPage() {
                                           handleArchiveActivity(act.id)
                                         }
                                         title="Archive submission (hide from active history)"
-                                        className="px-2.5 py-1 rounded-xl text-gray-600 hover:text-[#166534] hover:bg-green-50 border border-gray-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                                        className="px-2.5 py-1 rounded-xl text-gray-600 dark:text-slate-300 hover:text-[#166534] dark:hover:text-emerald-300 bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-900/30 border border-gray-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-700/50 transition-all duration-150 cursor-pointer flex items-center gap-1 text-xs font-semibold shadow-xs"
                                       >
                                         <Archive className="w-3.5 h-3.5" />
                                         <span className="hidden sm:inline">
@@ -7011,7 +7113,7 @@ export default function AdminDashboardPage() {
                                           handleDeleteActivity(act.id)
                                         }
                                         title="Delete submission permanently"
-                                        className="p-1.5 rounded-xl text-gray-400 hover:text-green-600 hover:bg-green-50 border border-gray-200 transition cursor-pointer"
+                                        className="p-1.5 rounded-xl text-gray-400 dark:text-slate-400 hover:text-red-600 dark:hover:text-rose-300 bg-transparent hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-gray-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800/50 transition-all duration-150 cursor-pointer shadow-xs"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -7033,22 +7135,22 @@ export default function AdminDashboardPage() {
                 <>
                   {/* Search Bar for Archived Submissions */}
                   {archivedActivities.length > 0 && (
-                    <div className="bg-white border border-[#EAEBED] rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                    <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-2xl p-4 shadow-xs flex items-center gap-3">
                       <div className="relative flex-1">
-                        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <Search className="w-4 h-4 text-gray-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <input
                           type="text"
                           value={archivedSearchQuery}
                           onChange={(e) => setArchivedSearchQuery(e.target.value)}
                           placeholder="Search archived by student name, quiz title, or month/year..."
-                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#166534] focus:bg-white transition"
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl text-xs font-semibold text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#166534] dark:focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition"
                         />
                       </div>
                       {archivedSearchQuery && (
                         <button
                           type="button"
                           onClick={() => setArchivedSearchQuery("")}
-                          className="px-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                          className="px-3 py-2 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition cursor-pointer"
                         >
                           Clear
                         </button>
@@ -7057,26 +7159,26 @@ export default function AdminDashboardPage() {
                   )}
 
                   {archivedActivities.length === 0 ? (
-                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
-                      <div className="w-14 h-14 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 mb-3">
+                    <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-12 text-center flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400 mb-3">
                         <Archive className="w-6 h-6 stroke-[1.8]" />
                       </div>
-                      <h4 className="text-base font-bold text-[#111827]">
+                      <h4 className="text-base font-bold text-[#111827] dark:text-slate-100">
                         No Archived Records
                       </h4>
-                      <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                      <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-1 max-w-sm">
                         When you click "Archive" on any active history entry, it will be categorized here grouped by Month and Year.
                       </p>
                     </div>
                   ) : filteredArchivedActivities.length === 0 ? (
-                    <div className="bg-white border border-[#EAEBED] rounded-3xl p-12 text-center flex flex-col items-center">
-                      <div className="w-14 h-14 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 mb-3">
+                    <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-12 text-center flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-400 dark:text-slate-500 mb-3">
                         <Search className="w-6 h-6 stroke-[1.8]" />
                       </div>
-                      <h4 className="text-base font-bold text-[#111827]">
+                      <h4 className="text-base font-bold text-[#111827] dark:text-slate-100">
                         No Matching Archived Records
                       </h4>
-                      <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                      <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-1 max-w-sm">
                         No archived records match "{archivedSearchQuery}". Try another keyword or clear search.
                       </p>
                     </div>
@@ -7086,24 +7188,24 @@ export default function AdminDashboardPage() {
                         ([monthYear, groupItems]) => (
                           <div
                             key={monthYear}
-                            className="bg-white border border-[#EAEBED] rounded-3xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
+                            className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
                           >
                             {/* Month & Year Group Header */}
-                            <div className="bg-[#FAFBFD] border-b border-[#EAEBED] px-6 py-4 flex items-center justify-between">
+                            <div className="bg-[#FAFBFD] dark:bg-slate-800/80 border-b border-[#EAEBED] dark:border-slate-700 px-6 py-4 flex items-center justify-between">
                               <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-green-50 border border-green-100 text-[#166534] flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-emerald-950/50 border border-green-100 dark:border-emerald-800 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
                                   <Archive className="w-4 h-4" />
                                 </div>
                                 <div>
-                                  <h3 className="text-sm sm:text-base font-extrabold text-[#111827]">
+                                  <h3 className="text-sm sm:text-base font-extrabold text-[#111827] dark:text-slate-100">
                                     {monthYear}
                                   </h3>
-                                  <span className="text-[10px] text-gray-500 font-medium">
+                                  <span className="text-[10px] text-gray-500 dark:text-slate-400 font-medium">
                                     Archived Submissions
                                   </span>
                                 </div>
                               </div>
-                              <span className="text-xs font-bold text-[#166534] bg-green-50 border border-green-100 px-2.5 py-0.5 rounded-full">
+                              <span className="text-xs font-bold text-[#166534] dark:text-emerald-400 bg-green-50 dark:bg-emerald-950/40 border border-green-100 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full">
                                 {groupItems.length} record
                                 {groupItems.length === 1 ? "" : "s"}
                               </span>
@@ -7113,53 +7215,33 @@ export default function AdminDashboardPage() {
                             <div className="p-6 overflow-x-auto">
                               <table className="w-full text-left text-sm">
                                 <thead>
-                                  <tr className="border-b border-[#EAEBED] text-xs font-bold uppercase text-[#6B7280]">
+                                  <tr className="border-b border-[#EAEBED] dark:border-slate-700 text-xs font-bold uppercase text-[#6B7280] dark:text-slate-400">
                                     <th className="pb-3 px-3">Student</th>
                                     <th className="pb-3 px-3">Quiz Title</th>
                                     <th className="pb-3 px-3">Points Earned</th>
-                                    <th className="pb-3 px-3">Status</th>
                                     <th className="pb-3 px-3">Submitted At</th>
                                     <th className="pb-3 px-3 text-right">
                                       Actions
                                     </th>
                                   </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#F3F4F6]">
+                                <tbody className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60">
                                   {groupItems.map((act) => {
-                                    const pct =
-                                      act.totalQuestions > 0
-                                        ? Math.round(
-                                            (act.score / act.totalQuestions) *
-                                              100
-                                          )
-                                        : 0;
-                                    const passed = pct >= 60;
                                     return (
                                       <tr
                                         key={act.id}
-                                        className="hover:bg-[#F9FAFB] transition"
+                                        className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors duration-150"
                                       >
-                                        <td className="py-3.5 px-3 font-semibold text-[#111827]">
+                                        <td className="py-3.5 px-3 font-semibold text-[#111827] dark:text-slate-100">
                                           {act.studentName}
                                         </td>
-                                        <td className="py-3.5 px-3 text-xs text-[#4B5563]">
+                                        <td className="py-3.5 px-3 text-xs text-[#4B5563] dark:text-slate-300">
                                           {act.quizTitle}
                                         </td>
-                                        <td className="py-3.5 px-3 text-xs font-bold text-[#166534]">
+                                        <td className="py-3.5 px-3 text-xs font-bold text-[#166534] dark:text-emerald-400">
                                           {act.score} / {act.totalQuestions} pts
                                         </td>
-                                        <td className="py-3.5 px-3">
-                                          <span
-                                            className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                                              passed
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-green-100 text-green-700"
-                                            }`}
-                                          >
-                                            {passed ? "Passed" : "Needs Review"}
-                                          </span>
-                                        </td>
-                                        <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                                        <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400">
                                           {act.submittedAt}
                                         </td>
                                         <td className="py-3.5 px-3 text-right">
@@ -7170,7 +7252,7 @@ export default function AdminDashboardPage() {
                                                 handleRestoreActivity(act.id)
                                               }
                                               title="Restore back to active history"
-                                              className="px-2.5 py-1 rounded-xl text-emerald-700 hover:bg-emerald-50 border border-emerald-200 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                                              className="px-2.5 py-1 rounded-xl text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-700/60 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all duration-150 cursor-pointer flex items-center gap-1 text-xs font-semibold shadow-xs"
                                             >
                                               <ArchiveRestore className="w-3.5 h-3.5" />
                                               <span>Restore</span>
@@ -7181,7 +7263,7 @@ export default function AdminDashboardPage() {
                                                 handleDeleteActivity(act.id)
                                               }
                                               title="Permanently delete from archive"
-                                              className="p-1.5 rounded-xl text-gray-400 hover:text-green-600 hover:bg-green-50 border border-gray-200 transition cursor-pointer"
+                                              className="p-1.5 rounded-xl text-gray-400 dark:text-slate-400 hover:text-red-600 dark:hover:text-rose-300 bg-transparent hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-gray-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800/50 transition-all duration-150 cursor-pointer shadow-xs"
                                             >
                                               <Trash2 className="w-3.5 h-3.5" />
                                             </button>
@@ -7200,6 +7282,7 @@ export default function AdminDashboardPage() {
                   )}
                 </>
               )}
+
             </div>
           );
         })()}
@@ -7274,8 +7357,8 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Block Filter Buttons — only show when Customize mode is toggled and there are blocks */}
-            {isBlockCustomizationMode && availableBlocks.length > 0 && (
+            {/* Block Filter Buttons — show when there are blocks */}
+            {availableBlocks.length > 0 && (
               <div className="bg-white border border-[#166534]/20 rounded-2xl p-4 shadow-xs">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-semibold text-gray-500 mr-1">Filter by Block:</span>
@@ -7325,24 +7408,22 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
             ) : (
-              <div className="bg-white border border-[#EAEBED] rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+              <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-[#EAEBED] text-xs font-bold uppercase text-[#6B7280]">
-                        <th className="pb-3 px-3">Student Name</th>
-                        <th className="pb-3 px-3">Email Address</th>
-                        <th className="pb-3 px-3 text-center">Block</th>
-                        <th className="pb-3 px-3">Joined Date</th>
-                        <th className="pb-3 px-3 text-center">Quizzes Taken</th>
-                        <th className="pb-3 px-3">Status</th>
-                        <th className="pb-3 px-3 text-right">Last Active</th>
+                      <tr className="border-b border-[#EAEBED] dark:border-slate-700 text-xs font-bold uppercase text-[#6B7280] dark:text-slate-400">
+                        <th className="pb-3 px-4">Student Name</th>
+                        <th className="pb-3 px-4">Email Address</th>
+                        <th className="pb-3 px-6 text-center w-28">Block</th>
+                        <th className="pb-3 px-6 text-center">Joined Date</th>
+                        <th className="pb-3 px-6 text-right">Last Active</th>
                         {isBlockCustomizationMode && (
-                          <th className="pb-3 px-3 text-center">Action</th>
+                          <th className="pb-3 px-4 text-center">Action</th>
                         )}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#F3F4F6]">
+                    <tbody className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60">
                       {filteredStudents.map((st) => {
                         const hasAttempts = st.quizzesTaken > 0;
                         const isOnline =
@@ -7350,8 +7431,8 @@ export default function AdminDashboardPage() {
                           onlineStudentKeys.has(st.email.toLowerCase());
 
                         return (
-                          <tr key={st.id} className="hover:bg-[#F9FAFB] transition">
-                            <td className="py-3.5 px-3">
+                          <tr key={st.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors duration-150">
+                            <td className="py-3.5 px-4">
                               <div className="flex items-center gap-3">
                                 <div className="relative">
                                   {st.avatarUrl ? (
@@ -7374,7 +7455,7 @@ export default function AdminDashboardPage() {
                                 </div>
                                 <div className="flex flex-col">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-bold text-[#111827]">{st.name}</span>
+                                    <span className="font-bold text-[#111827] dark:text-slate-100">{st.name}</span>
                                     {isOnline && (
                                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
@@ -7385,10 +7466,10 @@ export default function AdminDashboardPage() {
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3.5 px-3 text-xs text-[#4B5563]">
+                            <td className="py-3.5 px-4 text-xs text-[#4B5563] dark:text-slate-300">
                               {st.email}
                             </td>
-                            <td className="py-3.5 px-3 text-xs font-bold text-center">
+                            <td className="py-3.5 px-6 text-xs font-bold text-center">
                               {isBlockCustomizationMode ? (
                                 <button
                                   type="button"
@@ -7415,24 +7496,10 @@ export default function AdminDashboardPage() {
                                 <span className="text-gray-400 font-normal italic">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-3 text-xs text-[#6B7280]">
+                            <td className="py-3.5 px-6 text-xs text-[#6B7280] dark:text-slate-400 text-center">
                               {st.joinedDate}
                             </td>
-                            <td className="py-3.5 px-3 text-xs font-bold text-center text-[#111827]">
-                              {st.quizzesTaken}
-                            </td>
-                            <td className="py-3.5 px-3">
-                              <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                                  hasAttempts
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-gray-100 text-gray-600"
-                                }`}
-                              >
-                                {hasAttempts ? "Active Learner" : "New Student"}
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-3 text-xs text-[#6B7280] text-right">
+                            <td className="py-3.5 px-6 text-xs text-[#6B7280] dark:text-slate-400 text-right">
                               {st.lastActive}
                             </td>
                             {isBlockCustomizationMode && (
@@ -7588,28 +7655,6 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-                {/* Quick Common Blocks (A, B, C, D) */}
-                <div>
-                  <span className="text-[11px] font-bold text-gray-600 block mb-1.5">
-                    Quick Choose:
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {["A", "B", "C", "D", "E"].map((letter) => (
-                      <button
-                        type="button"
-                        key={letter}
-                        onClick={() => setTargetBlockInput(letter)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer border ${
-                          targetBlockInput.trim().toUpperCase() === letter
-                            ? "bg-[#166534] text-white border-[#166534] shadow-xs"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        Block {letter}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
                 {/* Actions */}
                 <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-100 mt-2">
@@ -7669,21 +7714,21 @@ export default function AdminDashboardPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-3xl bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#EAEBED] max-h-[85vh] flex flex-col"
+              className="w-full max-w-3xl bg-white dark:bg-[#161F30] rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#EAEBED] dark:border-slate-700 max-h-[85vh] flex flex-col"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center text-sm font-bold uppercase shrink-0">
                     {selectedSubmissionForReview.studentName.slice(0, 2)}
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-bold text-[#111827]">
+                    <h3 className="text-base sm:text-lg font-bold text-[#111827] dark:text-slate-100">
                       {selectedSubmissionForReview.studentName}'s Submission
                     </h3>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       {selectedSubmissionForReview.studentEmail} • Quiz:{" "}
-                      <span className="font-semibold text-gray-700">
+                      <span className="font-semibold text-gray-700 dark:text-slate-300">
                         {selectedSubmissionForReview.quizTitle}
                       </span>{" "}
                       ({selectedSubmissionForReview.topic})
@@ -7693,47 +7738,33 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedSubmissionForReview(null)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Submission Overview Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4 shrink-0">
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Score</p>
-                  <p className="text-base font-extrabold text-[#111827]">
+              <div className="grid grid-cols-3 gap-3 my-4 shrink-0">
+                <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700 text-center">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-500">Score</p>
+                  <p className="text-base font-extrabold text-[#111827] dark:text-slate-100">
                     {selectedSubmissionForReview.score} / {selectedSubmissionForReview.totalQuestions}
                   </p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Grade</p>
-                  <p
-                    className={`text-base font-extrabold ${
-                      selectedSubmissionForReview.percentage >= 75
-                        ? "text-emerald-700"
-                        : selectedSubmissionForReview.percentage >= 60
-                        ? "text-amber-700"
-                        : "text-green-700"
-                    }`}
-                  >
-                    {selectedSubmissionForReview.percentage}%
-                  </p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Status</p>
+                <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700 text-center">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-500">Status</p>
                   <p
                     className={`text-sm font-bold ${
-                      selectedSubmissionForReview.passed ? "text-emerald-700" : "text-green-700"
+                      selectedSubmissionForReview.passed ? "text-emerald-600 dark:text-emerald-400" : "text-green-700 dark:text-amber-400"
                     }`}
                   >
                     {selectedSubmissionForReview.passed ? "Passed" : "Needs Review"}
                   </p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Submitted</p>
-                  <p className="text-xs font-semibold text-gray-700 truncate">
+                <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700 text-center">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-500">Submitted</p>
+                  <p className="text-xs font-semibold text-gray-700 dark:text-slate-300 truncate">
                     {selectedSubmissionForReview.submittedAt}
                   </p>
                 </div>
@@ -7741,12 +7772,12 @@ export default function AdminDashboardPage() {
 
               {/* Answers Breakdown */}
               <div className="overflow-y-auto flex-1 pr-1 space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
                   Question-by-Question Response Breakdown
                 </h4>
 
                 {(!selectedSubmissionForReview.answers || selectedSubmissionForReview.answers.length === 0) ? (
-                  <p className="text-xs text-gray-400 italic py-4 text-center">
+                  <p className="text-xs text-gray-400 dark:text-slate-500 italic py-4 text-center">
                     Detailed answer history is not available for this legacy submission.
                   </p>
                 ) : (
@@ -7757,20 +7788,20 @@ export default function AdminDashboardPage() {
                         key={idx}
                         className={`p-4 rounded-2xl border ${
                           isRight
-                            ? "border-emerald-200 bg-emerald-50/30"
-                            : "border-green-200 bg-green-50/30"
+                            ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-900/20"
+                            : "border-rose-200 dark:border-rose-900 bg-rose-50/30 dark:bg-rose-900/20"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <p className="font-bold text-xs text-[#111827]">
-                            <span className="text-gray-400 mr-1.5">Q{idx + 1}.</span>
+                          <p className="font-bold text-xs text-[#111827] dark:text-slate-100">
+                            <span className="text-gray-400 dark:text-slate-500 mr-1.5">Q{idx + 1}.</span>
                             {ans.prompt}
                           </p>
                           <span
                             className={`text-[10px] font-extrabold px-2 py-0.5 rounded shrink-0 ${
                               isRight
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-green-100 text-green-800"
+                                ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-400"
+                                : "bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-400"
                             }`}
                           >
                             {isRight ? "Correct" : "Incorrect"}
@@ -7786,13 +7817,13 @@ export default function AdminDashboardPage() {
                               const isCorrectPick = ans.correct === choice;
 
                               let choiceClass =
-                                "bg-white border-gray-200 text-gray-700";
+                                "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300";
                               if (isCorrectPick) {
                                 choiceClass =
-                                  "bg-emerald-100 border-emerald-400 text-emerald-950 font-bold";
+                                  "bg-emerald-100 dark:bg-emerald-900/40 border-emerald-400 dark:border-emerald-600 text-emerald-950 dark:text-emerald-300 font-bold";
                               } else if (isStudentPick && !isRight) {
                                 choiceClass =
-                                  "bg-green-100 border-green-400 text-green-950 font-bold";
+                                  "bg-rose-100 dark:bg-rose-900/40 border-rose-400 dark:border-rose-600 text-rose-950 dark:text-rose-300 font-bold";
                               }
 
                               return (
@@ -7808,12 +7839,12 @@ export default function AdminDashboardPage() {
                                   </div>
                                   <div className="flex items-center gap-1 shrink-0 text-[10px] font-bold">
                                     {isStudentPick && (
-                                      <span className="px-1.5 py-0.5 rounded bg-black/10">
+                                      <span className="px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">
                                         Student Pick
                                       </span>
                                     )}
                                     {isCorrectPick && (
-                                      <span className="text-emerald-700">✓ Correct</span>
+                                      <span className="text-emerald-700 dark:text-emerald-400">✓ Correct</span>
                                     )}
                                   </div>
                                 </div>
@@ -7828,16 +7859,17 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end shrink-0">
+              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-700 flex items-center justify-end shrink-0">
                 <button
                   type="button"
                   onClick={() => setSelectedSubmissionForReview(null)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-100 text-xs font-bold rounded-xl transition cursor-pointer"
                 >
                   Close
                 </button>
               </div>
             </motion.div>
+
           </div>
         )}
       </AnimatePresence>

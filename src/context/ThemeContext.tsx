@@ -12,21 +12,49 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Always default to light mode to match the clean white reference design
-    localStorage.removeItem("app_theme");
-    return "light";
+    const saved = localStorage.getItem("app_theme") as Theme;
+    return saved === "dark" || saved === "light" ? saved : "light";
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove("dark");
-    root.classList.add("light");
-    root.setAttribute("data-theme", "light");
-    localStorage.setItem("app_theme", "light");
+    if (theme === "dark") {
+      root.classList.add("dark");
+      root.classList.remove("light");
+      root.setAttribute("data-theme", "dark");
+      localStorage.setItem("app_theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      root.classList.add("light");
+      root.setAttribute("data-theme", "light");
+      localStorage.setItem("app_theme", "light");
+    }
   }, [theme]);
 
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
+    const newTheme = theme === "dark" ? "light" : "dark";
+    const root = document.documentElement;
+
+    const applyTheme = () => {
+      setThemeState(newTheme);
+    };
+
+    if ("startViewTransition" in document) {
+      // Tag the direction so CSS knows which animation to play
+      root.classList.add(`transitioning-to-${newTheme}`);
+
+      const transition = (document as Document & {
+        startViewTransition: (cb: () => void) => { finished: Promise<void> };
+      }).startViewTransition(applyTheme);
+
+      // Clean up direction class once the animation finishes
+      transition.finished.finally(() => {
+        root.classList.remove(`transitioning-to-${newTheme}`);
+      });
+    } else {
+      // Fallback: just switch instantly (still has 400ms color transitions from CSS)
+      applyTheme();
+    }
   };
 
   const setTheme = (newTheme: Theme) => {
