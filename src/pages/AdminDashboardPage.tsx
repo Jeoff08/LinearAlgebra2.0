@@ -106,7 +106,7 @@ import {
   getCalculusDefinitionForTopic,
   type CalculatorDefinition,
 } from "../Calculus_One_Calculator/CalculatorData";
-import { getLinearAlgebraDefinitionForTopic } from "../data/linearAlgebraCalculators";
+import { getLinearAlgebraDefinitionForTopic } from "../components/linearAlgebraCalculators";
 
 // Real Complete Topic Data from Codebase
 import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
@@ -2910,7 +2910,7 @@ export default function AdminDashboardPage() {
                     {/* Light / Dark Mode Toggle */}
                     <button
                       type="button"
-                      onClick={() => toggleTheme()}
+                      onClick={(e) => toggleTheme(e)}
                       className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-[#4B5565] dark:text-slate-300 hover:bg-[#F6F7F9] dark:hover:bg-slate-800/60 text-left cursor-pointer transition-colors"
                     >
                       <div className="flex items-center gap-2.5">

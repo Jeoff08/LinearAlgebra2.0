@@ -87,8 +87,21 @@ const PDFExport: React.FC<PDFExportProps> = ({
   const [selectedOrientation, setSelectedOrientation] =
     useState<Orientation>(orientation);
   const [isOpen, setIsOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState<
+    "idle" | "downloading" | "completed"
+  >("idle");
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Clean up animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -109,9 +122,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
     localStorage.setItem("preferred_pdf_paper_size", size);
   };
 
-  const exportPDF = (overrideSize?: PaperSize) => {
-    setIsExporting(true);
-    const paperSizeKey = overrideSize || selectedSize;
+  const generatePDF = (paperSizeKey: PaperSize) => {
     const config = PAPER_CONFIGS[paperSizeKey] || PAPER_CONFIGS.a4;
 
     try {
@@ -505,10 +516,47 @@ const PDFExport: React.FC<PDFExportProps> = ({
     } catch (err) {
       console.error("PDF Generation failed:", err);
       alert("Failed to generate PDF. Please try again.");
-    } finally {
-      setIsExporting(false);
-      setIsOpen(false);
     }
+  };
+
+  const exportPDF = (overrideSize?: PaperSize) => {
+    if (downloadStatus !== "idle") return;
+    setIsOpen(false);
+
+    const paperSizeKey = overrideSize || selectedSize;
+    setDownloadStatus("downloading");
+    setDownloadProgress(0);
+
+    const startTime = performance.now();
+    const duration = 1600; // 1.6s smooth download animation
+
+    const updateProgress = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(100, Math.round((elapsed / duration) * 100));
+      setDownloadProgress(progress);
+
+      if (progress < 100) {
+        animationFrameRef.current = requestAnimationFrame(updateProgress);
+      } else {
+        try {
+          generatePDF(paperSizeKey);
+          setDownloadStatus("completed");
+        } catch (err) {
+          console.error("PDF Generation failed:", err);
+          alert("Failed to generate PDF. Please try again.");
+          setDownloadStatus("idle");
+          setDownloadProgress(0);
+          return;
+        }
+
+        setTimeout(() => {
+          setDownloadStatus("idle");
+          setDownloadProgress(0);
+        }, 2500);
+      }
+    };
+
+    animationFrameRef.current = requestAnimationFrame(updateProgress);
   };
 
   const currentConfig = PAPER_CONFIGS[selectedSize] || PAPER_CONFIGS.a4;
@@ -518,33 +566,127 @@ const PDFExport: React.FC<PDFExportProps> = ({
       className={`relative inline-block text-left ${className}`}
       ref={dropdownRef}
     >
-      <div className="inline-flex rounded-xl shadow-xs">
-        {/* Main Action Button */}
+      <div
+        className={`inline-flex items-center rounded-xl shadow-xs transition-all duration-300 overflow-hidden ${
+          downloadStatus === "completed"
+            ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+            : "bg-[#166534] hover:bg-[#14532D] dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white"
+        }`}
+      >
+        {/* Main Icon Button with Progress & Filling Animation */}
         <button
           type="button"
           onClick={() => exportPDF()}
-          disabled={isExporting}
-          title={`Export PDF in ${currentConfig.name} format`}
-          className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#166534] hover:bg-[#14532D] text-white text-xs sm:text-sm font-semibold rounded-l-xl border-r border-[#14532D] shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+          disabled={downloadStatus !== "idle"}
+          title={
+            downloadStatus === "downloading"
+              ? `Exporting PDF... ${downloadProgress}%`
+              : downloadStatus === "completed"
+              ? "Download Complete!"
+              : `Export PDF in ${currentConfig.name} (${currentConfig.shortName})`
+          }
+          className={`relative inline-flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-2 text-white text-xs font-semibold transition-all select-none cursor-pointer ${
+            downloadStatus !== "idle" ? "cursor-default" : "active:scale-95"
+          }`}
         >
-          <FileText className="w-4 h-4 text-white/80" />
-          <span>{isExporting ? "Exporting..." : buttonLabel}</span>
-          <span className="hidden sm:inline-block text-[11px] px-1.5 py-0.5 rounded bg-black/20 text-white/90 font-mono">
-            {currentConfig.shortName}
-          </span>
+          {/* Subtle Progress Bar Background Fill */}
+          {downloadStatus === "downloading" && (
+            <div
+              className="absolute inset-0 bg-white/20 transition-all duration-75 pointer-events-none"
+              style={{ width: `${downloadProgress}%` }}
+            />
+          )}
+
+          {/* Icon with Liquid Fill & Circular Ring */}
+          <div className="relative w-4 h-4 flex items-center justify-center flex-shrink-0 z-10">
+            {downloadStatus === "completed" ? (
+              <Check className="w-4 h-4 text-white stroke-[2.5] animate-in zoom-in-50 duration-200" />
+            ) : (
+              <>
+                {/* SVG circular progress ring around icon */}
+                {downloadStatus === "downloading" && (
+                  <svg
+                    className="absolute -inset-1 w-6 h-6 -rotate-90 pointer-events-none"
+                    viewBox="0 0 36 36"
+                  >
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15"
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 0.25)"
+                      strokeWidth="2.5"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15"
+                      fill="none"
+                      stroke="#4ade80"
+                      strokeWidth="2.5"
+                      strokeDasharray={94.25}
+                      strokeDashoffset={
+                        94.25 - (94.25 * downloadProgress) / 100
+                      }
+                      strokeLinecap="round"
+                      className="transition-all duration-75 ease-linear"
+                    />
+                  </svg>
+                )}
+
+                {/* Base empty / dim icon */}
+                <Download
+                  className={`w-4 h-4 transition-colors ${
+                    downloadStatus === "downloading"
+                      ? "text-white/30"
+                      : "text-white/90"
+                  }`}
+                />
+
+                {/* Foreground filled icon rising from bottom to top */}
+                {downloadStatus === "downloading" && (
+                  <div
+                    className="absolute inset-0 overflow-hidden flex items-center justify-center transition-all duration-75"
+                    style={{
+                      clipPath: `inset(${100 - downloadProgress}% 0 0 0)`,
+                    }}
+                  >
+                    <Download className="w-4 h-4 text-emerald-300 fill-emerald-300" />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Percentage text during download */}
+          {downloadStatus === "downloading" && (
+            <span className="text-[11px] font-mono font-bold text-white tabular-nums z-10 animate-in fade-in duration-150">
+              {downloadProgress}%
+            </span>
+          )}
+
+          {/* Completed status text */}
+          {downloadStatus === "completed" && (
+            <span className="text-[11px] font-bold text-white z-10 animate-in fade-in duration-150">
+              Done!
+            </span>
+          )}
         </button>
 
         {/* Paper Size & Options Toggle */}
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="inline-flex items-center justify-center px-2 py-2 bg-[#14532D] hover:bg-[#052e16] text-white rounded-r-xl shadow-xs transition-all focus:outline-none cursor-pointer"
-          title="Choose Paper Size & Options (A4, Short, Long)"
+          disabled={downloadStatus !== "idle"}
+          className="inline-flex items-center justify-center px-1.5 py-2 border-l border-white/20 hover:bg-black/10 text-white rounded-r-xl transition-all focus:outline-none cursor-pointer disabled:opacity-50"
+          title={`Paper size: ${currentConfig.name} (${currentConfig.shortName})`}
           aria-expanded={isOpen}
           aria-label="Paper size options"
         >
           <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </button>
       </div>
@@ -640,8 +782,8 @@ const PDFExport: React.FC<PDFExportProps> = ({
           <button
             type="button"
             onClick={() => exportPDF()}
-            disabled={isExporting}
-            className="w-full mt-3 py-2 px-3 bg-[#166534] hover:bg-[#14532D] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            disabled={downloadStatus !== "idle"}
+            className="w-full mt-3 py-2 px-3 bg-[#166534] hover:bg-[#14532D] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download {currentConfig.name} PDF</span>

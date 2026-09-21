@@ -41,7 +41,7 @@ import {
   type CalculatorDefinition,
 } from "../Calculus_One_Calculator/CalculatorData";
 import CalculusCalculator from "../Calculus_One_Calculator/Calculator";
-import { getLinearAlgebraDefinitionForTopic } from "../data/linearAlgebraCalculators";
+import { getLinearAlgebraDefinitionForTopic } from "../components/linearAlgebraCalculators";
 
 // Import all calculators (Linear Algebra)
 import SystemOfEquations from "../calculators/SystemOfEquations";
