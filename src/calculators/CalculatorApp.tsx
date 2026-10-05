@@ -212,7 +212,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
   };
 
   return (
-    <div className="relative min-h-screen bg-[#FDFDFD] text-[#111827]">
+    <div className="relative min-h-screen bg-[#FDFDFD] dark:bg-[#0B0F15] text-[#111827] dark:text-slate-100">
       {/* ========================================================================= */}
       {/* HERO SECTION: SOLVE SMARTER WITH LINEAR ALGEBRA                            */}
       {/* ========================================================================= */}
@@ -312,7 +312,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
       {/* ========================================================================= */}
       {/* DARK FILTER & SEARCH BAR                                                  */}
       {/* ========================================================================= */}
-      <div id="calculators-catalog" className="sticky top-16 sm:top-[4.5rem] z-20 bg-[#0B0F15] border-y border-white/10 shadow-md">
+      <div id="calculators-catalog" className="sticky top-16 sm:top-[4.5rem] z-20 bg-[#F8F9FA] dark:bg-[#0B0F15] border-y border-gray-200 dark:border-white/10 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
             
@@ -330,12 +330,12 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                     className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                       isActive
                         ? 'bg-[#166534] text-white shadow-md shadow-[#166534]/30'
-                        : 'bg-[#18202C] text-gray-300 hover:text-white hover:bg-[#222C3D] border border-white/10'
+                        : 'bg-white dark:bg-[#18202C] text-gray-700 dark:text-gray-300 hover:text-[#166534] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#222C3D] border border-gray-200 dark:border-white/10'
                     }`}
                   >
                     <span>{cat.label}</span>
                     <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-black/40 text-gray-300'
+                      isActive ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-black/40 text-gray-500 dark:text-gray-300'
                     }`}>
                       {cat.count}
                     </span>
@@ -355,12 +355,12 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                   setSearchTerm(e.target.value);
                   if (selectedToolId) setSelectedToolId(null);
                 }}
-                className="w-full rounded-full border border-white/15 bg-[#18202C] text-white placeholder-gray-400 pl-10 pr-9 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/30 transition-all"
+                className="w-full rounded-full border border-gray-200 dark:border-white/15 bg-white dark:bg-[#18202C] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 pl-10 pr-9 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#166534] focus:ring-2 focus:ring-[#166534]/30 transition-all"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -397,33 +397,33 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                       transition={{ duration: 0.25, delay: Math.min(index * 0.02, 0.2) }}
                       whileHover={{ y: -3 }}
                       onClick={() => handleSelectTool(tool.id)}
-                      className="group relative flex flex-col justify-between rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:shadow-xl hover:border-[#166534]/40 transition-all duration-300 cursor-pointer"
+                      className="group relative flex flex-col justify-between rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#161F30] p-6 shadow-xs hover:shadow-xl hover:border-[#166534]/40 dark:hover:border-[#166534]/50 transition-all duration-300 cursor-pointer"
                     >
                       <div>
                         {/* Top Row: Title + Category Pill */}
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-base sm:text-[1.08rem] font-black text-gray-900 group-hover:text-[#166534] transition-colors leading-snug">
+                          <h3 className="text-base sm:text-[1.08rem] font-black text-gray-900 dark:text-slate-100 group-hover:text-[#166534] dark:group-hover:text-emerald-400 transition-colors leading-snug">
                             {tool.name}
                           </h3>
-                          <span className="inline-flex items-center gap-1 rounded-md border border-[#F0D5D8] bg-[#F0FDF4] px-2.5 py-0.5 text-xs font-bold text-[#166534] shrink-0 lowercase">
+                          <span className="inline-flex items-center gap-1 rounded-md border border-[#F0D5D8] dark:border-emerald-800/40 bg-[#F0FDF4] dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-bold text-[#166534] dark:text-emerald-400 shrink-0 lowercase">
                             <Bookmark className="w-3 h-3 text-[#166534]" />
                             <span>{tool.badge || tool.category}</span>
                           </span>
                         </div>
 
                         {/* Middle: Description */}
-                        <p className="mt-2.5 text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-2 min-h-[42px] font-normal">
+                        <p className="mt-2.5 text-xs sm:text-sm text-gray-600 dark:text-slate-400 leading-relaxed line-clamp-2 min-h-[42px] font-normal">
                           {tool.description}
                         </p>
                       </div>
 
                       {/* Bottom Row: Category Subtitle + Open Calculator Button */}
-                      <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
-                        <span className="text-xs font-medium text-gray-400">
+                      <div className="mt-5 flex items-center justify-between border-t border-gray-100 dark:border-slate-700/60 pt-4">
+                        <span className="text-xs font-medium text-gray-400 dark:text-slate-500">
                           {tool.categoryLabel}
                         </span>
 
-                        <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#166534] group-hover:text-[#14532D] transition-colors">
+                        <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#166534] dark:text-emerald-400 group-hover:text-[#14532D] dark:group-hover:text-emerald-300 transition-colors">
                           <span>Open Calculator</span>
                           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                         </span>
@@ -432,10 +432,10 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                   ))}
                 </div>
               ) : (
-                <div className="py-20 text-center rounded-3xl border border-dashed border-gray-200 bg-white p-8">
+                <div className="py-20 text-center rounded-3xl border border-dashed border-gray-200 dark:border-slate-700 bg-white dark:bg-[#161F30] p-8">
                   <Calculator className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                  <h3 className="text-base font-bold text-gray-900">No calculators found</h3>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-slate-100">No calculators found</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mt-1">
                     No results match &ldquo;{searchTerm}&rdquo;. Try clearing your search query.
                   </p>
                   <button
@@ -463,11 +463,11 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
               className="space-y-6"
             >
               {/* Workspace Top Bar */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5 bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5 bg-white dark:bg-[#161F30] p-4 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs">
                 {/* Back Button */}
                 <button
                   onClick={handleBackToGrid}
-                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-xs sm:text-sm font-bold text-gray-700 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 px-4 py-2 text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-200 transition-all cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>All Calculators</span>
@@ -478,22 +478,22 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                   <button
                     ref={buttonRef}
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white hover:border-[#166534]/50 px-4 py-2 text-left transition-all cursor-pointer shadow-xs"
+                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#166534]/50 px-4 py-2 text-left transition-all cursor-pointer shadow-xs"
                   >
                     <div className="flex items-center gap-2.5 truncate">
                       <div className="w-6 h-6 rounded-lg bg-[#F0FDF4] text-[#166534] flex items-center justify-center shrink-0">
                         <Calculator className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                      <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-slate-100 truncate">
                         {currentTool.name}
                       </span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {/* Dropdown Menu */}
                   {isDropdownOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-gray-200 bg-white shadow-2xl p-2 z-50 max-h-80 overflow-y-auto">
+                    <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#161F30] shadow-2xl p-2 z-50 max-h-80 overflow-y-auto">
                       <div className="space-y-1">
                         {tools.map((t) => (
                           <button
@@ -505,7 +505,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                             className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl text-left transition-colors cursor-pointer ${
                               t.id === selectedToolId
                                 ? 'bg-[#166534] text-white'
-                                : 'text-gray-700 hover:bg-[#F0FDF4] hover:text-[#166534]'
+                                : 'text-gray-700 dark:text-slate-300 hover:bg-[#F0FDF4] dark:hover:bg-emerald-950/40 hover:text-[#166534] dark:hover:text-emerald-400'
                             }`}
                           >
                             <span>{t.name}</span>
@@ -521,14 +521,14 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePrevTool}
-                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#166534] transition-colors cursor-pointer"
+                    className="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 hover:text-[#166534] dark:hover:text-emerald-400 transition-colors cursor-pointer"
                     title="Previous Calculator"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
                     onClick={handleNextTool}
-                    className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#166534] transition-colors cursor-pointer"
+                    className="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 hover:text-[#166534] dark:hover:text-emerald-400 transition-colors cursor-pointer"
                     title="Next Calculator"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -537,7 +537,7 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
               </div>
 
               {/* ── 1. CALCULATOR HEADER CARD (Matching Image 2) ── */}
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-xs">
+              <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#161F30] p-6 sm:p-7 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
                     <div className="w-12 h-12 rounded-2xl bg-[#166534] text-white flex items-center justify-center shadow-md shadow-[#166534]/20 shrink-0">
@@ -545,27 +545,27 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#F0FDF4] text-[#166534] border border-[#F0D5D8]">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#F0FDF4] dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 border border-[#F0D5D8] dark:border-emerald-800/40">
                           LINEAR ALGEBRA
                         </span>
-                        <span className="text-xs text-gray-400 font-mono">
+                        <span className="text-xs text-gray-400 dark:text-slate-500 font-mono">
                           Linear Algebra • {currentTool.categoryLabel}
                         </span>
                       </div>
-                      <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mt-0.5">
+                      <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-slate-100 tracking-tight mt-0.5">
                         {currentTool.name}
                       </h2>
                     </div>
                   </div>
                 </div>
 
-                <p className="mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-3xl">
+                <p className="mt-3 text-xs sm:text-sm text-gray-600 dark:text-slate-400 leading-relaxed max-w-3xl">
                   {currentTool.description}
                 </p>
               </div>
 
               {/* ── 2. Calculator Workspace Container ── */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 sm:p-8">
+              <div className="bg-white dark:bg-[#161F30] rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6 sm:p-8">
                 {currentTool.component}
               </div>
             </motion.div>
@@ -574,9 +574,9 @@ export default function CalculatorApp({ initialToolId = null }: CalculatorAppPro
       </div>
 
       {/* Footer */}
-      <footer className="mt-16 border-t border-gray-200 bg-white py-8">
+      <footer className="mt-16 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B0F15] py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-xs text-gray-500 flex items-center justify-center gap-2">
+          <p className="text-xs text-gray-500 dark:text-slate-400 flex items-center justify-center gap-2">
             <Layers className="w-4 h-4 text-[#166534]" />
             <span>All 23 tools powered by modern linear algebra algorithms</span>
           </p>

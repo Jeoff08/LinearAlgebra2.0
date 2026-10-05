@@ -198,3 +198,9 @@ export function createEmptyQuestions(
     explanation: "",
   }));
 }
+
+export interface QuizSection {
+  type: QuizQuestionType;
+  itemCount: number;
+  pointsPerItem: number;
+}

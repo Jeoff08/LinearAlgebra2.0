@@ -17,7 +17,7 @@ export default function CalculatorsPage() {
   }, [navigate]);
 
   return (
-    <div className="relative min-h-screen bg-[#FDFDFD] text-[#111827]">
+    <div className="relative min-h-screen bg-[#FDFDFD] dark:bg-[#0B0F15] text-[#111827] dark:text-slate-100 transition-colors duration-300">
       <CalculatorApp />
     </div>
   );

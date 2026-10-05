@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  X,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -42,9 +43,23 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   >(null);
   const [showProfileConfirmModal, setShowProfileConfirmModal] = useState(false);
   const [showProfileSuccessModal, setShowProfileSuccessModal] = useState(false);
+  const [showPhotoPreviewModal, setShowPhotoPreviewModal] = useState(false);
   const [savedChangeType, setSavedChangeType] = useState<
     "name" | "photo" | "both"
   >("name");
+
+  useEffect(() => {
+    if (!showPhotoPreviewModal) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowPhotoPreviewModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [showPhotoPreviewModal]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -212,8 +227,23 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
         <form onSubmit={handleSaveProfile} className="flex flex-col gap-6">
           {/* Photo Upload Section */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-gray-100 dark:border-slate-700/60">
-            <div className="relative group">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-2 border-gray-200 dark:border-slate-700 shadow-sm bg-gray-50 dark:bg-slate-800 flex items-center justify-center">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => profileAvatarUrl && setShowPhotoPreviewModal(true)}
+                disabled={!profileAvatarUrl}
+                className={`w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-2 border-gray-200 dark:border-slate-700 shadow-sm bg-gray-50 dark:bg-slate-800 flex items-center justify-center ${
+                  profileAvatarUrl
+                    ? "cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-[#166534]/50"
+                    : "cursor-default"
+                }`}
+                aria-label={
+                  profileAvatarUrl
+                    ? "View profile photo"
+                    : "Profile photo placeholder"
+                }
+                title={profileAvatarUrl ? "View profile photo" : undefined}
+              >
                 {profileAvatarUrl ? (
                   <img
                     src={profileAvatarUrl}
@@ -225,17 +255,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                     {userInitial}
                   </div>
                 )}
-              </div>
-
-              {/* Photo Overlay / Upload Trigger */}
-              <label
-                htmlFor="avatar-upload-input"
-                className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center text-white cursor-pointer"
-                title="Upload new photo"
-              >
-                <Camera className="w-6 h-6 mb-1" />
-                <span className="text-[10px] font-bold">Change</span>
-              </label>
+              </button>
               <input
                 id="avatar-upload-input"
                 type="file"
@@ -404,6 +424,48 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Profile Photo Preview Modal */}
+      <AnimatePresence>
+        {showPhotoPreviewModal && profileAvatarUrl && (
+          <motion.div
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Profile photo preview"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setShowPhotoPreviewModal(false);
+              }
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="relative max-w-[min(90vw,640px)] max-h-[85vh]"
+            >
+              <img
+                src={profileAvatarUrl}
+                alt="Profile photo preview"
+                className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPhotoPreviewModal(false)}
+                className="absolute -right-3 -top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                aria-label="Close profile photo preview"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Confirmation Modal */}
       <AnimatePresence>

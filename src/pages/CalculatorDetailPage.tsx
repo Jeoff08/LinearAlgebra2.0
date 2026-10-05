@@ -94,9 +94,9 @@ export default function CalculatorDetailPage() {
 
   if (!currentTool) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FDFBFB] gap-4">
-        <Calculator className="w-12 h-12 text-[#9CA3AF]" />
-        <h2 className="text-lg font-bold text-[#111827]">Calculator not found</h2>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FDFBFB] dark:bg-[#0B0F15] gap-4">
+        <Calculator className="w-12 h-12 text-[#9CA3AF] dark:text-slate-500" />
+        <h2 className="text-lg font-bold text-[#111827] dark:text-white">Calculator not found</h2>
         <button
           onClick={() => navigate("/calculators")}
           className="inline-flex items-center gap-2 rounded-xl bg-[#166534] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#14532D] transition-all cursor-pointer"
@@ -116,7 +116,7 @@ export default function CalculatorDetailPage() {
   const exampleProblem = LINEAR_ALGEBRA_EXAMPLES[currentTool.id] || "";
 
   return (
-    <div className="relative min-h-screen bg-[#FDFDFD] text-[#111827]">
+    <div className="relative min-h-screen bg-[#FDFDFD] dark:bg-[#0B0F15] text-[#111827] dark:text-slate-100 transition-colors duration-300">
       {/* ======================================================================= */}
       {/* 1. HERO SECTION (Chalkboard Background with Action Buttons)             */}
       {/* ======================================================================= */}
@@ -192,12 +192,12 @@ export default function CalculatorDetailPage() {
       {/* ======================================================================= */}
       {/* 2. WORKSPACE TOP NAV BAR (Sticky, matching Image 2)                     */}
       {/* ======================================================================= */}
-      <div className="sticky top-16 sm:top-[4.5rem] z-30 bg-[#0B0F15] border-b border-white/10 shadow-md">
+      <div className="sticky top-16 sm:top-[4.5rem] z-20 bg-[#F8F9FA] dark:bg-[#0B0F15] border-b border-gray-200 dark:border-white/10 shadow-sm transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/calculators")}
-              className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 transition cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-gray-200/80 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-800 dark:text-white text-xs font-bold px-4 py-2 transition cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>All Solvers</span>
@@ -205,7 +205,7 @@ export default function CalculatorDetailPage() {
 
             <button
               onClick={() => navigate("/calculator-hub")}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-gray-300 hover:text-white text-xs font-semibold px-3 py-2 transition cursor-pointer hidden sm:inline-flex"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-white/10 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/15 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs font-semibold px-3 py-2 transition cursor-pointer hidden sm:inline-flex"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>All Math Tools</span>
@@ -215,7 +215,7 @@ export default function CalculatorDetailPage() {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="inline-flex items-center gap-1.5 sm:gap-2 bg-white/10 hover:bg-white/15 text-white px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition border border-white/10 cursor-pointer"
+                className="inline-flex items-center gap-1.5 sm:gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-gray-800 dark:text-white px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition border border-gray-300 dark:border-white/10 cursor-pointer"
               >
                 <span className="hidden sm:inline">Switch Calculator</span>
                 <span className="sm:hidden">Switch</span>
@@ -223,7 +223,7 @@ export default function CalculatorDetailPage() {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute left-0 sm:left-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-[#111827] border border-white/15 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden">
+                <div className="absolute left-0 sm:left-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/15 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden">
                   <div className="p-2 border-b border-white/10 mb-1">
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -233,7 +233,7 @@ export default function CalculatorDetailPage() {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         autoFocus
-                        className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 text-white text-xs placeholder-gray-400 border border-white/10 outline-none focus:border-[#166534]"
+                        className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white text-xs placeholder-gray-400 border border-gray-200 dark:border-white/10 outline-none focus:border-[#166534]"
                       />
                     </div>
                   </div>
@@ -245,7 +245,7 @@ export default function CalculatorDetailPage() {
                         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition cursor-pointer ${
                           t.id === currentTool.id
                             ? "bg-[#166534] text-white font-bold"
-                            : "text-gray-300 hover:bg-white/10 hover:text-white"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
                         }`}
                       >
                         <Calculator className="w-3.5 h-3.5 shrink-0" />
@@ -266,18 +266,18 @@ export default function CalculatorDetailPage() {
             <button
               onClick={handlePrev}
               disabled={currentIndex <= 0}
-              className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-lg bg-gray-200/80 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-800 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
               title="Previous solver"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs text-gray-400 font-mono hidden sm:inline">
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono hidden sm:inline">
               {currentIndex + 1} / {tools.length}
             </span>
             <button
               onClick={handleNext}
               disabled={currentIndex >= tools.length - 1}
-              className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-lg bg-gray-200/80 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-800 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
               title="Next solver"
             >
               <ChevronRight className="w-4 h-4" />
@@ -291,7 +291,7 @@ export default function CalculatorDetailPage() {
       {/* ======================================================================= */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-5">
         {/* ── 1. CALCULATOR HEADER CARD ── */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-7 shadow-xs">
+        <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#161F30] p-4 sm:p-7 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 sm:gap-3.5">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#166534] text-white flex items-center justify-center shadow-md shadow-[#166534]/20 shrink-0">
@@ -306,25 +306,25 @@ export default function CalculatorDetailPage() {
                     Linear Algebra • {currentTool.categoryLabel}
                   </span>
                 </div>
-                <h2 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight mt-0.5 truncate">
+                <h2 className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight mt-0.5 truncate">
                   {currentTool.name}
                 </h2>
               </div>
             </div>
           </div>
 
-          <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-3xl">
+          <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm text-gray-600 dark:text-slate-300 leading-relaxed max-w-3xl">
             {currentTool.description}
           </p>
 
           {/* Quick Example Suggestion Chip */}
           {exampleProblem && (
-            <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+            <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-100 dark:border-slate-700/60 flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-[#166534]" />
                 <span>Example:</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-[11px] sm:text-xs font-mono font-medium text-gray-800 break-all">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-slate-800/80 text-[11px] sm:text-xs font-mono font-medium text-gray-800 dark:text-slate-200 break-all border border-transparent dark:border-slate-700">
                 <span>{exampleProblem}</span>
                 <span className="text-[10px] text-[#166534] font-bold shrink-0">Use</span>
               </span>
@@ -333,7 +333,7 @@ export default function CalculatorDetailPage() {
         </div>
 
         {/* ── 2. CALCULATOR WORKSPACE CARD ── */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-8 shadow-xs overflow-x-auto">
+        <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#161F30] p-4 sm:p-8 shadow-xs overflow-x-auto text-gray-900 dark:text-slate-100">
           {currentTool.component}
         </div>
       </div>

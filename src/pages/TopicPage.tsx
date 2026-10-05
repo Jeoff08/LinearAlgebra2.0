@@ -650,7 +650,7 @@ export default function TopicPage() {
   const currentSlide = slides[currentSlideIndex] || slides[0];
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] text-[#111827]">
+    <div className="min-h-screen bg-[#FDFBFB] dark:bg-[#0B0F15] text-[#111827] dark:text-slate-100 transition-colors duration-300">
       
       {/* ========================================================================= */}
       {/* 1. TOP HERO SECTION (Authentic Chalkboard Background)                     */}
@@ -704,19 +704,19 @@ export default function TopicPage() {
 
             {/* Right Graphic Card */}
             <div className="lg:col-span-4 flex items-center justify-center lg:justify-end">
-              <div className="relative w-full max-w-[340px] rounded-2xl bg-[#FFF0F2] p-4 sm:p-5 shadow-2xl border border-white/40 text-gray-900">
+              <div className="relative w-full max-w-[340px] rounded-2xl bg-[#FFF0F2] dark:bg-[#161F30] p-4 sm:p-5 shadow-2xl border border-white/40 dark:border-slate-700 text-gray-900 dark:text-slate-100">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-[#166534] uppercase tracking-wider">Interactive Curve</span>
+                  <span className="text-[11px] font-bold text-[#166534] dark:text-emerald-400 uppercase tracking-wider">Interactive Curve</span>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => setIsCompleted(!isCompleted)} title={isCompleted ? "Marked Complete" : "Mark as Complete"} className={`h-6 w-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${isCompleted ? "bg-[#166534] text-white" : "bg-[#DCFCE7] text-[#166534] hover:bg-[#BBF7D0]"}`}>
+                    <button onClick={() => setIsCompleted(!isCompleted)} title={isCompleted ? "Marked Complete" : "Mark as Complete"} className={`h-6 w-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${isCompleted ? "bg-[#166534] text-white" : "bg-[#DCFCE7] dark:bg-emerald-950/60 text-[#166534] dark:text-emerald-400 hover:bg-[#BBF7D0] dark:hover:bg-emerald-900/60 border border-transparent dark:border-emerald-800/40"}`}>
                       <Check className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
-                <div className="bg-white rounded-xl p-2 border border-[#D1FAE5] shadow-inner">{renderTopicIllustration()}</div>
+                <div className="bg-white dark:bg-slate-800/60 rounded-xl p-2 border border-[#D1FAE5] dark:border-slate-700 shadow-inner">{renderTopicIllustration()}</div>
                 <div className="mt-3 flex items-center justify-between text-xs">
-                  <span className="text-[#6B7280] font-medium">Verified Visualization</span>
-                  <button onClick={() => { setActiveTab("problems"); setShowCalculator(true); }} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#166534] hover:underline cursor-pointer">
+                  <span className="text-[#6B7280] dark:text-slate-400 font-medium">Verified Visualization</span>
+                  <button onClick={() => { setActiveTab("problems"); setShowCalculator(true); }} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#166534] dark:text-emerald-400 hover:underline cursor-pointer">
                     <Calculator className="w-3 h-3" />
                     <span>Launch Solver</span>
                   </button>
@@ -1077,7 +1077,7 @@ export default function TopicPage() {
       {/* ========================================================================= */}
       {/* 3. HORIZONTAL NAVIGATION TABS BAR                                         */}
       {/* ========================================================================= */}
-      <div className="bg-white">
+      <div className="bg-white dark:bg-[#0B0F15] border-b border-transparent dark:border-slate-800/50">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 pt-4">
           <button
             onClick={(e) => {
@@ -1103,32 +1103,32 @@ export default function TopicPage() {
               sessionStorage.setItem("returningChapter", String(ch));
               navigate("/?tab=topics");
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white hover:bg-[#F0FDF4] px-4 py-2 text-xs font-bold text-[#374151] transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-[#161F30] hover:bg-[#F0FDF4] dark:hover:bg-slate-800 px-4 py-2 text-xs font-bold text-[#374151] dark:text-slate-200 transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Topics</span>
           </button>
         </div>
       </div>
-      <div className="sticky top-16 z-20 bg-white border-b border-[#E5E7EB] shadow-xs">
+      <div className="sticky top-16 z-20 bg-white dark:bg-[#0B0F15] border-b border-[#E5E7EB] dark:border-slate-800 shadow-xs">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10">
           <nav className="flex items-center gap-6 sm:gap-10 overflow-x-auto py-3 sm:py-3.5">
-            <button onClick={() => setActiveTab("toc")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "toc" ? "text-[#166534]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("toc")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "toc" ? "text-[#166534]" : "text-[#4B5563] dark:text-slate-400 hover:text-[#111827] dark:hover:text-white"}`}>
               <List className="w-4 h-4" />
               <span>Table of Contents</span>
               {activeTab === "toc" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#166534] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("overview")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "overview" ? "text-[#166534]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("overview")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "overview" ? "text-[#166534]" : "text-[#4B5563] dark:text-slate-400 hover:text-[#111827] dark:hover:text-white"}`}>
               <Info className="w-4 h-4" />
               <span>Overview</span>
               {activeTab === "overview" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#166534] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("problems")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "problems" ? "text-[#166534]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("problems")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "problems" ? "text-[#166534]" : "text-[#4B5563] dark:text-slate-400 hover:text-[#111827] dark:hover:text-white"}`}>
               <PenTool className="w-4 h-4" />
               <span>Practice Problems</span>
               {activeTab === "problems" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#166534] rounded-full" />}
             </button>
-            <button onClick={() => setActiveTab("summary")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "summary" ? "text-[#166534]" : "text-[#4B5563] hover:text-[#111827]"}`}>
+            <button onClick={() => setActiveTab("summary")} className={`relative flex items-center gap-2 py-1 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "summary" ? "text-[#166534]" : "text-[#4B5563] dark:text-slate-400 hover:text-[#111827] dark:hover:text-white"}`}>
               <FileText className="w-4 h-4" />
               <span>Summary</span>
               {activeTab === "summary" && <span className="absolute -bottom-3.5 left-0 right-0 h-[2.5px] bg-[#166534] rounded-full" />}
@@ -1136,7 +1136,7 @@ export default function TopicPage() {
           </nav>
         </div>
       </div>
-      <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-10 pb-24">
+      <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-10 pb-24 bg-[#FDFBFB] dark:bg-[#0B0F15]">
         {activeTab === "toc" && (
           <div className="space-y-3">
             {displayedLessons.map((lesson, idx) => {
@@ -1146,8 +1146,8 @@ export default function TopicPage() {
                     key={`lesson-${lesson.number}`}
                     className={`rounded-2xl transition-all duration-200 overflow-hidden ${
                       isExpanded
-                        ? "border-2 border-[#dcfce7] bg-white shadow-sm ring-1 ring-[#BBF7D0]"
-                        : "border border-[#D1FAE5] bg-white hover:border-[#dcfce7] hover:bg-[#FFFDFE] shadow-xs"
+                        ? "border-2 border-[#dcfce7] dark:border-emerald-800/60 bg-white dark:bg-[#161F30] shadow-sm ring-1 ring-[#BBF7D0] dark:ring-emerald-900/50"
+                        : "border border-[#D1FAE5] dark:border-slate-700/80 bg-white dark:bg-[#161F30] hover:border-[#dcfce7] dark:hover:border-emerald-800/60 hover:bg-[#FFFDFE] dark:hover:bg-[#1a2440] shadow-xs"
                     }`}
                   >
                     <div
@@ -1157,26 +1157,26 @@ export default function TopicPage() {
                       <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
                         <div
                           className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-colors ${
-                            isExpanded ? "bg-[#166534] text-white shadow-sm" : "bg-[#F3F4F6] text-[#374151]"
+                            isExpanded ? "bg-[#166534] text-white shadow-sm" : "bg-[#F3F4F6] dark:bg-slate-700 text-[#374151] dark:text-slate-200"
                           }`}
                         >
                           {String(lesson.number).padStart(2, "0")}
                         </div>
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#166534] bg-[#ECFDF5] border border-[#BBF7D0] px-2 py-0.5 rounded-md">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#166534] dark:text-emerald-400 bg-[#ECFDF5] dark:bg-emerald-950/50 border border-[#BBF7D0] dark:border-emerald-800/50 px-2 py-0.5 rounded-md">
                               Lesson {lesson.number}
                             </span>
                             {isExpanded && (
-                              <span className="text-[10px] font-bold text-[#B45309] bg-[#FEF3C7] border border-[#FDE68A] px-2 py-0.5 rounded-md">
+                              <span className="text-[10px] font-bold text-[#B45309] dark:text-amber-300 bg-[#FEF3C7] dark:bg-amber-950/40 border border-[#FDE68A] dark:border-amber-700/40 px-2 py-0.5 rounded-md">
                                 Open
                               </span>
                             )}
                           </div>
-                          <h3 className="text-sm sm:text-base font-bold text-[#111827] group-hover:text-[#166534] transition-colors leading-snug tracking-tight">
+                          <h3 className="text-sm sm:text-base font-bold text-[#111827] dark:text-white group-hover:text-[#166534] dark:group-hover:text-emerald-400 transition-colors leading-snug tracking-tight">
                             {lesson.title}
                           </h3>
-                          <p className="text-xs text-[#6B7280] font-normal leading-relaxed mt-0.5 truncate">
+                          <p className="text-xs text-[#6B7280] dark:text-slate-400 font-normal leading-relaxed mt-0.5 truncate">
                             {lesson.subtitle}
                           </p>
                         </div>
@@ -1188,12 +1188,12 @@ export default function TopicPage() {
                     </div>
 
                     {isExpanded && (
-                      <div className="border-t border-[#BBF7D0] p-5 sm:p-6 bg-[#FFFDFE] space-y-4">
-                        <div className="prose max-w-none min-w-0 text-sm text-[#374151] leading-relaxed text-justify [overflow-wrap:anywhere]">
+                      <div className="border-t border-[#BBF7D0] dark:border-slate-700/80 p-5 sm:p-6 bg-[#FFFDFE] dark:bg-[#161F30] space-y-4">
+                        <div className="prose dark:prose-invert max-w-none min-w-0 text-sm text-[#374151] dark:text-slate-300 leading-relaxed text-justify [overflow-wrap:anywhere]">
                           <TopicContentRenderer content={lesson.content || topic.details} />
                         </div>
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#F3F4F6]">
-                          <div className="flex items-center gap-2 text-xs text-[#6B7280]">
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#F3F4F6] dark:border-slate-700/60">
+                          <div className="flex items-center gap-2 text-xs text-[#6B7280] dark:text-slate-400">
                             <Sparkles className="w-4 h-4 text-[#166534]" />
                             <span>Verified textbook content with formal rigor</span>
                           </div>
@@ -1203,7 +1203,7 @@ export default function TopicPage() {
                                 setActiveTab("problems");
                                 setShowCalculator(true);
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] bg-white hover:bg-[#F0FDF4] px-3.5 py-1.5 text-xs font-bold text-[#166534] transition-all cursor-pointer shadow-xs"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1FAE5] dark:border-emerald-800/50 bg-white dark:bg-slate-800/80 hover:bg-[#F0FDF4] dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-bold text-[#166534] dark:text-emerald-400 transition-all cursor-pointer shadow-xs"
                             >
                               <Calculator className="w-3.5 h-3.5" />
                               <span>Try in Calculator</span>
@@ -1220,7 +1220,7 @@ export default function TopicPage() {
               <div className="flex justify-center pt-3">
                 <button
                   onClick={() => setShowAllLessons(!showAllLessons)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] px-5 py-2 text-xs font-bold text-[#374151] shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-[#161F30] hover:bg-[#F9FAFB] dark:hover:bg-slate-800 px-5 py-2 text-xs font-bold text-[#374151] dark:text-slate-200 shadow-xs transition-all cursor-pointer"
                 >
                   <span>{showAllLessons ? "Show Less" : "Show More"}</span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllLessons ? "rotate-180" : ""}`} />
@@ -1231,36 +1231,36 @@ export default function TopicPage() {
         )}
         {activeTab === "overview" && (
           <div className="space-y-8">
-            <div className="rounded-2xl border border-[#D1FAE5] bg-white p-6 sm:p-8 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold text-[#111827]">Topic Overview &amp; Learning Objectives</h2>
-              <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed">{topic.summary}</p>
-              <div className="min-w-0 text-sm text-[#4B5563] leading-relaxed text-justify [overflow-wrap:anywhere] pt-2">
+            <div className="rounded-2xl border border-[#D1FAE5] dark:border-slate-700/80 bg-white dark:bg-[#161F30] p-6 sm:p-8 shadow-sm space-y-4">
+              <h2 className="text-xl font-bold text-[#111827] dark:text-white">Topic Overview &amp; Learning Objectives</h2>
+              <p className="text-sm sm:text-base text-[#4B5563] dark:text-slate-300 leading-relaxed">{topic.summary}</p>
+              <div className="min-w-0 text-sm text-[#4B5563] dark:text-slate-300 leading-relaxed text-justify [overflow-wrap:anywhere] pt-2">
                 <TopicContentRenderer content={overviewDetails} />
               </div>
             </div>
-            <div className="rounded-2xl border border-[#bbf7d0] bg-[#fbf3f5] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="rounded-2xl border border-[#bbf7d0] dark:border-emerald-800/40 bg-[#fbf3f5] dark:bg-[#161F30] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#166534] text-white shadow-sm shrink-0"><Calculator className="w-6 h-6" /></div>
                 <div>
-                  <h3 className="text-base font-bold text-[#111827]">{calculatorInfo.name}</h3>
-                  <p className="text-xs sm:text-sm text-[#6B7280]">{calculatorInfo.description}</p>
+                  <h3 className="text-base font-bold text-[#111827] dark:text-white">{calculatorInfo.name}</h3>
+                  <p className="text-xs sm:text-sm text-[#6B7280] dark:text-slate-400">{calculatorInfo.description}</p>
                 </div>
               </div>
               <button onClick={() => setShowCalculator(!showCalculator)} className="inline-flex items-center gap-2 rounded-xl bg-[#166534] hover:bg-[#14532D] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all cursor-pointer shrink-0"><span>{showCalculator ? "Hide Calculator" : "Launch Interactive Solver"}</span><ChevronDown className={`w-3.5 h-3.5 transition-transform ${showCalculator ? "rotate-180" : ""}`} /></button>
             </div>
-            {showCalculator && <div className="rounded-2xl border border-[#D1FAE5] bg-white p-6 shadow-md">{calculatorInfo.component}</div>}
+            {showCalculator && <div className="rounded-2xl border border-[#D1FAE5] dark:border-slate-700/80 bg-white dark:bg-[#161F30] p-6 shadow-md">{calculatorInfo.component}</div>}
           </div>
         )}
         {activeTab === "problems" && (
           <div className="space-y-6">
             {/* Interactive Calculator Section */}
-            <div id="interactive-calculator-section" className="rounded-2xl border border-[#D1FAE5] bg-white p-6 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D1FAE5] pb-4">
+            <div id="interactive-calculator-section" className="rounded-2xl border border-[#D1FAE5] dark:border-slate-700/80 bg-white dark:bg-[#161F30] p-6 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D1FAE5] dark:border-slate-700/60 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#166534] text-white shadow-sm shrink-0"><Calculator className="w-5 h-5" /></div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-bold text-[#111827]">{calculatorInfo.name}</h3>
+                      <h3 className="text-base font-bold text-[#111827] dark:text-white">{calculatorInfo.name}</h3>
                       {topic.category === "linear-algebra" && (
                         <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#166534] bg-[#ECFDF5] border border-[#dcfce7] px-2.5 py-0.5 rounded-full">
                           <span>{topic.title}</span>
@@ -1269,14 +1269,14 @@ export default function TopicPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-[#6B7280]">Solve step by step with verified numerical and algebraic analysis.</p>
+                    <p className="text-xs text-[#6B7280] dark:text-slate-400">Solve step by step with verified numerical and algebraic analysis.</p>
                   </div>
                 </div>
               </div>
 
               {/* Loaded Example Banner Notification */}
               {loadedExample && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[#ECFDF5] border border-[#dcfce7] text-[#166534] text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[#ECFDF5] dark:bg-emerald-950/30 border border-[#dcfce7] dark:border-emerald-800/50 text-[#166534] dark:text-emerald-300 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#166534] shrink-0" />
                     <span>
@@ -1289,7 +1289,7 @@ export default function TopicPage() {
                         navigator.clipboard.writeText(loadedExample.text);
                         setCopiedIndex(loadedExample.index);
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-[#dcfce7] hover:bg-[#F0FDF4] font-bold text-[11px] cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-[#dcfce7] dark:border-emerald-800/50 hover:bg-[#F0FDF4] dark:hover:bg-slate-700 font-bold text-[11px] cursor-pointer dark:text-emerald-300"
                     >
                       Copy Text
                     </button>
@@ -1311,8 +1311,8 @@ export default function TopicPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-[#111827]">Step-by-Step Verified Examples</h2>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Click &ldquo;Try to Solve&rdquo; to automatically load any problem into the calculator solver.</p>
+                  <h2 className="text-xl font-bold text-[#111827] dark:text-white">Step-by-Step Verified Examples</h2>
+                  <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-0.5">Click &ldquo;Try to Solve&rdquo; to automatically load any problem into the calculator solver.</p>
                 </div>
               </div>
 
@@ -1324,14 +1324,14 @@ export default function TopicPage() {
                   return (
                     <div 
                       key={`example-${idx}`} 
-                      className={`rounded-2xl border bg-white p-5 space-y-3 transition-all duration-200 ${
+                      className={`rounded-2xl border bg-white dark:bg-[#161F30] p-5 space-y-3 transition-all duration-200 ${
                         isThisLoaded 
-                          ? "border-[#166534] shadow-md ring-2 ring-[#166534]/20" 
-                          : "border-[#D1FAE5] shadow-sm hover:border-[#bbf7d0]"
+                          ? "border-[#166534] dark:border-emerald-500/70 shadow-md ring-2 ring-[#166534]/20 dark:ring-emerald-500/20" 
+                          : "border-[#D1FAE5] dark:border-slate-700/80 shadow-sm hover:border-[#bbf7d0] dark:hover:border-emerald-800/60"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#bbf7d0] bg-[#fbf3f5] text-[#166534]">
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#bbf7d0] dark:border-emerald-800/50 bg-[#fbf3f5] dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400">
                           Problem #{idx + 1}
                         </span>
 
@@ -1349,7 +1349,7 @@ export default function TopicPage() {
                           {/* Copy Button */}
                           <button 
                             onClick={() => handleCopyExample(exampleText, idx)} 
-                            className="text-xs text-[#6B7280] hover:text-[#166534] inline-flex items-center gap-1 cursor-pointer py-1 px-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="text-xs text-[#6B7280] dark:text-slate-400 hover:text-[#166534] dark:hover:text-emerald-400 inline-flex items-center gap-1 cursor-pointer py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                             title="Copy problem text"
                           >
                             {copiedIndex === idx ? (
@@ -1367,7 +1367,7 @@ export default function TopicPage() {
                         </div>
                       </div>
 
-                      <div className="text-xs sm:text-sm text-[#374151] font-mono leading-relaxed bg-[#F9FAFB] p-3.5 rounded-xl border border-[#E5E7EB] whitespace-pre-wrap break-words">
+                      <div className="text-xs sm:text-sm text-[#374151] dark:text-slate-300 font-mono leading-relaxed bg-[#F9FAFB] dark:bg-slate-800/60 p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 whitespace-pre-wrap break-words">
                         {exampleText}
                       </div>
                     </div>
@@ -1379,19 +1379,19 @@ export default function TopicPage() {
         )}
         {activeTab === "summary" && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-[#D1FAE5] bg-white p-6 sm:p-8 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold text-[#111827]">Quick Summary &amp; Key Takeaways</h2>
-              <div className="p-4 rounded-xl border border-[#bbf7d0] bg-[#fbf3f5] text-sm text-[#166534] font-medium leading-relaxed">{topic.summary}</div>
+            <div className="rounded-2xl border border-[#D1FAE5] dark:border-slate-700/80 bg-white dark:bg-[#161F30] p-6 sm:p-8 shadow-sm space-y-4">
+              <h2 className="text-xl font-bold text-[#111827] dark:text-white">Quick Summary &amp; Key Takeaways</h2>
+              <div className="p-4 rounded-xl border border-[#bbf7d0] dark:border-emerald-800/40 bg-[#fbf3f5] dark:bg-emerald-950/30 text-sm text-[#166534] dark:text-emerald-300 font-medium leading-relaxed">{topic.summary}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                <div className="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] space-y-2"><h4 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Fundamental Conditions</h4><p className="text-xs text-[#4B5563] leading-relaxed">Verify existence, limit equivalence, and continuous behavior across the given domain.</p></div>
-                <div className="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] space-y-2"><h4 className="text-xs font-bold uppercase tracking-wider text-[#166534]">Next Learning Milestone</h4><p className="text-xs text-[#4B5563] leading-relaxed">Advance to subsequent properties, derivatives, and integral calculus applications.</p></div>
+                <div className="p-4 rounded-xl border border-[#E5E7EB] dark:border-slate-700/80 bg-[#F9FAFB] dark:bg-slate-800/50 space-y-2"><h4 className="text-xs font-bold uppercase tracking-wider text-[#166534] dark:text-emerald-400">Fundamental Conditions</h4><p className="text-xs text-[#4B5563] dark:text-slate-300 leading-relaxed">Verify existence, limit equivalence, and continuous behavior across the given domain.</p></div>
+                <div className="p-4 rounded-xl border border-[#E5E7EB] dark:border-slate-700/80 bg-[#F9FAFB] dark:bg-slate-800/50 space-y-2"><h4 className="text-xs font-bold uppercase tracking-wider text-[#166534] dark:text-emerald-400">Next Learning Milestone</h4><p className="text-xs text-[#4B5563] dark:text-slate-300 leading-relaxed">Advance to subsequent properties, derivatives, and integral calculus applications.</p></div>
               </div>
             </div>
           </div>
         )}
         {/* BOTTOM NAVIGATION: Next Topic */}
         {nextTopic && (
-          <div className="flex items-center justify-end border-t border-[#E5E7EB] pt-8 mt-6">
+          <div className="flex items-center justify-end border-t border-[#E5E7EB] dark:border-slate-700/60 pt-8 mt-6">
             <button
               type="button"
               onClick={handleNextTopicClick}

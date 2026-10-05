@@ -81,9 +81,9 @@ export default function LoginPage() {
       {/* Subtle Floating Back to Home Button */}
       <Link
         to="/"
-        className="absolute top-5 left-5 z-30 inline-flex items-center gap-1.5 rounded-full border border-black/15 bg-white/80 hover:bg-white text-gray-800 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold shadow-md transition-all hover:scale-105"
+        className="absolute top-5 left-5 z-30 inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 dark:border-white/10 bg-white/90 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 text-gray-800 dark:text-slate-100 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold shadow-md transition-all hover:scale-105"
       >
-        <ArrowLeft className="w-3.5 h-3.5" />
+        <ArrowLeft className="w-3.5 h-3.5 text-gray-600 dark:text-slate-300" />
         <span>Home</span>
       </Link>
 

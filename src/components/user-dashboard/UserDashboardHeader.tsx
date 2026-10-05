@@ -236,11 +236,11 @@ export const UserDashboardHeader: React.FC<UserDashboardHeaderProps> = ({
                           onClick={() => handleStudentNotificationClick(quiz)}
                           className={`group/notif relative w-full text-left p-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition cursor-pointer flex items-start gap-3 ${
                             isUnread
-                              ? "bg-[#FFF8F8] dark:bg-emerald-950/20"
+                              ? "bg-emerald-50/40 dark:bg-emerald-950/30"
                               : "bg-white dark:bg-[#161F30]"
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                          <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-emerald-900/40 text-[#166534] dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                             <Sparkles className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0 pr-6">
@@ -257,15 +257,15 @@ export const UserDashboardHeader: React.FC<UserDashboardHeaderProps> = ({
                               {quiz.pointsPerItem || 1} pts/item)
                             </p>
                             <div className="flex items-center justify-between mt-1 text-[10px]">
-                              <span className="text-gray-400">
+                              <span className="text-gray-400 dark:text-slate-500">
                                 {quiz.createdAt}
                               </span>
                               {isCompleted ? (
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded">
+                                <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
                                   Completed
                                 </span>
                               ) : (
-                                <span className="font-bold text-[#166534] dark:text-emerald-400 bg-green-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded">
+                                <span className="font-bold text-[#166534] dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
                                   Take Quiz →
                                 </span>
                               )}
@@ -276,7 +276,7 @@ export const UserDashboardHeader: React.FC<UserDashboardHeaderProps> = ({
                             onClick={(e) =>
                               handleDeleteStudentNotification(quiz.id, e)
                             }
-                            className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-slate-700 rounded-lg transition-all shrink-0 cursor-pointer"
+                            className="opacity-60 group-hover/notif:opacity-100 p-1 text-gray-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700/80 rounded-lg transition-all shrink-0 cursor-pointer"
                             title="Delete notification"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

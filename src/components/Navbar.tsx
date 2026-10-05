@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import {
   LogIn,
@@ -12,11 +13,27 @@ import {
   LayoutDashboard,
   Menu,
   X,
+  ChevronDown,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { playNavButtonAnimation } from "../utils/buttonAnimation";
 
 export default function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -173,6 +190,10 @@ export default function Navbar() {
           : "text-[#4B5563] hover:text-[#111827]"
     }`;
 
+  const displayName = user?.name || user?.email?.split("@")[0] || "User";
+  const userInitial = displayName.charAt(0).toUpperCase();
+  const roleLabel = isAdmin ? "Admin" : "Student";
+
   if (
     location.pathname.startsWith("/admin") ||
     location.pathname === "/dashboard" ||
@@ -184,7 +205,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-30 px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[100] px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
         isHeroPage
           ? "bg-black/40 backdrop-blur-md border-b border-white/10"
           : "bg-white border-b border-[#E5E7EB] shadow-xs"
@@ -299,7 +320,7 @@ export default function Navbar() {
         </nav>
 
         {/* Right Nav Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3" ref={dropdownRef}>
           {!isAuthenticated ? (
             <div className="flex items-center gap-2 sm:gap-3">
               <Link
@@ -325,38 +346,132 @@ export default function Navbar() {
               </Link>
             </div>
           ) : (
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden sm:flex flex-col text-right">
-                <span
-                  className={`text-xs font-medium ${
-                    isHeroPage ? "text-white/80" : "text-[#374151]"
-                  }`}
-                >
-                  {user?.name}
-                </span>
-                <span
-                  className={`text-[0.65rem] font-bold uppercase tracking-wider ${
-                    isHeroPage ? "text-[#22c55e]" : "text-[#166534]"
-                  }`}
-                >
-                  {user?.role}
-                </span>
-              </div>
+            <div className="relative">
               <button
                 type="button"
-                onClick={async () => {
-                  await logout();
-                  navigate("/login", { replace: true });
-                }}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 sm:px-3.5 sm:py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className={`flex items-center gap-2.5 cursor-pointer group py-1.5 pl-2.5 pr-2 rounded-xl transition ${
                   isHeroPage
-                    ? "border-[#22c55e]/60 bg-[#166534]/20 text-[#22c55e] hover:bg-[#166534]/40 hover:border-[#22c55e]"
-                    : "bg-green-50 border-green-200 text-green-600 hover:bg-green-100 hover:border-green-300"
+                    ? "hover:bg-white/10 text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-800 dark:text-white"
                 }`}
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Logout</span>
+                <div className="flex-col text-right leading-tight hidden sm:flex">
+                  <span
+                    className={`text-xs font-bold ${
+                      isHeroPage ? "text-white drop-shadow" : "text-gray-900 dark:text-white"
+                    }`}
+                  >
+                    {displayName}
+                  </span>
+                  <span
+                    className={`text-[10px] font-medium ${
+                      isHeroPage ? "text-white/70" : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {roleLabel}
+                  </span>
+                </div>
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={displayName}
+                    className="w-8 h-8 rounded-full object-cover shadow border border-white/30"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#166534] text-white font-bold text-sm flex items-center justify-center shadow">
+                    {userInitial}
+                  </div>
+                )}
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    userDropdownOpen ? "rotate-180" : ""
+                  } ${
+                    isHeroPage
+                      ? "text-white/70 group-hover:text-white"
+                      : "text-gray-500 group-hover:text-gray-800 dark:text-gray-400"
+                  }`}
+                />
               </button>
+
+              <AnimatePresence>
+                {userDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#1E293B] rounded-2xl border border-[#EAEBED] dark:border-slate-700 shadow-xl p-1.5 z-[110] flex flex-col gap-1"
+                  >
+                    {/* User info header */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-slate-700">
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-100 truncate">
+                        {displayName}
+                      </p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                        {user?.email}
+                      </p>
+                      {user?.block && (
+                        <span className="inline-flex items-center mt-1 rounded-md bg-[#166534]/10 border border-[#166534]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#166534] dark:text-emerald-400 leading-none">
+                          Block {String(user.block).trim().toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Go to Dashboard */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        navigate(isAdmin ? "/admin" : "/dashboard");
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-[#166534] dark:text-emerald-400" />
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        Go to Dashboard
+                      </span>
+                    </button>
+
+                    {/* Dark Mode Toggle */}
+                    <button
+                      type="button"
+                      onClick={(e) => toggleTheme(e)}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {theme === "dark" ? (
+                          <Moon className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <Sun className="w-4 h-4 text-amber-500" />
+                        )}
+                        <span className="font-semibold">
+                          {theme === "dark" ? "Dark Mode" : "Light Mode"}
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        {theme === "dark" ? "On" : "Off"}
+                      </span>
+                    </button>
+
+                    <div className="h-[1px] bg-gray-100 dark:bg-gray-800 my-0.5" />
+
+                    {/* Sign Out */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setUserDropdownOpen(false);
+                        await logout();
+                        navigate("/login", { replace: true });
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 text-left cursor-pointer transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 text-red-600" />
+                      <span>Sign Out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
@@ -462,6 +577,27 @@ export default function Navbar() {
 
           {isAuthenticated && (
             <div className="pt-2 mt-2 border-t border-gray-100">
+              <div className="px-3.5 py-2 mb-1 flex items-center gap-3">
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={displayName}
+                    className="w-8 h-8 rounded-full object-cover shadow border border-gray-200"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#166534] text-white font-bold text-sm flex items-center justify-center shadow">
+                    {userInitial}
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-gray-800">
+                    {displayName}
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">
+                    {roleLabel}
+                  </span>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={async () => {
