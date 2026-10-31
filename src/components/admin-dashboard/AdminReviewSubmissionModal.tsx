@@ -1,17 +1,32 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
-import type { StudentSubmissionItem } from "../../types/dashboard";
+import { X, Lock, Eye } from "lucide-react";
+import type { QuizItem, StudentSubmissionItem } from "../../types/dashboard";
 
 interface AdminReviewSubmissionModalProps {
   selectedSubmissionForReview: StudentSubmissionItem | null;
   setSelectedSubmissionForReview: (sub: StudentSubmissionItem | null) => void;
+  quizzes?: QuizItem[];
+  onToggleQuizReview?: (quizId: string, currentStatus?: boolean) => void;
 }
 
 export const AdminReviewSubmissionModal: React.FC<
   AdminReviewSubmissionModalProps
-> = ({ selectedSubmissionForReview, setSelectedSubmissionForReview }) => {
+> = ({
+  selectedSubmissionForReview,
+  setSelectedSubmissionForReview,
+  quizzes,
+  onToggleQuizReview,
+}) => {
   if (!selectedSubmissionForReview) return null;
+
+  const targetQuiz = quizzes?.find(
+    (q) => q.id === selectedSubmissionForReview.quizId
+  );
+  const isReviewAllowed =
+    targetQuiz?.allowReview !== undefined
+      ? Boolean(targetQuiz.allowReview)
+      : Boolean(selectedSubmissionForReview.allowReview);
 
   return (
     <AnimatePresence>
@@ -50,7 +65,7 @@ export const AdminReviewSubmissionModal: React.FC<
             </button>
           </div>
 
-          {/* Submission Overview Metrics */}
+          {/* Submission Overview Metrics & Review Permission Bar */}
           <div className="grid grid-cols-3 gap-3 my-4 shrink-0">
             <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700 text-center">
               <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-500">
@@ -83,6 +98,45 @@ export const AdminReviewSubmissionModal: React.FC<
                 {selectedSubmissionForReview.submittedAt}
               </p>
             </div>
+          </div>
+
+          {/* Quick Review Permission Control for Admin */}
+          <div className="mb-4 p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-700 dark:text-slate-200">
+                Student Review Permission:
+              </span>
+              {isReviewAllowed ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
+                  <Eye className="w-3 h-3" />
+                  <span>Correct Answers Visible to Students</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
+                  <Lock className="w-3 h-3" />
+                  <span>Correct Answers Hidden from Students</span>
+                </span>
+              )}
+            </div>
+
+            {onToggleQuizReview && (
+              <button
+                type="button"
+                onClick={() =>
+                  onToggleQuizReview(
+                    selectedSubmissionForReview.quizId,
+                    isReviewAllowed
+                  )
+                }
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer shadow-xs ${
+                  isReviewAllowed
+                    ? "bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300"
+                    : "bg-[#166534] hover:bg-[#14532d] text-white"
+                }`}
+              >
+                {isReviewAllowed ? "Lock Answers" : "Allow Review"}
+              </button>
+            )}
           </div>
 
           {/* Answers Breakdown */}

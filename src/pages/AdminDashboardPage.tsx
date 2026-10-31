@@ -684,6 +684,7 @@ export default function AdminDashboardPage() {
           category: isCalc1 ? "calculus-1" : "calculus-2",
           categoryLabel: def.category,
           formula: def.example,
+          image: def.image,
           description: def.description,
           badge: def.badge || (isCalc1 ? "Calculus 1" : "Calculus 2"),
           type: "calculus",
@@ -886,8 +887,11 @@ export default function AdminDashboardPage() {
     if (!supabase) return;
     setIsLoadingQuizzes(true);
     try {
-      // 1. Fetch quizzes and questions
-      const { data: quizzesData, error: qError } = await supabase
+      // 1. Fetch quizzes and questions (with allow_review if column exists)
+      let quizzesData: any = null;
+      let qError: any = null;
+
+      const resWithReview = await supabase
         .from("quizzes")
         .select(`
           id,
@@ -895,6 +899,7 @@ export default function AdminDashboardPage() {
           topic,
           created_at,
           points_per_item,
+          allow_review,
           quiz_questions (
             id,
             question_index,
@@ -907,6 +912,34 @@ export default function AdminDashboardPage() {
           )
         `)
         .order("created_at", { ascending: false });
+
+      if (resWithReview.error) {
+        // Fallback if column not yet migrated in Supabase
+        const fallbackRes = await supabase
+          .from("quizzes")
+          .select(`
+            id,
+            title,
+            topic,
+            created_at,
+            points_per_item,
+            quiz_questions (
+              id,
+              question_index,
+              prompt,
+              option_a,
+              option_b,
+              option_c,
+              option_d,
+              correct_answer
+            )
+          `)
+          .order("created_at", { ascending: false });
+        quizzesData = fallbackRes.data;
+        qError = fallbackRes.error;
+      } else {
+        quizzesData = resWithReview.data;
+      }
 
       if (qError) {
         console.error("Error fetching quizzes:", qError);
@@ -1002,6 +1035,9 @@ export default function AdminDashboardPage() {
               : 0;
 
           const primaryType = qDrafts[0]?.questionType || "multiple_choice";
+          const isReviewAllowed = q.allow_review !== undefined
+            ? Boolean(q.allow_review)
+            : localStorage.getItem(`quiz_allow_review_${q.id}`) === "true";
 
           return {
             id: q.id,
@@ -1018,6 +1054,7 @@ export default function AdminDashboardPage() {
             }),
             questionType: primaryType,
             pointsPerItem: ppi,
+            allowReview: isReviewAllowed,
           };
         });
         setQuizzes(formatted);
@@ -1077,8 +1114,8 @@ export default function AdminDashboardPage() {
 
       // Format complete student submissions & activity items
       if (attemptsData && quizzesData) {
-        const quizMap = new Map(quizzesData.map((q: any) => [q.id, q]));
-        const profileMap = new Map(
+        const quizMap = new Map<string, any>((quizzesData as any[]).map((q: any) => [q.id, q]));
+        const profileMap = new Map<string, any>(
           (profilesData || []).map((p: any) => [p.id, p]),
         );
 
@@ -1119,6 +1156,9 @@ export default function AdminDashboardPage() {
             const qTopic = quiz?.topic || "Linear Algebra";
             const totalQ = a.total_questions || 1;
             const pct = Math.round((a.score / totalQ) * 100);
+            const isSubReviewAllowed = quiz?.allow_review !== undefined
+              ? Boolean(quiz.allow_review)
+              : localStorage.getItem(`quiz_allow_review_${a.quiz_id}`) === "true";
 
             return {
               id: a.id,
@@ -1144,6 +1184,7 @@ export default function AdminDashboardPage() {
                 },
               ),
               answers: parsedAnswers,
+              allowReview: isSubReviewAllowed,
             };
           },
         );
@@ -1524,6 +1565,99 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleToggleQuizReview = async (quizId: string, currentStatus?: boolean) => {
+    const newStatus = !currentStatus;
+
+    // 1. Optimistic state update in Admin
+    setQuizzes((prev) =>
+      prev.map((q) => (q.id === quizId ? { ...q, allowReview: newStatus } : q))
+    );
+    setStudentSubmissions((prev) =>
+      prev.map((sub) =>
+        sub.quizId === quizId ? { ...sub, allowReview: newStatus } : sub
+      )
+    );
+
+    // 2. Persist in localStorage
+    try {
+      localStorage.setItem(`quiz_allow_review_${quizId}`, String(newStatus));
+    } catch {}
+
+    // 3. Persist to Supabase if available
+    if (supabase) {
+      try {
+        await supabase
+          .from("quizzes")
+          .update({ allow_review: newStatus })
+          .eq("id", quizId);
+      } catch (err) {
+        console.warn("Could not update allow_review in Supabase quizzes table:", err);
+      }
+
+      // 4. Broadcast real-time change to all connected students
+      try {
+        const syncChannel = supabase.channel("quiz-review-sync");
+        syncChannel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            syncChannel.send({
+              type: "broadcast",
+              event: "quiz-review-toggled",
+              payload: { quizId, allowReview: newStatus },
+            });
+            setTimeout(() => syncChannel.unsubscribe(), 1200);
+          }
+        });
+      } catch (chanErr) {
+        console.warn("Could not broadcast quiz review status:", chanErr);
+      }
+    }
+  };
+
+  const handleBulkToggleQuizReview = async (allow: boolean = true) => {
+    // 1. Optimistic state update in Admin
+    setQuizzes((prev) => prev.map((q) => ({ ...q, allowReview: allow })));
+    setStudentSubmissions((prev) =>
+      prev.map((sub) => ({ ...sub, allowReview: allow }))
+    );
+
+    // 2. Persist in localStorage for each quiz and globally
+    try {
+      quizzes.forEach((q) => {
+        localStorage.setItem(`quiz_allow_review_${q.id}`, String(allow));
+      });
+      localStorage.setItem("quiz_allow_review_all", String(allow));
+    } catch {}
+
+    // 3. Persist to Supabase if available
+    if (supabase) {
+      try {
+        await supabase
+          .from("quizzes")
+          .update({ allow_review: allow })
+          .neq("id", "00000000-0000-0000-0000-000000000000");
+      } catch (err) {
+        console.warn("Could not bulk update allow_review in Supabase quizzes table:", err);
+      }
+
+      // 4. Broadcast real-time change to all connected students
+      try {
+        const syncChannel = supabase.channel("quiz-review-sync");
+        syncChannel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            syncChannel.send({
+              type: "broadcast",
+              event: "quiz-review-toggled",
+              payload: { quizId: "all", allowReview: allow },
+            });
+            setTimeout(() => syncChannel.unsubscribe(), 1200);
+          }
+        });
+      } catch (chanErr) {
+        console.warn("Could not broadcast bulk review status:", chanErr);
+      }
+    }
+  };
+
   // History Archiving & Deletion State & Handlers
   const [historyTab, setHistoryTab] = useState<"active" | "archived">("active");
   const [archivedSearchQuery, setArchivedSearchQuery] = useState("");
@@ -1754,6 +1888,7 @@ export default function AdminDashboardPage() {
                 quizzes={quizzes}
                 handleNavClick={handleNavClick}
                 handleStartStudentPreviewQuiz={handleStartStudentPreviewQuiz}
+                onToggleQuizReview={handleToggleQuizReview}
               />
             )}
 
@@ -1872,6 +2007,8 @@ export default function AdminDashboardPage() {
                 filteredSubmissions={filteredSubmissions}
                 setSelectedSubmissionForReview={setSelectedSubmissionForReview}
                 handleDeleteQuiz={handleDeleteQuiz}
+                onToggleQuizReview={handleToggleQuizReview}
+                onBulkToggleQuizReview={handleBulkToggleQuizReview}
               />
             )}
 
@@ -1945,6 +2082,8 @@ export default function AdminDashboardPage() {
       <AdminReviewSubmissionModal
         selectedSubmissionForReview={selectedSubmissionForReview}
         setSelectedSubmissionForReview={setSelectedSubmissionForReview}
+        quizzes={quizzes}
+        onToggleQuizReview={handleToggleQuizReview}
       />
     </div>
   );

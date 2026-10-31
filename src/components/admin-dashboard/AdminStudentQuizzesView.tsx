@@ -10,6 +10,8 @@ import {
   ListOrdered,
   Users,
   Play,
+  Lock,
+  Eye,
 } from "lucide-react";
 import type { QuizItem } from "../../types/dashboard";
 
@@ -17,11 +19,12 @@ interface AdminStudentQuizzesViewProps {
   quizzes: QuizItem[];
   handleNavClick: (nav: any) => void;
   handleStartStudentPreviewQuiz: (quiz: QuizItem) => void;
+  onToggleQuizReview?: (quizId: string, currentStatus?: boolean) => void;
 }
 
 export const AdminStudentQuizzesView: React.FC<
   AdminStudentQuizzesViewProps
-> = ({ quizzes, handleNavClick, handleStartStudentPreviewQuiz }) => {
+> = ({ quizzes, handleNavClick, handleStartStudentPreviewQuiz, onToggleQuizReview }) => {
   return (
     <motion.div
       key="student-quizzes-view"
@@ -161,6 +164,37 @@ export const AdminStudentQuizzesView: React.FC<
                           ? "Identification"
                           : "Multiple Choice"}
                       </span>
+                      {onToggleQuizReview && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleQuizReview(quiz.id, quiz.allowReview);
+                          }}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer shadow-xs ${
+                            quiz.allowReview
+                              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
+                              : "bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300"
+                          }`}
+                          title={
+                            quiz.allowReview
+                              ? "Review is ALLOWED: Students can view answers. Click to lock."
+                              : "Review is LOCKED: Students cannot view answers. Click to allow."
+                          }
+                        >
+                          {quiz.allowReview ? (
+                            <>
+                              <Eye className="w-2.5 h-2.5 text-emerald-700" />
+                              <span>Review: Allowed</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-2.5 h-2.5 text-amber-700" />
+                              <span>Review: Locked</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-[#166534]/8 group-hover:bg-[#166534]/15 flex items-center justify-center transition">
                       <FileText className="w-4 h-4 text-[#166534]" />

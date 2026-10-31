@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Calculator,
@@ -6,6 +6,8 @@ import {
   Layers,
   TrendingUp,
   Zap,
+  ZoomIn,
+  X,
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
@@ -40,6 +42,7 @@ export const CalculatorsView: React.FC<CalculatorsViewProps> = ({
   setCalcSearchQuery,
   globalSearchQuery = "",
 }) => {
+  const [modalImage, setModalImage] = useState<{ src: string; alt: string } | null>(null);
   const calculatorsList = useMemo(() => {
     return allCalculators || buildAllCombinedCalculators();
   }, [allCalculators]);
@@ -75,6 +78,7 @@ export const CalculatorsView: React.FC<CalculatorsViewProps> = ({
   }, [calculatorsList, calcCategoryFilter, calcSearchQuery, globalSearchQuery]);
 
   return (
+    <>
     <div className="flex flex-col gap-6">
       {activeCalculator ? (
         /* Active Calculator Solver View */
@@ -240,10 +244,31 @@ export const CalculatorsView: React.FC<CalculatorsViewProps> = ({
                     {calc.title}
                   </h3>
 
-                  {/* Formula Pill */}
-                  <div className="my-2.5 p-2 bg-[#F9FAFB] dark:bg-slate-800/60 border border-[#F0F1F3] dark:border-slate-700 rounded-xl font-serif text-xs text-[#1F242D] dark:text-slate-200 text-center overflow-x-auto">
-                    <code>{calc.formula}</code>
-                  </div>
+                  {/* Formula Pill or Image */}
+                  {calc.image ? (
+                    <div
+                      className="my-2.5 p-1 bg-[#F9FAFB] dark:bg-slate-800/60 border border-[#F0F1F3] dark:border-slate-700 rounded-xl overflow-hidden cursor-pointer relative group/img"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const imageSrc = calc.image!.startsWith("/") ? calc.image! : `/${calc.image}`;
+                        setModalImage({ src: imageSrc, alt: calc.title });
+                      }}
+                      title="Click to view full image"
+                    >
+                      <img
+                        src={calc.image.startsWith("/") ? calc.image : `/${calc.image}`}
+                        alt={calc.title}
+                        className="w-full h-auto max-h-[120px] object-cover rounded-lg transition-transform duration-200 group-hover/img:scale-[1.02]"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                        <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 drop-shadow-lg" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="my-2.5 p-2 bg-[#F9FAFB] dark:bg-slate-800/60 border border-[#F0F1F3] dark:border-slate-700 rounded-xl font-serif text-xs text-[#1F242D] dark:text-slate-200 text-center overflow-x-auto">
+                      <code>{calc.formula}</code>
+                    </div>
+                  )}
 
                   {/* Description */}
                   <p className="text-xs text-[#6B7280] dark:text-slate-400 leading-relaxed line-clamp-3">
@@ -285,6 +310,36 @@ export const CalculatorsView: React.FC<CalculatorsViewProps> = ({
         </div>
       )}
     </div>
+
+      {/* Image Modal */}
+      {modalImage && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setModalImage(null)}
+        >
+          <div
+            className="relative max-w-[90vw] max-h-[90vh] animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setModalImage(null)}
+              className="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-lg flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors cursor-pointer"
+              title="Close"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+            <img
+              src={modalImage.src}
+              alt={modalImage.alt}
+              className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl border border-white/10 object-contain"
+            />
+            <p className="text-center text-sm text-white/70 mt-3 font-medium">
+              {modalImage.alt}
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

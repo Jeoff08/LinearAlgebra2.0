@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Lock, CheckCircle2 } from "lucide-react";
 import type { StudentQuizAttemptItem } from "../../types/dashboard";
 
 interface UserReviewAttemptModalProps {
@@ -14,6 +14,8 @@ export const UserReviewAttemptModal: React.FC<UserReviewAttemptModalProps> = ({
 }) => {
   const [revealedSteps, setRevealedSteps] = useState<Record<string, number>>({});
 
+  const isReviewAllowed = Boolean(reviewingAttempt?.allowReview);
+
   return (
     <AnimatePresence>
       {reviewingAttempt && (
@@ -24,26 +26,57 @@ export const UserReviewAttemptModal: React.FC<UserReviewAttemptModalProps> = ({
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             className="w-full max-w-3xl bg-white dark:bg-[#161F30] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl border border-[#EAEBED] dark:border-[#1E2D45] max-h-[92vh] sm:max-h-[85vh] flex flex-col"
           >
-            <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 dark:border-[#1E2D45] shrink-0">
-              <div className="min-w-0 pr-2">
-                <h3 className="text-base sm:text-lg font-bold text-[#111827] dark:text-[#F1F5F9] truncate">
-                  {reviewingAttempt.quizTitle}
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-[#94A3B8] mt-0.5">
-                  Score: {reviewingAttempt.score} /{" "}
-                  {reviewingAttempt.totalQuestions} pts • Submitted:{" "}
-                  {reviewingAttempt.submittedAt}
-                </p>
+            {/* Header */}
+            <div className="pb-3 sm:pb-4 border-b border-gray-100 dark:border-[#1E2D45] shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 pr-2">
+                  <h3 className="text-base sm:text-lg font-bold text-[#111827] dark:text-[#F1F5F9] truncate">
+                    {reviewingAttempt.quizTitle}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-[#94A3B8] mt-0.5">
+                    Score: {reviewingAttempt.score} /{" "}
+                    {reviewingAttempt.totalQuestions} pts • Submitted:{" "}
+                    {reviewingAttempt.submittedAt}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg text-gray-400 dark:text-[#94A3B8] hover:text-gray-600 dark:hover:text-[#F1F5F9] hover:bg-gray-100 dark:hover:bg-[#1E2D45] cursor-pointer shrink-0"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-gray-400 dark:text-[#94A3B8] hover:text-gray-600 dark:hover:text-[#F1F5F9] hover:bg-gray-100 dark:hover:bg-[#1E2D45] cursor-pointer shrink-0"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              {/* Review Permission Status Banner */}
+              {!isReviewAllowed ? (
+                <div className="mt-3 p-3 sm:p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                      <span>Correct Answers Hidden</span>
+                      <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
+                        Admin Approval Required
+                      </span>
+                    </p>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
+                      The admin has not yet released the review answer key for this quiz. You can review your submitted choices and score, but correct answers and detailed step-by-step solutions will remain locked until the instructor allows them.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 p-2.5 sm:p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                    Review Released: Full correct answers and solution explanations are unlocked by the admin.
+                  </p>
+                </div>
+              )}
             </div>
 
+            {/* Questions List */}
             <div className="overflow-y-auto py-3 sm:py-4 flex-1 space-y-3 sm:space-y-4">
               {reviewingAttempt.answers.length === 0 ? (
                 <p className="text-xs text-gray-500 dark:text-[#94A3B8] text-center py-6">
@@ -76,8 +109,8 @@ export const UserReviewAttemptModal: React.FC<UserReviewAttemptModalProps> = ({
                       {ans.prompt}
                     </h4>
 
+                    {/* ── 1. Problem Solving ── */}
                     {ans.questionType === "problem_solving" ? (
-                      /* ── Problem Solving: show answer + step-by-step solution ── */
                       <div className="space-y-3">
                         {/* Your answer */}
                         <div
@@ -102,8 +135,19 @@ export const UserReviewAttemptModal: React.FC<UserReviewAttemptModalProps> = ({
                           </div>
                         </div>
 
-                        {/* Step-by-step solution — interactive reveal */}
-                        {ans.explanation &&
+                        {/* Step-by-step solution / Locked State */}
+                        {!isReviewAllowed ? (
+                          <div className="rounded-2xl border border-dashed border-amber-300 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 p-4 text-center flex flex-col items-center justify-center gap-1.5">
+                            <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                            <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                              Step-by-Step Solution Locked
+                            </span>
+                            <p className="text-[11px] text-amber-700 dark:text-amber-400 max-w-sm">
+                              The instructor has not released the full step-by-step mathematical solution for this problem yet.
+                            </p>
+                          </div>
+                        ) : (
+                          ans.explanation &&
                           (() => {
                             const steps = ans.explanation
                               .split(" → ")
@@ -194,8 +238,7 @@ export const UserReviewAttemptModal: React.FC<UserReviewAttemptModalProps> = ({
                                   {/* Placeholder while no steps revealed */}
                                   {revealed === 0 && (
                                     <p className="text-xs text-[#166534]/70 dark:text-[#4ADE80]/80 italic text-center py-2">
-                                      Press "Show Next Step" to start the
-                                      walkthrough →
+                                      Press "Show Next Step" to start the walkthrough →
                                     </p>
                                   )}
 
@@ -262,41 +305,118 @@ export const UserReviewAttemptModal: React.FC<UserReviewAttemptModalProps> = ({
                                 </div>
                               </div>
                             );
-                          })()}
+                          })()
+                        )}
+                      </div>
+                    ) : ans.questionType === "identification" || ans.questionType === "enumeration" ? (
+                      /* ── 2. Identification / Enumeration ── */
+                      <div className="space-y-2.5 text-xs pt-1">
+                        <div className="p-3 bg-white dark:bg-[#1E2D45] border border-gray-200 dark:border-[#263347] rounded-xl">
+                          <span className="font-bold text-gray-500 dark:text-[#94A3B8] block text-[11px] uppercase tracking-wide">
+                            Your Answer:
+                          </span>
+                          <p className="font-semibold text-gray-800 dark:text-[#F1F5F9] mt-0.5 whitespace-pre-line">
+                            {ans.selected || "(No answer entered)"}
+                          </p>
+                        </div>
+
+                        {!isReviewAllowed ? (
+                          <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
+                            <Lock className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span className="font-semibold">Correct Answer:</span>
+                            <span className="italic opacity-80">
+                              Hidden until review is released by instructor
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-xl space-y-1">
+                            <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                              <span>Correct Answer: {ans.correctAnswerText || ans.correct}</span>
+                            </div>
+                            {ans.explanation && (
+                              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 whitespace-pre-line pl-5 mt-1">
+                                {ans.explanation}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      /* ── All other types: standard A/B/C/D grid ── */
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                        {(["A", "B", "C", "D"] as const).map((optKey) => {
-                          const optionText =
-                            ans.options?.[optKey] || `Choice ${optKey}`;
-                          const wasSelected = ans.selected === optKey;
-                          let style =
-                            "bg-white dark:bg-[#1E2D45] border-gray-200 dark:border-[#263347] text-gray-700 dark:text-[#CBD5E1]";
-                          if (wasSelected && ans.isCorrect) {
-                            style =
-                              "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300 font-bold";
-                          } else if (wasSelected && !ans.isCorrect) {
-                            style =
-                              "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300 font-bold";
-                          }
+                      /* ── 3. Multiple Choice (or default options grid) ── */
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          {(["A", "B", "C", "D"] as const).map((optKey) => {
+                            const optionText =
+                              ans.options?.[optKey] || `Choice ${optKey}`;
+                            const wasSelected = ans.selected === optKey;
+                            const isCorrectChoice = ans.correct === optKey;
 
-                          return (
-                            <div
-                              key={optKey}
-                              className={`p-2 rounded-xl border flex items-center justify-between ${style}`}
-                            >
-                              <span className="truncate">
-                                <strong>{optKey}:</strong> {optionText}
-                              </span>
-                              {wasSelected && (
-                                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 shrink-0 ml-1">
-                                  Your Choice
+                            let style =
+                              "bg-white dark:bg-[#1E2D45] border-gray-200 dark:border-[#263347] text-gray-700 dark:text-[#CBD5E1]";
+                            let badge: React.ReactNode = null;
+
+                            if (isReviewAllowed) {
+                              // When review is allowed: reveal both what user picked and the actual correct choice
+                              if (wasSelected && ans.isCorrect) {
+                                style =
+                                  "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300 font-bold ring-1 ring-green-400/50";
+                                badge = (
+                                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-green-200 dark:bg-green-900/60 text-green-900 dark:text-green-200 shrink-0 ml-1">
+                                    Your Choice ✓
+                                  </span>
+                                );
+                              } else if (wasSelected && !ans.isCorrect) {
+                                style =
+                                  "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300 font-bold";
+                                badge = (
+                                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-red-200 dark:bg-red-900/60 text-red-900 dark:text-red-200 shrink-0 ml-1">
+                                    Your Choice ✗
+                                  </span>
+                                );
+                              } else if (!wasSelected && isCorrectChoice) {
+                                style =
+                                  "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 font-bold border-dashed";
+                                badge = (
+                                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 shrink-0 ml-1">
+                                    Correct Answer ✓
+                                  </span>
+                                );
+                              }
+                            } else {
+                              // When review is NOT allowed: only show user's choice, DO NOT reveal the correct option!
+                              if (wasSelected) {
+                                style = ans.isCorrect
+                                  ? "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300 font-bold"
+                                  : "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300 font-bold";
+                                badge = (
+                                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 shrink-0 ml-1">
+                                    Your Choice
+                                  </span>
+                                );
+                              }
+                            }
+
+                            return (
+                              <div
+                                key={optKey}
+                                className={`p-2.5 rounded-xl border flex items-center justify-between ${style}`}
+                              >
+                                <span className="truncate pr-2">
+                                  <strong>{optKey}:</strong> {optionText}
                                 </span>
-                              )}
-                            </div>
-                          );
-                        })}
+                                {badge}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {!isReviewAllowed && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 font-medium pt-1 px-1">
+                            <Lock className="w-3.5 h-3.5 shrink-0" />
+                            <span>Correct answer is hidden until released by instructor.</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -304,6 +424,7 @@ export const UserReviewAttemptModal: React.FC<UserReviewAttemptModalProps> = ({
               )}
             </div>
 
+            {/* Footer */}
             <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-[#1E2D45] shrink-0">
               <button
                 type="button"

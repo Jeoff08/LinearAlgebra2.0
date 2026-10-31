@@ -161,7 +161,8 @@ create table if not exists public.quizzes (
   topic text not null default 'Linear Algebra',
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
-  points_per_item int not null default 1
+  points_per_item int not null default 1,
+  allow_review boolean not null default false
 );
 
 -- 2. Quiz Questions (belongs to a quiz)
@@ -193,6 +194,7 @@ create table if not exists public.quiz_attempts (
 
 -- Migration safety: ensures column exists on previously created quizzes tables
 alter table public.quizzes add column if not exists points_per_item int not null default 1;
+alter table public.quizzes add column if not exists allow_review boolean not null default false;
 
 -- Enable RLS
 alter table public.quizzes enable row level security;

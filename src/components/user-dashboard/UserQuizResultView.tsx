@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, CheckCircle2, History } from "lucide-react";
+import { Sparkles, CheckCircle2, History, Lock } from "lucide-react";
 import type { StudentQuizAttemptItem } from "../../types/dashboard";
 
 interface UserQuizResultViewProps {
@@ -15,6 +15,8 @@ export const UserQuizResultView: React.FC<UserQuizResultViewProps> = ({
   onAllQuizzes,
   formatSeconds,
 }) => {
+  const isReviewAllowed = Boolean(submittedResult.allowReview);
+
   return (
     <div className="w-full max-w-[1440px] mx-auto flex flex-col gap-6 pb-24">
       {/* Celebratory Hero Banner */}
@@ -49,6 +51,12 @@ export const UserQuizResultView: React.FC<UserQuizResultViewProps> = ({
             <span className="text-xs font-semibold bg-gray-100 dark:bg-[#1E2D45] text-gray-700 dark:text-[#CBD5E1] px-3 py-1 rounded-full">
               Time: {formatSeconds(submittedResult.timeSpentSeconds)}
             </span>
+            {!isReviewAllowed && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800/40 whitespace-nowrap">
+                <Lock className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>Answers Locked by Admin</span>
+              </span>
+            )}
           </div>
         </div>
 
@@ -94,14 +102,38 @@ export const UserQuizResultView: React.FC<UserQuizResultViewProps> = ({
 
       {/* Detailed Question Review Breakdown */}
       <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-[#1E2D45] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-5">
-        <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#1E2D45]">
-          <h3 className="text-base font-bold text-[#111827] dark:text-[#F1F5F9]">
-            Question by Question Breakdown
-          </h3>
-          <span className="text-xs font-semibold text-gray-500 dark:text-[#94A3B8]">
-            {submittedResult.answers.length} Questions
-          </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-[#1E2D45]">
+          <div>
+            <h3 className="text-base font-bold text-[#111827] dark:text-[#F1F5F9]">
+              Question by Question Breakdown
+            </h3>
+            <p className="text-xs text-[#6B7280] dark:text-[#94A3B8]">
+              {submittedResult.answers.length} Questions Submitted
+            </p>
+          </div>
+          {!isReviewAllowed && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
+              <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Correct answers locked by instructor</span>
+            </span>
+          )}
         </div>
+
+        {!isReviewAllowed && (
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                Answer Key Locked by Admin
+              </h4>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
+                The administrator has not yet enabled answer review for this quiz. You can see your submitted answers and total score, but the correct answers and step-by-step solutions are hidden until the admin allows them in Quizzes History.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           {submittedResult.answers.map((ans, idx) => (
@@ -141,50 +173,84 @@ export const UserQuizResultView: React.FC<UserQuizResultViewProps> = ({
                     </p>
                   </div>
 
-                  {ans.explanation && (
-                    <div className="p-3 bg-gray-50 dark:bg-[#161F30] border border-gray-200 dark:border-[#263347] rounded-xl text-gray-600 dark:text-[#CBD5E1]">
-                      <span className="font-bold text-gray-700 dark:text-[#F1F5F9]">
-                        Solution Explanation:{" "}
-                      </span>
-                      <span className="whitespace-pre-line">
-                        {ans.explanation}
-                      </span>
+                  {!isReviewAllowed ? (
+                    <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
+                      <Lock className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>Correct solution hidden until review is allowed by instructor.</span>
                     </div>
+                  ) : (
+                    ans.explanation && (
+                      <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl text-emerald-800 dark:text-emerald-300">
+                        <span className="font-bold">
+                          Solution Explanation:{" "}
+                        </span>
+                        <span className="whitespace-pre-line">
+                          {ans.explanation}
+                        </span>
+                      </div>
+                    )
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {(["A", "B", "C", "D"] as const).map((optKey) => {
-                    const optionText =
-                      ans.options?.[optKey] || `Option ${optKey}`;
-                    const wasSelected = ans.selected === optKey;
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {(["A", "B", "C", "D"] as const).map((optKey) => {
+                      const optionText =
+                        ans.options?.[optKey] || `Option ${optKey}`;
+                      const wasSelected = ans.selected === optKey;
+                      const isCorrectChoice = ans.correct === optKey;
 
-                    let bgClass =
-                      "bg-white dark:bg-[#1E2D45] border-gray-200 dark:border-[#263347] text-gray-700 dark:text-[#CBD5E1]";
-                    if (wasSelected && ans.isCorrect) {
-                      bgClass =
-                        "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300 font-bold";
-                    } else if (wasSelected && !ans.isCorrect) {
-                      bgClass =
-                        "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300 font-bold";
-                    }
+                      let bgClass =
+                        "bg-white dark:bg-[#1E2D45] border-gray-200 dark:border-[#263347] text-gray-700 dark:text-[#CBD5E1]";
+                      let badgeText = "";
 
-                    return (
-                      <div
-                        key={optKey}
-                        className={`p-2.5 rounded-xl border flex items-center justify-between ${bgClass}`}
-                      >
-                        <span className="truncate">
-                          <strong>{optKey}:</strong> {optionText}
-                        </span>
-                        {wasSelected && (
-                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 shrink-0 ml-1">
-                            Your Choice
+                      if (isReviewAllowed) {
+                        if (wasSelected && ans.isCorrect) {
+                          bgClass =
+                            "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300 font-bold ring-1 ring-green-400/50";
+                          badgeText = "Your Choice ✓";
+                        } else if (wasSelected && !ans.isCorrect) {
+                          bgClass =
+                            "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300 font-bold";
+                          badgeText = "Your Choice ✗";
+                        } else if (!wasSelected && isCorrectChoice) {
+                          bgClass =
+                            "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 font-bold border-dashed";
+                          badgeText = "Correct Answer ✓";
+                        }
+                      } else {
+                        if (wasSelected) {
+                          bgClass = ans.isCorrect
+                            ? "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-900 dark:text-green-300 font-bold"
+                            : "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-900 dark:text-red-300 font-bold";
+                          badgeText = "Your Choice";
+                        }
+                      }
+
+                      return (
+                        <div
+                          key={optKey}
+                          className={`p-2.5 rounded-xl border flex items-center justify-between ${bgClass}`}
+                        >
+                          <span className="truncate pr-2">
+                            <strong>{optKey}:</strong> {optionText}
                           </span>
-                        )}
-                      </div>
-                    );
-                  })}
+                          {badgeText && (
+                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 shrink-0 ml-1">
+                              {badgeText}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {!isReviewAllowed && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 font-medium pt-1 px-1">
+                      <Lock className="w-3.5 h-3.5 shrink-0" />
+                      <span>Correct answer is locked until approved by the admin.</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

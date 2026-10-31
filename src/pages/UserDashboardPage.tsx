@@ -116,8 +116,11 @@ export default function UserDashboardPage() {
     if (!supabase) return;
     setIsLoadingQuizzes(true);
     try {
-      // 1. Fetch quizzes and questions
-      const { data: quizzesData, error: qError } = await supabase
+      // 1. Fetch quizzes and questions (with allow_review column if migrated)
+      let quizzesData: any = null;
+      let qError: any = null;
+
+      const resWithReview = await supabase
         .from("quizzes")
         .select(`
           id,
@@ -125,6 +128,7 @@ export default function UserDashboardPage() {
           topic,
           created_at,
           points_per_item,
+          allow_review,
           quiz_questions (
             id,
             question_index,
@@ -137,6 +141,34 @@ export default function UserDashboardPage() {
           )
         `)
         .order("created_at", { ascending: false });
+
+      if (resWithReview.error) {
+        // Fallback in case allow_review is not yet migrated in Supabase
+        const fallbackRes = await supabase
+          .from("quizzes")
+          .select(`
+            id,
+            title,
+            topic,
+            created_at,
+            points_per_item,
+            quiz_questions (
+              id,
+              question_index,
+              prompt,
+              option_a,
+              option_b,
+              option_c,
+              option_d,
+              correct_answer
+            )
+          `)
+          .order("created_at", { ascending: false });
+        quizzesData = fallbackRes.data;
+        qError = fallbackRes.error;
+      } else {
+        quizzesData = resWithReview.data;
+      }
 
       if (qError) {
         console.error("Error loading student quizzes:", qError);
@@ -168,10 +200,14 @@ export default function UserDashboardPage() {
       }
 
       // Process attempts
-      const quizMap = new Map((quizzesData || []).map((q: any) => [q.id, q]));
+      const quizMap = new Map<string, any>((quizzesData || []).map((q: any) => [q.id, q]));
       const formattedAttempts: StudentQuizAttemptItem[] = studentAttempts.map(
         (att: any) => {
           const parentQuiz = quizMap.get(att.quiz_id);
+          const isReviewAllowed = parentQuiz?.allow_review !== undefined
+            ? Boolean(parentQuiz.allow_review)
+            : localStorage.getItem(`quiz_allow_review_${att.quiz_id}`) === "true";
+
           let parsedAnswers: QuizAnswerRecord[] = [];
           try {
             const raw = JSON.parse(att.answers_json || "[]");
@@ -211,6 +247,7 @@ export default function UserDashboardPage() {
               minute: "2-digit",
             }),
             answers: parsedAnswers,
+            allowReview: isReviewAllowed,
           };
         }
       );
@@ -279,6 +316,10 @@ export default function UserDashboardPage() {
             const lastScore =
               attemptsCount > 0 ? relevantAttempts[0].score : undefined;
 
+            const isQuizReviewAllowed = q.allow_review !== undefined
+              ? Boolean(q.allow_review)
+              : localStorage.getItem(`quiz_allow_review_${q.id}`) === "true";
+
             return {
               id: q.id,
               title: q.title,
@@ -294,6 +335,7 @@ export default function UserDashboardPage() {
               bestScore,
               lastScore,
               pointsPerItem: q.points_per_item || 1,
+              allowReview: isQuizReviewAllowed,
             };
           }
         );
@@ -310,6 +352,110 @@ export default function UserDashboardPage() {
   useEffect(() => {
     fetchStudentQuizData();
   }, [user?.id]);
+
+  // Real-time listener for Admin toggling quiz review permissions
+  useEffect(() => {
+    if (!supabase) return;
+    const reviewChannel = supabase.channel("quiz-review-sync");
+    reviewChannel
+      .on("broadcast", { event: "quiz-review-toggled" }, ({ payload }) => {
+        if (payload?.quizId === "all") {
+          const newStatus = Boolean(payload.allowReview);
+          setAvailableQuizzes((prev) =>
+            prev.map((q) => ({ ...q, allowReview: newStatus }))
+          );
+          setMyAttempts((prev) =>
+            prev.map((att) => ({ ...att, allowReview: newStatus }))
+          );
+          setReviewingAttempt((prev) =>
+            prev ? { ...prev, allowReview: newStatus } : prev
+          );
+          setSubmittedResult((prev) =>
+            prev ? { ...prev, allowReview: newStatus } : prev
+          );
+        } else if (payload?.quizId) {
+          const newStatus = Boolean(payload.allowReview);
+          try {
+            localStorage.setItem(
+              `quiz_allow_review_${payload.quizId}`,
+              String(newStatus)
+            );
+          } catch {}
+          setAvailableQuizzes((prev) =>
+            prev.map((q) =>
+              q.id === payload.quizId ? { ...q, allowReview: newStatus } : q
+            )
+          );
+          setMyAttempts((prev) =>
+            prev.map((att) =>
+              att.quizId === payload.quizId
+                ? { ...att, allowReview: newStatus }
+                : att
+            )
+          );
+          setReviewingAttempt((prev) =>
+            prev && prev.quizId === payload.quizId
+              ? { ...prev, allowReview: newStatus }
+              : prev
+          );
+          setSubmittedResult((prev) =>
+            prev && prev.quizId === payload.quizId
+              ? { ...prev, allowReview: newStatus }
+              : prev
+          );
+        }
+      })
+      .subscribe();
+
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === "quiz_allow_review_all") {
+        const newStatus = e.newValue === "true";
+        setAvailableQuizzes((prev) =>
+          prev.map((q) => ({ ...q, allowReview: newStatus }))
+        );
+        setMyAttempts((prev) =>
+          prev.map((att) => ({ ...att, allowReview: newStatus }))
+        );
+        setReviewingAttempt((prev) =>
+          prev ? { ...prev, allowReview: newStatus } : prev
+        );
+        setSubmittedResult((prev) =>
+          prev ? { ...prev, allowReview: newStatus } : prev
+        );
+      } else if (e.key?.startsWith("quiz_allow_review_")) {
+        const quizId = e.key.replace("quiz_allow_review_", "");
+        const newStatus = e.newValue === "true";
+        setAvailableQuizzes((prev) =>
+          prev.map((q) =>
+            q.id === quizId ? { ...q, allowReview: newStatus } : q
+          )
+        );
+        setMyAttempts((prev) =>
+          prev.map((att) =>
+            att.quizId === quizId ? { ...att, allowReview: newStatus } : att
+          )
+        );
+        setReviewingAttempt((prev) =>
+          prev && prev.quizId === quizId
+            ? { ...prev, allowReview: newStatus }
+            : prev
+        );
+        setSubmittedResult((prev) =>
+          prev && prev.quizId === quizId
+            ? { ...prev, allowReview: newStatus }
+            : prev
+        );
+      }
+    };
+    window.addEventListener("storage", handleStorageEvent);
+
+    return () => {
+      if (supabase && reviewChannel) {
+        supabase.removeChannel(reviewChannel);
+      }
+      window.removeEventListener("storage", handleStorageEvent);
+    };
+  }, [supabase]);
 
   // Timer effect when taking quiz
   useEffect(() => {
@@ -507,6 +653,10 @@ export default function UserDashboardPage() {
         }
       }
 
+      const isReviewAllowed = activeTakingQuiz?.allowReview !== undefined
+        ? Boolean(activeTakingQuiz.allowReview)
+        : localStorage.getItem(`quiz_allow_review_${activeTakingQuiz.id}`) === "true";
+
       const newAttempt: StudentQuizAttemptItem = {
         id: attemptId,
         quizId: activeTakingQuiz.id,
@@ -525,6 +675,7 @@ export default function UserDashboardPage() {
           minute: "2-digit",
         }),
         answers: detailedAnswers,
+        allowReview: isReviewAllowed,
       };
 
       setSubmittedResult(newAttempt);

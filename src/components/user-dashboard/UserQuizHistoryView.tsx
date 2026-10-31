@@ -1,5 +1,5 @@
 import React from "react";
-import { History } from "lucide-react";
+import { History, Lock, CheckCircle2, Eye } from "lucide-react";
 import type { StudentQuizAttemptItem } from "../../types/dashboard";
 
 interface UserQuizHistoryViewProps {
@@ -37,16 +37,17 @@ export const UserQuizHistoryView: React.FC<UserQuizHistoryViewProps> = ({
                 Your Quiz Attempts History
               </h2>
               <p className="text-xs sm:text-sm text-[#6B7280] dark:text-slate-400 mt-1">
-                Review all previous quiz submissions, grading details, and track
-                your performance over time.
+                Review your previous quiz submissions. Correct answers and step-by-step solutions are visible when released by the admin.
               </p>
             </div>
           </div>
 
-          <span className="inline-flex items-center rounded-full bg-[#166534]/10 dark:bg-emerald-950/40 border border-[#166534]/20 dark:border-emerald-800/40 px-3.5 py-1 text-xs font-bold text-[#166534] dark:text-emerald-400">
-            {myAttempts.length} Total Submission
-            {myAttempts.length === 1 ? "" : "s"}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center rounded-full bg-[#166534]/10 dark:bg-emerald-950/40 border border-[#166534]/20 dark:border-emerald-800/40 px-3.5 py-1 text-xs font-bold text-[#166534] dark:text-emerald-400">
+              {myAttempts.length} Total Submission
+              {myAttempts.length === 1 ? "" : "s"}
+            </span>
+          </div>
         </div>
 
         {/* Summary Stat Strip */}
@@ -116,6 +117,7 @@ export const UserQuizHistoryView: React.FC<UserQuizHistoryViewProps> = ({
                   <th className="pb-3 px-3">Points</th>
                   <th className="pb-3 px-3">Time</th>
                   <th className="pb-3 px-3">Submitted</th>
+                  <th className="pb-3 px-3 text-center">Review Status</th>
                   <th className="pb-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -125,30 +127,59 @@ export const UserQuizHistoryView: React.FC<UserQuizHistoryViewProps> = ({
                     key={att.id}
                     className="hover:bg-[#F9FAFB] dark:hover:bg-slate-800/40 transition"
                   >
-                    <td className="py-3.5 px-3 font-semibold text-[#111827] dark:text-slate-100">
+                    <td className="py-3.5 px-3 font-semibold text-[#111827] dark:text-slate-100 align-middle">
                       {att.quizTitle}
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-300">
+                    <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-300 align-middle">
                       <span className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-2 py-0.5 rounded-md font-medium">
                         {att.topic}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-xs font-bold text-[#166534] dark:text-emerald-400">
+                    <td className="py-3.5 px-3 text-xs font-bold text-[#166534] dark:text-emerald-400 align-middle">
                       {att.score} / {att.totalQuestions} pts
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400">
+                    <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400 align-middle">
                       {formatSeconds(att.timeSpentSeconds)}
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400">
+                    <td className="py-3.5 px-3 text-xs text-[#6B7280] dark:text-slate-400 align-middle">
                       {att.submittedAt}
                     </td>
-                    <td className="py-3.5 px-3 text-right">
+                    <td className="py-3.5 px-3 text-xs text-center align-middle">
+                      <div className="flex items-center justify-center">
+                        {att.allowReview ? (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>Answers Released</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 whitespace-nowrap">
+                            <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                            <span>Answers Locked</span>
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-3 text-right align-middle">
                       <button
                         type="button"
                         onClick={() => onReviewAttempt(att)}
-                        className="px-3 py-1 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 text-xs font-bold rounded-lg transition cursor-pointer"
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                          att.allowReview
+                            ? "bg-[#166534] hover:bg-[#14532d] text-white shadow-xs"
+                            : "bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200"
+                        }`}
                       >
-                        Review
+                        {att.allowReview ? (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Review Answers</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                            <span>Review (Locked)</span>
+                          </>
+                        )}
                       </button>
                     </td>
                   </tr>

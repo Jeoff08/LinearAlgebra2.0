@@ -43,6 +43,7 @@ export interface StudentAvailableQuiz {
   bestScore?: number;
   lastScore?: number;
   pointsPerItem?: number;
+  allowReview?: boolean;
 }
 
 export interface QuizItem {
@@ -56,6 +57,7 @@ export interface QuizItem {
   createdAt: string;
   questionType?: QuizQuestionType;
   pointsPerItem: number;
+  allowReview?: boolean;
 }
 
 export interface QuizAnswerRecord {
@@ -87,6 +89,7 @@ export interface StudentQuizAttemptItem {
   timeSpentSeconds: number;
   submittedAt: string;
   answers: QuizAnswerRecord[];
+  allowReview?: boolean;
 }
 
 export interface StudentQuizRecord {
@@ -154,6 +157,7 @@ export interface StudentSubmissionItem {
   timeSpentSeconds: number;
   submittedAt: string;
   answers: any[];
+  allowReview?: boolean;
 }
 
 export interface CalculatorCardMeta {
@@ -166,6 +170,7 @@ export interface CalculatorCardMeta {
   badge: string;
   type: "linear" | "calculus";
   calculusDefId?: string;
+  image?: string;
 }
 
 export interface UnifiedTopicItem {

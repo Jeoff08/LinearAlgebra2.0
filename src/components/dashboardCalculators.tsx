@@ -49,6 +49,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "A + B, \\; A - B, \\; A \\times B, \\; kA",
+    image: "src/assets_2.0/2.png",
     description:
       "Perform addition, subtraction, matrix multiplication, and scalar scaling on matrices.",
     badge: "Operations",
@@ -60,6 +61,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "\\det(A) = |A|",
+    image: "src/assets_2.0/3.png",
     description:
       "Computes determinants via Gaussian elimination and cofactor expansion with full steps.",
     badge: "Core",
@@ -71,6 +73,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "A^{-1} = \\frac{1}{\\det(A)} \\text{adj}(A)",
+    image: "src/assets_2.0/4.png",
     description:
       "Calculates the inverse of square invertible matrices using Gauss-Jordan elimination.",
     badge: "Essential",
@@ -83,6 +86,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     categoryLabel: "Linear Algebra",
     formula:
       "A\\mathbf{v} = \\lambda\\mathbf{v}, \\; \\det(A - \\lambda I) = 0",
+    image: "src/assets_2.0/5.png",
     description:
       "Finds characteristic polynomials, roots, eigenvalues, and eigenvector basis vectors.",
     badge: "Advanced",
@@ -94,6 +98,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "A\\mathbf{x} = \\mathbf{b}",
+    image: "src/assets_2.0/1.png",
     description:
       "Solves systems of linear equations using Gaussian elimination, Gauss-Jordan, and Cramer's rule.",
     badge: "Solvers",
@@ -105,6 +110,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "\\mathbf{u} \\cdot \\mathbf{v} = \\sum u_i v_i",
+    image: "src/assets_2.0/6.png",
     description:
       "Calculates vector dot products, vector magnitudes, cosine similarity, angle, and orthogonality.",
     badge: "Vectors",
@@ -116,6 +122,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "\\mathbf{u} \\times \\mathbf{v}",
+    image: "src/assets_2.0/7.png",
     description:
       "Computes 3D cross products, perpendicular normal vectors, and area of parallelograms in R³.",
     badge: "Vectors",
@@ -128,6 +135,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     categoryLabel: "Linear Algebra",
     formula:
       "\\text{proj}_{\\mathbf{u}}(\\mathbf{v}) = \\frac{\\mathbf{u}\\cdot\\mathbf{v}}{\\|\\mathbf{u}\\|^2}\\mathbf{u}",
+    image: "src/assets_2.0/8.png",
     description:
       "Finds orthogonal projection of vectors onto lines/subspaces and orthogonal complements.",
     badge: "Vectors",
@@ -139,6 +147,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "\\|\\mathbf{v}\\|_2 = \\sqrt{v_1^2 + \\dots + v_n^2}",
+    image: "src/assets_2.0/9.png",
     description:
       "Evaluates vector addition, scalar multiplication, Euclidean norm, Manhattan norm, and unit vectors.",
     badge: "Vectors",
@@ -150,6 +159,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "\\text{rank}(A) + \\text{nullity}(A) = n",
+    image: "src/assets_2.0/10.png",
     description:
       "Computes row echelon form, pivot columns, row space basis, null space basis, and dimension.",
     badge: "Spaces",
@@ -161,6 +171,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "c_1\\mathbf{v}_1 + \\dots + c_k\\mathbf{v}_k = \\mathbf{0}",
+    image: "src/assets_2.0/11.png",
     description:
       "Tests sets of vectors for linear independence and determines if non-trivial combinations exist.",
     badge: "Spaces",
@@ -172,6 +183,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "\\mathbf{w} = c_1\\mathbf{v}_1 + \\dots + c_k\\mathbf{v}_k",
+    image: "src/assets_2.0/12.png",
     description:
       "Determines if a target vector can be expressed as a linear combination of a set of vectors.",
     badge: "Spaces",
@@ -183,6 +195,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "\\text{span}(\\mathcal{B}) = V, \\quad |\\mathcal{B}| = \\dim(V)",
+    image: "src/assets_2.0/13.png",
     description:
       "Finds minimal spanning sets, basis for column spaces, and basis for row spaces.",
     badge: "Spaces",
@@ -194,6 +207,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "\\text{span}\\{\\mathbf{v}_1, \\dots, \\mathbf{v}_k\\}",
+    image: "src/assets_2.0/14.png",
     description:
       "Calculates the subspace spanned by vectors, detects redundant vectors, and finds spanning dimension.",
     badge: "Spaces",
@@ -205,6 +219,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "A = LU, \\quad PA = LU",
+    image: "src/assets_2.0/15.png",
     description:
       "Decomposes a matrix into lower and upper triangular factors with partial pivoting permutations.",
     badge: "Decomposition",
@@ -216,6 +231,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "A = QR",
+    image: "src/assets_2.0/16.png",
     description:
       "Gram-Schmidt orthonormalization producing orthogonal matrix Q and upper triangular matrix R.",
     badge: "Decomposition",
@@ -227,6 +243,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "A = U \\Sigma V^T",
+    image: "src/assets_2.0/17.png",
     description:
       "Computes singular values, left and right singular vectors for dimensionality reduction and pseudo-inverses.",
     badge: "Decomposition",
@@ -238,6 +255,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "A = PDP^{-1}",
+    image: "src/assets_2.0/18.png",
     description:
       "Finds modal matrix P and diagonal matrix D containing eigenvalues for matrix powers Aᵏ.",
     badge: "Advanced",
@@ -249,6 +267,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "(A^T)_{ij} = A_{ji}, \\quad A^T = A",
+    image: "src/assets_2.0/19.png",
     description:
       "Computes matrix transpose, trace, tests for symmetry, skew-symmetry, and orthogonality.",
     badge: "Operations",
@@ -260,6 +279,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "A^T A \\mathbf{\\hat{x}} = A^T \\mathbf{b}",
+    image: "src/assets_2.0/20.png",
     description:
       "Finds optimal least-squares approximate solution for inconsistent overdetermined linear systems.",
     badge: "Advanced",
@@ -271,6 +291,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "T(\\mathbf{x}) = A\\mathbf{x}",
+    image: "src/assets_2.0/21.png",
     description:
       "Applies 2D and 3D linear mappings, rotations, reflections, dilations, and shears.",
     badge: "Transformations",
@@ -282,6 +303,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "Q(\\mathbf{x}) = \\mathbf{x}^T A \\mathbf{x}",
+    image: "src/assets_2.0/22.png",
     description:
       "Classifies symmetric quadratic forms as positive definite, negative definite, or indefinite via eigenvalues.",
     badge: "Advanced",
@@ -293,6 +315,7 @@ export const LINEAR_ALGEBRA_CALCULATORS: CalculatorCardMeta[] = [
     category: "linear-algebra",
     categoryLabel: "Linear Algebra",
     formula: "f(A, B, c)",
+    image: "src/assets_2.0/23.png",
     description:
       "All-in-one matrix solver suite for simultaneous matrix calculations and multi-step workflows.",
     badge: "Suite",
@@ -312,6 +335,7 @@ export function buildAllCombinedCalculators(): CalculatorCardMeta[] {
         category: isCalc1 ? "calculus-1" : "calculus-2",
         categoryLabel: def.category,
         formula: def.example,
+        image: def.image,
         description: def.description,
         badge: def.badge || (isCalc1 ? "Calculus 1" : "Calculus 2"),
         type: "calculus",
