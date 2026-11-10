@@ -44,12 +44,20 @@ export interface StudentAvailableQuiz {
   lastScore?: number;
   pointsPerItem?: number;
   allowReview?: boolean;
+  subjectId?: string;
+  assignedSubject?: string;
+  designatedSubject?: string;
+  quizNumber?: number;
+  period?: "prelim" | "midterm" | "semi-final" | "final";
 }
 
 export interface QuizItem {
   id: string;
   title: string;
   topic: string;
+  subject?: string;
+  quizNumber?: number;
+  period?: "prelim" | "midterm" | "semi-final" | "final";
   questionsCount: number;
   questions: QuizQuestionDraft[];
   attempts: number;
@@ -124,6 +132,7 @@ export interface StudentItem {
   id: string;
   name: string;
   email: string;
+  studentId?: string;
   block?: string;
   avatarUrl?: string;
   quizzesTaken: number;

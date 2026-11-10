@@ -2,19 +2,66 @@ import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { UserPlus, Lock, Mail, User, Eye, EyeOff, ArrowLeft, LayoutGrid } from "lucide-react";
+import { UserPlus, Lock, Mail, User, Eye, EyeOff, ArrowLeft, LayoutGrid, BookOpen, Hash } from "lucide-react";
 import imageLogo from "../assets/image logo.png";
 
 export default function RegisterPage() {
   const { register, isAuthenticated, loading, user } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [block, setBlock] = useState("");
+  const [subjectCode, setSubjectCode] = useState("");
+  const [offerNumber, setOfferNumber] = useState("");
+  const [availableSubjects, setAvailableSubjects] = useState<
+    Array<{ subjectCode: string; offerNumber: string; subjectName: string }>
+  >([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Load available subjects from grading system or defaults for auto-complete
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("mathworkspace_grading_data");
+      if (raw) {
+        const records = JSON.parse(raw);
+        if (Array.isArray(records) && records.length > 0) {
+          const list = records
+            .filter((r: any) => r.subject?.subjectCode)
+            .map((r: any) => ({
+              subjectCode: r.subject.subjectCode,
+              offerNumber: r.subject.offerNumber || "",
+              subjectName: r.subject.subjectName || "",
+            }));
+          if (list.length > 0) {
+            setAvailableSubjects(list);
+            return;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    setAvailableSubjects([
+      { subjectCode: "MATH 101", offerNumber: "80062", subjectName: "Calculus with Analytic Geometry" },
+      { subjectCode: "MATH 102", offerNumber: "80063", subjectName: "Integral Calculus" },
+      { subjectCode: "MATH 103", offerNumber: "80132", subjectName: "Linear Algebra" },
+      { subjectCode: "GEC 4", offerNumber: "50371", subjectName: "Mathematics in the Modern World" },
+    ]);
+  }, []);
+
+  const handleSubjectCodeChange = (val: string) => {
+    setSubjectCode(val);
+    const matched = availableSubjects.find(
+      (s) => s.subjectCode.toLowerCase().trim() === val.toLowerCase().trim()
+    );
+    if (matched && matched.offerNumber && !offerNumber) {
+      setOfferNumber(matched.offerNumber);
+    }
+  };
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -33,7 +80,15 @@ export default function RegisterPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const err = await register(name, email, password, block);
+    const err = await register(
+      name,
+      email,
+      password,
+      block,
+      subjectCode,
+      offerNumber,
+      studentId
+    );
     setSubmitting(false);
     if (err) {
       setError(err);
@@ -48,7 +103,7 @@ export default function RegisterPage() {
 
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#201D1D] overflow-x-hidden font-sans">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#201D1D] overflow-x-hidden font-sans animate-in fade-in duration-300">
       {/* Subtle Floating Back to Home Button */}
       <Link
         to="/"
@@ -123,24 +178,108 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Block Field */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="block"
-                className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
-              >
-                <LayoutGrid className="w-3.5 h-3.5 text-[#16a34a]" />
-                <span>Block / Section</span>
-              </label>
-              <input
-                id="block"
-                type="text"
-                value={block}
-                onChange={(e) => setBlock(e.target.value)}
-                placeholder="e.g. A, B, C..."
-                required
-                className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
-              />
+            {/* Student ID Number & Block Fields (2 Columns) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Student ID Number Field */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="studentId"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
+                >
+                  <Hash className="w-3.5 h-3.5 text-[#16a34a]" />
+                  <span>ID Number</span>
+                </label>
+                <input
+                  id="studentId"
+                  type="text"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder="e.g. 2026-02182"
+                  required
+                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                />
+              </div>
+
+              {/* Block Field */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="block"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5 text-[#16a34a]" />
+                  <span>Block / Section</span>
+                </label>
+                <input
+                  id="block"
+                  type="text"
+                  value={block}
+                  onChange={(e) => setBlock(e.target.value)}
+                  placeholder="e.g. BSCS 1-A"
+                  required
+                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                />
+              </div>
+            </div>
+
+            {/* Subject Code & Offer Number Fields (2 Columns) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Subject Code Field */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="subjectCode"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-[#16a34a]" />
+                  <span>Subject Code</span>
+                </label>
+                <input
+                  id="subjectCode"
+                  list="subject-code-suggestions"
+                  type="text"
+                  value={subjectCode}
+                  onChange={(e) => handleSubjectCodeChange(e.target.value)}
+                  placeholder="e.g. MATH 101"
+                  required
+                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                />
+                <datalist id="subject-code-suggestions">
+                  {availableSubjects.map((s, idx) => (
+                    <option key={idx} value={s.subjectCode}>
+                      {s.subjectName ? `${s.subjectCode} — ${s.subjectName}` : s.subjectCode}
+                    </option>
+                  ))}
+                </datalist>
+              </div>
+
+              {/* Offer Number Field */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="offerNumber"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
+                >
+                  <Hash className="w-3.5 h-3.5 text-[#16a34a]" />
+                  <span>Offer Number</span>
+                </label>
+                <input
+                  id="offerNumber"
+                  list="offer-number-suggestions"
+                  type="text"
+                  value={offerNumber}
+                  onChange={(e) => setOfferNumber(e.target.value)}
+                  placeholder="e.g. 80062"
+                  required
+                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                />
+                <datalist id="offer-number-suggestions">
+                  {availableSubjects
+                    .filter((s) => s.offerNumber)
+                    .map((s, idx) => (
+                      <option key={idx} value={s.offerNumber}>
+                        {s.subjectCode ? `${s.offerNumber} (${s.subjectCode})` : s.offerNumber}
+                      </option>
+                    ))}
+                </datalist>
+              </div>
             </div>
 
             {/* Email Address Field */}

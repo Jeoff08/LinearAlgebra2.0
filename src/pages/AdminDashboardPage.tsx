@@ -43,6 +43,7 @@ import { AdminOverviewView } from "../components/admin-dashboard/AdminOverviewVi
 import { AdminStudentOverviewView } from "../components/admin-dashboard/AdminStudentOverviewView";
 import { AdminStudentQuizzesView } from "../components/admin-dashboard/AdminStudentQuizzesView";
 import { AdminAddQuizView } from "../components/admin-dashboard/AdminAddQuizView";
+import { AdminPublishedQuizzesView } from "../components/admin-dashboard/AdminPublishedQuizzesView";
 import { AdminQuizResultsView } from "../components/admin-dashboard/AdminQuizResultsView";
 import { AdminHistoryQuizzesView } from "../components/admin-dashboard/AdminHistoryQuizzesView";
 import { AdminViewStudentsView } from "../components/admin-dashboard/AdminViewStudentsView";
@@ -51,6 +52,8 @@ import { AdminMoveBlockModal } from "../components/admin-dashboard/AdminMoveBloc
 import { AdminReviewSubmissionModal } from "../components/admin-dashboard/AdminReviewSubmissionModal";
 import { CalculatorsView } from "../components/dashboard/CalculatorsView";
 import { TopicsView } from "../components/dashboard/TopicsView";
+import { GradingManagementView } from "../components/admin-dashboard/GradingManagementView";
+// useGradingData is only used inside GradingManagementView — NOT here
 
 function createEmptyQuestions(
   count: number,
@@ -340,10 +343,53 @@ export default function AdminDashboardPage() {
     | "calculators"
     | "topics"
     | "add-quiz"
+    | "published-quizzes"
     | "quiz-results"
     | "history-quizzes"
     | "view-students"
+    | "grading"
   >("dashboard");
+
+  // Lightweight read-only subject list from localStorage (no heavy hook here)
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+  const [selectedGradingPeriod, setSelectedGradingPeriod] = useState<"prelim" | "midterm" | "semi-final" | "final">("prelim");
+
+  const availableSubjects = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("mathworkspace_grading_data");
+      let records: any[] = [];
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) records = parsed;
+      }
+      if (records.length === 0) {
+        records = [
+          { subject: { id: "math-101", subjectCode: "MATH 101", offerNumber: "80062", subjectName: "Calculus with Analytic Geometry" } },
+          { subject: { id: "math-102", subjectCode: "MATH 102", offerNumber: "80063", subjectName: "Integral Calculus" } },
+          { subject: { id: "math-103", subjectCode: "MATH 103", offerNumber: "80064", subjectName: "Linear Algebra" } },
+        ];
+      } else {
+        if (!records.some((r) => r.subject?.subjectCode?.toLowerCase().includes("102"))) {
+          records.push({
+            subject: { id: "math-102", subjectCode: "MATH 102", offerNumber: "80063", subjectName: "Integral Calculus" }
+          });
+        }
+        if (!records.some((r) => r.subject?.subjectCode?.toLowerCase().includes("103"))) {
+          records.push({
+            subject: { id: "math-103", subjectCode: "MATH 103", offerNumber: "80064", subjectName: "Linear Algebra" }
+          });
+        }
+      }
+      return records.map((r: any) => ({
+        id: r.subject?.id || "",
+        subjectCode: r.subject?.subjectCode || "",
+        offerNumber: r.subject?.offerNumber || "",
+        subjectName: r.subject?.subjectName || "",
+      })).filter((s: any) => s.id);
+    } catch {
+      return [];
+    }
+  }, []);
 
   // Student Overview States (Learner View Mode)
   const [isStudentViewMode, setIsStudentViewMode] = useState(false);
@@ -900,6 +946,7 @@ export default function AdminDashboardPage() {
           created_at,
           points_per_item,
           allow_review,
+          subject_id,
           quiz_questions (
             id,
             question_index,
@@ -914,7 +961,7 @@ export default function AdminDashboardPage() {
         .order("created_at", { ascending: false });
 
       if (resWithReview.error) {
-        // Fallback if column not yet migrated in Supabase
+        // Fallback if subject_id or allow_review column not yet migrated in Supabase
         const fallbackRes = await supabase
           .from("quizzes")
           .select(`
@@ -967,7 +1014,7 @@ export default function AdminDashboardPage() {
       // 3. Fetch student profiles (all registered users)
       const { data: profilesData, error: pError } = await supabase
         .from("profiles")
-        .select("id, name, email, block, avatar_url, created_at, role")
+        .select("id, name, email, block, avatar_url, created_at, role, student_id, id_number")
         .order("created_at", { ascending: false });
 
       if (pError) {
@@ -1039,10 +1086,15 @@ export default function AdminDashboardPage() {
             ? Boolean(q.allow_review)
             : localStorage.getItem(`quiz_allow_review_${q.id}`) === "true";
 
+          const assignedSubject = q.subject_id || localStorage.getItem(`quiz_subject_${q.id}`) || undefined;
+          const assignedPeriod = (q.period || localStorage.getItem(`quiz_period_${q.id}`) || "prelim") as "prelim" | "midterm" | "semi-final" | "final";
+
           return {
             id: q.id,
             title: q.title,
             topic: q.topic,
+            subject: assignedSubject,
+            period: assignedPeriod,
             questionsCount: qDrafts.length,
             questions: qDrafts,
             attempts: attemptsCount,
@@ -1055,12 +1107,74 @@ export default function AdminDashboardPage() {
             questionType: primaryType,
             pointsPerItem: ppi,
             allowReview: isReviewAllowed,
-          };
+            _rawCreatedAt: q.created_at,
+          } as QuizItem & { _rawCreatedAt: string };
         });
-        setQuizzes(formatted);
+
+        // ── Compute quizNumber per subject (chronological order) ──
+        // Build a lookup from quiz ID → subject code
+        const resolveSubjectCode = (quiz: typeof formatted[number]): string | null => {
+          const subjectId = quiz.subject;
+          if (!subjectId) return null;
+
+          // Check if stored subject code exists in localStorage
+          const storedCode = localStorage.getItem(`quiz_subject_code_${quiz.id}`);
+          if (storedCode) return storedCode.toUpperCase().trim();
+
+          // Try to extract from topic e.g. "Linear Algebra [MATH 103]"
+          const bracketMatch = quiz.topic?.match(/\[([^\]]+)\]/);
+          if (bracketMatch) return bracketMatch[1].toUpperCase().trim();
+
+          // Match against availableSubjects by id
+          const matchedSub = availableSubjects.find(
+            (s) =>
+              s.id === subjectId ||
+              s.subjectCode.toLowerCase() === subjectId.toLowerCase() ||
+              `${s.subjectCode} - ${s.offerNumber}`.toLowerCase() === subjectId.toLowerCase()
+          );
+          if (matchedSub) return matchedSub.subjectCode;
+
+          return null;
+        };
+
+        // Sort by created_at ascending for numbering
+        const sortedByDate = [...formatted].sort((a, b) => {
+          const rawA = (a as any)._rawCreatedAt || "";
+          const rawB = (b as any)._rawCreatedAt || "";
+          return new Date(rawA).getTime() - new Date(rawB).getTime();
+        });
+
+        // Assign quiz numbers per subject AND per period (e.g. MATH 101 Midterm starts at Quiz 1)
+        const subjectPeriodCounters: Record<string, number> = {};
+        const quizNumberMap: Record<string, { quizNumber: number; subjectCode: string }> = {};
+
+        sortedByDate.forEach((quiz) => {
+          const subjectCode = resolveSubjectCode(quiz);
+          if (subjectCode) {
+            const period = quiz.period || "prelim";
+            const key = `${subjectCode.toUpperCase()}__${period}`;
+            if (!subjectPeriodCounters[key]) subjectPeriodCounters[key] = 0;
+            subjectPeriodCounters[key] += 1;
+            quizNumberMap[quiz.id] = { quizNumber: subjectPeriodCounters[key], subjectCode: subjectCode.toUpperCase() };
+            // Store in localStorage for grading slot resolution
+            localStorage.setItem(`quiz_number_${quiz.id}`, String(subjectPeriodCounters[key]));
+          }
+        });
+
+        // Apply quizNumber back to the formatted array
+        const numberedFormatted = formatted.map((quiz) => {
+          const mapping = quizNumberMap[quiz.id];
+          if (mapping) {
+            return { ...quiz, quizNumber: mapping.quizNumber };
+          }
+          return quiz;
+        });
+
+        setQuizzes(numberedFormatted);
       }
 
       // Format student items (exclude admins)
+      let studentList: StudentItem[] = [];
       if (profilesData) {
         const nonAdmins = profilesData.filter(
           (prof: any) =>
@@ -1068,7 +1182,7 @@ export default function AdminDashboardPage() {
             prof.email?.toLowerCase().trim() !== "admin@gmail.com",
         );
 
-        const studentList: StudentItem[] = nonAdmins.map((prof: any) => {
+        studentList = nonAdmins.map((prof: any) => {
           const userAttempts = (attemptsData || []).filter(
             (a: any) => a.user_id === prof.id,
           );
@@ -1090,6 +1204,7 @@ export default function AdminDashboardPage() {
             id: prof.id,
             name: prof.name || prof.email?.split("@")[0] || "Student",
             email: prof.email || "No email",
+            studentId: ((prof as any).student_id || (prof as any).id_number || "").trim(),
             block: prof.block || "",
             avatarUrl: prof.avatar_url || "",
             quizzesTaken: userAttempts.length,
@@ -1109,7 +1224,208 @@ export default function AdminDashboardPage() {
               : "Recent",
           };
         });
-        setStudents(studentList);
+      }
+
+      // Merge students from localStorage grading data (e.g. Charme or students enrolled locally)
+      try {
+        const rawGrading = localStorage.getItem("mathworkspace_grading_data");
+        if (rawGrading) {
+          const gradingRecords = JSON.parse(rawGrading);
+          if (Array.isArray(gradingRecords)) {
+            gradingRecords.forEach((rec: any) => {
+              if (Array.isArray(rec.students)) {
+                rec.students.forEach((st: any) => {
+                  const sName = (st.fullName || "").trim();
+                  if (!sName) return;
+                  const alreadyExists = studentList.some(
+                    (existing) =>
+                      existing.id === st.id ||
+                      existing.name.toLowerCase().trim() === sName.toLowerCase() ||
+                      (st.studentId && existing.studentId && existing.studentId.toLowerCase() === st.studentId.toLowerCase())
+                  );
+                  if (!alreadyExists) {
+                    studentList.push({
+                      id: st.id || `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                      name: sName,
+                      email: st.email || `${sName.toLowerCase().replace(/\\s+/g, '')}@student.edu`,
+                      studentId: st.studentId || "2026-0000",
+                      block: st.block || "Block A",
+                      avatarUrl: "",
+                      quizzesTaken: 0,
+                      averageScore: 0,
+                      lastActive: "Recent",
+                      joinedDate: "Recent",
+                    });
+                  }
+                });
+              }
+            });
+          }
+        }
+      } catch (mergeErr) {
+        console.warn("Could not merge local grading students into directory:", mergeErr);
+      }
+
+      setStudents(studentList);
+
+      if (profilesData) {
+        const nonAdmins = profilesData.filter(
+          (prof: any) =>
+            prof.role !== "admin" &&
+            prof.email?.toLowerCase().trim() !== "admin@gmail.com",
+        );
+
+        // Sync registered student IDs and enrollments with local grading records
+        try {
+          const rawGrading = localStorage.getItem("mathworkspace_grading_data");
+          if (rawGrading) {
+            const gradingRecords = JSON.parse(rawGrading);
+            let updatedAny = false;
+            if (Array.isArray(gradingRecords)) {
+              gradingRecords.forEach((rec: any) => {
+                if (!Array.isArray(rec.students)) rec.students = [];
+                const subCode = (rec.subject?.subjectCode || "").toLowerCase().trim();
+                const subDigits = subCode.match(/\d+/)?.[0];
+
+                // Remove students from rec if they belong to another subject (e.g. Jeoff Montebon in MATH 101)
+                const initLen = rec.students.length;
+                rec.students = rec.students.filter((st: any) => {
+                  const nameLower = (st.fullName || "").toLowerCase();
+                  if (subDigits === "101") {
+                    if (nameLower.includes("jeoff") || nameLower.includes("montebon")) return false;
+                  }
+                  const matchedProfile = nonAdmins.find(
+                    (p: any) =>
+                      p.id === st.id ||
+                      (p.name && p.name.toLowerCase().trim() === st.fullName?.toLowerCase().trim())
+                  );
+                  if (matchedProfile) {
+                    const pDigits = ((matchedProfile as any).subject_code || "").match(/\d+/)?.[0];
+                    if (pDigits && subDigits && pDigits !== subDigits) return false;
+                  }
+                  return true;
+                });
+                if (rec.students.length !== initLen) {
+                  rec.students.forEach((st: any, i: number) => { st.studentNumber = String(i + 1); });
+                  if (Array.isArray(rec.periods?.prelim?.scores)) {
+                    const validIds = new Set(rec.students.map((s: any) => s.id));
+                    rec.periods.prelim.scores = rec.periods.prelim.scores.filter((s: any) => validIds.has(s.studentId));
+                  }
+                  updatedAny = true;
+                }
+
+                nonAdmins.forEach((p: any) => {
+                  const pSub = ((p as any).subject_code || "").toLowerCase().trim();
+                  const pOffer = ((p as any).offer_number || "").toLowerCase().trim();
+
+                  let belongs = false;
+                  if (subDigits && pSub.includes(subDigits)) belongs = true;
+                  else if (pSub && pSub === subCode) belongs = true;
+                  else if (pOffer && pOffer === (rec.subject?.offerNumber || "").toLowerCase().trim()) belongs = true;
+
+                  if (belongs) {
+                    const profIdNumber = ((p as any).student_id || (p as any).id_number || `2026-${p.id.slice(0, 5)}`).toUpperCase().trim();
+                    const profName = p.name || "Student";
+                    const existing = rec.students.find(
+                      (st: any) =>
+                        st.id === p.id ||
+                        st.studentId === profIdNumber ||
+                        st.fullName?.toLowerCase().trim() === profName.toLowerCase().trim()
+                    );
+                    if (existing) {
+                      if (existing.studentId !== profIdNumber || existing.fullName !== profName) {
+                        existing.studentId = profIdNumber;
+                        existing.fullName = profName;
+                        updatedAny = true;
+                      }
+                    } else {
+                      rec.students.push({
+                        id: p.id,
+                        studentNumber: String(rec.students.length + 1),
+                        studentId: profIdNumber,
+                        fullName: profName,
+                      });
+                      updatedAny = true;
+                    }
+                  }
+                });
+
+                // Clean up duplicate or ghost scores across all periods (prelim, midterm, semi-final, final)
+                (Object.keys(rec.periods || {}) as ("prelim" | "midterm" | "semi-final" | "final")[]).forEach((pKey) => {
+                  const periodData = rec.periods?.[pKey];
+                  if (periodData && Array.isArray(periodData.quizActivities) && Array.isArray(periodData.scores)) {
+                    const q1 = periodData.quizActivities[0];
+                    if (q1) {
+                      rec.students.forEach((st: any) => {
+                        const s1 = periodData.scores.find((s: any) => s.studentId === st.id && s.activityId === q1.id);
+                        periodData.quizActivities.forEach((act: any, aIdx: number) => {
+                          if (aIdx > 0) {
+                            const sOther = periodData.scores.find((s: any) => s.studentId === st.id && s.activityId === act.id);
+                            if (sOther && s1 && sOther.score !== null && s1.score === sOther.score) {
+                              periodData.scores = periodData.scores.filter((s: any) => !(s.studentId === st.id && s.activityId === act.id));
+                              act.maxScore = 0;
+                              updatedAny = true;
+                            }
+                          }
+                        });
+                      });
+                    }
+
+                    // Reconcile any quizzes accidentally placed in Quiz 10 instead of the incremental slot (e.g. Quiz 4)
+                    const qActs = periodData.quizActivities;
+                    if (qActs.length === 10) {
+                      const lastAct = qActs[9]; // Quiz 10
+                      const lastHasScore = periodData.scores.some((s: any) => s.activityId === lastAct.id && s.score !== null);
+                      if (lastAct && (lastAct.maxScore > 0 || lastHasScore)) {
+                        const firstEmptyIdx = qActs.findIndex((act: any, idx: number) => {
+                          if (idx >= 9) return false;
+                          const hasScore = periodData.scores.some((s: any) => s.activityId === act.id && s.score !== null);
+                          return act.maxScore === 0 && !hasScore;
+                        });
+
+                        if (firstEmptyIdx >= 0) {
+                          const targetAct = qActs[firstEmptyIdx];
+                          targetAct.maxScore = lastAct.maxScore;
+                          lastAct.maxScore = 0;
+
+                          periodData.scores.forEach((s: any) => {
+                            if (s.activityId === lastAct.id) {
+                              s.activityId = targetAct.id;
+                            }
+                          });
+
+                          updatedAny = true;
+                        }
+                      }
+                    }
+
+                    // Auto-fix: ensure any quiz with a student score (even if score is 0) has a non-zero maxScore
+                    if (Array.isArray(periodData.quizActivities) && Array.isArray(periodData.scores)) {
+                      periodData.quizActivities.forEach((q: any) => {
+                        const activityScores = periodData.scores.filter((s: any) => s.activityId === q.id && s.score !== null);
+                        const hasAnyScoreEntry = activityScores.length > 0;
+                        const maxStudentScore = Math.max(
+                          0,
+                          ...activityScores.map((s: any) => Number(s.score || 0))
+                        );
+                        if (hasAnyScoreEntry && (q.maxScore === 0 || q.maxScore < maxStudentScore)) {
+                          q.maxScore = Math.max(maxStudentScore, 10);
+                          updatedAny = true;
+                        }
+                      });
+                    }
+                  }
+                });
+              });
+              if (updatedAny) {
+                localStorage.setItem("mathworkspace_grading_data", JSON.stringify(gradingRecords));
+                window.dispatchEvent(new Event("storage"));
+              }
+            }
+          }
+        } catch (syncErr) {
+          console.warn("Could not sync grading records with profiles in admin:", syncErr);
+        }
       }
 
       // Format complete student submissions & activity items
@@ -1226,7 +1542,9 @@ export default function AdminDashboardPage() {
     } else if (
       navKey === "dashboard" ||
       navKey === "add-quiz" ||
-      navKey === "view-students"
+      navKey === "published-quizzes" ||
+      navKey === "view-students" ||
+      navKey === "grading"
     ) {
       setIsStudentViewMode(false);
     }
@@ -1459,23 +1777,64 @@ export default function AdminDashboardPage() {
 
     setIsSubmittingQuiz(true);
     try {
+      const selectedSub = availableSubjects.find((s) => s.id === selectedSubjectId);
       if (supabase) {
-        const { data: quizData, error: quizError } = await supabase
-          .from("quizzes")
-          .insert([
-            {
-              title: newQuizTitle.trim(),
-              topic: newQuizTopic,
-              created_by: user?.id || null,
-              points_per_item: typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1,
-            },
-          ])
-          .select("id")
-          .single();
+        const resolvedTopic = selectedSub && !newQuizTopic.includes(selectedSub.subjectCode)
+          ? `${newQuizTopic} [${selectedSub.subjectCode}]`
+          : newQuizTopic;
+
+        // Attempt insert with subject_id (if table column exists) or fallback
+        const baseQuizPayload: any = {
+          title: newQuizTitle.trim(),
+          topic: resolvedTopic,
+          created_by: user?.id || null,
+          points_per_item: typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1,
+        };
+
+        let quizData: any = null;
+        let quizError: any = null;
+
+        if (selectedSubjectId) {
+          const resWithSubject = await supabase
+            .from("quizzes")
+            .insert([{ ...baseQuizPayload, subject_id: selectedSubjectId }])
+            .select("id")
+            .single();
+
+          if (resWithSubject.error) {
+            // If subject_id column doesn't exist yet in Supabase, fallback to inserting without it
+            const fallbackRes = await supabase
+              .from("quizzes")
+              .insert([baseQuizPayload])
+              .select("id")
+              .single();
+            quizData = fallbackRes.data;
+            quizError = fallbackRes.error;
+          } else {
+            quizData = resWithSubject.data;
+          }
+        } else {
+          const res = await supabase
+            .from("quizzes")
+            .insert([baseQuizPayload])
+            .select("id")
+            .single();
+          quizData = res.data;
+          quizError = res.error;
+        }
 
         if (quizError || !quizData) {
           throw quizError || new Error("Failed to insert quiz into database");
         }
+
+        // Also save subject mapping locally so it works even if DB column hasn't migrated yet
+        if (selectedSubjectId) {
+          localStorage.setItem(`quiz_subject_${quizData.id}`, selectedSubjectId);
+          if (selectedSub) {
+            localStorage.setItem(`quiz_subject_code_${quizData.id}`, selectedSub.subjectCode);
+          }
+        }
+        localStorage.setItem(`quiz_period_${quizData.id}`, selectedGradingPeriod);
 
         const questionsToInsert = validDrafts.map((q, index) => {
           const isMC =
@@ -1507,12 +1866,49 @@ export default function AdminDashboardPage() {
         }
 
         await fetchQuizzesAndStats();
+
+        // Automatically set the maxScore in Grading Sheet for this published quiz immediately
+        try {
+          const rawGrading = localStorage.getItem("mathworkspace_grading_data");
+          if (rawGrading) {
+            const records = JSON.parse(rawGrading);
+            const periodKey = selectedGradingPeriod || "prelim";
+            const targetRec = records.find((r: any) => {
+              if (selectedSub) {
+                return (
+                  r.subject?.id === selectedSubjectId ||
+                  r.subject?.subjectCode?.toLowerCase() === selectedSub.subjectCode.toLowerCase()
+                );
+              }
+              return true;
+            });
+
+            if (targetRec && targetRec.periods?.[periodKey]) {
+              const targetPeriod = targetRec.periods[periodKey];
+              const totalQuizPoints = validDrafts.length * (typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1);
+              // Find the next available quiz slot for this period (starts at Quiz 1)
+              let slotIdx = targetPeriod.quizActivities.findIndex((act: any) => act.maxScore === 0);
+              if (slotIdx === -1 || slotIdx >= 10) slotIdx = 0;
+
+              if (targetPeriod.quizActivities[slotIdx]) {
+                targetPeriod.quizActivities[slotIdx].maxScore = totalQuizPoints;
+                localStorage.setItem(`quiz_number_${quizData.id}`, String(slotIdx + 1));
+                localStorage.setItem("mathworkspace_grading_data", JSON.stringify(records));
+                window.dispatchEvent(new Event("storage"));
+                window.dispatchEvent(new CustomEvent("mathworkspace-quiz-submitted"));
+              }
+            }
+          }
+        } catch (gSyncErr) {
+          console.warn("Could not pre-set max score on quiz publish:", gSyncErr);
+        }
       } else {
         const count = validDrafts.length || 1;
         const newQuiz: QuizItem = {
           id: Date.now().toString(),
           title: newQuizTitle.trim(),
           topic: newQuizTopic,
+          subject: selectedSubjectId || undefined,
           questionsCount: count,
           pointsPerItem: typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1,
           questions: validDrafts,
@@ -1522,8 +1918,15 @@ export default function AdminDashboardPage() {
           questionType: generatorQuestionType,
         };
         setQuizzes((prev) => [newQuiz, ...prev]);
+        if (selectedSubjectId) {
+          localStorage.setItem(`quiz_subject_${newQuiz.id}`, selectedSubjectId);
+          if (selectedSub) {
+            localStorage.setItem(`quiz_subject_code_${newQuiz.id}`, selectedSub.subjectCode);
+          }
+        }
       }
 
+      setSelectedSubjectId("");
       setNewQuizTitle("");
       setGeneratorStep(1);
       setNewQuizQuestions("5");
@@ -1562,6 +1965,41 @@ export default function AdminDashboardPage() {
     } catch (err: any) {
       console.error("Error deleting quiz:", err);
       alert("Failed to delete quiz: " + (err.message || "Unknown error"));
+    }
+  };
+
+  const handleClearAllQuizzes = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete ALL published quizzes and all their student attempts? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    try {
+      if (supabase) {
+        // Delete all quiz attempts first or delete all quizzes (foreign key cascading)
+        await supabase.from("quiz_attempts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        const { error } = await supabase.from("quizzes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        if (error) {
+          // Fallback: delete row by row if neq filter isn't supported
+          for (const q of quizzes) {
+            await supabase.from("quizzes").delete().eq("id", q.id);
+          }
+        }
+      }
+      setQuizzes([]);
+      setStudentSubmissions([]);
+      // Clear localStorage quiz slots & numbers
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("quiz_number_") || key.startsWith("quiz_slot_") || key.startsWith("quiz_subject_"))) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (err: any) {
+      console.error("Error clearing all quizzes:", err);
+      alert("Failed to clear quizzes: " + (err.message || "Unknown error"));
     }
   };
 
@@ -1613,28 +2051,47 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleBulkToggleQuizReview = async (allow: boolean = true) => {
+  const handleBulkToggleQuizReview = async (allow: boolean = true, targetQuizIds?: string[]) => {
+    const idsToUpdate = targetQuizIds && targetQuizIds.length > 0 ? new Set(targetQuizIds) : null;
+
     // 1. Optimistic state update in Admin
-    setQuizzes((prev) => prev.map((q) => ({ ...q, allowReview: allow })));
+    setQuizzes((prev) =>
+      prev.map((q) => (idsToUpdate ? (idsToUpdate.has(q.id) ? { ...q, allowReview: allow } : q) : { ...q, allowReview: allow }))
+    );
     setStudentSubmissions((prev) =>
-      prev.map((sub) => ({ ...sub, allowReview: allow }))
+      prev.map((sub) =>
+        idsToUpdate ? (idsToUpdate.has(sub.quizId) ? { ...sub, allowReview: allow } : sub) : { ...sub, allowReview: allow }
+      )
     );
 
     // 2. Persist in localStorage for each quiz and globally
     try {
-      quizzes.forEach((q) => {
-        localStorage.setItem(`quiz_allow_review_${q.id}`, String(allow));
-      });
-      localStorage.setItem("quiz_allow_review_all", String(allow));
+      if (idsToUpdate) {
+        idsToUpdate.forEach((id) => {
+          localStorage.setItem(`quiz_allow_review_${id}`, String(allow));
+        });
+      } else {
+        quizzes.forEach((q) => {
+          localStorage.setItem(`quiz_allow_review_${q.id}`, String(allow));
+        });
+        localStorage.setItem("quiz_allow_review_all", String(allow));
+      }
     } catch {}
 
     // 3. Persist to Supabase if available
     if (supabase) {
       try {
-        await supabase
-          .from("quizzes")
-          .update({ allow_review: allow })
-          .neq("id", "00000000-0000-0000-0000-000000000000");
+        if (idsToUpdate) {
+          await supabase
+            .from("quizzes")
+            .update({ allow_review: allow })
+            .in("id", Array.from(idsToUpdate));
+        } else {
+          await supabase
+            .from("quizzes")
+            .update({ allow_review: allow })
+            .neq("id", "00000000-0000-0000-0000-000000000000");
+        }
       } catch (err) {
         console.warn("Could not bulk update allow_review in Supabase quizzes table:", err);
       }
@@ -1644,11 +2101,21 @@ export default function AdminDashboardPage() {
         const syncChannel = supabase.channel("quiz-review-sync");
         syncChannel.subscribe((status) => {
           if (status === "SUBSCRIBED") {
-            syncChannel.send({
-              type: "broadcast",
-              event: "quiz-review-toggled",
-              payload: { quizId: "all", allowReview: allow },
-            });
+            if (idsToUpdate) {
+              Array.from(idsToUpdate).forEach((qId) => {
+                syncChannel.send({
+                  type: "broadcast",
+                  event: "quiz-review-toggled",
+                  payload: { quizId: qId, allowReview: allow },
+                });
+              });
+            } else {
+              syncChannel.send({
+                type: "broadcast",
+                event: "quiz-review-toggled",
+                payload: { quizId: "all", allowReview: allow },
+              });
+            }
             setTimeout(() => syncChannel.unsubscribe(), 1200);
           }
         });
@@ -1987,6 +2454,27 @@ export default function AdminDashboardPage() {
                 adminReviewQuizModal={adminReviewQuizModal}
                 setAdminReviewQuizModal={setAdminReviewQuizModal}
                 handleDeleteQuiz={handleDeleteQuiz}
+                availableSubjects={availableSubjects}
+                selectedSubjectId={selectedSubjectId}
+                setSelectedSubjectId={setSelectedSubjectId}
+                selectedGradingPeriod={selectedGradingPeriod}
+                setSelectedGradingPeriod={setSelectedGradingPeriod}
+              />
+            )}
+
+            {/* VIEW: PUBLISHED QUIZZES MANAGEMENT */}
+            {activeNav === "published-quizzes" && (
+              <AdminPublishedQuizzesView
+                quizzes={quizzes}
+                isLoadingQuizzes={isLoadingQuizzes}
+                fetchQuizzesAndStats={fetchQuizzesAndStats}
+                handleNavClick={handleNavClick}
+                setAdminReviewQuizModal={setAdminReviewQuizModal}
+                handleDeleteQuiz={handleDeleteQuiz}
+                handleClearAllQuizzes={handleClearAllQuizzes}
+                handleStartStudentPreviewQuiz={handleStartStudentPreviewQuiz}
+                onToggleQuizReview={handleToggleQuizReview}
+                onBulkToggleQuizReview={handleBulkToggleQuizReview}
               />
             )}
 
@@ -2043,6 +2531,11 @@ export default function AdminDashboardPage() {
                 onlineStudentKeys={onlineStudentKeys}
                 handleOpenMoveBlockModal={handleOpenMoveBlockModal}
               />
+            )}
+
+            {/* VIEW H: STUDENT GRADING MANAGEMENT SYSTEM */}
+            {activeNav === "grading" && (
+              <GradingManagementView />
             )}
           </AnimatePresence>
         </main>

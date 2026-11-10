@@ -12,17 +12,7 @@ export function ProtectedRoute({
   const { user, loading, isAuthenticated } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <div className="relative flex items-center justify-center w-12 h-12">
-          <div className="absolute inset-0 rounded-full border-2 border-t-slate-500 border-r-slate-300 border-b-transparent border-l-transparent" />
-          <span className="font-mono text-sm font-bold text-slate-500">λ</span>
-        </div>
-        <p className="text-xs font-mono tracking-widest text-slate-500 font-semibold">
-          VERIFYING SESSION…
-        </p>
-      </div>
-    );
+    return null;
   }
 
   if (!isAuthenticated) {
@@ -38,5 +28,5 @@ export function ProtectedRoute({
     }
   }
 
-  return children;
+  return <div className="animate-in fade-in duration-300">{children}</div>;
 }

@@ -10,6 +10,7 @@ import {
 import { api } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import type { PublicUser } from '../types/models'
+import { createDefaultSubjectRecord } from '../types/grading'
 
 type AuthContextValue = {
   user: PublicUser | null
@@ -18,7 +19,15 @@ type AuthContextValue = {
   isAdmin: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<string | null>
-  register: (name: string, email: string, password: string, block?: string) => Promise<string | null>
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    block?: string,
+    subjectCode?: string,
+    offerNumber?: string,
+    studentId?: string
+  ) => Promise<string | null>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -98,13 +107,120 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null
   }, [])
 
-  const register = useCallback(async (name: string, email: string, password: string, block?: string) => {
-    const result = await api.register({ name, email, password, block })
-    if (!result.ok) return result.error
-    setToken(result.token)
-    setUser(result.user)
-    return null
-  }, [])
+  const register = useCallback(
+    async (
+      name: string,
+      email: string,
+      password: string,
+      block?: string,
+      subjectCode?: string,
+      offerNumber?: string,
+      studentId?: string
+    ) => {
+      const result = await api.register({
+        name,
+        email,
+        password,
+        block,
+        subjectCode,
+        offerNumber,
+        studentId,
+      })
+      if (!result.ok) return result.error
+      setToken(result.token)
+      setUser(result.user)
+
+      // Auto-enroll student into the grading sheet for that subject
+      try {
+        const raw = localStorage.getItem('mathworkspace_grading_data')
+        let records = raw ? JSON.parse(raw) : []
+        if (!Array.isArray(records) || records.length === 0) {
+          records = [
+            createDefaultSubjectRecord('MATH 101', 'Calculus with Analytic Geometry', '80062'),
+            createDefaultSubjectRecord('MATH 102', 'Integral Calculus', '80063'),
+          ]
+        }
+
+        const inputCode = (subjectCode || '').toLowerCase().trim()
+        const inputOffer = (offerNumber || '').toLowerCase().trim()
+        const is102 = inputCode.includes('102') || inputOffer.includes('102')
+
+        let target = records.find((r: any) => {
+          const subCode = (r.subject?.subjectCode || '').toLowerCase().trim()
+          const subOffer = (r.subject?.offerNumber || '').toLowerCase().trim()
+          if (is102) {
+            return subCode.includes('102')
+          }
+          if (inputCode && subCode === inputCode) return true
+          if (inputOffer && subOffer === inputOffer) return true
+          const subDigits = subCode.match(/\d+/)?.[0]
+          if (subDigits && inputCode.includes(subDigits)) return true
+          return false
+        })
+
+        // If user registered for MATH 102 and record doesn't exist yet, create it
+        if (!target && is102) {
+          target = createDefaultSubjectRecord('MATH 102', 'Integral Calculus', '80063')
+          records.push(target)
+        }
+
+        // If not 102 and no matching record, create subject or use first
+        if (!target) {
+          if (subjectCode && subjectCode.trim()) {
+            target = createDefaultSubjectRecord(subjectCode.trim(), 'Mathematics', offerNumber?.trim() || '')
+            records.push(target)
+          } else {
+            target = records[0]
+          }
+        }
+
+        if (target) {
+          const studentName = name.trim()
+          const resolvedStudentId = (
+            studentId?.trim() ||
+            result.user.student_id ||
+            result.user.id_number ||
+            `2026-${result.user.id.slice(0, 5)}`
+          ).toUpperCase()
+
+          if (!Array.isArray(target.students)) {
+            target.students = []
+          }
+
+          const existingIdx = target.students.findIndex(
+            (s: any) =>
+              s.id === result.user.id ||
+              s.studentId === resolvedStudentId ||
+              s.fullName.toLowerCase() === studentName.toLowerCase()
+          )
+
+          if (existingIdx >= 0) {
+            target.students[existingIdx].studentId = resolvedStudentId
+            target.students[existingIdx].fullName = studentName
+          } else {
+            target.students.push({
+              id: result.user.id,
+              studentNumber: String(target.students.length + 1),
+              studentId: resolvedStudentId,
+              fullName: studentName,
+            })
+          }
+
+          localStorage.setItem(
+            'mathworkspace_grading_data',
+            JSON.stringify(records)
+          )
+          window.dispatchEvent(new Event('storage'))
+          window.dispatchEvent(new CustomEvent('mathworkspace-quiz-submitted'))
+        }
+      } catch (e) {
+        console.error('Error syncing student with grading data:', e)
+      }
+
+      return null
+    },
+    []
+  )
 
   const logout = useCallback(async () => {
     await api.logout()

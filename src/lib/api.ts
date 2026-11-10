@@ -12,17 +12,26 @@ function mapProfile(row: {
   id: string
   email: string
   name: string
+  student_id?: string
+  id_number?: string
   block?: string
+  subject_code?: string
+  offer_number?: string
   avatar_url?: string
   role: 'admin' | 'user'
   created_at: string
 }): PublicUser {
   const isAdminEmail = row.email?.toLowerCase().trim() === 'admin@gmail.com'
+  const resolvedStudentId = row.student_id || row.id_number || ''
   return {
     id: row.id,
     email: row.email,
     name: row.name,
+    student_id: resolvedStudentId,
+    id_number: resolvedStudentId,
     block: row.block || '',
+    subject_code: row.subject_code || '',
+    offer_number: row.offer_number || '',
     avatar_url: row.avatar_url || '',
     role: isAdminEmail ? 'admin' : (row.role || 'user'),
     created_at: row.created_at,
@@ -33,7 +42,7 @@ async function loadProfile(userId: string): Promise<PublicUser | null> {
   const client = requireClient()
   const { data, error } = await client
     .from('profiles')
-    .select('id, email, name, block, avatar_url, role, created_at')
+    .select('*')
     .eq('id', userId)
     .maybeSingle()
 
@@ -47,13 +56,71 @@ function toAuthError(message: string): AuthResult {
 }
 
 export const api = {
-  async register(input: { email: string; password: string; name: string; block?: string }): Promise<AuthResult> {
+  async register(input: {
+    email: string
+    password: string
+    name: string
+    studentId?: string
+    block?: string
+    subjectCode?: string
+    offerNumber?: string
+  }): Promise<AuthResult> {
     try {
       const client = requireClient()
+      const resolvedStudentId = input.studentId?.trim() || ''
+
+      // Check if ID Number is already in use by another student
+      if (resolvedStudentId) {
+        try {
+          const { data: existingProfiles } = await client
+            .from('profiles')
+            .select('id, student_id, id_number')
+            .or(`student_id.eq.${resolvedStudentId},id_number.eq.${resolvedStudentId}`)
+            .limit(1)
+
+          if (existingProfiles && existingProfiles.length > 0) {
+            return toAuthError(`Student ID "${resolvedStudentId}" is already taken by another student.`)
+          }
+        } catch {
+          // If check fails (e.g. offline/schema), proceed
+        }
+
+        // Also check local grading records
+        try {
+          const rawGrading = localStorage.getItem("mathworkspace_grading_data")
+          if (rawGrading) {
+            const subjects = JSON.parse(rawGrading)
+            if (Array.isArray(subjects)) {
+              for (const subj of subjects) {
+                if (Array.isArray(subj.students)) {
+                  const match = subj.students.find(
+                    (s: any) => s.studentId?.toLowerCase() === resolvedStudentId.toLowerCase()
+                  )
+                  if (match) {
+                    return toAuthError(`Student ID "${resolvedStudentId}" is already taken by another student.`)
+                  }
+                }
+              }
+            }
+          }
+        } catch {
+          // non-blocking
+        }
+      }
+
       const { data, error } = await client.auth.signUp({
         email: input.email.trim(),
         password: input.password,
-        options: { data: { name: input.name.trim() || 'User', block: input.block?.trim() || '' } },
+        options: {
+          data: {
+            name: input.name.trim() || 'User',
+            student_id: resolvedStudentId,
+            id_number: resolvedStudentId,
+            block: input.block?.trim() || '',
+            subject_code: input.subjectCode?.trim() || '',
+            offer_number: input.offerNumber?.trim() || '',
+          },
+        },
       })
       if (error) return toAuthError(error.message)
       if (!data.user) return toAuthError('Could not create account')
@@ -62,13 +129,48 @@ export const api = {
       }
       const userEmail = data.user.email ?? input.email.trim()
       const isAdminUser = userEmail.toLowerCase().trim() === 'admin@gmail.com'
-      const user = (await loadProfile(data.user.id)) ?? {
+
+      // Upsert into public.profiles to ensure student_id is persisted directly
+      try {
+        await client.from('profiles').upsert(
+          {
+            id: data.user.id,
+            email: userEmail,
+            name: input.name.trim() || 'User',
+            student_id: resolvedStudentId,
+            id_number: resolvedStudentId,
+            block: input.block?.trim() || '',
+            subject_code: input.subjectCode?.trim() || '',
+            offer_number: input.offerNumber?.trim() || '',
+          },
+          { onConflict: 'id' }
+        )
+      } catch (upsertErr) {
+        console.warn('Profile upsert fallback in register:', upsertErr)
+      }
+
+      const loaded = await loadProfile(data.user.id)
+      const user: PublicUser = loaded ?? {
         id: data.user.id,
         email: userEmail,
         name: input.name.trim() || 'User',
+        student_id: resolvedStudentId,
+        id_number: resolvedStudentId,
         block: input.block?.trim() || '',
+        subject_code: input.subjectCode?.trim() || '',
+        offer_number: input.offerNumber?.trim() || '',
         role: (isAdminUser ? 'admin' : 'user') as 'admin' | 'user',
         created_at: new Date().toISOString(),
+      }
+      if (!user.student_id && resolvedStudentId) {
+        user.student_id = resolvedStudentId
+        user.id_number = resolvedStudentId
+      }
+      if (!user.subject_code && input.subjectCode) {
+        user.subject_code = input.subjectCode.trim()
+      }
+      if (!user.offer_number && input.offerNumber) {
+        user.offer_number = input.offerNumber.trim()
       }
       return { ok: true, user, token: data.session.access_token }
     } catch (err) {

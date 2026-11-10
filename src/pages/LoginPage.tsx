@@ -77,7 +77,7 @@ export default function LoginPage() {
 
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#201D1D] overflow-x-hidden font-sans">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#201D1D] overflow-x-hidden font-sans animate-in fade-in duration-300">
       {/* Subtle Floating Back to Home Button */}
       <Link
         to="/"

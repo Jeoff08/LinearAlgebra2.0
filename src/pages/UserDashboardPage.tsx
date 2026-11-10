@@ -27,6 +27,96 @@ import { UserReviewAttemptModal } from "../components/user-dashboard/UserReviewA
 import { UserDashboardSidebar } from "../components/user-dashboard/UserDashboardSidebar";
 import { UserDashboardHeader } from "../components/user-dashboard/UserDashboardHeader";
 
+/**
+ * Resolves the designated academic subject (MATH 101, MATH 102, or MATH 103)
+ * for any given quiz based on explicit assignment, local storage metadata,
+ * title, and topic classification.
+ */
+export const resolveQuizDesignatedSubject = (q: any): string => {
+  if (!q) return "MATH 101";
+
+  // 1. Direct designatedSubject property
+  if (q.designatedSubject) {
+    const s = String(q.designatedSubject).toUpperCase();
+    if (s.includes("103")) return "MATH 103";
+    if (s.includes("102")) return "MATH 102";
+    if (s.includes("101")) return "MATH 101";
+    return s;
+  }
+
+  // 2. Direct explicit assigned subject code or id (from DB or localStorage)
+  const explicitCode =
+    (q.id ? localStorage.getItem(`quiz_subject_code_${q.id}`) : "") ||
+    q.assignedSubject ||
+    q.subject_id ||
+    q.subjectId ||
+    (q.id ? localStorage.getItem(`quiz_subject_${q.id}`) : "") ||
+    "";
+
+  const lowerExplicit = String(explicitCode).toLowerCase().trim();
+  if (lowerExplicit.includes("103") || lowerExplicit.includes("linear")) {
+    return "MATH 103";
+  }
+  if (
+    lowerExplicit.includes("102") ||
+    lowerExplicit.includes("integral") ||
+    lowerExplicit.includes("calculus 2") ||
+    lowerExplicit.includes("calculus-2")
+  ) {
+    return "MATH 102";
+  }
+  if (
+    lowerExplicit.includes("101") ||
+    lowerExplicit.includes("analytic") ||
+    lowerExplicit.includes("differential") ||
+    lowerExplicit.includes("calculus 1") ||
+    lowerExplicit.includes("calculus-1")
+  ) {
+    return "MATH 101";
+  }
+
+  // 3. Infer from topic or title
+  const title = (q.title || "").toLowerCase();
+  const topic = (q.topic || "").toLowerCase();
+
+  if (
+    topic.includes("103") ||
+    topic.includes("linear-algebra") ||
+    topic.includes("linear algebra") ||
+    title.includes("103") ||
+    title.includes("linear algebra") ||
+    title.includes("matrix") ||
+    title.includes("matrices") ||
+    title.includes("vector")
+  ) {
+    return "MATH 103";
+  }
+  if (
+    topic.includes("102") ||
+    topic.includes("calculus-2") ||
+    topic.includes("calculus 2") ||
+    topic.includes("integral") ||
+    title.includes("102") ||
+    title.includes("integral")
+  ) {
+    return "MATH 102";
+  }
+  if (
+    topic.includes("101") ||
+    topic.includes("calculus-1") ||
+    topic.includes("calculus 1") ||
+    topic.includes("differential") ||
+    title.includes("101") ||
+    title.includes("differential") ||
+    title.includes("analytic geometry")
+  ) {
+    return "MATH 101";
+  }
+
+  // Default fallback
+  return "MATH 101";
+};
+
 export default function UserDashboardPage() {
   const { user, logout, refreshUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -129,6 +219,7 @@ export default function UserDashboardPage() {
           created_at,
           points_per_item,
           allow_review,
+          subject_id,
           quiz_questions (
             id,
             question_index,
@@ -143,7 +234,7 @@ export default function UserDashboardPage() {
         .order("created_at", { ascending: false });
 
       if (resWithReview.error) {
-        // Fallback in case allow_review is not yet migrated in Supabase
+        // Fallback in case subject_id or allow_review is not yet migrated in Supabase
         const fallbackRes = await supabase
           .from("quizzes")
           .select(`
@@ -320,6 +411,10 @@ export default function UserDashboardPage() {
               ? Boolean(q.allow_review)
               : localStorage.getItem(`quiz_allow_review_${q.id}`) === "true";
 
+            const assignedSubject = q.subject_id || localStorage.getItem(`quiz_subject_${q.id}`) || "";
+            const designatedSubject = resolveQuizDesignatedSubject(q);
+            const quizPeriod = (q.period || localStorage.getItem(`quiz_period_${q.id}`) || "prelim") as "prelim" | "midterm" | "semi-final" | "final";
+
             return {
               id: q.id,
               title: q.title,
@@ -336,6 +431,10 @@ export default function UserDashboardPage() {
               lastScore,
               pointsPerItem: q.points_per_item || 1,
               allowReview: isQuizReviewAllowed,
+              subjectId: q.subject_id || "",
+              assignedSubject,
+              designatedSubject,
+              period: quizPeriod,
             };
           }
         );
@@ -629,7 +728,7 @@ export default function UserDashboardPage() {
           attemptId = attemptData.id;
 
           try {
-            const submissionChannel = supabase.channel("quiz-submissions");
+            const submissionChannel = supabase.channel("quiz-submissions-broadcast");
             submissionChannel.subscribe((status) => {
               if (status === "SUBSCRIBED") {
                 submissionChannel.send({
@@ -651,6 +750,384 @@ export default function UserDashboardPage() {
             console.warn("Could not broadcast quiz submission:", broadcastErr);
           }
         }
+      }
+
+      // Automatically record score into Grading Sheet
+      try {
+        const rawGrading = localStorage.getItem("mathworkspace_grading_data");
+        let gradingRecords = rawGrading ? JSON.parse(rawGrading) : [];
+        if (!Array.isArray(gradingRecords) || gradingRecords.length === 0) {
+          gradingRecords = [
+            {
+              subject: { id: "math-101", subjectCode: "MATH 101", offerNumber: "80062", subjectName: "Calculus with Analytic Geometry" },
+              students: [],
+              periods: {
+                prelim: {
+                  period: "prelim",
+                  quizActivities: Array.from({ length: 10 }, (_, i) => ({
+                    id: `quiz-act-101-${i + 1}-${Date.now()}`,
+                    type: "quiz",
+                    label: `Quiz ${i + 1}`,
+                    maxScore: 0,
+                    index: i,
+                  })),
+                  participationActivities: [],
+                  examActivity: { id: "exam-101", type: "exam", label: "Exam", maxScore: 0, index: 0 },
+                  scores: [],
+                },
+              },
+            },
+            {
+              subject: { id: "math-102", subjectCode: "MATH 102", offerNumber: "80063", subjectName: "Integral Calculus" },
+              students: [],
+              periods: {
+                prelim: {
+                  period: "prelim",
+                  quizActivities: Array.from({ length: 10 }, (_, i) => ({
+                    id: `quiz-act-102-${i + 1}-${Date.now()}`,
+                    type: "quiz",
+                    label: `Quiz ${i + 1}`,
+                    maxScore: 0,
+                    index: i,
+                  })),
+                  participationActivities: [],
+                  examActivity: { id: "exam-102", type: "exam", label: "Exam", maxScore: 0, index: 0 },
+                  scores: [],
+                },
+              },
+            },
+          ];
+        }
+
+        // -------------------------------------------------------------
+        // Strict Subject Matching: base on what is the subject for the quiz
+        // e.g. MATH 101, MATH 102, or MATH 103 (from "Add Quiz" / assigned)
+        // -------------------------------------------------------------
+        const resolvedQuizSub = resolveQuizDesignatedSubject(activeTakingQuiz);
+        let isFor103 = resolvedQuizSub === "MATH 103";
+        let isFor102 = resolvedQuizSub === "MATH 102";
+        let isFor101 = resolvedQuizSub === "MATH 101";
+
+        if (!isFor103 && !isFor102 && !isFor101) {
+          const userSubCode = (user?.subject_code || "").toLowerCase().trim();
+          if (userSubCode.includes("103")) isFor103 = true;
+          else if (userSubCode.includes("102")) isFor102 = true;
+          else isFor101 = true;
+        }
+
+        let targetRec = gradingRecords.find((r: any) => {
+          const subCode = (r.subject?.subjectCode || "").toLowerCase().trim();
+          const subOffer = (r.subject?.offerNumber || "").toLowerCase().trim();
+          const subId = (r.subject?.id || "").toLowerCase().trim();
+
+          if (isFor103 && (subCode.includes("103") || subId.includes("103"))) {
+            return true;
+          }
+          if (isFor102 && (subCode.includes("102") || subId.includes("102"))) {
+            return true;
+          }
+          if (isFor101 && (subCode.includes("101") || subId.includes("101"))) {
+            return true;
+          }
+          return false;
+        });
+
+        // If target is MATH 103 and doesn't exist yet, create it
+        if (!targetRec && isFor103) {
+          const new103 = {
+            subject: {
+              id: "math-103-" + Date.now(),
+              subjectCode: "MATH 103",
+              subjectName: "Linear Algebra",
+              offerNumber: "80064",
+              academicYear: "2025-2026",
+              semester: "2nd Semester",
+              section: "Section A",
+              instructorName: "Instructor",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            students: [],
+            periods: {
+              prelim: {
+                period: "prelim",
+                quizActivities: Array.from({ length: 10 }, (_, i) => ({
+                  id: `quiz-act-103-${i + 1}-${Date.now()}`,
+                  type: "quiz",
+                  label: `Quiz ${i + 1}`,
+                  maxScore: 0,
+                  index: i,
+                })),
+                participationActivities: Array.from({ length: 5 }, (_, i) => ({
+                  id: `part-act-103-${i + 1}-${Date.now()}`,
+                  type: "participation",
+                  label: `Class Participation ${i + 1}`,
+                  maxScore: 0,
+                  index: i,
+                })),
+                examActivity: { id: `exam-act-103-${Date.now()}`, type: "exam", label: "Exam", maxScore: 0, index: 0 },
+                scores: [],
+              },
+              midterm: { period: "midterm", quizActivities: [], participationActivities: [], examActivity: { id: "exam", type: "exam", label: "Exam", maxScore: 0, index: 0 }, scores: [] },
+              "semi-final": { period: "semi-final", quizActivities: [], participationActivities: [], examActivity: { id: "exam", type: "exam", label: "Exam", maxScore: 0, index: 0 }, scores: [] },
+              final: { period: "final", quizActivities: [], participationActivities: [], examActivity: { id: "exam", type: "exam", label: "Exam", maxScore: 0, index: 0 }, scores: [] },
+            },
+          };
+          gradingRecords.push(new103);
+          targetRec = new103;
+        }
+
+        // If target is MATH 102 and doesn't exist yet, create it
+        if (!targetRec && isFor102) {
+          const new102 = {
+            subject: {
+              id: "math-102-" + Date.now(),
+              subjectCode: "MATH 102",
+              subjectName: "Integral Calculus",
+              offerNumber: "80063",
+              academicYear: "2025-2026",
+              semester: "2nd Semester",
+              section: "Section A",
+              instructorName: "Instructor",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            students: [],
+            periods: {
+              prelim: {
+                period: "prelim",
+                quizActivities: Array.from({ length: 10 }, (_, i) => ({
+                  id: `quiz-act-102-${i + 1}-${Date.now()}`,
+                  type: "quiz",
+                  label: `Quiz ${i + 1}`,
+                  maxScore: 0,
+                  index: i,
+                })),
+                participationActivities: Array.from({ length: 5 }, (_, i) => ({
+                  id: `part-act-102-${i + 1}-${Date.now()}`,
+                  type: "participation",
+                  label: `Class Participation ${i + 1}`,
+                  maxScore: 0,
+                  index: i,
+                })),
+                examActivity: { id: `exam-act-102-${Date.now()}`, type: "exam", label: "Exam", maxScore: 0, index: 0 },
+                scores: [],
+              },
+              midterm: { period: "midterm", quizActivities: [], participationActivities: [], examActivity: { id: "exam", type: "exam", label: "Exam", maxScore: 0, index: 0 }, scores: [] },
+              "semi-final": { period: "semi-final", quizActivities: [], participationActivities: [], examActivity: { id: "exam", type: "exam", label: "Exam", maxScore: 0, index: 0 }, scores: [] },
+              final: { period: "final", quizActivities: [], participationActivities: [], examActivity: { id: "exam", type: "exam", label: "Exam", maxScore: 0, index: 0 }, scores: [] },
+            },
+          };
+          gradingRecords.push(new102);
+          targetRec = new102;
+        }
+
+        // Fallback to first record if not matched
+        if (!targetRec) {
+          targetRec = gradingRecords[0];
+        }
+
+        if (targetRec) {
+          // 1. Ensure student exists in target record
+          const resolvedStudentId = (
+            user?.student_id ||
+            user?.id_number ||
+            `2026-${(user?.id || Date.now().toString()).slice(0, 5)}`
+          ).toUpperCase();
+
+          let studentObj = targetRec.students.find(
+            (s: any) =>
+              s.id === user?.id ||
+              s.studentId === resolvedStudentId ||
+              s.fullName.toLowerCase() === studentName.toLowerCase()
+          );
+
+          if (!studentObj) {
+            studentObj = {
+              id: user?.id || Date.now().toString(),
+              studentNumber: String(targetRec.students.length + 1),
+              studentId: resolvedStudentId,
+              fullName: studentName,
+            };
+            targetRec.students.push(studentObj);
+          }
+
+          // 2. Resolve target grading period (prelim, midterm, semi-final, final)
+          const rawQuizPeriod = activeTakingQuiz.period || localStorage.getItem(`quiz_period_${activeTakingQuiz.id}`) || "prelim";
+          const quizPeriodKey: "prelim" | "midterm" | "semi-final" | "final" =
+            rawQuizPeriod === "midterm" || rawQuizPeriod === "semi-final" || rawQuizPeriod === "final"
+              ? rawQuizPeriod
+              : "prelim";
+
+          const targetPeriod = targetRec.periods[quizPeriodKey];
+          if (!Array.isArray(targetPeriod.quizActivities) || targetPeriod.quizActivities.length === 0) {
+            targetPeriod.quizActivities = Array.from({ length: 10 }, (_, i) => ({
+              id: `quiz-act-${(targetRec.subject.subjectCode || 'sub').replace(/\s+/g, '')}-${quizPeriodKey}-${i + 1}`,
+              type: "quiz",
+              label: `Quiz ${i + 1}`,
+              maxScore: 0,
+              index: i,
+            }));
+          } else if (targetPeriod.quizActivities.length < 10) {
+            while (targetPeriod.quizActivities.length < 10) {
+              const nextIdx = targetPeriod.quizActivities.length;
+              targetPeriod.quizActivities.push({
+                id: `quiz-act-${(targetRec.subject.subjectCode || 'sub').replace(/\s+/g, '')}-${quizPeriodKey}-${nextIdx + 1}`,
+                type: "quiz",
+                label: `Quiz ${nextIdx + 1}`,
+                maxScore: 0,
+                index: nextIdx,
+              });
+            }
+          } else if (targetPeriod.quizActivities.length > 10) {
+            targetPeriod.quizActivities = targetPeriod.quizActivities.slice(0, 10);
+          }
+
+          // Ensure exactly 10 slots with proper labels Quiz 1..10
+          targetPeriod.quizActivities.forEach((qAct: any, idx: number) => {
+            qAct.index = idx;
+            qAct.label = `Quiz ${idx + 1}`;
+          });
+
+          // 3. Slot determination:
+          // A single quiz must ALWAYS map to its corresponding quiz slot.
+          // - If title explicitly says "Quiz N" (e.g. Quiz 1, Quiz 2), use slot N - 1.
+          // - Otherwise, match its position among quizzes for this subject (1st quiz = Quiz 1, 2nd quiz = Quiz 2).
+          // - Retaking Quiz 1 will update Quiz 1 and will NEVER duplicate into Quiz 2!
+          let quizSlotIdx = -1;
+
+          // Check if this student already has a dedicated slot for this quiz ID
+          const slotStorageKey = `quiz_slot_${studentObj.id}_${activeTakingQuiz.id}`;
+          const rememberedSlot = localStorage.getItem(slotStorageKey);
+          if (rememberedSlot !== null) {
+            const parsed = parseInt(rememberedSlot, 10);
+            if (!isNaN(parsed) && parsed >= 0 && parsed < targetPeriod.quizActivities.length) {
+              quizSlotIdx = parsed;
+            }
+          }
+
+          // Check if explicit quiz_number exists in localStorage or activeTakingQuiz
+          if (quizSlotIdx === -1) {
+            const storedQuizNum = localStorage.getItem(`quiz_number_${activeTakingQuiz.id}`);
+            if (storedQuizNum) {
+              const pNum = parseInt(storedQuizNum, 10);
+              if (pNum >= 1 && pNum <= 10) {
+                quizSlotIdx = pNum - 1;
+              }
+            } else if (activeTakingQuiz.quizNumber && activeTakingQuiz.quizNumber >= 1 && activeTakingQuiz.quizNumber <= 10) {
+              quizSlotIdx = activeTakingQuiz.quizNumber - 1;
+            }
+          }
+
+          // If title explicitly says "Quiz N" (e.g. Quiz 3), use that slot (if not already taken by another quiz)
+          if (quizSlotIdx === -1) {
+            const numMatch = (activeTakingQuiz.title || "").match(/quiz\s*(\d+)/i);
+            if (numMatch && numMatch[1]) {
+              const pNum = parseInt(numMatch[1], 10);
+              if (pNum >= 1 && pNum <= 10) {
+                quizSlotIdx = pNum - 1;
+              }
+            }
+          }
+
+          // If no explicit number in title, find its index among the subject's quizzes for THIS period
+          if (quizSlotIdx === -1 && Array.isArray(availableQuizzes)) {
+            const subjQuizzes = availableQuizzes.filter((q) => {
+              const qPeriod = q.period || localStorage.getItem(`quiz_period_${q.id}`) || "prelim";
+              if (qPeriod !== quizPeriodKey) return false;
+
+              const qSub = (q.assignedSubject || q.subjectId || localStorage.getItem(`quiz_subject_code_${q.id}`) || "").toLowerCase();
+              const qTopic = (q.topic || "").toLowerCase();
+              const qTitle = (q.title || "").toLowerCase();
+              if (isFor102) {
+                return qSub.includes("102") || qTopic.includes("102") || qTitle.includes("102") || qTopic.includes("calculus-2") || qTopic.includes("integral");
+              }
+              return qSub.includes("101") || qTopic.includes("101") || qTitle.includes("101") || qTopic.includes("calculus-1") || qTopic.includes("differential") || (!qSub && !qTopic.includes("102"));
+            });
+            const qPos = subjQuizzes.findIndex((q) => q.id === activeTakingQuiz.id);
+            if (qPos >= 0 && qPos < 10) {
+              quizSlotIdx = qPos;
+            }
+          }
+
+          // Default fallback: Always Quiz 1 (index 0)
+          if (quizSlotIdx === -1) {
+            quizSlotIdx = 0;
+          }
+
+          // Remember this slot for this quiz so retakes update the same slot
+          try {
+            localStorage.setItem(slotStorageKey, String(quizSlotIdx));
+          } catch {}
+
+          const targetActivity = targetPeriod.quizActivities[quizSlotIdx];
+          if (targetActivity.maxScore < totalPossiblePoints || targetActivity.maxScore === 0) {
+            targetActivity.maxScore = totalPossiblePoints;
+          }
+
+          // 4. Set student's score in the target constant quiz column
+          if (!Array.isArray(targetPeriod.scores)) {
+            targetPeriod.scores = [];
+          }
+
+          const existingScoreIdx = targetPeriod.scores.findIndex(
+            (s: any) => s.studentId === studentObj.id && s.activityId === targetActivity.id
+          );
+
+          if (existingScoreIdx >= 0) {
+            targetPeriod.scores[existingScoreIdx].score = totalEarnedPoints;
+          } else {
+            targetPeriod.scores.push({
+              studentId: studentObj.id,
+              activityId: targetActivity.id,
+              score: totalEarnedPoints,
+            });
+          }
+
+          // Clean up any duplicate or ghost scores in Quiz 2..10 for this student in this period if only Quiz 1 was taken
+          if (quizSlotIdx === 0) {
+            targetPeriod.quizActivities.forEach((act: any, aIdx: number) => {
+              if (aIdx > 0) {
+                // If there are no other quizzes published/attempted for this slot, ensure maxScore=0 and no score
+                const qScore = targetPeriod.scores.find((s: any) => s.studentId === studentObj.id && s.activityId === act.id);
+                const q1 = targetPeriod.quizActivities[0];
+                const s1 = targetPeriod.scores.find((s: any) => s.studentId === studentObj.id && s.activityId === q1.id);
+                if (qScore && s1 && qScore.score === s1.score) {
+                  targetPeriod.scores = targetPeriod.scores.filter(
+                    (s: any) => !(s.studentId === studentObj.id && s.activityId === act.id)
+                  );
+                  act.maxScore = 0;
+                }
+              }
+            });
+          }
+
+          // Ensure student is in the right subject (e.g. if quiz is for 102, clean from 101)
+          if (isFor102) {
+            gradingRecords.forEach((r: any) => {
+              if (r.subject.id !== targetRec.subject.id && Array.isArray(r.students)) {
+                const initLen = r.students.length;
+                r.students = r.students.filter((st: any) => {
+                  const nameLower = (st.fullName || "").toLowerCase();
+                  if (st.id === studentObj.id) return false;
+                  if (nameLower.includes("jeoff") || nameLower.includes("montebon")) return false;
+                  return true;
+                });
+                if (r.students.length !== initLen) {
+                  r.students.forEach((st: any, i: number) => { st.studentNumber = String(i + 1); });
+                  if (Array.isArray(r.periods?.prelim?.scores)) {
+                    r.periods.prelim.scores = r.periods.prelim.scores.filter((s: any) => s.studentId !== studentObj.id);
+                  }
+                }
+              }
+            });
+          }
+
+          localStorage.setItem("mathworkspace_grading_data", JSON.stringify(gradingRecords));
+          window.dispatchEvent(new CustomEvent("mathworkspace-quiz-submitted"));
+        }
+      } catch (gradingSyncErr) {
+        console.warn("Could not sync attempt to local grading sheet:", gradingSyncErr);
       }
 
       const isReviewAllowed = activeTakingQuiz?.allowReview !== undefined
@@ -717,26 +1194,119 @@ export default function UserDashboardPage() {
     return `${mins}m ${secs < 10 ? "0" : ""}${secs}s`;
   };
 
-  const totalQuizzesTaken = myAttempts.length;
-  const passedQuizzesCount = myAttempts.filter((a) => a.passed).length;
+  const userEnrolledSubject = useMemo(() => {
+    // 1. Direct from user profile if available
+    const subCode = (user as any)?.subject_code || (user as any)?.subjectCode;
+    if (subCode) {
+      const s = String(subCode).toUpperCase();
+      if (s.includes("102")) return "MATH 102";
+      if (s.includes("103")) return "MATH 103";
+      if (s.includes("101")) return "MATH 101";
+      return s;
+    }
+
+    // 2. Look up in localStorage grading data
+    try {
+      const rawGrading = localStorage.getItem("mathworkspace_grading_data");
+      if (rawGrading) {
+        const records = JSON.parse(rawGrading);
+        if (Array.isArray(records)) {
+          const userName = (user?.name || "").toLowerCase().trim();
+          const userId = user?.id;
+          for (const rec of records) {
+            const found = rec.students?.some(
+              (st: any) =>
+                (userId && st.id === userId) ||
+                (userName && st.fullName?.toLowerCase().trim() === userName)
+            );
+            if (found && rec.subject?.subjectCode) {
+              const code = rec.subject.subjectCode.toUpperCase();
+              if (code.includes("102")) return "MATH 102";
+              if (code.includes("103")) return "MATH 103";
+              if (code.includes("101")) return "MATH 101";
+              return rec.subject.subjectCode;
+            }
+          }
+        }
+      }
+    } catch {}
+
+    // 3. Known student name rule (Jeoff Montebon -> MATH 102)
+    const name = (user?.name || "").toLowerCase();
+    if (name.includes("jeoff") || name.includes("montebon")) {
+      return "MATH 102";
+    }
+
+    return "MATH 101";
+  }, [user]);
+
+  const enrolledAttempts = useMemo(() => {
+    const norm = (s?: string) => (s || "MATH 101").toUpperCase().trim();
+    const enrolled = norm(userEnrolledSubject);
+    return myAttempts.filter((att) => {
+      const parentQuiz = availableQuizzes.find((q) => q.id === att.quizId);
+      const qSub = parentQuiz ? norm(parentQuiz.designatedSubject) : "";
+      if (qSub) return qSub === enrolled;
+
+      const t = (att.topic || "").toLowerCase();
+      const title = (att.quizTitle || "").toLowerCase();
+      if (enrolled === "MATH 102") {
+        return (
+          t.includes("calculus 2") ||
+          t.includes("calculus-2") ||
+          t.includes("integral") ||
+          title.includes("102") ||
+          title.includes("calculus 2")
+        );
+      }
+      if (enrolled === "MATH 103") {
+        return (
+          t.includes("linear") ||
+          title.includes("103") ||
+          title.includes("linear")
+        );
+      }
+      return (
+        t.includes("calculus 1") ||
+        t.includes("calculus-1") ||
+        t.includes("differential") ||
+        title.includes("101")
+      );
+    });
+  }, [myAttempts, availableQuizzes, userEnrolledSubject]);
+
+  const activeAttemptsForStats =
+    enrolledAttempts.length > 0 ? enrolledAttempts : myAttempts;
+
+  const totalQuizzesTaken = activeAttemptsForStats.length;
+  const passedQuizzesCount = activeAttemptsForStats.filter((a) => a.passed).length;
   const studentAverageScore =
     totalQuizzesTaken > 0
       ? Math.round(
-          myAttempts.reduce((acc, a) => acc + a.score, 0) / totalQuizzesTaken
+          activeAttemptsForStats.reduce((acc, a) => acc + a.score, 0) /
+            totalQuizzesTaken
         )
       : 0;
   const studentHighestScore =
-    totalQuizzesTaken > 0 ? Math.max(...myAttempts.map((a) => a.score)) : 0;
-  const totalTimeSpentSeconds = myAttempts.reduce(
+    totalQuizzesTaken > 0
+      ? Math.max(...activeAttemptsForStats.map((a) => a.score))
+      : 0;
+  const totalTimeSpentSeconds = activeAttemptsForStats.reduce(
     (acc, a) => acc + a.timeSpentSeconds,
     0
   );
 
   const pendingAvailableQuizzes = useMemo(() => {
-    return availableQuizzes.filter(
-      (quiz) => !myAttempts.some((attempt) => attempt.quizId === quiz.id)
-    );
-  }, [availableQuizzes, myAttempts]);
+    const norm = (s?: string) => (s || "MATH 101").toUpperCase().trim();
+    const enrolled = norm(userEnrolledSubject);
+
+    // Strictly filter available quizzes to only the student's enrolled subject (e.g. MATH 102)
+    return availableQuizzes.filter((quiz) => {
+      const notTaken = !myAttempts.some((attempt) => attempt.quizId === quiz.id);
+      const quizSub = norm(quiz.designatedSubject);
+      return notTaken && quizSub === enrolled;
+    });
+  }, [availableQuizzes, myAttempts, userEnrolledSubject]);
 
   const displayName =
     user?.name || (user?.email ? user.email.split("@")[0] : "Student");
@@ -755,8 +1325,10 @@ export default function UserDashboardPage() {
     navigate("/login", { replace: true });
   };
 
+
+
   return (
-    <div className="fixed inset-0 z-40 bg-[#F8F9FA] dark:bg-[#0B0F19] text-[#1F242D] dark:text-slate-100 font-sans antialiased flex overflow-hidden select-none">
+    <div className="fixed inset-0 z-40 bg-[#F8F9FA] dark:bg-[#0B0F19] text-[#1F242D] dark:text-slate-100 font-sans antialiased flex overflow-hidden select-none animate-in fade-in duration-300">
       {/* 1. LEFT SIDEBAR */}
       <UserDashboardSidebar
         activeNav={activeNav}
@@ -806,6 +1378,7 @@ export default function UserDashboardPage() {
               onStartQuiz={handleStartQuiz}
               onReviewAttempt={setReviewingAttempt}
               formatSeconds={formatSeconds}
+              userEnrolledSubject={userEnrolledSubject}
             />
           )}
 
@@ -885,6 +1458,7 @@ export default function UserDashboardPage() {
                 setQuizSearchTerm={setQuizSearchTerm}
                 onStartQuiz={handleStartQuiz}
                 onReviewAttempt={setReviewingAttempt}
+                userEnrolledSubject={userEnrolledSubject}
               />
             )}
 

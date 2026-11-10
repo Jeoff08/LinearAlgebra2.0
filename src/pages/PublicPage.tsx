@@ -1034,7 +1034,6 @@ export default function PublicPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-
   // Active view: "main" | "categories" | "topics-linear" | "topics-calculus" | "topics-calculus-2"
   const [activeView, setActiveView] = useState<"main" | "categories" | "topics-linear" | "topics-calculus" | "topics-calculus-2">(() => {
     const search = window.location.hash.includes("?")

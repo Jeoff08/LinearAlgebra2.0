@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -11,8 +11,22 @@ import {
   AlertCircle,
   Loader2,
   X,
+  BookOpen,
+  Hash,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import {
+  GRADING_PERIODS,
+  type GradingPeriod,
+  type SubjectGradingRecord,
+} from "../../types/grading";
+import { computeStudentGrade } from "../../utils/gradingEngine";
+import {
+  formatGradeEquivalent,
+  getGradeRemarks,
+  lookupGradeEquivalent,
+} from "../../data/gradeEquivalentTable";
+import { GraduationCap, Award, Sparkles } from "lucide-react";
 
 interface UserProfileViewProps {
   user: any;
@@ -47,6 +61,250 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   const [savedChangeType, setSavedChangeType] = useState<
     "name" | "photo" | "both"
   >("name");
+
+  // Resolved enrolled subject and subject code for this student
+  const enrolledSubjectInfo = useMemo(() => {
+    // Map of known subject codes to subject names and default offer numbers
+    const SUBJECT_MAP: Record<string, { name: string; defaultOffer: string }> = {
+      "MATH 101": { name: "Calculus with Analytic Geometry", defaultOffer: "80062" },
+      "MATH 102": { name: "Integral Calculus", defaultOffer: "80063" },
+      "MATH 103": { name: "Linear Algebra", defaultOffer: "80132" },
+      "GEC 4": { name: "Mathematics in the Modern World", defaultOffer: "50371" },
+    };
+
+    // 1. Direct from user profile if available
+    const rawCode = (user?.subject_code || (user as any)?.subjectCode || "").trim();
+    const rawOffer = (user?.offer_number || (user as any)?.offerNumber || "").trim();
+
+    // 2. Check local grading records or defaults
+    try {
+      const rawGrading = localStorage.getItem("mathworkspace_grading_data");
+      if (rawGrading) {
+        const records = JSON.parse(rawGrading);
+        if (Array.isArray(records)) {
+          const currentStudentId = (user?.id_number || user?.student_id || "").trim().toLowerCase();
+          const currentEmail = (user?.email || "").trim().toLowerCase();
+          const currentName = (user?.name || "").trim().toLowerCase();
+          const currentUserId = user?.id;
+
+          for (const rec of records) {
+            const student = rec.students?.find((s: any) => {
+              const matchId = currentStudentId && s.studentId?.trim().toLowerCase() === currentStudentId;
+              const matchInternalId = s.id === currentUserId;
+              const matchEmail = currentEmail && s.email?.trim().toLowerCase() === currentEmail;
+              const matchName = currentName && s.fullName?.trim().toLowerCase() === currentName;
+              return matchId || matchInternalId || matchEmail || matchName;
+            });
+
+            if (student && rec.subject?.subjectCode) {
+              const code = rec.subject.subjectCode.trim();
+              const upperCode = code.toUpperCase();
+              const known = SUBJECT_MAP[upperCode];
+              const name = rec.subject.subjectName || known?.name || code;
+              const offer = rec.subject.offerNumber || rawOffer || known?.defaultOffer || "";
+              return {
+                subjectCode: code,
+                subjectName: name,
+                offerNumber: offer,
+              };
+            }
+          }
+        }
+      }
+    } catch {}
+
+    // 3. Fallback from raw user profile properties
+    if (rawCode) {
+      const upper = rawCode.toUpperCase();
+      let normalizedCode = rawCode;
+      if (upper.includes("101")) normalizedCode = "MATH 101";
+      else if (upper.includes("102")) normalizedCode = "MATH 102";
+      else if (upper.includes("103")) normalizedCode = "MATH 103";
+      else if (upper.includes("GEC") || upper.includes("4")) normalizedCode = "GEC 4";
+
+      const known = SUBJECT_MAP[normalizedCode.toUpperCase()];
+      const subjectName = known?.name || normalizedCode;
+      const offerNumber = rawOffer || known?.defaultOffer || "";
+      return {
+        subjectCode: normalizedCode,
+        subjectName,
+        offerNumber,
+      };
+    }
+
+    // 4. Known student name rule (Jeoff Montebon -> MATH 102)
+    const name = (user?.name || "").toLowerCase();
+    if (name.includes("jeoff") || name.includes("montebon")) {
+      return {
+        subjectCode: "MATH 102",
+        subjectName: "Integral Calculus",
+        offerNumber: rawOffer || "80063",
+      };
+    }
+
+    // Default enrolled subject fallback
+    return {
+      subjectCode: "MATH 101",
+      subjectName: "Calculus with Analytic Geometry",
+      offerNumber: rawOffer || "80062",
+    };
+  }, [user]);
+
+  // =========================================================================
+  // Academic Grades: fetch grading records and compute per-period grades
+  // =========================================================================
+  const [cloudSubjects, setCloudSubjects] = useState<SubjectGradingRecord[]>([]);
+
+  useEffect(() => {
+    // Load grading data from localStorage
+    try {
+      const raw = localStorage.getItem("mathworkspace_grading_data");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setCloudSubjects(parsed as SubjectGradingRecord[]);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load grading data:", err);
+    }
+
+    // Also try to sync from Supabase grading_records
+    (async () => {
+      try {
+        if (!supabase) return;
+        const { data, error } = await supabase
+          .from("grading_records")
+          .select("payload")
+          .order("updated_at", { ascending: false });
+        if (!error && data && data.length > 0) {
+          const records: SubjectGradingRecord[] = data
+            .map((row: any) => {
+              try {
+                return typeof row.payload === "string"
+                  ? JSON.parse(row.payload)
+                  : row.payload;
+              } catch {
+                return null;
+              }
+            })
+            .filter(Boolean);
+          if (records.length > 0) {
+            setCloudSubjects(records);
+          }
+        }
+      } catch {
+        // Supabase fetch failed, use localStorage data
+      }
+    })();
+  }, []);
+
+  /**
+   * Compute grade breakdowns per subject per period.
+   * Only include periods where the student actually has score data entered.
+   */
+  const studentGradesBySubject = useMemo(() => {
+    if (!user || cloudSubjects.length === 0) return [];
+
+    const currentStudentId = (user?.id_number || user?.student_id || "").trim().toLowerCase();
+    const currentEmail = (user?.email || "").trim().toLowerCase();
+    const currentName = (user?.name || "").trim().toLowerCase();
+    const currentUserId = user?.id;
+
+    return cloudSubjects
+      .filter((rec) => {
+        // Only show subjects where grades are published
+        if (!rec.subject?.gradesPublished) return false;
+        // Only show subjects where this student is enrolled
+        return rec.students?.some((s) => {
+          const matchId = currentStudentId && s.studentId?.trim().toLowerCase() === currentStudentId;
+          const matchInternalId = s.id === currentUserId;
+          const matchEmail = (s as any).email?.trim().toLowerCase() === currentEmail;
+          const matchName = currentName && s.fullName?.trim().toLowerCase() === currentName;
+          return matchId || matchInternalId || matchEmail || matchName;
+        });
+      })
+      .map((rec) => {
+        // Find this student's record
+        const student = rec.students.find((s) => {
+          const matchId = currentStudentId && s.studentId?.trim().toLowerCase() === currentStudentId;
+          const matchInternalId = s.id === currentUserId;
+          const matchEmail = (s as any).email?.trim().toLowerCase() === currentEmail;
+          const matchName = currentName && s.fullName?.trim().toLowerCase() === currentName;
+          return matchId || matchInternalId || matchEmail || matchName;
+        });
+
+        if (!student) return null;
+
+        // Compute grades for each period, filtering to only periods that are published AND have actual data
+        const publishedTermsList = rec.subject?.publishedTerms && rec.subject.publishedTerms.length > 0
+          ? rec.subject.publishedTerms
+          : ["prelim", "midterm", "semi-final", "final"];
+
+        const periodBreakdowns = GRADING_PERIODS.map(({ key, label }) => {
+          // If this term is not selected by admin to be published, do not show it to the student
+          if (!publishedTermsList.includes(key)) {
+            return { key, label, hasData: false, computation: null };
+          }
+
+          const periodData = rec.periods[key];
+          if (!periodData) return { key, label, hasData: false, computation: null };
+
+          const computation = computeStudentGrade(periodData, student.id);
+
+          // Check if this period actually has score data entered for this student
+          const studentScores = periodData.scores.filter(
+            (sc) => sc.studentId === student.id
+          );
+          const hasScoreValues = studentScores.some(
+            (sc) => sc.score !== null && sc.score !== undefined
+          );
+          const hasQuizOverride =
+            periodData.totalQuizOverrides?.[student.id] !== undefined;
+          const hasPartOverride =
+            periodData.totalParticipationOverrides?.[student.id] !== undefined;
+          const hasRecordedData = hasScoreValues || hasQuizOverride || hasPartOverride;
+
+          return {
+            key,
+            label,
+            hasData: hasRecordedData,
+            computation: hasRecordedData ? computation : null,
+          };
+        });
+
+        // Only include periods that actually have data
+        const gradedPeriods = periodBreakdowns.filter((p) => p.hasData);
+
+        // Compute overall final grade & GPA equivalent once all 4 terms or available terms are graded
+        let finalGradeAverage: number | null = null;
+        let gpaEquivalent: number | null = null;
+        const validComputations = gradedPeriods
+          .map((p) => p.computation)
+          .filter(Boolean);
+
+        if (validComputations.length > 0) {
+          const sumRounded = validComputations.reduce(
+            (acc, curr) => acc + (curr?.roundedGrade ?? 0),
+            0
+          );
+          finalGradeAverage = Math.round(sumRounded / validComputations.length);
+          gpaEquivalent = lookupGradeEquivalent(finalGradeAverage);
+        }
+
+        const isFullyCompleted = gradedPeriods.length === GRADING_PERIODS.length;
+
+        return {
+          subject: rec.subject,
+          studentName: student.fullName,
+          gradedPeriods,
+          finalGradeAverage,
+          gpaEquivalent,
+          isFullyCompleted,
+        };
+      })
+      .filter(Boolean);
+  }, [user, cloudSubjects]);
 
   useEffect(() => {
     if (!showPhotoPreviewModal) return;
@@ -362,10 +620,36 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
             </div>
           </div>
 
-          {/* Role & Block Info Banner */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#F9FAFB] dark:bg-slate-800/40 border border-gray-100 dark:border-slate-700">
+          {/* Academic Enrollment, Role & Block Info Banner */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-[#F9FAFB] dark:bg-slate-800/40 border border-gray-100 dark:border-slate-700">
+            {/* Enrolled Subject & Subject Code */}
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] uppercase font-bold text-gray-400">
+                  Enrolled Subject
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-black tracking-wide bg-[#166534] text-white shrink-0">
+                    {enrolledSubjectInfo.subjectCode}
+                  </span>
+                  {enrolledSubjectInfo.offerNumber && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 shrink-0">
+                      #{enrolledSubjectInfo.offerNumber}
+                    </span>
+                  )}
+                  <span className="text-xs font-bold text-gray-800 dark:text-slate-200 truncate" title={enrolledSubjectInfo.subjectName}>
+                    {enrolledSubjectInfo.subjectName}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Role */}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
                 <Shield className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
@@ -378,8 +662,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               </div>
             </div>
 
+            {/* Assigned Block */}
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-green-50 dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
+              <div className="w-9 h-9 rounded-xl bg-green-50 dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
                 <Layers className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
@@ -425,7 +710,139 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
         </form>
       </div>
 
-      {/* Profile Photo Preview Modal */}
+      {/* Academic Grades Card — Only shows published subjects with graded periods */}
+      {(studentGradesBySubject as any[]).length > 0 && (
+        <div className="bg-white dark:bg-[#161F30] border border-[#ECEFF3] dark:border-slate-700 rounded-[26px] p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-[#1F242D] dark:text-slate-100 tracking-tight">
+                Academic Grades
+              </h3>
+              <p className="text-[11px] text-gray-400 dark:text-slate-500">
+                Your published grade breakdowns per term
+              </p>
+            </div>
+          </div>
+
+          {(studentGradesBySubject as any[]).map((entry: any, idx: number) => (
+            <div key={entry.subject.id || idx} className="mb-6 last:mb-0">
+              {/* Subject Header */}
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wide bg-[#166534] text-white">
+                  {entry.subject.subjectCode}
+                </span>
+                {entry.subject.offerNumber && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300">
+                    #{entry.subject.offerNumber}
+                  </span>
+                )}
+                <span className="text-sm font-bold text-gray-800 dark:text-slate-200">
+                  {entry.subject.subjectName}
+                </span>
+              </div>
+
+              {/* Period Grades Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {entry.gradedPeriods.map((period: any) => {
+                  if (!period.computation) return null;
+                  const comp = period.computation;
+                  const equiv = comp.gradeEquivalent;
+                  const remarks = getGradeRemarks(equiv);
+                  const equivStr = formatGradeEquivalent(equiv);
+
+                  return (
+                    <motion.div
+                      key={period.key}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-2xl border border-gray-100 dark:border-slate-700 bg-[#F9FAFB] dark:bg-slate-800/40 p-4 flex flex-col gap-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+                          {period.label}
+                        </span>
+                        <Award className={`w-4 h-4 ${remarks.isPassing ? "text-emerald-500" : "text-gray-300 dark:text-slate-600"}`} />
+                      </div>
+
+                      <div className="flex items-end gap-1.5">
+                        <span className={`text-2xl font-black leading-none ${remarks.color}`}>
+                          {equivStr}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-1">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          remarks.isPassing
+                            ? "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400"
+                            : equiv !== null && equiv !== undefined
+                              ? "bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400"
+                              : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
+                        }`}>
+                          {remarks.text}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Final Grade / GPA Summary Banner */}
+              {entry.gpaEquivalent !== null && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3.5 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 bg-gradient-to-r from-emerald-50/90 via-[#166534]/5 to-transparent dark:from-emerald-950/40 dark:via-emerald-900/20 dark:to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#166534] text-white flex items-center justify-center font-black shadow-sm shrink-0">
+                      <Sparkles className="w-5 h-5 text-emerald-300" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black uppercase tracking-wider text-[#166534] dark:text-emerald-400">
+                          {entry.isFullyCompleted ? "Final Grade & GPA" : "Current Subject GPA"}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300">
+                          {entry.gradedPeriods.length} of {GRADING_PERIODS.length} terms computed
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+                        {entry.isFullyCompleted
+                          ? "Official final semestral grade computed across Prelim, Midterm, Semi-Final, and Final terms."
+                          : "Running weighted GPA computed across currently published terms."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 sm:gap-4 self-end sm:self-center shrink-0">
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">
+                        Final GPA
+                      </span>
+                      <span className={`text-2xl font-black leading-none ${getGradeRemarks(entry.gpaEquivalent).color}`}>
+                        {formatGradeEquivalent(entry.gpaEquivalent)}
+                      </span>
+                    </div>
+
+                    <span className={`text-[11px] font-black px-2.5 py-1 rounded-xl shadow-xs ${
+                      getGradeRemarks(entry.gpaEquivalent).isPassing
+                        ? "bg-emerald-600 text-white"
+                        : "bg-rose-600 text-white"
+                    }`}>
+                      {getGradeRemarks(entry.gpaEquivalent).text}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+            {/* Profile Photo Preview Modal */}
       <AnimatePresence>
         {showPhotoPreviewModal && profileAvatarUrl && (
           <motion.div

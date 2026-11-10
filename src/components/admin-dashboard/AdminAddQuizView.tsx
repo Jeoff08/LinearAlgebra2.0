@@ -25,6 +25,8 @@ import {
   RefreshCw,
   AlertCircle,
   Trash2,
+  GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import type {
   QuizItem,
@@ -82,6 +84,11 @@ interface AdminAddQuizViewProps {
   adminReviewQuizModal: QuizItem | null;
   setAdminReviewQuizModal: (q: QuizItem | null) => void;
   handleDeleteQuiz: (id: string) => void;
+  availableSubjects?: Array<{ id: string; subjectCode: string; offerNumber: string; subjectName: string }>;
+  selectedSubjectId?: string;
+  setSelectedSubjectId?: (id: string) => void;
+  selectedGradingPeriod?: "prelim" | "midterm" | "semi-final" | "final";
+  setSelectedGradingPeriod?: (p: "prelim" | "midterm" | "semi-final" | "final") => void;
 }
 
 export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
@@ -129,6 +136,11 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
   adminReviewQuizModal,
   setAdminReviewQuizModal,
   handleDeleteQuiz,
+  availableSubjects = [],
+  selectedSubjectId = "",
+  setSelectedSubjectId,
+  selectedGradingPeriod = "prelim",
+  setSelectedGradingPeriod,
 }) => {
   return (
     <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
@@ -218,6 +230,104 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
         {/* ================================================================= */}
         {generatorStep === 1 && (
           <div className="space-y-6">
+            {/* Subject Selector Section */}
+            {availableSubjects && availableSubjects.length > 0 && (
+              <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-[#166534] dark:text-emerald-400" />
+                      <h3 className="text-base font-bold text-[#111827] dark:text-slate-100">
+                        Target Subject / Course
+                      </h3>
+                    </div>
+                    <p className="text-xs text-[#6B7280] dark:text-slate-400 mt-0.5">
+                      Select which enrolled class section and grading sheet this quiz is for.
+                    </p>
+                  </div>
+                  {selectedSubjectId && (
+                    <span className="text-[11px] font-bold text-[#166534] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-xl self-start sm:self-auto">
+                      Connected to Grading Sheet
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+                  {availableSubjects.map((subj) => {
+                    const isSelected = selectedSubjectId === subj.id;
+                    const label = `${subj.subjectCode} - ${subj.offerNumber}`;
+                    return (
+                      <button
+                        key={subj.id}
+                        type="button"
+                        onClick={() => setSelectedSubjectId && setSelectedSubjectId(subj.id)}
+                        className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
+                          isSelected
+                            ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
+                            : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-black tracking-wide ${
+                            isSelected
+                              ? "bg-[#166534] text-white"
+                              : "bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200"
+                          }`}>
+                            {label}
+                          </span>
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                            isSelected
+                              ? "bg-[#166534] text-white"
+                              : "border border-gray-300 dark:border-slate-500 text-transparent"
+                          }`}>
+                            ✓
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-[#111827] dark:text-slate-100 truncate mt-1">
+                          {subj.subjectName}
+                        </h4>
+                        <span className="text-[10px] text-gray-500 dark:text-slate-400 mt-1">
+                          Offer No. {subj.offerNumber}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Grading Period Picker */}
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/60">
+                  <label className="block text-xs font-bold text-[#374151] dark:text-slate-200 mb-2 uppercase tracking-wide">
+                    Grading Period
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { key: "prelim", label: "Prelim" },
+                      { key: "midterm", label: "Midterm" },
+                      { key: "semi-final", label: "Semi-Final" },
+                      { key: "final", label: "Final" },
+                    ].map((period) => {
+                      const isSelected = selectedGradingPeriod === period.key;
+                      return (
+                        <button
+                          key={period.key}
+                          type="button"
+                          onClick={() => setSelectedGradingPeriod && setSelectedGradingPeriod(period.key as any)}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
+                            isSelected
+                              ? "bg-[#166534] text-white border-[#166534] shadow-xs"
+                              : "bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-600"
+                          }`}
+                        >
+                          <span>{period.label}</span>
+                          {isSelected && <span className="text-[10px]">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Category Selection Cards */}
             <div className="bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-3xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
               <div>
@@ -773,7 +883,7 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                       scale: 1.08,
                       transition: { duration: 0.5, ease: "easeInOut" },
                     }}
-                    className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/90 backdrop-blur-md"
+                    className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/90 dark:bg-[#0B132B]/90 backdrop-blur-md"
                   >
                     <motion.div
                       ref={publishedGSAPRef}
@@ -796,13 +906,13 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                           <CheckCircle2 className="gsap-publish-check w-10 h-10 text-white" />
                         </div>
                       </div>
-                      <h3 className="gsap-publish-text text-emerald-700 text-2xl font-bold tracking-wide">
+                      <h3 className="gsap-publish-text text-emerald-700 dark:text-emerald-400 text-2xl font-bold tracking-wide">
                         Published!
                       </h3>
-                      <p className="gsap-publish-text text-emerald-600/80 text-sm text-center max-w-[240px]">
+                      <p className="gsap-publish-text text-emerald-600/80 dark:text-emerald-300/80 text-sm text-center max-w-[240px]">
                         Quiz is now live for students.
                       </p>
-                      <p className="text-[11px] text-emerald-500/60 mt-1">
+                      <p className="text-[11px] text-emerald-500/60 dark:text-emerald-400/60 mt-1">
                         This message will close automatically...
                       </p>
                     </motion.div>
@@ -817,7 +927,7 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/85 backdrop-blur-md"
+                    className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/85 dark:bg-[#0B132B]/85 backdrop-blur-md"
                   >
                     {/* Spinning ring */}
                     <div className="relative w-28 h-28 mb-6">
@@ -833,10 +943,10 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                       </div>
                     </div>
                     {/* Text */}
-                    <h3 className="text-[#166534] text-xl font-bold tracking-wide mb-1">
+                    <h3 className="text-[#166534] dark:text-emerald-400 text-xl font-bold tracking-wide mb-1">
                       Generating Quiz
                     </h3>
-                    <p className="text-[#166534]/60 text-sm mb-6">
+                    <p className="text-[#166534]/60 dark:text-emerald-300/70 text-sm mb-6">
                       Crafting your questions, please wait...
                     </p>
                     {/* Animated dots bar */}
@@ -844,7 +954,7 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                       {[0, 1, 2, 3, 4].map((i) => (
                         <motion.div
                           key={i}
-                          className="w-2.5 h-2.5 rounded-full bg-[#166534]"
+                          className="w-2.5 h-2.5 rounded-full bg-[#166534] dark:bg-emerald-400"
                           animate={{
                             scale: [1, 1.6, 1],
                             opacity: [0.4, 1, 0.4],
@@ -972,6 +1082,70 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#166534] focus:border-[#166534]"
                 />
               </div>
+
+              {/* Target Subject Selector in Step 2 */}
+              {availableSubjects && availableSubjects.length > 0 && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-[#166534]" />
+                      <span>Grading Sheet Subject Connection</span>
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {availableSubjects.map((subj) => {
+                        const isSelected = selectedSubjectId === subj.id;
+                        const label = `${subj.subjectCode} - ${subj.offerNumber}`;
+                        return (
+                          <button
+                            key={subj.id}
+                            type="button"
+                            onClick={() => setSelectedSubjectId && setSelectedSubjectId(subj.id)}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border ${
+                              isSelected
+                                ? "bg-[#166534] text-white border-[#166534] shadow-xs"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200"
+                            }`}
+                          >
+                            <span>{label}</span>
+                            {isSelected && <span className="text-[10px]">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wide">
+                      Grading Period
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[
+                        { key: "prelim", label: "Prelim" },
+                        { key: "midterm", label: "Midterm" },
+                        { key: "semi-final", label: "Semi-Final" },
+                        { key: "final", label: "Final" },
+                      ].map((period) => {
+                        const isSelected = selectedGradingPeriod === period.key;
+                        return (
+                          <button
+                            key={period.key}
+                            type="button"
+                            onClick={() => setSelectedGradingPeriod && setSelectedGradingPeriod(period.key as any)}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border ${
+                              isSelected
+                                ? "bg-[#166534] text-white border-[#166534] shadow-xs"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200"
+                            }`}
+                          >
+                            <span>{period.label}</span>
+                            {isSelected && <span className="text-[10px]">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Notice Banner */}
               <div className="p-3.5 rounded-2xl bg-[#FFFBEB] border border-[#FEF3C7] flex items-start gap-3 text-xs text-[#92400E]">

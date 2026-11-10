@@ -36,6 +36,8 @@ export const UserQuizTakingView: React.FC<UserQuizTakingViewProps> = ({
   formatSeconds,
 }) => {
   const currentQuestion = activeTakingQuiz.questions[currentQuestionIndex];
+  const pointsPerItem = activeTakingQuiz.pointsPerItem || 1;
+  const totalMaxScore = activeTakingQuiz.questions.length * pointsPerItem;
 
   return (
     <div className="w-full max-w-[1440px] mx-auto flex flex-col gap-6 pb-24">
@@ -66,7 +68,12 @@ export const UserQuizTakingView: React.FC<UserQuizTakingViewProps> = ({
             <span>Exit Quiz</span>
           </button>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            {activeTakingQuiz.designatedSubject && (
+              <span className="text-xs font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 px-3 py-1 rounded-full">
+                {activeTakingQuiz.designatedSubject}
+              </span>
+            )}
             <span className="text-xs font-extrabold uppercase tracking-wider bg-[#166534]/10 dark:bg-[#166534]/25 text-[#166534] dark:text-[#4ADE80] border border-[#166534]/20 dark:border-[#166534]/40 px-3 py-1 rounded-full">
               {activeTakingQuiz.topic}
             </span>
@@ -101,6 +108,9 @@ export const UserQuizTakingView: React.FC<UserQuizTakingViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2 sm:self-end">
+            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-300 px-3.5 py-1 rounded-xl text-xs font-black shadow-xs">
+              <span>Total Max Score: {totalMaxScore} pts</span>
+            </div>
             <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-[#166534]/20 border border-emerald-200 dark:border-[#166534]/40 text-emerald-800 dark:text-[#4ADE80] px-3 py-1 rounded-xl text-xs font-bold">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-[#4ADE80]" />
               <span>
@@ -165,12 +175,15 @@ export const UserQuizTakingView: React.FC<UserQuizTakingViewProps> = ({
               </span>
             </div>
 
-            <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 px-3 py-1 rounded-xl">
-              ★ {activeTakingQuiz.pointsPerItem || 1}{" "}
-              {(activeTakingQuiz.pointsPerItem || 1) === 1
-                ? "Point"
-                : "Points"}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-[#1E2D45] border border-gray-200 dark:border-[#263347] px-3 py-1 rounded-xl">
+                Total: <strong className="text-gray-900 dark:text-[#F1F5F9] font-black">{totalMaxScore} pts</strong>
+              </span>
+              <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 px-3 py-1 rounded-xl">
+                ★ {pointsPerItem}{" "}
+                {pointsPerItem === 1 ? "Point" : "Points"}
+              </span>
+            </div>
           </div>
 
           {/* Question Prompt */}

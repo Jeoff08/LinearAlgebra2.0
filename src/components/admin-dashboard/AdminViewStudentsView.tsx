@@ -222,6 +222,11 @@ export const AdminViewStudentsView: React.FC<AdminViewStudentsViewProps> = ({
                                 </span>
                               )}
                             </div>
+                            {st.studentId && (
+                              <span className="text-[11px] font-mono font-semibold text-blue-600 dark:text-blue-400">
+                                ID: {st.studentId}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>

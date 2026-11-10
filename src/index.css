@@ -1461,6 +1461,29 @@ html.dark select {
   border-color: #334155 !important;
 }
 
+/* Table spreadsheet cell inputs override */
+html.dark input.grading-cell-input[type="text"],
+html.dark input.grading-cell-input {
+  background-color: transparent !important;
+  color: #F8FAFC !important;
+  border-color: transparent !important;
+}
+html.dark input.grading-cell-input[type="text"]:focus,
+html.dark input.grading-cell-input:focus {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+}
+
+html.light input.grading-cell-input[type="text"],
+html.light input.grading-cell-input {
+  background-color: transparent !important;
+  color: #1E293B !important;
+}
+html.light input.grading-cell-input[type="text"]:focus,
+html.light input.grading-cell-input:focus {
+  background-color: #FFFFFF !important;
+}
+
 html.dark input::placeholder,
 html.dark textarea::placeholder {
   color: #64748B !important;

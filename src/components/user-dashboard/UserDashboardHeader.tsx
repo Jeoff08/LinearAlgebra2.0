@@ -253,7 +253,7 @@ export const UserDashboardHeader: React.FC<UserDashboardHeaderProps> = ({
                               )}
                             </div>
                             <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate mt-0.5">
-                              {quiz.topic} • {quiz.questionsCount} items (
+                              {quiz.designatedSubject ? `${quiz.designatedSubject} • ` : ""}{quiz.topic} • {quiz.questionsCount} items (
                               {quiz.pointsPerItem || 1} pts/item)
                             </p>
                             <div className="flex items-center justify-between mt-1 text-[10px]">

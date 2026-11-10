@@ -5,6 +5,7 @@ import {
   Calculator,
   BookOpen,
   PlusSquare,
+  ClipboardCheck,
   BarChart3,
   History,
   Users,
@@ -12,6 +13,7 @@ import {
   X,
   ArrowLeft,
   HelpCircle,
+  FileSpreadsheet,
 } from "lucide-react";
 
 interface AdminDashboardSidebarProps {
@@ -323,6 +325,33 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     {!isTopicCalculatorOpen && <span>Add Quiz</span>}
                   </button>
 
+                  {/* Published Quizzes */}
+                  <button
+                    onClick={() => handleNavClick("published-quizzes")}
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                      isTopicCalculatorOpen ? "justify-center !px-0" : ""
+                    } ${
+                      activeNav === "published-quizzes"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Published Quizzes"
+                  >
+                    <ClipboardCheck className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && (
+                      <div className="flex items-center justify-between w-full">
+                        <span>Published Quizzes</span>
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                          activeNav === "published-quizzes"
+                            ? "bg-white/20 text-white"
+                            : "bg-emerald-50 text-[#166534]"
+                        }`}>
+                          {quizzesCount}
+                        </span>
+                      </div>
+                    )}
+                  </button>
+
                   {/* Quiz Results */}
                   <button
                     onClick={() => handleNavClick("quiz-results")}
@@ -394,6 +423,30 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   >
                     <GraduationCap className="w-4 h-4 shrink-0" />
                     {!isTopicCalculatorOpen && <span>Student Overview</span>}
+                  </button>
+                  {/* Section: Academic & Grading */}
+                  {!isTopicCalculatorOpen && (
+                    <div className="pt-5 pb-1">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        Academic & Grading
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Grading Sheet */}
+                  <button
+                    onClick={() => handleNavClick("grading")}
+                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                      isTopicCalculatorOpen ? "justify-center !px-0" : ""
+                    } ${
+                      activeNav === "grading"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                    }`}
+                    title="Grading Sheet"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Grading Sheet</span>}
                   </button>
                 </motion.div>
               )}
@@ -661,6 +714,24 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           <span>Add Quiz</span>
                         </button>
                         <button
+                          onClick={() => handleNavClick("published-quizzes")}
+                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left ${
+                            activeNav === "published-quizzes"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <ClipboardCheck className="w-4 h-4 shrink-0" />
+                            <span>Published Quizzes</span>
+                          </div>
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                            activeNav === "published-quizzes" ? "bg-white/20 text-white" : "bg-emerald-100 text-[#166534]"
+                          }`}>
+                            {quizzesCount}
+                          </span>
+                        </button>
+                        <button
                           onClick={() => handleNavClick("quiz-results")}
                           className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
                         >
@@ -696,6 +767,22 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                         >
                           <GraduationCap className="w-4 h-4 shrink-0" />
                           <span>Student Overview</span>
+                        </button>
+                        <div className="pt-4 pb-1">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                            Academic & Grading
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleNavClick("grading")}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "grading"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
+                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                          }`}
+                        >
+                          <FileSpreadsheet className="w-4 h-4 shrink-0" />
+                          <span>Grading Sheet</span>
                         </button>
                       </motion.div>
                     )}

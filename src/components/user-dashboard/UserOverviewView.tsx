@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
@@ -34,6 +34,7 @@ interface UserOverviewViewProps {
   onStartQuiz: (quiz: StudentAvailableQuiz) => void;
   onReviewAttempt: (attempt: StudentQuizAttemptItem) => void;
   formatSeconds: (sec: number) => string;
+  userEnrolledSubject?: string;
 }
 
 export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
@@ -54,7 +55,39 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
   onStartQuiz,
   onReviewAttempt,
   formatSeconds,
+  userEnrolledSubject = "MATH 101",
 }) => {
+  const displayAttempts: StudentQuizAttemptItem[] = useMemo(() => {
+    const norm = (s?: string) => (s || "MATH 101").toUpperCase().trim();
+    const enrolled = norm(userEnrolledSubject);
+    const filtered = myAttempts.filter((att: StudentQuizAttemptItem) => {
+      const t = (att.topic || "").toLowerCase();
+      const title = (att.quizTitle || "").toLowerCase();
+      if (enrolled === "MATH 102") {
+        return (
+          t.includes("calculus 2") ||
+          t.includes("calculus-2") ||
+          t.includes("integral") ||
+          title.includes("102") ||
+          title.includes("calculus 2")
+        );
+      }
+      if (enrolled === "MATH 103") {
+        return (
+          t.includes("linear") ||
+          title.includes("103") ||
+          title.includes("linear")
+        );
+      }
+      return (
+        t.includes("calculus 1") ||
+        t.includes("calculus-1") ||
+        t.includes("differential") ||
+        title.includes("101")
+      );
+    });
+    return filtered.length > 0 ? filtered : myAttempts;
+  }, [myAttempts, userEnrolledSubject]);
   return (
     <>
       {/* TOP ROW: HERO WELCOME BANNER (LEFT) & YOUR PROGRESS CARD (RIGHT) */}
@@ -296,9 +329,16 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
           <div>
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm sm:text-base font-bold text-[#1F242D] dark:text-slate-100">
-                Available Quizzes
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-[#1F242D] dark:text-slate-100">
+                  Available Quizzes
+                </h3>
+                {userEnrolledSubject && (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                    {userEnrolledSubject}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => onNavigate("quizzes")}
                 className="bg-[#166534] hover:bg-[#14532d] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer"
@@ -322,11 +362,17 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
                 <HelpCircle className="w-6 h-6" />
               </div>
               <h4 className="text-sm font-bold text-[#1F242D] dark:text-slate-100 mb-1">
-                No quizzes added yet
+                No quizzes available for {userEnrolledSubject}
               </h4>
               <p className="text-xs text-[#8C93A0] dark:text-slate-400 mb-4">
-                Quizzes published by instructors will appear here.
+                You have completed all published quizzes for {userEnrolledSubject}, or no new quizzes have been assigned yet.
               </p>
+              <button
+                onClick={() => onNavigate("quizzes")}
+                className="bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold px-3.5 py-2 rounded-xl transition cursor-pointer"
+              >
+                Browse Quizzes Catalog
+              </button>
             </div>
           ) : (
             <div className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60 my-2">
@@ -336,16 +382,40 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
                   className="grid grid-cols-6 items-center py-3 px-1 text-xs hover:bg-[#F9FAFB] dark:hover:bg-slate-800/50 rounded-lg transition"
                 >
                   <div className="col-span-3 min-w-0 pr-2">
-                    <p className="font-bold text-[#1F242D] dark:text-slate-100 truncate">
-                      {quiz.title}
-                    </p>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span
+                        className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded border ${
+                          (quiz.designatedSubject || "MATH 101").includes("102")
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800"
+                            : (quiz.designatedSubject || "MATH 101").includes("103")
+                            ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800"
+                            : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
+                        }`}
+                      >
+                        {quiz.designatedSubject || "MATH 101"}
+                      </span>
+                      <p className="font-bold text-[#1F242D] dark:text-slate-100 truncate">
+                        {quiz.title}
+                      </p>
+                    </div>
                     <p className="text-[11px] text-[#8C93A0] dark:text-slate-400">
                       {quiz.createdAt}
                     </p>
                   </div>
-                  <div className="col-span-1">
-                    <span className="text-[10px] font-semibold bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-2 py-0.5 rounded">
+                  <div className="col-span-1 flex flex-col gap-1 items-start">
+                    <span className="text-[10px] font-semibold bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-2 py-0.5 rounded truncate max-w-full">
                       {quiz.topic}
+                    </span>
+                    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded border ${
+                      (quiz.period || "prelim") === "prelim"
+                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                        : (quiz.period || "prelim") === "midterm"
+                        ? "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                        : (quiz.period || "prelim") === "semi-final"
+                        ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                        : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                    }`}>
+                      {quiz.period === "semi-final" ? "Semi-Final" : quiz.period === "midterm" ? "Midterm" : quiz.period === "final" ? "Final" : "Prelim"}
                     </span>
                   </div>
                   <div className="col-span-1 text-center font-medium text-[#4B5565] dark:text-slate-300">
@@ -386,14 +456,21 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
           <div>
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm sm:text-base font-bold text-[#1F242D] dark:text-slate-100">
-                Recent Quiz History
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-[#1F242D] dark:text-slate-100">
+                  Recent Quiz History
+                </h3>
+                {userEnrolledSubject && (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                    {userEnrolledSubject}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => onNavigate("quizzes-history")}
                 className="bg-white dark:bg-slate-800 border border-[#E0E2E6] dark:border-slate-700 hover:bg-[#F8F9FA] dark:hover:bg-slate-700 text-[#4B5565] dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer"
               >
-                View All ({myAttempts.length})
+                View All ({displayAttempts.length})
               </button>
             </div>
 
@@ -406,7 +483,7 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
             </div>
           </div>
 
-          {myAttempts.length === 0 ? (
+          {displayAttempts.length === 0 ? (
             <div className="py-10 flex flex-col items-center justify-center text-center">
               <div className="w-14 h-14 rounded-full bg-[#FCE8EB] dark:bg-slate-800 flex items-center justify-center mb-3 text-[#166534] dark:text-emerald-400">
                 <Clock className="w-6 h-6" />
@@ -426,7 +503,7 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
             </div>
           ) : (
             <div className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60 my-2">
-              {myAttempts.slice(0, 4).map((att) => (
+              {displayAttempts.slice(0, 4).map((att) => (
                 <div
                   key={att.id}
                   className="grid grid-cols-5 items-center py-3 px-1 text-xs hover:bg-[#F9FAFB] dark:hover:bg-slate-800/50 rounded-lg transition"
