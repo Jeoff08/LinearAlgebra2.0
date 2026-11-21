@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
+import {
+  generateStudentPersonalizedQuizQuestions,
+} from "../utils/quizGenerator";
 
 import type {
   StudentAvailableQuiz,
@@ -22,10 +25,15 @@ import { UserQuizTakingView } from "../components/user-dashboard/UserQuizTakingV
 import { UserQuizResultView } from "../components/user-dashboard/UserQuizResultView";
 import { UserQuizHistoryView } from "../components/user-dashboard/UserQuizHistoryView";
 import { UserProfileView } from "../components/user-dashboard/UserProfileView";
+import { UserAttendanceView } from "../components/user-dashboard/UserAttendanceView";
 import { UserExitQuizModal } from "../components/user-dashboard/UserExitQuizModal";
 import { UserReviewAttemptModal } from "../components/user-dashboard/UserReviewAttemptModal";
 import { UserDashboardSidebar } from "../components/user-dashboard/UserDashboardSidebar";
 import { UserDashboardHeader } from "../components/user-dashboard/UserDashboardHeader";
+import {
+  getQuizLockStatus,
+  requestQuizUnlock,
+} from "../utils/quizLockManager";
 
 /**
  * Resolves the designated academic subject (MATH 101, MATH 102, or MATH 103)
@@ -129,6 +137,7 @@ export default function UserDashboardPage() {
     | "topics"
     | "quizzes"
     | "quizzes-history"
+    | "attendance"
     | "profile"
   >("dashboard");
 
@@ -570,13 +579,100 @@ export default function UserDashboardPage() {
   }, [activeTakingQuiz, submittedResult]);
 
   const handleStartQuiz = (quiz: StudentAvailableQuiz) => {
+    const studentKey =
+      user?.student_id ||
+      user?.id_number ||
+      user?.id ||
+      user?.email ||
+      user?.name ||
+      "student";
+
+    const lockStatus = getQuizLockStatus(quiz.id, studentKey);
+    if (lockStatus.isLocked) {
+      if (!lockStatus.unlockRequested) {
+        const doRequest = window.confirm(
+          `This quiz is locked due to exceeding tab-switching warnings (3/3 warnings).\n\nWould you like to send an unlock request to your instructor/admin now?`
+        );
+        if (doRequest) {
+          requestQuizUnlock(
+            quiz.id,
+            studentKey,
+            user?.name || user?.email || "Student",
+            quiz.title
+          );
+          alert("Unlock request has been sent to your instructor/admin!");
+        }
+      } else {
+        alert(
+          "This quiz is locked. Your unlock request has already been submitted and is currently pending admin approval."
+        );
+      }
+      return;
+    }
+
     const existingAttempt = myAttempts.find((att) => att.quizId === quiz.id);
     if (existingAttempt) {
       setReviewingAttempt(existingAttempt);
       return;
     }
+    const isGenericStudent = studentKey === "student" || studentKey === "unknown";
+    const cacheKey = `quiz_student_qset_v4_${quiz.id}_${studentKey}`;
+    let personalizedQuestions: QuizQuestionItem[] = [];
 
-    setActiveTakingQuiz(quiz);
+    if (!isGenericStudent) {
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          personalizedQuestions = JSON.parse(cached);
+        }
+      } catch {
+        personalizedQuestions = [];
+      }
+    }
+
+    if (!Array.isArray(personalizedQuestions) || personalizedQuestions.length === 0) {
+      let storedTopics: any[] | undefined = undefined;
+      try {
+        const rawTopics = localStorage.getItem(`quiz_chosen_topics_${quiz.id}`);
+        if (rawTopics) {
+          storedTopics = JSON.parse(rawTopics);
+        }
+      } catch {
+        storedTopics = undefined;
+      }
+
+      const storedCategory = (localStorage.getItem(`quiz_category_${quiz.id}`) || undefined) as any;
+
+      personalizedQuestions = generateStudentPersonalizedQuizQuestions(
+        quiz.id,
+        studentKey,
+        quiz.topic,
+        quiz.questions,
+        storedTopics,
+        storedCategory,
+        quiz.title
+      );
+
+      if (!isGenericStudent) {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(personalizedQuestions));
+        } catch (err) {
+          console.warn("Could not cache student quiz questionnaire:", err);
+        }
+      }
+    }
+
+    console.log(
+      `[Quiz Personalization] Student "${studentKey}" loaded ${personalizedQuestions.length} questions for quiz "${quiz.title}" (${quiz.id})`
+    );
+
+    const activeQuiz: StudentAvailableQuiz = {
+      ...quiz,
+      questions: personalizedQuestions,
+      questionsCount: personalizedQuestions.length,
+    };
+
+    setActiveTakingQuiz(activeQuiz);
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
     setQuizTimerSeconds(0);
@@ -1084,24 +1180,6 @@ export default function UserDashboardPage() {
             });
           }
 
-          // Clean up any duplicate or ghost scores in Quiz 2..10 for this student in this period if only Quiz 1 was taken
-          if (quizSlotIdx === 0) {
-            targetPeriod.quizActivities.forEach((act: any, aIdx: number) => {
-              if (aIdx > 0) {
-                // If there are no other quizzes published/attempted for this slot, ensure maxScore=0 and no score
-                const qScore = targetPeriod.scores.find((s: any) => s.studentId === studentObj.id && s.activityId === act.id);
-                const q1 = targetPeriod.quizActivities[0];
-                const s1 = targetPeriod.scores.find((s: any) => s.studentId === studentObj.id && s.activityId === q1.id);
-                if (qScore && s1 && qScore.score === s1.score) {
-                  targetPeriod.scores = targetPeriod.scores.filter(
-                    (s: any) => !(s.studentId === studentObj.id && s.activityId === act.id)
-                  );
-                  act.maxScore = 0;
-                }
-              }
-            });
-          }
-
           // Ensure student is in the right subject (e.g. if quiz is for 102, clean from 101)
           if (isFor102) {
             gradingRecords.forEach((r: any) => {
@@ -1181,6 +1259,19 @@ export default function UserDashboardPage() {
     setSelectedAnswers({});
     setQuizTimerSeconds(0);
     setCurrentQuestionIndex(0);
+    setActiveNav("quizzes");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleReturnToQuizzes = () => {
+    setShowExitConfirmModal(false);
+    setActiveTakingQuiz(null);
+    setSubmittedResult(null);
+    setSelectedAnswers({});
+    setQuizTimerSeconds(0);
+    setCurrentQuestionIndex(0);
+    setActiveNav("quizzes");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const formatSeconds = (totalSeconds: number) => {
@@ -1421,8 +1512,21 @@ export default function UserDashboardPage() {
               quizTimerSeconds={quizTimerSeconds}
               isSubmittingQuiz={isSubmittingQuiz}
               onExitQuiz={handleExitQuiz}
+              onReturnToQuizzes={handleReturnToQuizzes}
               onSubmitQuiz={handleSubmitQuiz}
               formatSeconds={formatSeconds}
+              studentKey={
+                user?.student_id ||
+                user?.id_number ||
+                user?.id ||
+                user?.email ||
+                user?.name ||
+                "student"
+              }
+              studentName={user?.name || user?.email || "Student"}
+              onQuizLocked={(quizId) => {
+                console.warn(`[Anti-Cheat] Quiz ${quizId} locked due to tab switching.`);
+              }}
             />
           )}
 
@@ -1459,6 +1563,15 @@ export default function UserDashboardPage() {
                 onStartQuiz={handleStartQuiz}
                 onReviewAttempt={setReviewingAttempt}
                 userEnrolledSubject={userEnrolledSubject}
+                studentKey={
+                  user?.student_id ||
+                  user?.id_number ||
+                  user?.id ||
+                  user?.email ||
+                  user?.name ||
+                  "student"
+                }
+                studentName={user?.name || user?.email || "Student"}
               />
             )}
 
@@ -1485,6 +1598,15 @@ export default function UserDashboardPage() {
               refreshUser={refreshUser}
               onNavigate={handleNavClick}
               userInitial={userInitial}
+            />
+          )}
+
+          {/* VIEW I: STUDENT ATTENDANCE */}
+          {!activeTakingQuiz && !submittedResult && activeNav === "attendance" && (
+            <UserAttendanceView
+              user={user}
+              onNavigate={handleNavClick}
+              userEnrolledSubject={userEnrolledSubject}
             />
           )}
 

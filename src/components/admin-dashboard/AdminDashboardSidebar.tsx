@@ -10,6 +10,7 @@ import {
   History,
   Users,
   GraduationCap,
+  UserCheck,
   X,
   ArrowLeft,
   HelpCircle,
@@ -43,11 +44,11 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
       {/* 1. LEFT SIDEBAR (Desktop Fixed)                                           */}
       {/* ========================================================================= */}
       <aside
-        className={`hidden lg:flex bg-white border-r border-[#EAEBED] flex-col justify-between h-full shrink-0 overflow-hidden select-none z-30 transition-all duration-300 ease-in-out ${
-          isTopicCalculatorOpen ? "w-[70px] p-3" : "w-[260px] p-5"
+        className={`hidden lg:flex bg-white dark:bg-[#161F30] border-r border-[#EAEBED] dark:border-slate-800 flex-col justify-between h-full shrink-0 overflow-y-auto overflow-x-hidden select-none z-30 transition-all duration-300 ease-in-out ${
+          isTopicCalculatorOpen ? "w-[70px] p-2.5" : "w-[260px] px-4 py-3.5"
         }`}
       >
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
           {/* Brand Logo Header */}
           <div
             className={`flex items-center gap-3 px-1 py-1 ${
@@ -61,8 +62,8 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
             </div>
             {!isTopicCalculatorOpen && (
               <div className="flex flex-col leading-tight">
-                <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D]">
-                  Math<span className="text-[#166534]">Workspace</span>
+                <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D] dark:text-white">
+                  Math<span className="text-[#166534] dark:text-emerald-400">Workspace</span>
                 </span>
                 <AnimatePresence mode="wait" initial={false}>
                   {isStudentViewMode ? (
@@ -88,7 +89,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ duration: 0.18 }}
-                      className="text-[0.72rem] font-semibold text-[#8C93A0]"
+                      className="text-[0.72rem] font-semibold text-[#8C93A0] dark:text-slate-400"
                     >
                       Admin Dashboard
                     </motion.span>
@@ -99,7 +100,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
           </div>
 
           {/* Main Navigation Links */}
-          <nav className="flex flex-col gap-1 mt-1">
+          <nav className="flex flex-col gap-0.5 mt-0.5">
             <AnimatePresence mode="wait" initial={false}>
               {isStudentViewMode ? (
                 /* STUDENT OVERVIEW SIDEBAR NAVIGATION */
@@ -109,17 +110,17 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 12 }}
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="flex flex-col gap-1"
+                  className="flex flex-col gap-0.5"
                 >
                   {/* Dashboard (Student Overview) */}
                   <button
                     onClick={() => handleNavClick("student-overview")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "student-overview"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Dashboard"
                   >
@@ -129,8 +130,8 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
 
                   {/* LEARN Section */}
                   {!isTopicCalculatorOpen && (
-                    <div className="pt-4 pb-1">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                    <div className="pt-2.5 pb-0.5">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                         LEARN
                       </span>
                     </div>
@@ -139,12 +140,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Calculators */}
                   <button
                     onClick={() => handleNavClick("calculators")}
-                    className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "calculators"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Calculators"
                   >
@@ -157,12 +158,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Topics */}
                   <button
                     onClick={() => handleNavClick("topics")}
-                    className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "topics"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Topics"
                   >
@@ -174,8 +175,8 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
 
                   {/* PRACTICE Section */}
                   {!isTopicCalculatorOpen && (
-                    <div className="pt-4 pb-1">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                    <div className="pt-2.5 pb-0.5">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                         PRACTICE
                       </span>
                     </div>
@@ -184,12 +185,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Quizzes */}
                   <button
                     onClick={() => handleNavClick("student-quizzes")}
-                    className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "student-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Quizzes"
                   >
@@ -213,12 +214,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Quizzes History */}
                   <button
                     onClick={() => handleNavClick("history-quizzes")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "history-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Quizzes History"
                   >
@@ -229,12 +230,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Quiz Results */}
                   <button
                     onClick={() => handleNavClick("quiz-results")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "quiz-results"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Quiz Results"
                   >
@@ -250,17 +251,17 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -12 }}
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="flex flex-col gap-1"
+                  className="flex flex-col gap-0.5"
                 >
                   {/* Dashboard Link */}
                   <button
                     onClick={() => handleNavClick("dashboard")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "dashboard"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Dashboard"
                   >
@@ -271,12 +272,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Calculators Link */}
                   <button
                     onClick={() => handleNavClick("calculators")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "calculators"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Calculators"
                   >
@@ -287,12 +288,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Topics Link */}
                   <button
                     onClick={() => handleNavClick("topics")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "topics"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Topics"
                   >
@@ -302,8 +303,8 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
 
                   {/* Section: Quiz Management */}
                   {!isTopicCalculatorOpen && (
-                    <div className="pt-5 pb-1">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                    <div className="pt-2.5 pb-0.5">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                         Quiz Management
                       </span>
                     </div>
@@ -312,12 +313,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Add Quiz */}
                   <button
                     onClick={() => handleNavClick("add-quiz")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "add-quiz"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Add Quiz"
                   >
@@ -328,12 +329,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Published Quizzes */}
                   <button
                     onClick={() => handleNavClick("published-quizzes")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "published-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Published Quizzes"
                   >
@@ -344,7 +345,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                         <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
                           activeNav === "published-quizzes"
                             ? "bg-white/20 text-white"
-                            : "bg-emerald-50 text-[#166534]"
+                            : "bg-emerald-50 dark:bg-emerald-950/60 text-[#166534] dark:text-emerald-400"
                         }`}>
                           {quizzesCount}
                         </span>
@@ -355,12 +356,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Quiz Results */}
                   <button
                     onClick={() => handleNavClick("quiz-results")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "quiz-results"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Quiz Results"
                   >
@@ -371,12 +372,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* History Quizzes */}
                   <button
                     onClick={() => handleNavClick("history-quizzes")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "history-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="History Quizzes"
                   >
@@ -386,8 +387,8 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
 
                   {/* Section: User Management */}
                   {!isTopicCalculatorOpen && (
-                    <div className="pt-5 pb-1">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                    <div className="pt-2.5 pb-0.5">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                         User Management
                       </span>
                     </div>
@@ -396,12 +397,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* View Students */}
                   <button
                     onClick={() => handleNavClick("view-students")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "view-students"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="View Students"
                   >
@@ -412,22 +413,38 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Student Overview */}
                   <button
                     onClick={() => handleNavClick("student-overview")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "student-overview"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Student Overview"
                   >
                     <GraduationCap className="w-4 h-4 shrink-0" />
                     {!isTopicCalculatorOpen && <span>Student Overview</span>}
                   </button>
+
+                  {/* Attendance */}
+                  <button
+                    onClick={() => handleNavClick("attendance")}
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                      isTopicCalculatorOpen ? "justify-center !px-0" : ""
+                    } ${
+                      activeNav === "attendance"
+                        ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                    }`}
+                    title="Attendance"
+                  >
+                    <UserCheck className="w-4 h-4 shrink-0" />
+                    {!isTopicCalculatorOpen && <span>Attendance</span>}
+                  </button>
                   {/* Section: Academic & Grading */}
                   {!isTopicCalculatorOpen && (
-                    <div className="pt-5 pb-1">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                    <div className="pt-2.5 pb-0.5">
+                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                         Academic & Grading
                       </span>
                     </div>
@@ -436,12 +453,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Grading Sheet */}
                   <button
                     onClick={() => handleNavClick("grading")}
-                    className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                    className={`nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm text-left cursor-pointer ${
                       isTopicCalculatorOpen ? "justify-center !px-0" : ""
                     } ${
                       activeNav === "grading"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] hover:bg-[#F4F5F7] hover:text-[#1F242D]"
+                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                     }`}
                     title="Grading Sheet"
                   >
@@ -496,7 +513,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative w-[270px] bg-white border-r border-[#EAEBED] flex flex-col justify-between p-5 h-full z-10 shadow-2xl"
+              className="relative w-[270px] bg-white dark:bg-[#161F30] border-r border-[#EAEBED] dark:border-slate-800 flex flex-col justify-between p-5 h-full z-10 shadow-2xl"
             >
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between px-1">
@@ -507,16 +524,16 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                       </span>
                     </div>
                     <div className="flex flex-col leading-tight">
-                      <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D]">
-                        Math<span className="text-[#166534]">Workspace</span>
+                      <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D] dark:text-slate-100">
+                        Math<span className="text-[#166534] dark:text-emerald-400">Workspace</span>
                       </span>
-                      <span className="text-[0.72rem] font-semibold text-[#8C93A0] flex items-center gap-1.5">
+                      <span className="text-[0.72rem] font-semibold text-[#8C93A0] dark:text-slate-400 flex items-center gap-1.5">
                         {isStudentViewMode ? (
                           <>
-                            <span className="text-[#166534] font-bold">
+                            <span className="text-[#166534] dark:text-emerald-400 font-bold">
                               Student Portal
                             </span>
-                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#166534]/10 text-[#166534]">
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#166534]/10 dark:bg-[#166534]/30 text-[#166534] dark:text-emerald-300">
                               Overview
                             </span>
                           </>
@@ -528,7 +545,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   </div>
                   <button
                     onClick={() => setMobileSidebarOpen(false)}
-                    className="p-1 rounded-lg hover:bg-gray-100 text-gray-500"
+                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -548,28 +565,28 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                       >
                         <button
                           onClick={() => handleNavClick("student-overview")}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm transition-all text-left ${
                             activeNav === "student-overview"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <LayoutDashboard className="w-4 h-4 shrink-0" />
                           <span>Dashboard</span>
                         </button>
 
-                        <div className="pt-4 pb-1">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        <div className="pt-2.5 pb-0.5">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                             LEARN
                           </span>
                         </div>
 
                         <button
                           onClick={() => handleNavClick("calculators")}
-                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "calculators"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -580,10 +597,10 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
 
                         <button
                           onClick={() => handleNavClick("topics")}
-                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "topics"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -592,18 +609,18 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           </div>
                         </button>
 
-                        <div className="pt-4 pb-1">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        <div className="pt-2.5 pb-0.5">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                             PRACTICE
                           </span>
                         </div>
 
                         <button
                           onClick={() => handleNavClick("student-quizzes")}
-                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "student-quizzes"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -614,7 +631,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                             className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
                               activeNav === "student-quizzes"
                                 ? "bg-white/20 text-white"
-                                : "bg-[#F0F1F3] text-[#6B7280]"
+                                : "bg-[#F0F1F3] dark:bg-slate-700 text-[#6B7280] dark:text-slate-300"
                             }`}
                           >
                             {quizzesCount}
@@ -623,10 +640,10 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
 
                         <button
                           onClick={() => handleNavClick("history-quizzes")}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "history-quizzes"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <History className="w-4 h-4 shrink-0" />
@@ -635,23 +652,23 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
 
                         <button
                           onClick={() => handleNavClick("quiz-results")}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "quiz-results"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <BarChart3 className="w-4 h-4 shrink-0" />
                           <span>Quiz Results</span>
                         </button>
 
-                        <div className="pt-4 border-t border-[#F0F1F3] mt-2">
+                        <div className="pt-4 border-t border-[#F0F1F3] dark:border-slate-800 mt-2">
                           <button
                             onClick={() => {
                               setIsStudentViewMode(false);
                               handleNavClick("dashboard");
                             }}
-                            className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#166534]/30 bg-[#F0FDF4] text-[#166534] font-bold text-xs hover:bg-[#FCE8EB] transition shadow-xs"
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-[#166534]/30 bg-[#F0FDF4] dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 font-bold text-xs hover:bg-[#FCE8EB] dark:hover:bg-[#166534]/30 transition shadow-xs"
                           >
                             <ArrowLeft className="w-4 h-4" />
                             <span>Return to Admin</span>
@@ -670,10 +687,10 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                       >
                         <button
                           onClick={() => handleNavClick("dashboard")}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm transition-all text-left ${
                             activeNav === "dashboard"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -681,10 +698,10 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                         </button>
                         <button
                           onClick={() => handleNavClick("calculators")}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm transition-all text-left ${
                             activeNav === "calculators"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <Calculator className="w-4 h-4 shrink-0" />
@@ -692,33 +709,37 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                         </button>
                         <button
                           onClick={() => handleNavClick("topics")}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all text-left ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm transition-all text-left ${
                             activeNav === "topics"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <BookOpen className="w-4 h-4 shrink-0" />
                           <span>Topics</span>
                         </button>
-                        <div className="pt-4 pb-1">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        <div className="pt-2.5 pb-0.5">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                             Quiz Management
                           </span>
                         </div>
                         <button
                           onClick={() => handleNavClick("add-quiz")}
-                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "add-quiz"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                          }`}
                         >
                           <PlusSquare className="w-4 h-4 shrink-0" />
                           <span>Add Quiz</span>
                         </button>
                         <button
                           onClick={() => handleNavClick("published-quizzes")}
-                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-left ${
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm text-left ${
                             activeNav === "published-quizzes"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -726,59 +747,84 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                             <span>Published Quizzes</span>
                           </div>
                           <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-                            activeNav === "published-quizzes" ? "bg-white/20 text-white" : "bg-emerald-100 text-[#166534]"
+                            activeNav === "published-quizzes"
+                              ? "bg-white/20 text-white"
+                              : "bg-emerald-100 dark:bg-emerald-950/60 text-[#166534] dark:text-emerald-400"
                           }`}>
                             {quizzesCount}
                           </span>
                         </button>
                         <button
                           onClick={() => handleNavClick("quiz-results")}
-                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "quiz-results"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                          }`}
                         >
                           <BarChart3 className="w-4 h-4 shrink-0" />
                           <span>Quiz Results</span>
                         </button>
                         <button
                           onClick={() => handleNavClick("history-quizzes")}
-                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "history-quizzes"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                          }`}
                         >
                           <History className="w-4 h-4 shrink-0" />
                           <span>History Quizzes</span>
                         </button>
-                        <div className="pt-4 pb-1">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        <div className="pt-2.5 pb-0.5">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                             User Management
                           </span>
                         </div>
                         <button
                           onClick={() => handleNavClick("view-students")}
-                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-[#4B5565] hover:bg-[#F4F5F7] text-left"
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "view-students"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                          }`}
                         >
                           <Users className="w-4 h-4 shrink-0" />
                           <span>View Students</span>
                         </button>
                         <button
                           onClick={() => handleNavClick("student-overview")}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "student-overview"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <GraduationCap className="w-4 h-4 shrink-0" />
                           <span>Student Overview</span>
                         </button>
-                        <div className="pt-4 pb-1">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] uppercase px-3.5">
+                        <button
+                          onClick={() => handleNavClick("attendance")}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
+                            activeNav === "attendance"
+                              ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                          }`}
+                        >
+                          <UserCheck className="w-4 h-4 shrink-0" />
+                          <span>Attendance</span>
+                        </button>
+                        <div className="pt-2.5 pb-0.5">
+                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
                             Academic & Grading
                           </span>
                         </div>
                         <button
                           onClick={() => handleNavClick("grading")}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all text-left ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "grading"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] hover:bg-[#F4F5F7]"
+                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
                           }`}
                         >
                           <FileSpreadsheet className="w-4 h-4 shrink-0" />

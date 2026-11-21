@@ -53,6 +53,7 @@ import { AdminReviewSubmissionModal } from "../components/admin-dashboard/AdminR
 import { CalculatorsView } from "../components/dashboard/CalculatorsView";
 import { TopicsView } from "../components/dashboard/TopicsView";
 import { GradingManagementView } from "../components/admin-dashboard/GradingManagementView";
+import { AdminAttendanceView } from "../components/admin-dashboard/AdminAttendanceView";
 // useGradingData is only used inside GradingManagementView — NOT here
 
 function createEmptyQuestions(
@@ -347,6 +348,7 @@ export default function AdminDashboardPage() {
     | "quiz-results"
     | "history-quizzes"
     | "view-students"
+    | "attendance"
     | "grading"
   >("dashboard");
 
@@ -454,7 +456,23 @@ export default function AdminDashboardPage() {
     }
   });
 
-  // New Quiz Form State
+  // Auto-switch quiz generator category when admin selects a target subject
+  useEffect(() => {
+    if (!selectedSubjectId) return;
+    const selectedSub = availableSubjects.find((s) => s.id === selectedSubjectId);
+    if (!selectedSub) return;
+    const code = (selectedSub.subjectCode || "").toUpperCase();
+    if (code.includes("101")) {
+      setGeneratorCategory("calculus-1");
+      setSelectedTopicIds([]);
+    } else if (code.includes("102")) {
+      setGeneratorCategory("calculus-2");
+      setSelectedTopicIds([]);
+    } else if (code.includes("103")) {
+      setGeneratorCategory("linear-algebra");
+      setSelectedTopicIds([]);
+    }
+  }, [selectedSubjectId, availableSubjects]);
   const [newQuizTitle, setNewQuizTitle] = useState("");
   const [newQuizTopic, setNewQuizTopic] = useState("Linear Algebra");
   const [newQuizQuestions, setNewQuizQuestions] = useState("5");
@@ -554,6 +572,37 @@ export default function AdminDashboardPage() {
     totalQuestions: number;
     submittedAt: string;
   } | null>(null);
+
+  const [unlockRequestToast, setUnlockRequestToast] = useState<{
+    quizId: string;
+    studentKey: string;
+    studentName: string;
+    quizTitle: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const handleUnlockReq = (e: any) => {
+      const detail = e.detail;
+      if (detail) {
+        setUnlockRequestToast({
+          quizId: detail.quizId,
+          studentKey: detail.studentKey,
+          studentName: detail.studentName,
+          quizTitle: detail.quizTitle,
+        });
+      }
+    };
+    window.addEventListener("quiz_unlock_requested", handleUnlockReq);
+    return () => window.removeEventListener("quiz_unlock_requested", handleUnlockReq);
+  }, []);
+
+  useEffect(() => {
+    if (!unlockRequestToast) return;
+    const timer = setTimeout(() => {
+      setUnlockRequestToast(null);
+    }, 7000);
+    return () => clearTimeout(timer);
+  }, [unlockRequestToast]);
 
   // Student block editing modal
   const [editingBlockStudent, setEditingBlockStudent] = useState<StudentItem | null>(null);
@@ -1287,33 +1336,6 @@ export default function AdminDashboardPage() {
                 const subCode = (rec.subject?.subjectCode || "").toLowerCase().trim();
                 const subDigits = subCode.match(/\d+/)?.[0];
 
-                // Remove students from rec if they belong to another subject (e.g. Jeoff Montebon in MATH 101)
-                const initLen = rec.students.length;
-                rec.students = rec.students.filter((st: any) => {
-                  const nameLower = (st.fullName || "").toLowerCase();
-                  if (subDigits === "101") {
-                    if (nameLower.includes("jeoff") || nameLower.includes("montebon")) return false;
-                  }
-                  const matchedProfile = nonAdmins.find(
-                    (p: any) =>
-                      p.id === st.id ||
-                      (p.name && p.name.toLowerCase().trim() === st.fullName?.toLowerCase().trim())
-                  );
-                  if (matchedProfile) {
-                    const pDigits = ((matchedProfile as any).subject_code || "").match(/\d+/)?.[0];
-                    if (pDigits && subDigits && pDigits !== subDigits) return false;
-                  }
-                  return true;
-                });
-                if (rec.students.length !== initLen) {
-                  rec.students.forEach((st: any, i: number) => { st.studentNumber = String(i + 1); });
-                  if (Array.isArray(rec.periods?.prelim?.scores)) {
-                    const validIds = new Set(rec.students.map((s: any) => s.id));
-                    rec.periods.prelim.scores = rec.periods.prelim.scores.filter((s: any) => validIds.has(s.studentId));
-                  }
-                  updatedAny = true;
-                }
-
                 nonAdmins.forEach((p: any) => {
                   const pSub = ((p as any).subject_code || "").toLowerCase().trim();
                   const pOffer = ((p as any).offer_number || "").toLowerCase().trim();
@@ -1350,28 +1372,10 @@ export default function AdminDashboardPage() {
                   }
                 });
 
-                // Clean up duplicate or ghost scores across all periods (prelim, midterm, semi-final, final)
+                // Reconcile any quizzes accidentally placed in Quiz 10 instead of the incremental slot (e.g. Quiz 4)
                 (Object.keys(rec.periods || {}) as ("prelim" | "midterm" | "semi-final" | "final")[]).forEach((pKey) => {
                   const periodData = rec.periods?.[pKey];
                   if (periodData && Array.isArray(periodData.quizActivities) && Array.isArray(periodData.scores)) {
-                    const q1 = periodData.quizActivities[0];
-                    if (q1) {
-                      rec.students.forEach((st: any) => {
-                        const s1 = periodData.scores.find((s: any) => s.studentId === st.id && s.activityId === q1.id);
-                        periodData.quizActivities.forEach((act: any, aIdx: number) => {
-                          if (aIdx > 0) {
-                            const sOther = periodData.scores.find((s: any) => s.studentId === st.id && s.activityId === act.id);
-                            if (sOther && s1 && sOther.score !== null && s1.score === sOther.score) {
-                              periodData.scores = periodData.scores.filter((s: any) => !(s.studentId === st.id && s.activityId === act.id));
-                              act.maxScore = 0;
-                              updatedAny = true;
-                            }
-                          }
-                        });
-                      });
-                    }
-
-                    // Reconcile any quizzes accidentally placed in Quiz 10 instead of the incremental slot (e.g. Quiz 4)
                     const qActs = periodData.quizActivities;
                     if (qActs.length === 10) {
                       const lastAct = qActs[9]; // Quiz 10
@@ -1571,7 +1575,10 @@ export default function AdminDashboardPage() {
   // Filtered topics for the Quiz Generator
   const availableGeneratorTopics = useMemo(() => {
     return allCombinedTopics.filter((t) => {
-      const matchCat = t.category === generatorCategory;
+      const matchCat =
+        generatorCategory === "calculus-1" || generatorCategory === "calculus-2"
+          ? (t.category === "calculus-1" || t.category === "calculus-2")
+          : t.category === generatorCategory;
       if (!matchCat) return false;
       if (!generatorTopicSearch.trim()) return true;
       const q = generatorTopicSearch.toLowerCase().trim();
@@ -1593,7 +1600,11 @@ export default function AdminDashboardPage() {
 
   const handleSelectAllTopics = () => {
     const currentCatTopics = allCombinedTopics
-      .filter((t) => t.category === generatorCategory)
+      .filter((t) =>
+        generatorCategory === "calculus-1" || generatorCategory === "calculus-2"
+          ? (t.category === "calculus-1" || t.category === "calculus-2")
+          : t.category === generatorCategory
+      )
       .map((t) => t.id);
     setSelectedTopicIds(currentCatTopics);
   };
@@ -1608,8 +1619,10 @@ export default function AdminDashboardPage() {
     setIsGeneratingQuiz(true);
     setTimeout(() => {
       try {
-        const topicsInCat = allCombinedTopics.filter(
-          (t) => t.category === generatorCategory
+        const topicsInCat = allCombinedTopics.filter((t) =>
+          generatorCategory === "calculus-1" || generatorCategory === "calculus-2"
+            ? (t.category === "calculus-1" || t.category === "calculus-2")
+            : t.category === generatorCategory
         );
         const chosenTopics =
           selectedTopicIds.length > 0
@@ -1656,10 +1669,7 @@ export default function AdminDashboardPage() {
         const catLabel =
           generatorCategory === "linear-algebra"
             ? "Linear Algebra"
-            : generatorCategory === "calculus-1"
-            ? "Calculus 1"
-            : "Calculus 2";
-        setNewQuizTopic(catLabel);
+            : "Calculus 1 & 2";
 
         const getTypeLabel = (t: QuizQuestionType) =>
           t === "multiple_choice"
@@ -1680,6 +1690,7 @@ export default function AdminDashboardPage() {
             ? chosenTopics.map((t) => t.title).join(" & ")
             : `${catLabel} Comprehensive`;
 
+        setNewQuizTopic(topicFocus);
         setNewQuizTitle(`${topicFocus} - ${typeLabelStr} Quiz`);
         setGeneratorStep(2);
       } catch (err) {
@@ -1696,8 +1707,10 @@ export default function AdminDashboardPage() {
     const currentQ = newQuizQuestionDrafts[index];
     if (!currentQ) return;
 
-    const topicsInCat = allCombinedTopics.filter(
-      (t) => t.category === generatorCategory
+    const topicsInCat = allCombinedTopics.filter((t) =>
+      generatorCategory === "calculus-1" || generatorCategory === "calculus-2"
+        ? (t.category === "calculus-1" || t.category === "calculus-2")
+        : t.category === generatorCategory
     );
     const chosenTopics =
       selectedTopicIds.length > 0
@@ -1778,6 +1791,26 @@ export default function AdminDashboardPage() {
     setIsSubmittingQuiz(true);
     try {
       const selectedSub = availableSubjects.find((s) => s.id === selectedSubjectId);
+
+      // Store chosen topics and sections for this quiz so students can generate unique questionnaires
+      const chosenTopicsToStore = (
+        selectedTopicIds.length > 0
+          ? allCombinedTopics.filter((t) => selectedTopicIds.includes(t.id))
+          : allCombinedTopics.filter((t) =>
+              generatorCategory === "calculus-1" || generatorCategory === "calculus-2"
+                ? (t.category === "calculus-1" || t.category === "calculus-2")
+                : t.category === generatorCategory
+            )
+      ).map((t) => ({
+        id: t.id,
+        title: t.title,
+        category: t.category,
+        chapter: t.chapter,
+        summary: t.summary,
+        details: t.details,
+        examples: t.examples,
+      }));
+
       if (supabase) {
         const resolvedTopic = selectedSub && !newQuizTopic.includes(selectedSub.subjectCode)
           ? `${newQuizTopic} [${selectedSub.subjectCode}]`
@@ -1835,6 +1868,18 @@ export default function AdminDashboardPage() {
           }
         }
         localStorage.setItem(`quiz_period_${quizData.id}`, selectedGradingPeriod);
+
+        localStorage.setItem(`quiz_chosen_topics_${quizData.id}`, JSON.stringify(chosenTopicsToStore));
+        localStorage.setItem(`quiz_category_${quizData.id}`, generatorCategory);
+        localStorage.setItem(`quiz_sections_${quizData.id}`, JSON.stringify(
+          questionTypeSections.length > 0
+            ? questionTypeSections
+            : [{
+                type: generatorQuestionType,
+                itemCount: typeof generatorItemCount === "number" && generatorItemCount > 0 ? generatorItemCount : validDrafts.length,
+                pointsPerItem: typeof generatorPointsPerItem === "number" && generatorPointsPerItem > 0 ? generatorPointsPerItem : 1,
+              }]
+        ));
 
         const questionsToInsert = validDrafts.map((q, index) => {
           const isMC =
@@ -1924,6 +1969,8 @@ export default function AdminDashboardPage() {
             localStorage.setItem(`quiz_subject_code_${newQuiz.id}`, selectedSub.subjectCode);
           }
         }
+        localStorage.setItem(`quiz_chosen_topics_${newQuiz.id}`, JSON.stringify(chosenTopicsToStore));
+        localStorage.setItem(`quiz_category_${newQuiz.id}`, generatorCategory);
       }
 
       setSelectedSubjectId("");
@@ -2306,6 +2353,8 @@ export default function AdminDashboardPage() {
         <AdminDashboardHeader
           recentSubmissionToast={recentSubmissionToast}
           setRecentSubmissionToast={setRecentSubmissionToast}
+          unlockRequestToast={unlockRequestToast}
+          setUnlockRequestToast={setUnlockRequestToast}
           handleNavClick={handleNavClick}
           setMobileSidebarOpen={setMobileSidebarOpen}
           isNotificationsOpen={isNotificationsOpen}
@@ -2536,6 +2585,14 @@ export default function AdminDashboardPage() {
             {/* VIEW H: STUDENT GRADING MANAGEMENT SYSTEM */}
             {activeNav === "grading" && (
               <GradingManagementView />
+            )}
+
+            {/* VIEW I: STUDENT ATTENDANCE MANAGEMENT SYSTEM */}
+            {activeNav === "attendance" && (
+              <AdminAttendanceView
+                students={students}
+                availableSubjects={availableSubjects}
+              />
             )}
           </AnimatePresence>
         </main>

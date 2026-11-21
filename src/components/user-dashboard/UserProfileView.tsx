@@ -20,7 +20,12 @@ import {
   type GradingPeriod,
   type SubjectGradingRecord,
 } from "../../types/grading";
-import { computeStudentGrade } from "../../utils/gradingEngine";
+import {
+  computeStudentGrade,
+  computeCumulativeGrades,
+  formatSermsValue,
+} from "../../utils/gradingEngine";
+import type { CumulativeGradeResult } from "../../utils/gradingEngine";
 import {
   formatGradeEquivalent,
   getGradeRemarks,
@@ -294,6 +299,48 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 
         const isFullyCompleted = gradedPeriods.length === GRADING_PERIODS.length;
 
+        // ============================================================
+        // SERMS Cumulative Grade Computation
+        // ============================================================
+        // PRELIM = Prelim period grade equivalent
+        // QG2    = Midterm period grade equivalent
+        // MIDTERM = (PRELIM + QG2) / 2
+        // QG3    = Semi-Final period grade equivalent
+        // SEMI-FINAL = (MIDTERM + QG3) / 2
+        // QG4    = Final period grade equivalent
+        // FINAL  = (SEMI-FINAL + QG4) / 2
+        // FINAL GRADE = FINAL
+
+        const getSermsRawForPeriod = (periodKey: GradingPeriod): number | null => {
+          const periodData = rec.periods[periodKey];
+          if (!periodData) return null;
+          const comp = computeStudentGrade(periodData, student.id);
+          const scores = periodData.scores.filter((sc) => sc.studentId === student.id);
+          const hasData = scores.some((sc) => sc.score !== null && sc.score !== undefined) ||
+            periodData.totalQuizOverrides?.[student.id] !== undefined ||
+            periodData.totalParticipationOverrides?.[student.id] !== undefined;
+          if (hasData && comp.gradeEquivalent != null) {
+            const val = Number(comp.gradeEquivalent);
+            return Number.isFinite(val) ? val : null;
+          }
+          return null;
+        };
+
+        const sermsPrelim = getSermsRawForPeriod("prelim");
+        const sermsQg2 = getSermsRawForPeriod("midterm");
+        const sermsQg3 = getSermsRawForPeriod("semi-final");
+        const sermsQg4 = getSermsRawForPeriod("final");
+
+        const sermsCumulative = computeCumulativeGrades(sermsPrelim, sermsQg2, sermsQg3, sermsQg4);
+
+        // Use SERMS cumulative as the official final grade when available
+        const sermsGpaEquivalent: number | null =
+          sermsCumulative.finalGrade !== null
+            ? sermsCumulative.finalGrade
+            : sermsCumulative.runningGrade !== null
+            ? sermsCumulative.runningGrade
+            : null;
+
         return {
           subject: rec.subject,
           studentName: student.fullName,
@@ -301,6 +348,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           finalGradeAverage,
           gpaEquivalent,
           isFullyCompleted,
+          sermsCumulative,
+          sermsGpaEquivalent,
         };
       })
       .filter(Boolean);
@@ -788,6 +837,77 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                   );
                 })}
               </div>
+
+              {/* SERMS Cumulative Grade Progression */}
+              {entry.sermsCumulative && (entry.sermsCumulative.prelim !== null || entry.sermsCumulative.midterm !== null) && (
+                <div className="mt-3 p-3.5 rounded-2xl bg-gray-50/80 dark:bg-slate-800/40 border border-gray-200/80 dark:border-slate-700/70">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-slate-400">
+                      SERMS Cumulative Grade Progression
+                    </span>
+                    {entry.sermsCumulative.finalGrade !== null ? (
+                      <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                        Official Final Grade: {formatSermsValue(entry.sermsCumulative.finalGrade)}
+                      </span>
+                    ) : entry.sermsCumulative.runningGrade !== null ? (
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                        Running Cumulative: {formatSermsValue(entry.sermsCumulative.runningGrade)} (Partial)
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-center text-xs">
+                    {/* Prelim Raw */}
+                    <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase block">PRELIM (Raw)</span>
+                      <span className="text-sm font-black text-gray-800 dark:text-slate-100">
+                        {formatSermsValue(entry.sermsCumulative.prelim)}
+                      </span>
+                    </div>
+                    {/* QG2 Raw */}
+                    <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase block">QG2 (Raw)</span>
+                      <span className="text-sm font-black text-gray-800 dark:text-slate-100">
+                        {formatSermsValue(entry.sermsCumulative.qg2)}
+                      </span>
+                    </div>
+                    {/* Midterm Cumulative */}
+                    <div className="p-2 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40">
+                      <span className="text-[9px] font-extrabold text-emerald-700 dark:text-emerald-400 uppercase block">MIDTERM</span>
+                      <span className="text-sm font-black text-emerald-800 dark:text-emerald-300">
+                        {formatSermsValue(entry.sermsCumulative.midterm)}
+                      </span>
+                    </div>
+                    {/* QG3 Raw */}
+                    <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase block">QG3 (Raw)</span>
+                      <span className="text-sm font-black text-gray-800 dark:text-slate-100">
+                        {formatSermsValue(entry.sermsCumulative.qg3)}
+                      </span>
+                    </div>
+                    {/* Semi-Final Cumulative */}
+                    <div className="p-2 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40">
+                      <span className="text-[9px] font-extrabold text-emerald-700 dark:text-emerald-400 uppercase block">SEMI-FINAL</span>
+                      <span className="text-sm font-black text-emerald-800 dark:text-emerald-300">
+                        {formatSermsValue(entry.sermsCumulative.semiFinal)}
+                      </span>
+                    </div>
+                    {/* QG4 Raw */}
+                    <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase block">QG4 (Raw)</span>
+                      <span className="text-sm font-black text-gray-800 dark:text-slate-100">
+                        {formatSermsValue(entry.sermsCumulative.qg4)}
+                      </span>
+                    </div>
+                    {/* Final Grade */}
+                    <div className="p-2 rounded-xl bg-emerald-600 text-white col-span-2 sm:col-span-1 shadow-xs">
+                      <span className="text-[9px] font-extrabold text-emerald-200 uppercase block">FINAL GRADE</span>
+                      <span className="text-sm font-black text-white">
+                        {formatSermsValue(entry.sermsCumulative.finalGrade ?? entry.sermsCumulative.runningGrade)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Final Grade / GPA Summary Banner */}
               {entry.gpaEquivalent !== null && (

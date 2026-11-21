@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   HelpCircle,
   Search,
@@ -10,11 +10,18 @@ import {
   Play,
   GraduationCap,
   Sparkles,
+  Lock,
+  Clock,
+  Send,
 } from "lucide-react";
 import type {
   StudentAvailableQuiz,
   StudentQuizAttemptItem,
 } from "../../types/dashboard";
+import {
+  getQuizLockStatus,
+  requestQuizUnlock,
+} from "../../utils/quizLockManager";
 
 interface UserQuizzesViewProps {
   availableQuizzes: StudentAvailableQuiz[];
@@ -27,6 +34,8 @@ interface UserQuizzesViewProps {
   onStartQuiz: (quiz: StudentAvailableQuiz) => void;
   onReviewAttempt: (attempt: StudentQuizAttemptItem) => void;
   userEnrolledSubject?: string;
+  studentKey?: string;
+  studentName?: string;
 }
 
 export const UserQuizzesView: React.FC<UserQuizzesViewProps> = ({
@@ -40,7 +49,16 @@ export const UserQuizzesView: React.FC<UserQuizzesViewProps> = ({
   onStartQuiz,
   onReviewAttempt,
   userEnrolledSubject = "MATH 101",
+  studentKey = "student",
+  studentName = "Student",
 }) => {
+  const [, setRefreshLockKey] = useState(0);
+
+  useEffect(() => {
+    const handleLockUpdate = () => setRefreshLockKey((k) => k + 1);
+    window.addEventListener("quiz_lock_updated", handleLockUpdate);
+    return () => window.removeEventListener("quiz_lock_updated", handleLockUpdate);
+  }, []);
   // Default filter to "enrolled" so the student immediately sees the quizzes designated for their enrolled course
   const [selectedSubjectFilter, setSelectedSubjectFilter] =
     useState<string>("enrolled");
@@ -184,10 +202,6 @@ export const UserQuizzesView: React.FC<UserQuizzesViewProps> = ({
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
             {[
               ["all", "All Topics"],
-              ["Calculus 1", "Calculus 1"],
-              ["Calculus 2", "Calculus 2"],
-              ["Linear Algebra", "Linear Algebra"],
-              ["Differential Equations", "Diff. Equations"],
             ].map(([topicKey, label]) => (
               <button
                 key={topicKey}
@@ -257,11 +271,15 @@ export const UserQuizzesView: React.FC<UserQuizzesViewProps> = ({
               designatedSub.toUpperCase().trim() ===
               (userEnrolledSubject || "").toUpperCase().trim();
 
+            const lockStatus = getQuizLockStatus(quiz.id, studentKey);
+
             return (
               <div
                 key={quiz.id}
                 className={`bg-white dark:bg-[#161F30] border rounded-3xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group ${
-                  isEnrolledMatch
+                  lockStatus.isLocked
+                    ? "border-red-300 dark:border-red-900/60 ring-1 ring-red-400/30"
+                    : isEnrolledMatch
                     ? "border-[#166534]/30 dark:border-emerald-800/60 ring-1 ring-[#166534]/10 dark:ring-emerald-900/20"
                     : "border-[#EAEBED] dark:border-[#1E2D45] hover:border-[#166534]/40 dark:hover:border-[#22C55E]/40"
                 }`}
@@ -345,7 +363,11 @@ export const UserQuizzesView: React.FC<UserQuizzesViewProps> = ({
 
                 <div className="mt-6 pt-4 border-t border-gray-100 dark:border-[#1E2D45] flex items-center justify-between">
                   <span className="text-xs text-gray-500 dark:text-[#4B6080] font-medium">
-                    {quiz.attemptsCount > 0 ? (
+                    {lockStatus.isLocked ? (
+                      <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1">
+                        <Lock className="w-3.5 h-3.5" /> Locked (Tab-Switch)
+                      </span>
+                    ) : quiz.attemptsCount > 0 ? (
                       <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Completed
                       </span>
@@ -354,7 +376,31 @@ export const UserQuizzesView: React.FC<UserQuizzesViewProps> = ({
                     )}
                   </span>
 
-                  {quiz.attemptsCount > 0 ? (
+                  {lockStatus.isLocked ? (
+                    lockStatus.unlockRequested ? (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-xl shadow-xs">
+                        <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                        <span>Pending Unlock</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          requestQuizUnlock(
+                            quiz.id,
+                            studentKey,
+                            studentName,
+                            quiz.title
+                          );
+                          setRefreshLockKey((k) => k + 1);
+                        }}
+                        className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                        title="Click to request administrator unlock"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Request Unlock</span>
+                      </button>
+                    )
+                  ) : quiz.attemptsCount > 0 ? (
                     <button
                       onClick={() => {
                         const past = myAttempts.find(

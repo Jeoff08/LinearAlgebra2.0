@@ -50,6 +50,8 @@ import {
 } from "../../types/grading";
 import {
   computeStudentGrade,
+  computeCumulativeGrades,
+  formatSermsValue,
   getScore,
   setScore,
   validateScore,
@@ -60,6 +62,9 @@ import {
   exportPeriodToExcel,
   importStudentListFromExcel,
   importScoresFromExcel,
+  exportStudentTemplateExcel,
+  importGradingWorkbookFromExcel,
+  importMultiSubjectGradingFromExcel,
 } from "../../utils/gradingExcel";
 import {
   lookupGradeEquivalent,
@@ -79,9 +84,9 @@ const getThemeColors = (isDark: boolean) => {
       hoverBg: "rgba(36, 48, 71, 0.4)",
 
       // Student Information
-      studentInfoHeaderBg: "rgba(30, 41, 59, 0.95)",
+      studentInfoHeaderBg: "#1E293B",
       studentInfoHeaderText: "#93C5FD", // light blue
-      studentInfoSubheaderBg: "rgba(22, 33, 49, 0.95)",
+      studentInfoSubheaderBg: "#162131",
       studentInfoSubheaderText: "#94A3B8",
       studentRowEvenBg: "#0F172A",
       studentRowOddBg: "#141E33",
@@ -90,55 +95,55 @@ const getThemeColors = (isDark: boolean) => {
       studentNameText: "#F8FAFC", // crisp readable white
 
       // Quizzes (25%)
-      quizHeaderBg: "rgba(69, 26, 3, 0.9)", // deep dark warm amber
+      quizHeaderBg: "#451A03", // deep dark warm amber
       quizHeaderText: "#FDE047", // bright gold
-      quizSubheaderBg: "rgba(42, 27, 10, 0.85)",
+      quizSubheaderBg: "#2A1B0A",
       quizSubheaderText: "#FDE68A",
-      quizTotalHeaderBg: "rgba(113, 63, 18, 0.85)",
+      quizTotalHeaderBg: "#713F12",
       quizTotalHeaderText: "#FEF08A",
       quizCellBg: "rgba(245, 158, 11, 0.09)",
       quizTotalCellBg: "rgba(245, 158, 11, 0.22)",
       quizTotalCellText: "#FDE047",
 
       // Class Participation (15%)
-      participationHeaderBg: "rgba(6, 78, 59, 0.9)", // deep forest emerald
+      participationHeaderBg: "#064E3B", // deep forest emerald
       participationHeaderText: "#86EFAC", // mint green
-      participationSubheaderBg: "rgba(6, 46, 36, 0.85)",
+      participationSubheaderBg: "#062E24",
       participationSubheaderText: "#A7F3D0",
-      participationTotalHeaderBg: "rgba(4, 120, 87, 0.75)",
+      participationTotalHeaderBg: "#047857",
       participationTotalHeaderText: "#6EE7B7",
       participationCellBg: "rgba(16, 185, 129, 0.09)",
       participationTotalCellBg: "rgba(16, 185, 129, 0.22)",
       participationTotalCellText: "#6EE7B7",
 
       // Exam (60%)
-      examHeaderBg: "rgba(12, 74, 110, 0.9)", // deep ocean sky blue
+      examHeaderBg: "#0C4A6E", // deep ocean sky blue
       examHeaderText: "#7DD3FC",
-      examSubheaderBg: "rgba(10, 45, 68, 0.85)",
+      examSubheaderBg: "#0A2D44",
       examSubheaderText: "#BAE6FD",
       examCellBg: "rgba(14, 165, 233, 0.09)",
       examCellText: "#F8FAFC",
 
       // Total Grade
-      totalGradeHeaderBg: "rgba(124, 45, 18, 0.85)", // deep dark orange
+      totalGradeHeaderBg: "#7C2D12", // deep dark orange
       totalGradeHeaderText: "#FDBA74",
       totalGradeCellBg: "rgba(249, 115, 22, 0.16)",
       totalGradeCellText: "#FDBA74",
 
       // Rounded
-      roundedHeaderBg: "rgba(124, 45, 18, 0.95)",
+      roundedHeaderBg: "#7C2D12",
       roundedHeaderText: "#FED7AA",
       roundedCellBg: "rgba(249, 115, 22, 0.26)",
       roundedCellText: "#FED7AA",
 
       // Grade Equivalent
-      gradeEquivalentHeaderBg: "rgba(136, 19, 55, 0.85)", // deep dark ruby/rose
+      gradeEquivalentHeaderBg: "#881337", // deep dark ruby/rose
       gradeEquivalentHeaderText: "#FDA4AF",
       gradeEquivalentCellBg: "rgba(244, 63, 94, 0.20)",
       gradeEquivalentCellText: "#FDA4AF",
 
       // Overall GPA
-      gpaHeaderBg: "rgba(22, 101, 52, 0.90)", // rich emerald
+      gpaHeaderBg: "#166534", // rich emerald
       gpaHeaderText: "#A7F3D0",
       gpaCellBg: "rgba(16, 185, 129, 0.20)",
       gpaCellText: "#6EE7B7",
@@ -273,7 +278,7 @@ const ScoreCell: React.FC<{
     <div className="relative">
       <input
         type="text"
-        inputMode="numeric"
+        inputMode="decimal"
         value={localVal}
         disabled={disabled}
         onChange={(e) => {
@@ -329,7 +334,7 @@ const MaxScoreCell: React.FC<{
   return (
     <input
       type="text"
-      inputMode="numeric"
+      inputMode="decimal"
       value={localVal}
       onChange={(e) => setLocalVal(e.target.value)}
       onBlur={handleBlur}
@@ -340,6 +345,71 @@ const MaxScoreCell: React.FC<{
   );
 };
 
+/** SERMS Raw Grade Cell (Editable input with click-to-edit) */
+const SermsRawGradeCell: React.FC<{
+  value: number | null;
+  placeholder?: string;
+  onChange: (val: number | null) => void;
+  title?: string;
+  bg?: string;
+  textColor?: string;
+}> = ({ value, placeholder = "—", onChange, title, bg, textColor }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localVal, setLocalVal] = useState(value !== null ? String(value) : "");
+
+  useEffect(() => {
+    setLocalVal(value !== null ? String(value) : "");
+  }, [value]);
+
+  const handleCommit = () => {
+    setIsEditing(false);
+    if (localVal.trim() === "") {
+      onChange(null);
+      return;
+    }
+    const num = Number(localVal);
+    if (!isNaN(num) && Number.isFinite(num) && num >= 0 && num <= 5.0) {
+      onChange(num);
+    } else {
+      setLocalVal(value !== null ? String(value) : "");
+    }
+  };
+
+  return (
+    <div
+      className="relative flex items-center justify-center w-full h-full cursor-pointer group py-1"
+      onClick={() => setIsEditing(true)}
+      title={title || "Click to edit raw grade"}
+    >
+      {isEditing ? (
+        <input
+          type="text"
+          inputMode="decimal"
+          autoFocus
+          value={localVal}
+          onChange={(e) => setLocalVal(e.target.value)}
+          onBlur={handleCommit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleCommit();
+            if (e.key === "Escape") {
+              setLocalVal(value !== null ? String(value) : "");
+              setIsEditing(false);
+            }
+          }}
+          className="w-16 h-7 text-center text-xs font-black rounded border border-emerald-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none ring-2 ring-emerald-500/30"
+        />
+      ) : (
+        <span
+          className="px-2 py-0.5 rounded text-xs font-black group-hover:ring-1 group-hover:ring-emerald-400/50 transition-all select-none"
+          style={{ background: bg, color: textColor }}
+        >
+          {value !== null ? formatSermsValue(value) : placeholder}
+        </span>
+      )}
+    </div>
+  );
+};
+
 /** Subject Info Header */
 const SubjectHeader: React.FC<{
   subject: SubjectGradingRecord["subject"];
@@ -347,6 +417,24 @@ const SubjectHeader: React.FC<{
   isEditing: boolean;
   setIsEditing: (v: boolean) => void;
 }> = ({ subject, onUpdate, isEditing, setIsEditing }) => {
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("grading_subject_info_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("grading_subject_info_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const fields = [
     { key: "subjectCode", label: "Subject Code" },
     { key: "offerNumber", label: "Offer No." },
@@ -355,6 +443,31 @@ const SubjectHeader: React.FC<{
     { key: "instructorName", label: "Instructor" },
   ] as const;
 
+  if (isCollapsed) {
+    return (
+      <div className="bg-gradient-to-r from-[#166534]/5 to-transparent dark:from-[#166534]/15 dark:to-transparent border border-[#166534]/10 dark:border-emerald-800/30 rounded-xl px-4 py-2.5 mb-3 flex items-center justify-between transition-colors">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-[#166534] dark:text-emerald-400" />
+          <span className="text-xs font-bold text-[#166534] dark:text-emerald-400">
+            Subject Information
+          </span>
+          <span className="text-[11px] font-semibold text-gray-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-none">
+            {subject.subjectCode || "Subject"} {subject.offerNumber ? `(${subject.offerNumber})` : ""} {subject.instructorName ? `• ${subject.instructorName}` : ""}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={toggleCollapse}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-[#161F30] border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-[#166534]/40 transition cursor-pointer active:scale-95 shadow-2xs"
+          title="Show Subject Information"
+        >
+          <ChevronDown className="w-3.5 h-3.5 text-[#166534] dark:text-emerald-400" />
+          <span>Show Info</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gradient-to-r from-[#166534]/5 to-transparent dark:from-[#166534]/15 dark:to-transparent border border-[#166534]/10 dark:border-emerald-800/30 rounded-2xl p-4 mb-4 transition-colors">
       <div className="flex items-center justify-between mb-3">
@@ -362,21 +475,34 @@ const SubjectHeader: React.FC<{
           <BookOpen className="w-4 h-4" />
           Subject Information
         </h3>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer
-            bg-[#166534]/10 dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 hover:bg-[#166534]/20 dark:hover:bg-emerald-900/40 active:scale-95"
-        >
-          {isEditing ? (
-            <>
-              <Save className="w-3.5 h-3.5" /> Done
-            </>
-          ) : (
-            <>
-              <Edit3 className="w-3.5 h-3.5" /> Edit
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsEditing(!isEditing)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer
+              bg-[#166534]/10 dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 hover:bg-[#166534]/20 dark:hover:bg-emerald-900/40 active:scale-95"
+          >
+            {isEditing ? (
+              <>
+                <Save className="w-3.5 h-3.5" /> Done
+              </>
+            ) : (
+              <>
+                <Edit3 className="w-3.5 h-3.5" /> Edit
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer
+              bg-gray-100 dark:bg-slate-800/80 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 border border-gray-200/80 dark:border-slate-700 active:scale-95"
+            title="Hide Subject Information"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+            <span>Hide</span>
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {fields.map(({ key, label }) => (
@@ -412,7 +538,9 @@ const StudentModal: React.FC<{
   mode: "add" | "edit";
   onSave: (student: GradingStudent) => void;
   onClose: () => void;
-}> = ({ student, mode, onSave, onClose }) => {
+  onImportExcel?: () => void;
+  onDownloadTemplate?: () => void;
+}> = ({ student, mode, onSave, onClose, onImportExcel, onDownloadTemplate }) => {
   const [form, setForm] = useState<GradingStudent>(
     student || {
       id: generateId(),
@@ -489,6 +617,33 @@ const StudentModal: React.FC<{
             />
           </div>
         </div>
+
+        {mode === "add" && onImportExcel && (
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onImportExcel();
+              }}
+              className="inline-flex items-center gap-1.5 font-bold text-[#166534] dark:text-emerald-400 hover:underline cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Upload roster from Excel (.xlsx)
+            </button>
+            {onDownloadTemplate && (
+              <button
+                type="button"
+                onClick={onDownloadTemplate}
+                className="inline-flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition cursor-pointer"
+                title="Download Excel format template"
+              >
+                <Download className="w-3 h-3" />
+                Template
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-3 mt-6">
           <button
@@ -698,9 +853,10 @@ const GradeBreakdownModal: React.FC<{
 // =====================================================================
 
 export const GradingManagementView: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState<GradingPeriod | "overall">("prelim");
+  const [selectedTab, setSelectedTab] = useState<GradingPeriod | "overall" | "cumulative">("prelim");
   const {
     records,
+    setRecords,
     activeSubjectId,
     setActiveSubjectId,
     activePeriod,
@@ -710,9 +866,11 @@ export const GradingManagementView: React.FC = () => {
     addSubject,
     updateSubject,
     deleteSubject,
+    deleteAllSubjects,
     updateRecord,
     togglePublishGrades,
     clearAllGradingScores,
+    setSermsRawGrade,
   } = useGradingData();
 
   // UI state
@@ -727,6 +885,7 @@ export const GradingManagementView: React.FC = () => {
   const [breakdownModal, setBreakdownModal] = useState<GradingStudent | null>(null);
   const [showSubjectPicker, setShowSubjectPicker] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const [publishConfirm, setPublishConfirm] = useState<boolean | null>(null);
   const [publishModalAlert, setPublishModalAlert] = useState<{ title: string; message: string; type: "published" | "unpublished" } | null>(null);
   const [selectedPublishTerms, setSelectedPublishTerms] = useState<GradingPeriod[]>(["prelim"]);
@@ -771,7 +930,7 @@ export const GradingManagementView: React.FC = () => {
 
   // Keep selectedTab in sync when activePeriod changes
   useEffect(() => {
-    if (selectedTab !== "overall" && selectedTab !== activePeriod) {
+    if (selectedTab !== "overall" && selectedTab !== "cumulative" && selectedTab !== activePeriod) {
       setSelectedTab(activePeriod);
     }
   }, [activePeriod]);
@@ -1132,82 +1291,61 @@ export const GradingManagementView: React.FC = () => {
   );
 
   const handleImportStudents = useCallback(async () => {
-    if (!activeSubjectId) return;
     fileInputRef.current?.click();
-  }, [activeSubjectId]);
+  }, []);
 
   const handleStudentFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file || !activeSubjectId) return;
+      if (!file) return;
       try {
-        const imported = await importStudentListFromExcel(file);
-        updateRecord(activeSubjectId, (rec) => ({
-          ...rec,
-          students: [
-            ...rec.students,
-            ...imported.filter(
-              (imp) => !rec.students.some((s) => s.studentId === imp.studentId)
-            ),
-          ],
-        }));
+        const result = await importMultiSubjectGradingFromExcel(file, records, activeSubjectId);
+        setRecords(result.records);
+        if (result.activeSubjectIdToSelect) {
+          setActiveSubjectId(result.activeSubjectIdToSelect);
+        }
         setImportToast({
           type: "success",
-          message: `Imported ${imported.length} students successfully.`,
+          message: result.summaryText,
         });
-      } catch (err) {
+      } catch (err: any) {
         setImportToast({
           type: "error",
-          message: `Import failed: ${err}`,
+          message: `Import failed: ${err?.message || err}`,
         });
       }
       e.target.value = "";
     },
-    [activeSubjectId, updateRecord]
+    [records, activeSubjectId, setRecords, setActiveSubjectId]
   );
 
   const handleImportScores = useCallback(async () => {
-    if (!activeSubjectId) return;
     scoreImportRef.current?.click();
-  }, [activeSubjectId]);
+  }, []);
 
   const handleScoreFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file || !activeSubjectId || !periodData) return;
+      if (!file) return;
       try {
-        const { scores, warnings } = await importScoresFromExcel(
-          file,
-          students,
-          periodData
-        );
-        updateRecord(activeSubjectId, (rec) => ({
-          ...rec,
-          periods: {
-            ...rec.periods,
-            [activePeriod]: { ...rec.periods[activePeriod], scores },
-          },
-        }));
-        if (warnings.length > 0) {
-          setImportToast({
-            type: "warning",
-            message: `Imported with ${warnings.length} warning(s): ${warnings[0]}`,
-          });
-        } else {
-          setImportToast({
-            type: "success",
-            message: "Scores imported successfully.",
-          });
+        const result = await importMultiSubjectGradingFromExcel(file, records, activeSubjectId);
+        setRecords(result.records);
+        if (result.activeSubjectIdToSelect) {
+          setActiveSubjectId(result.activeSubjectIdToSelect);
         }
-      } catch (err) {
+        setImportToast({
+          type: "success",
+          message: result.summaryText,
+        });
+      } catch (err: any) {
         setImportToast({
           type: "error",
-          message: `Score import failed: ${err}`,
+          message: `Score import failed: ${err?.message || err}`,
         });
       }
       e.target.value = "";
     },
-    [activeSubjectId, activePeriod, periodData, students, updateRecord]
+    [records, activeSubjectId, setRecords, setActiveSubjectId]
   );
 
   const handleSort = (field: typeof sortField) => {
@@ -1225,25 +1363,80 @@ export const GradingManagementView: React.FC = () => {
   if (records.length === 0 || !activeRecord) {
     return (
       <div className="p-6 sm:p-8 max-w-[1440px] mx-auto">
+        {/* Hidden file inputs */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          className="hidden"
+          onChange={handleStudentFileChange}
+        />
+        <input
+          ref={scoreImportRef}
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          className="hidden"
+          onChange={handleScoreFileChange}
+        />
+
+        {/* Toast notification */}
+        <AnimatePresence>
+          {importToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className={`fixed top-20 right-6 z-[300] flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${
+                importToast.type === "success"
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : importToast.type === "warning"
+                  ? "bg-amber-50 border-amber-200 text-amber-800"
+                  : "bg-red-50 border-red-200 text-red-800"
+              }`}
+            >
+              {importToast.type === "success" ? (
+                <CheckCircle className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              {importToast.message}
+              <button
+                onClick={() => setImportToast(null)}
+                className="ml-2 p-0.5 rounded hover:bg-black/5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center mb-6 shadow-lg shadow-[#166534]/20">
             <FileSpreadsheet className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">
             Student Grading Management
           </h2>
-          <p className="text-sm text-gray-500 mb-6 max-w-md">
-            Create your first subject to start managing student grades with
-            spreadsheet-style grading tables, automatic computations, and Excel
-            import/export.
+          <p className="text-sm text-gray-500 dark:text-slate-400 mb-6 max-w-md">
+            Create your first subject or upload an Excel grading workbook to start managing student grades with
+            spreadsheet-style grading tables, automatic computations, and multi-subject separation.
           </p>
-          <button
-            onClick={() => addSubject()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#166534] text-white text-sm font-bold hover:bg-[#14532d] transition shadow-md shadow-[#166534]/30 active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Create Subject
-          </button>
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            <button
+              onClick={() => addSubject()}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#166534] text-white text-sm font-bold hover:bg-[#14532d] transition shadow-md shadow-[#166534]/30 active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Create Subject
+            </button>
+            <button
+              onClick={handleImportStudents}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-[#161F30] border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 text-sm font-bold hover:bg-gray-50 dark:hover:bg-slate-800 transition shadow-xs active:scale-95 cursor-pointer"
+            >
+              <Upload className="w-4 h-4" />
+              Import from Excel
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1260,7 +1453,7 @@ export const GradingManagementView: React.FC = () => {
   );
 
   return (
-    <div className="p-4 sm:p-6 max-w-full mx-auto pb-16">
+    <div className="p-2.5 sm:p-6 max-w-full mx-auto pb-16">
       {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
@@ -1358,7 +1551,7 @@ export const GradingManagementView: React.FC = () => {
                       )}
                     </button>
                   ))}
-                  <div className="border-t border-gray-100 dark:border-slate-700 mt-1 pt-1">
+                  <div className="border-t border-gray-100 dark:border-slate-700 mt-1 pt-1 flex flex-col gap-1">
                     <button
                       onClick={() => {
                         addSubject();
@@ -1370,6 +1563,18 @@ export const GradingManagementView: React.FC = () => {
                       <Plus className="w-3.5 h-3.5" />
                       Add New Subject
                     </button>
+                    {records.length > 0 && (
+                      <button
+                        onClick={() => {
+                          setShowSubjectPicker(false);
+                          setDeleteAllConfirm(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete All Subjects ({records.length})
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -1382,14 +1587,25 @@ export const GradingManagementView: React.FC = () => {
                 setDeleteConfirm(activeRecord.subject.id);
               }}
               className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
-              title="Delete subject"
+              title="Delete current subject"
             >
               <Trash2 className="w-4 h-4" />
             </button>
           )}
+
+          {records.length > 1 && (
+            <button
+              onClick={() => setDeleteAllConfirm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-900/40 transition cursor-pointer active:scale-95 shadow-2xs"
+              title="Delete all subjects bulk action"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete All ({records.length})</span>
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           {activeRecord && (
             <button
               onClick={() => {
@@ -1398,7 +1614,7 @@ export const GradingManagementView: React.FC = () => {
                   // Pre-populate with currently selected term or existing publishedTerms or fallback to active selectedTab / prelim
                   const existingTerms = activeRecord.subject.publishedTerms && activeRecord.subject.publishedTerms.length > 0
                     ? activeRecord.subject.publishedTerms
-                    : [selectedTab !== "overall" ? selectedTab : "prelim"];
+                    : [selectedTab !== "overall" && selectedTab !== "cumulative" ? selectedTab : "prelim"];
                   setSelectedPublishTerms(existingTerms);
                   setPublishConfirm(true);
                 } else {
@@ -1672,7 +1888,7 @@ export const GradingManagementView: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Delete Confirm */}
+      {/* Delete Single Subject Confirm */}
       <AnimatePresence>
         {deleteConfirm && (
           <motion.div
@@ -1718,6 +1934,97 @@ export const GradingManagementView: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Delete All Subjects Bulk Action Confirm Modal */}
+      <AnimatePresence>
+        {deleteAllConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setDeleteAllConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#161F30] rounded-2xl p-6 shadow-2xl border border-red-200 dark:border-red-900/50 max-w-md w-full"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-950/50 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-slate-100">
+                    Delete All Subjects?
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    Bulk action: all {records.length} subjects will be removed
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 rounded-xl p-3 mb-4 text-xs text-red-700 dark:text-red-300">
+                <p className="font-semibold mb-1">
+                  Warning: This action cannot be undone!
+                </p>
+                <p className="text-[11px] text-red-600/90 dark:text-red-300/80 leading-relaxed">
+                  This will permanently delete all {records.length} subjects, including all student rosters, quizzes, activities, scores, and grading computations.
+                </p>
+              </div>
+
+              <div className="max-h-36 overflow-y-auto mb-5 p-2 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700/60 text-xs scrollbar-thin">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                  Subjects to be deleted ({records.length}):
+                </p>
+                <div className="space-y-1">
+                  {records.map((r) => (
+                    <div
+                      key={r.subject.id}
+                      className="flex items-center justify-between text-gray-700 dark:text-slate-300 font-medium py-0.5"
+                    >
+                      <span className="truncate pr-2">
+                        {r.subject.subjectCode || "Untitled"}{" "}
+                        {r.subject.offerNumber && `(${r.subject.offerNumber})`}
+                        {r.subject.subjectName && ` • ${r.subject.subjectName}`}
+                      </span>
+                      <span className="text-[10px] text-gray-400 dark:text-slate-500 shrink-0 font-semibold">
+                        {r.students.length} students
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteAllConfirm(false)}
+                  className="flex-1 h-10 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const count = records.length;
+                    deleteAllSubjects();
+                    setDeleteAllConfirm(false);
+                    setImportToast({
+                      type: "warning",
+                      message: `Successfully deleted all ${count} subjects.`,
+                    });
+                  }}
+                  className="flex-1 h-10 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-md shadow-red-600/20 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete All ({records.length})</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ===== Subject Info Header ===== */}
       <SubjectHeader
         subject={activeRecord.subject}
@@ -1726,82 +2033,111 @@ export const GradingManagementView: React.FC = () => {
         setIsEditing={setIsEditingSubject}
       />
 
-      {/* ===== Grading Period Tabs ===== */}
-      <div className="flex items-center gap-1 mb-4 bg-gray-50 dark:bg-slate-850/60 dark:bg-slate-800/60 rounded-xl p-1 border border-gray-100 dark:border-slate-700/60 w-fit">
-        {GRADING_PERIODS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => {
-              setSelectedTab(p.key);
-              setActivePeriod(p.key);
-            }}
-            className={`relative px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedTab === p.key
-                ? "bg-white dark:bg-[#161F30] text-[#166534] dark:text-emerald-400 shadow-sm border border-[#166534]/15 dark:border-emerald-500/30"
-                : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/40"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-
-        {/* Overall GPA Tab */}
-        <button
-          onClick={() => setSelectedTab("overall")}
-          className={`relative px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-            selectedTab === "overall"
-              ? "bg-[#166534] text-white shadow-sm shadow-emerald-950/40 border border-emerald-400/40"
-              : "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40"
-          }`}
-        >
-          <span>Overall GPA</span>
-        </button>
-      </div>
-
-      {/* ===== Fullscreen Wrapper (covers controls + table + legend) ===== */}
+      {/* ===== Fullscreen Wrapper (covers controls + tabs + table + legend) ===== */}
       <div
         ref={fullscreenRef}
         className={
           isFullscreen
-            ? "fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-[#0F172A] p-4"
+            ? "fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-[#0F172A] p-4 overflow-y-auto"
             : ""
         }
       >
+      {/* ===== Grading Period Tabs (Visible in Normal & Fullscreen) ===== */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3">
+        <div className="w-full sm:w-auto overflow-x-auto scrollbar-none py-1">
+          <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-800/60 rounded-xl p-1 border border-gray-100 dark:border-slate-700/60 w-max">
+            {GRADING_PERIODS.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => {
+                  setSelectedTab(p.key);
+                  setActivePeriod(p.key);
+                }}
+                className={`relative px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  selectedTab === p.key
+                    ? "bg-white dark:bg-[#161F30] text-[#166534] dark:text-emerald-400 shadow-sm border border-[#166534]/15 dark:border-emerald-500/30"
+                    : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/40"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+
+            {/* Cumulative Grade Tab */}
+            <button
+              onClick={() => setSelectedTab("cumulative")}
+              className={`relative px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                selectedTab === "cumulative"
+                  ? "bg-[#166534] text-white shadow-sm shadow-emerald-950/40 border border-emerald-400/40"
+                  : "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40"
+              }`}
+            >
+              <span>Cumulative Grade</span>
+            </button>
+          </div>
+        </div>
+
+        {isFullscreen && (
+          <div className="flex items-center gap-2 px-1">
+            <FileSpreadsheet className="w-4 h-4 text-[#166534] dark:text-emerald-400" />
+            <span className="text-xs font-bold text-gray-800 dark:text-slate-100">
+              {activeRecord?.subject?.subjectCode || "Grading Sheet"}
+            </span>
+            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0.5 rounded-full">
+              {selectedTab === "cumulative" ? "Cumulative Grade" : periodLabel}
+            </span>
+          </div>
+        )}
+      </div>
       {/* ===== Student Controls ===== */}
-      <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${isFullscreen ? "mb-2 shrink-0" : "mb-3"}`}>
-        <div className="flex items-center gap-2">
-          <div className="relative">
+      <div className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 ${isFullscreen ? "mb-2 shrink-0" : "mb-3"}`}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search students..."
-              className="h-8 pl-8 pr-3 w-56 rounded-lg border border-gray-200 dark:border-slate-700 text-xs font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-[#161F30] outline-none focus:ring-2 focus:ring-[#166534]/30 focus:border-[#166534]/30 placeholder-gray-400 dark:placeholder-slate-500"
+              className="h-8 pl-8 pr-3 w-full sm:w-56 rounded-lg border border-gray-200 dark:border-slate-700 text-xs font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-[#161F30] outline-none focus:ring-2 focus:ring-[#166534]/30 focus:border-[#166534]/30 placeholder-gray-400 dark:placeholder-slate-500"
             />
           </div>
-          <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 px-2">
-            {filteredStudents.length} / {students.length} students
+          <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 px-1 whitespace-nowrap">
+            {filteredStudents.length}/{students.length}
           </span>
+          {/* Mobile Fullscreen Button (prominently displayed on mobile so it is never cut off) */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="flex sm:hidden items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-100 transition cursor-pointer active:scale-95 shrink-0 shadow-xs"
+            title={isFullscreen ? "Exit fullscreen" : "Fullscreen grading view"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-3.5 h-3.5" />
+            ) : (
+              <Maximize2 className="w-3.5 h-3.5" />
+            )}
+            <span>{isFullscreen ? "Exit" : "Fullscreen"}</span>
+          </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="w-full sm:w-auto overflow-x-auto scrollbar-none flex items-center gap-1.5 py-1">
           <button
             onClick={handleAddStudent}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#166534] dark:bg-emerald-600 hover:bg-[#14532d] dark:hover:bg-emerald-700 transition cursor-pointer shadow-sm active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#166534] dark:bg-emerald-600 hover:bg-[#14532d] dark:hover:bg-emerald-700 transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Student
           </button>
           <button
             onClick={handleAddQuiz}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800/40 hover:bg-yellow-100 dark:hover:bg-yellow-950/60 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800/40 hover:bg-yellow-100 dark:hover:bg-yellow-950/60 transition cursor-pointer whitespace-nowrap shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             Quiz
           </button>
           <button
             onClick={handleAddParticipation}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 dark:text-emerald-300 bg-green-50 dark:bg-emerald-950/40 border border-green-200 dark:border-emerald-800/40 hover:bg-green-100 dark:hover:bg-emerald-950/60 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 dark:text-emerald-300 bg-green-50 dark:bg-emerald-950/40 border border-green-200 dark:border-emerald-800/40 hover:bg-green-100 dark:hover:bg-emerald-950/60 transition cursor-pointer whitespace-nowrap shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             Participation
@@ -1812,16 +2148,16 @@ export const GradingManagementView: React.FC = () => {
                 clearAllGradingScores();
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition cursor-pointer whitespace-nowrap shrink-0"
             title="Clear all quiz, participation, and exam scores"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Clear All Scores
+            Clear
           </button>
-          <div className="w-px h-6 bg-gray-200 dark:bg-slate-700" />
+          <div className="hidden sm:block w-px h-6 bg-gray-200 dark:bg-slate-700 shrink-0" />
           <button
             onClick={toggleFullscreen}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer active:scale-95"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
             title={isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen grading view"}
           >
             {isFullscreen ? (
@@ -1851,32 +2187,30 @@ export const GradingManagementView: React.FC = () => {
         )}
         {selectedTab === "overall" ? (
           <div
-            className={`overflow-x-auto overflow-y-auto rounded-xl border shadow-sm transition-colors ${isFullscreen ? "flex-1 rounded-none border-0 shadow-none max-h-full" : "max-h-[calc(100vh-340px)]"}`}
+            className={`overflow-x-auto rounded-xl border shadow-sm transition-colors ${isFullscreen ? "flex-1 overflow-y-auto rounded-none border-0 shadow-none max-h-full" : ""}`}
             style={{
               borderColor: isFullscreen ? "transparent" : colors.borderColor,
               background: colors.tableBg,
+              WebkitOverflowScrolling: "touch",
             }}
           >
             <table className="w-full border-collapse text-sm" style={{ minWidth: 950 }}>
-              <thead className="sticky top-0 z-20">
-                <tr>
+              <thead>
+                <tr className="h-[38px]">
                   <th
                     colSpan={3}
-                    className="sticky left-0 z-30 px-3 py-2.5 text-xs font-bold uppercase tracking-wider border-b border-r select-none"
+                    className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none h-[38px]"
                     style={{
                       background: colors.studentInfoHeaderBg,
                       color: colors.studentInfoHeaderText,
                       borderColor: colors.borderColor,
-                      width: 370,
-                      minWidth: 370,
-                      maxWidth: 370,
                     }}
                   >
                     Student Information
                   </th>
                   <th
                     colSpan={4}
-                    className="px-3 py-2.5 text-xs font-bold uppercase tracking-wider border-b border-r select-none text-center"
+                    className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none text-center h-[38px]"
                     style={{
                       background: colors.examHeaderBg,
                       color: colors.examHeaderText,
@@ -1887,7 +2221,7 @@ export const GradingManagementView: React.FC = () => {
                   </th>
                   <th
                     colSpan={3}
-                    className="px-3 py-2.5 text-xs font-black uppercase tracking-wider border-b select-none text-center"
+                    className="px-3 py-2 text-xs font-black uppercase tracking-wider border-b select-none text-center h-[38px]"
                     style={{
                       background: colors.gpaHeaderBg,
                       color: colors.gpaHeaderText,
@@ -1897,42 +2231,33 @@ export const GradingManagementView: React.FC = () => {
                     Semestral Summary & Overall GPA
                   </th>
                 </tr>
-                <tr style={{ background: colors.studentInfoSubheaderBg }}>
+                <tr className="h-[38px]" style={{ background: colors.studentInfoSubheaderBg }}>
                   <th
-                    className="sticky left-0 z-30 px-2 py-3 text-xs font-bold border-b border-r text-center"
+                    className="px-2 py-2 text-xs font-bold border-b border-r text-center w-[50px] min-w-[50px] h-[38px]"
                     style={{
                       background: colors.studentInfoSubheaderBg,
                       color: colors.studentInfoSubheaderText,
                       borderColor: colors.borderColor,
-                      width: 50,
-                      minWidth: 50,
-                      maxWidth: 50,
                     }}
                   >
                     No.
                   </th>
                   <th
-                    className="sticky left-[50px] z-30 px-3 py-3 text-xs font-bold border-b border-r"
+                    className="px-2 py-2 text-xs font-bold border-b border-r w-[120px] min-w-[120px] h-[38px]"
                     style={{
                       background: colors.studentInfoSubheaderBg,
                       color: colors.studentInfoSubheaderText,
                       borderColor: colors.borderColor,
-                      width: 130,
-                      minWidth: 130,
-                      maxWidth: 130,
                     }}
                   >
                     Student ID
                   </th>
                   <th
-                    className="sticky left-[180px] z-30 px-3 py-3 text-xs font-bold border-b border-r"
+                    className="px-3 py-2 text-xs font-bold border-b border-r w-[180px] min-w-[180px] h-[38px]"
                     style={{
                       background: colors.studentInfoSubheaderBg,
                       color: colors.studentInfoSubheaderText,
                       borderColor: colors.borderColor,
-                      width: 190,
-                      minWidth: 190,
-                      maxWidth: 190,
                     }}
                   >
                     Student Name
@@ -1941,7 +2266,7 @@ export const GradingManagementView: React.FC = () => {
                   {GRADING_PERIODS.map((gp) => (
                     <th
                       key={gp.key}
-                      className="px-3 py-3 text-xs font-bold border-b border-r text-center"
+                      className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
                       style={{
                         background: colors.gradeEquivalentHeaderBg,
                         color: colors.gradeEquivalentHeaderText,
@@ -1954,7 +2279,7 @@ export const GradingManagementView: React.FC = () => {
                   ))}
 
                   <th
-                    className="px-3 py-3 text-xs font-bold border-b border-r text-center"
+                    className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
                     style={{
                       background: colors.totalGradeHeaderBg,
                       color: colors.totalGradeHeaderText,
@@ -1965,7 +2290,7 @@ export const GradingManagementView: React.FC = () => {
                     Average %
                   </th>
                   <th
-                    className="px-3 py-3 text-xs font-black border-b border-r text-center"
+                    className="px-3 py-2 text-xs font-black border-b border-r text-center h-[38px]"
                     style={{
                       background: colors.gpaHeaderBg,
                       color: colors.gpaHeaderText,
@@ -1976,7 +2301,7 @@ export const GradingManagementView: React.FC = () => {
                     Overall GPA
                   </th>
                   <th
-                    className="px-3 py-3 text-xs font-bold border-b text-center"
+                    className="px-3 py-2 text-xs font-bold border-b text-center h-[38px]"
                     style={{
                       background: colors.studentInfoSubheaderBg,
                       color: colors.studentInfoSubheaderText,
@@ -2029,19 +2354,19 @@ export const GradingManagementView: React.FC = () => {
                         style={{ background: rowBg }}
                       >
                         <td
-                          className="sticky left-0 z-10 px-2 py-2 text-center text-xs font-bold border-b border-r"
+                          className="px-2 py-2 text-center text-xs font-bold border-b border-r w-[50px] min-w-[50px]"
                           style={{ background: rowBg, color: colors.studentNumberText, borderColor: colors.borderColor }}
                         >
                           {student.studentNumber || idx + 1}
                         </td>
                         <td
-                          className="sticky left-[50px] z-10 px-3 py-2 text-xs font-semibold border-b border-r"
+                          className="px-2 py-2 text-xs font-semibold border-b border-r font-mono truncate w-[120px] min-w-[120px]"
                           style={{ background: rowBg, color: colors.studentIdText, borderColor: colors.borderColor }}
                         >
                           {student.studentId || "—"}
                         </td>
                         <td
-                          className="sticky left-[180px] z-10 px-3 py-2 text-xs font-bold border-b border-r truncate"
+                          className="px-3 py-2 text-xs font-bold border-b border-r truncate w-[180px] min-w-[180px]"
                           style={{ background: rowBg, color: colors.studentNameText, borderColor: colors.borderColor }}
                         >
                           {student.fullName}
@@ -2123,36 +2448,493 @@ export const GradingManagementView: React.FC = () => {
               </tbody>
             </table>
           </div>
+        ) : selectedTab === "cumulative" ? (
+          <div
+            className={`overflow-x-auto rounded-xl border shadow-sm transition-colors ${isFullscreen ? "flex-1 overflow-y-auto rounded-none border-0 shadow-none max-h-full" : ""}`}
+            style={{
+              borderColor: isFullscreen ? "transparent" : colors.borderColor,
+              background: colors.tableBg,
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            <table className="w-full border-collapse text-sm" style={{ minWidth: 1050 }}>
+              <thead>
+                <tr className="h-[38px]">
+                  <th
+                    colSpan={3}
+                    className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none h-[38px]"
+                    style={{
+                      background: colors.studentInfoHeaderBg,
+                      color: colors.studentInfoHeaderText,
+                      borderColor: colors.borderColor,
+                    }}
+                  >
+                    Student Information
+                  </th>
+                  <th
+                    colSpan={8}
+                    className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-b select-none text-center h-[38px]"
+                    style={{
+                      background: colors.gpaHeaderBg,
+                      color: colors.gpaHeaderText,
+                      borderColor: colors.borderColor,
+                    }}
+                  >
+                    Cumulative Grade Table
+                  </th>
+                </tr>
+                <tr className="h-[38px]" style={{ background: colors.studentInfoSubheaderBg }}>
+                  <th
+                    className="px-2 py-2 text-xs font-bold border-b border-r text-center w-[50px] min-w-[50px] h-[38px]"
+                    style={{
+                      background: colors.studentInfoSubheaderBg,
+                      color: colors.studentInfoSubheaderText,
+                      borderColor: colors.borderColor,
+                    }}
+                  >
+                    No.
+                  </th>
+                  <th
+                    className="px-2 py-2 text-xs font-bold border-b border-r w-[120px] min-w-[120px] h-[38px]"
+                    style={{
+                      background: colors.studentInfoSubheaderBg,
+                      color: colors.studentInfoSubheaderText,
+                      borderColor: colors.borderColor,
+                    }}
+                  >
+                    Student ID
+                  </th>
+                  <th
+                    className="px-3 py-2 text-xs font-bold border-b border-r w-[180px] min-w-[180px] h-[38px]"
+                    style={{
+                      background: colors.studentInfoSubheaderBg,
+                      color: colors.studentInfoSubheaderText,
+                      borderColor: colors.borderColor,
+                    }}
+                  >
+                    Student Name
+                  </th>
+
+                  {/* 1. PRELIM (Raw Data in SERMS) */}
+                  <th
+                    className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
+                    style={{
+                      background: colors.gradeEquivalentHeaderBg,
+                      color: colors.gradeEquivalentHeaderText,
+                      borderColor: colors.borderColor,
+                      minWidth: 110,
+                    }}
+                    title="Prelim raw equivalent score or direct input"
+                  >
+                    PRELIM (Raw Data in SERMS)
+                  </th>
+
+                  {/* 2. QG2 (Raw Data in SERMS) */}
+                  <th
+                    className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
+                    style={{
+                      background: colors.quizHeaderBg,
+                      color: colors.quizHeaderText,
+                      borderColor: colors.borderColor,
+                      minWidth: 110,
+                    }}
+                    title="Automatic from Midterm period grade equivalent"
+                  >
+                    QG2 (Raw Data in SERMS)
+                  </th>
+
+                  {/* 3. MIDTERM (Cumulative Grade) */}
+                  <th
+                    className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
+                    style={{
+                      background: colors.totalGradeHeaderBg,
+                      color: colors.totalGradeHeaderText,
+                      borderColor: colors.borderColor,
+                      minWidth: 110,
+                    }}
+                    title="Midterm = (Prelim + QG2) / 2"
+                  >
+                    MIDTERM (Cumulative Grade)
+                  </th>
+
+                  {/* 4. QG3 (Raw Data in SERMS) */}
+                  <th
+                    className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
+                    style={{
+                      background: colors.quizHeaderBg,
+                      color: colors.quizHeaderText,
+                      borderColor: colors.borderColor,
+                      minWidth: 110,
+                    }}
+                    title="Automatic from Semi-Final period grade equivalent"
+                  >
+                    QG3 (Raw Data in SERMS)
+                  </th>
+
+                  {/* 5. SEMI-FINAL (Cumulative Grade) */}
+                  <th
+                    className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
+                    style={{
+                      background: colors.totalGradeHeaderBg,
+                      color: colors.totalGradeHeaderText,
+                      borderColor: colors.borderColor,
+                      minWidth: 110,
+                    }}
+                    title="Semi-Final = (Midterm + QG3) / 2"
+                  >
+                    SEMI-FINAL (Cumulative Grade)
+                  </th>
+
+                  {/* 6. QG4 (Raw Data in SERMS) */}
+                  <th
+                    className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
+                    style={{
+                      background: colors.quizHeaderBg,
+                      color: colors.quizHeaderText,
+                      borderColor: colors.borderColor,
+                      minWidth: 110,
+                    }}
+                    title="Automatic from Final period grade equivalent"
+                  >
+                    QG4 (Raw Data in SERMS)
+                  </th>
+
+                  {/* 7. FINAL (Cumulative Grade) */}
+                  <th
+                    className="px-3 py-2 text-xs font-bold border-b border-r text-center h-[38px]"
+                    style={{
+                      background: colors.totalGradeHeaderBg,
+                      color: colors.totalGradeHeaderText,
+                      borderColor: colors.borderColor,
+                      minWidth: 110,
+                    }}
+                    title="Final = (Semi-Final + QG4) / 2"
+                  >
+                    FINAL (Cumulative Grade)
+                  </th>
+
+                  {/* 8. FINAL GRADE */}
+                  <th
+                    className="px-3 py-2 text-xs font-black border-b text-center h-[38px]"
+                    style={{
+                      background: colors.gpaHeaderBg,
+                      color: colors.gpaHeaderText,
+                      borderColor: colors.borderColor,
+                      minWidth: 100,
+                    }}
+                    title="Rounded to 1 decimal place"
+                  >
+                    FINAL GRADE
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="px-6 py-12 text-center text-sm text-gray-400">
+                      No students match your search filter
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStudents.map((student, idx) => {
+                    const rowBg = idx % 2 === 0 ? colors.studentRowEvenBg : colors.studentRowOddBg;
+
+                    // 1. Prelim Raw Data in SERMS
+                    const prelimPd = activeRecord?.periods?.prelim;
+                    let prelimRaw: number | null = null;
+                    if (prelimPd) {
+                      const c = computeStudentGrade(prelimPd, student.id);
+                      const scores = prelimPd.scores.filter((sc) => sc.studentId === student.id);
+                      const hasData = scores.some((sc) => sc.score !== null && sc.score !== undefined) ||
+                        prelimPd.totalQuizOverrides?.[student.id] !== undefined ||
+                        prelimPd.totalParticipationOverrides?.[student.id] !== undefined;
+                      if (hasData && c.gradeEquivalent != null) {
+                        prelimRaw = Number(c.gradeEquivalent);
+                      }
+                    }
+
+                    // QG2 automatically reflects the Midterm period grade equivalent
+                    const midtermPd = activeRecord?.periods?.midterm;
+                    let defaultQg2: number | null = null;
+                    if (midtermPd) {
+                      const c = computeStudentGrade(midtermPd, student.id);
+                      const scores = midtermPd.scores.filter((sc) => sc.studentId === student.id);
+                      const hasData = scores.some((sc) => sc.score !== null && sc.score !== undefined) ||
+                        midtermPd.totalQuizOverrides?.[student.id] !== undefined ||
+                        midtermPd.totalParticipationOverrides?.[student.id] !== undefined;
+                      if (hasData && c.gradeEquivalent != null) {
+                        defaultQg2 = Number(c.gradeEquivalent);
+                      }
+                    }
+                    let qg2 = defaultQg2;
+
+                    // QG3 automatically reflects the Semi-Final period grade equivalent
+                    const semiPd = activeRecord?.periods?.["semi-final"];
+                    let defaultQg3: number | null = null;
+                    if (semiPd) {
+                      const c = computeStudentGrade(semiPd, student.id);
+                      const scores = semiPd.scores.filter((sc) => sc.studentId === student.id);
+                      const hasData = scores.some((sc) => sc.score !== null && sc.score !== undefined) ||
+                        semiPd.totalQuizOverrides?.[student.id] !== undefined ||
+                        semiPd.totalParticipationOverrides?.[student.id] !== undefined;
+                      if (hasData && c.gradeEquivalent != null) {
+                        defaultQg3 = Number(c.gradeEquivalent);
+                      }
+                    }
+                    let qg3 = defaultQg3;
+
+                    // QG4 automatically reflects the Final period grade equivalent
+                    const finalPd = activeRecord?.periods?.final;
+                    let defaultQg4: number | null = null;
+                    if (finalPd) {
+                      const c = computeStudentGrade(finalPd, student.id);
+                      const scores = finalPd.scores.filter((sc) => sc.studentId === student.id);
+                      const hasData = scores.some((sc) => sc.score !== null && sc.score !== undefined) ||
+                        finalPd.totalQuizOverrides?.[student.id] !== undefined ||
+                        finalPd.totalParticipationOverrides?.[student.id] !== undefined;
+                      if (hasData && c.gradeEquivalent != null) {
+                        defaultQg4 = Number(c.gradeEquivalent);
+                      }
+                    }
+                    let qg4 = defaultQg4;
+
+                    // SERMS raw overrides (if manually entered or overridden)
+                    const sermsOverrides = activeRecord?.sermsRawGrades?.[student.id];
+                    if (sermsOverrides?.prelim !== undefined && sermsOverrides?.prelim !== null) {
+                      prelimRaw = sermsOverrides.prelim;
+                    }
+                    if (sermsOverrides?.qg2 !== undefined && sermsOverrides?.qg2 !== null) {
+                      qg2 = sermsOverrides.qg2;
+                    }
+                    if (sermsOverrides?.qg3 !== undefined && sermsOverrides?.qg3 !== null) {
+                      qg3 = sermsOverrides.qg3;
+                    }
+                    if (sermsOverrides?.qg4 !== undefined && sermsOverrides?.qg4 !== null) {
+                      qg4 = sermsOverrides.qg4;
+                    }
+
+                    // Compute cumulative grades with exact formulas
+                    const cum = computeCumulativeGrades(prelimRaw, qg2, qg3, qg4);
+
+                    return (
+                      <tr
+                        key={student.id}
+                        className="group transition-colors"
+                        style={{ background: rowBg }}
+                      >
+                        <td
+                          className="px-2 py-2 text-center text-xs font-bold border-b border-r w-[50px] min-w-[50px]"
+                          style={{ background: rowBg, color: colors.studentNumberText, borderColor: colors.borderColor }}
+                        >
+                          {student.studentNumber || idx + 1}
+                        </td>
+                        <td
+                          className="px-2 py-2 text-xs font-semibold border-b border-r font-mono truncate w-[120px] min-w-[120px]"
+                          style={{ background: rowBg, color: colors.studentIdText, borderColor: colors.borderColor }}
+                        >
+                          {student.studentId || "—"}
+                        </td>
+                        <td
+                          className="px-3 py-2 text-xs font-bold border-b border-r truncate w-[180px] min-w-[180px]"
+                          style={{ background: rowBg, color: colors.studentNameText, borderColor: colors.borderColor }}
+                        >
+                          {student.fullName}
+                        </td>
+
+                        {/* 1. PRELIM (Raw Data in SERMS) */}
+                        <td
+                          className="px-1 py-1 text-center border-b border-r"
+                          style={{
+                            borderColor: colors.borderColor,
+                            background: cum.prelim !== null ? colors.gradeEquivalentCellBg : undefined,
+                          }}
+                        >
+                          <SermsRawGradeCell
+                            value={cum.prelim}
+                            placeholder="—"
+                            bg={cum.prelim !== null ? colors.gradeEquivalentCellBg : undefined}
+                            textColor={cum.prelim !== null ? colors.gradeEquivalentCellText : colors.studentIdText}
+                            onChange={(val) => setSermsRawGrade(student.id, "prelim", val)}
+                            title="PRELIM: Click to edit raw grade"
+                          />
+                        </td>
+
+                        {/* 2. QG2 (Raw Data in SERMS) - Automatically populated from Midterm period grade */}
+                        <td
+                          className="px-1 py-1 text-center border-b border-r"
+                          style={{
+                            borderColor: colors.borderColor,
+                            background: qg2 !== null ? colors.gradeEquivalentCellBg : undefined,
+                          }}
+                        >
+                          <SermsRawGradeCell
+                            value={qg2}
+                            placeholder="—"
+                            bg={qg2 !== null ? colors.gradeEquivalentCellBg : undefined}
+                            textColor={qg2 !== null ? colors.gradeEquivalentCellText : colors.studentIdText}
+                            onChange={(val) => setSermsRawGrade(student.id, "qg2", val)}
+                            title="QG2: Automatic from Midterm. Click to override"
+                          />
+                        </td>
+
+                        {/* 3. MIDTERM (Cumulative Grade) = (Prelim + QG2) / 2 */}
+                        <td
+                          className="px-3 py-2 text-center text-xs font-black border-b border-r select-none"
+                          style={{
+                            borderColor: colors.borderColor,
+                            background: colors.totalGradeCellBg,
+                            color: colors.totalGradeCellText,
+                          }}
+                          title="Midterm = (Prelim + QG2) / 2"
+                        >
+                          {formatSermsValue(cum.midterm)}
+                        </td>
+
+                        {/* 4. QG3 (Raw Data in SERMS) - Automatically populated from Semi-Final period grade */}
+                        <td
+                          className="px-1 py-1 text-center border-b border-r"
+                          style={{
+                            borderColor: colors.borderColor,
+                            background: qg3 !== null ? colors.gradeEquivalentCellBg : undefined,
+                          }}
+                        >
+                          <SermsRawGradeCell
+                            value={qg3}
+                            placeholder="—"
+                            bg={qg3 !== null ? colors.gradeEquivalentCellBg : undefined}
+                            textColor={qg3 !== null ? colors.gradeEquivalentCellText : colors.studentIdText}
+                            onChange={(val) => setSermsRawGrade(student.id, "qg3", val)}
+                            title="QG3: Automatic from Semi-Final. Click to override"
+                          />
+                        </td>
+
+                        {/* 5. SEMI-FINAL (Cumulative Grade) = (Midterm + QG3) / 2 */}
+                        <td
+                          className="px-3 py-2 text-center text-xs font-black border-b border-r select-none"
+                          style={{
+                            borderColor: colors.borderColor,
+                            background: colors.totalGradeCellBg,
+                            color: colors.totalGradeCellText,
+                          }}
+                          title="Semi-Final = (Midterm + QG3) / 2"
+                        >
+                          {formatSermsValue(cum.semiFinal)}
+                        </td>
+
+                        {/* 6. QG4 (Raw Data in SERMS) - Automatically populated from Final period grade */}
+                        <td
+                          className="px-1 py-1 text-center border-b border-r"
+                          style={{
+                            borderColor: colors.borderColor,
+                            background: qg4 !== null ? colors.gradeEquivalentCellBg : undefined,
+                          }}
+                        >
+                          <SermsRawGradeCell
+                            value={qg4}
+                            placeholder="—"
+                            bg={qg4 !== null ? colors.gradeEquivalentCellBg : undefined}
+                            textColor={qg4 !== null ? colors.gradeEquivalentCellText : colors.studentIdText}
+                            onChange={(val) => setSermsRawGrade(student.id, "qg4", val)}
+                            title="QG4: Automatic from Final. Click to override"
+                          />
+                        </td>
+
+                        {/* 7. FINAL (Cumulative Grade) = (Semi-Final + QG4) / 2 */}
+                        <td
+                          className="px-3 py-2 text-center text-xs font-black border-b border-r select-none"
+                          style={{
+                            borderColor: colors.borderColor,
+                            background: colors.totalGradeCellBg,
+                            color: colors.totalGradeCellText,
+                          }}
+                          title="Final = (Semi-Final + QG4) / 2"
+                        >
+                          {formatSermsValue(cum.finalCumulative)}
+                        </td>
+
+                        {/* FINAL GRADE - SERMS: FINAL GRADE = FINAL (with Partial running grade display) */}
+                        {(() => {
+                          // Display: use runningGrade so partial grades are visible; use finalGrade for the official value
+                          const displayGrade = cum.finalGrade !== null ? cum.finalGrade : cum.runningGrade;
+                          const hasGrade = displayGrade !== null;
+                          const isFail = hasGrade && displayGrade! > 3.0;
+                          return (
+                            <td
+                              className="px-3 py-2 text-center text-sm font-black border-b"
+                              style={{
+                                borderColor: colors.borderColor,
+                                background: !hasGrade
+                                  ? undefined
+                                  : isFail
+                                  ? colors.gradeEquivalentCellBg
+                                  : colors.gpaCellBg,
+                                color: !hasGrade
+                                  ? colors.studentIdText
+                                  : isFail
+                                  ? colors.gradeEquivalentCellText
+                                  : colors.gpaCellText,
+                              }}
+                              title={
+                                cum.isPartial
+                                  ? `Partial / Running Grade: ${formatSermsValue(displayGrade)} (awaiting remaining periods)`
+                                  : cum.finalGrade !== null
+                                  ? `SERMS Final Grade: ${formatSermsValue(cum.finalGrade)} (FINAL GRADE = FINAL)`
+                                  : "No grade data"
+                              }
+                            >
+                              {hasGrade ? (
+                                <div className="inline-flex items-center gap-1">
+                                  <span>{formatSermsValue(displayGrade)}</span>
+                                  {cum.isPartial && (
+                                    <span
+                                      className="text-[9px] font-extrabold uppercase px-1 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+                                      title="Partial Grade (ongoing terms — FINAL GRADE requires all 4 periods)"
+                                    >
+                                      Partial
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                          );
+                        })()}
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         ) : (
-        <div
-          ref={tableRef}
-          className={`overflow-x-auto overflow-y-auto rounded-xl border shadow-sm transition-colors ${isFullscreen ? "flex-1 rounded-none border-0 shadow-none max-h-full" : "max-h-[calc(100vh-340px)]"}`}
-          style={{
-            borderColor: isFullscreen ? "transparent" : colors.borderColor,
-            background: colors.tableBg,
-          }}
-        >
-        <table className="w-full border-collapse text-sm" style={{ minWidth: 1000 }}>
-          <thead className="sticky top-0 z-20">
-            {/* Category Group Headers */}
-            <tr>
-              <th
-                colSpan={3}
-                className="sticky left-0 z-30 px-2 py-2.5 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors"
+          <div
+            ref={tableRef}
+            className={`overflow-x-auto rounded-xl border shadow-sm transition-colors ${isFullscreen ? "flex-1 overflow-y-auto rounded-none border-0 shadow-none max-h-full" : ""}`}
+            style={{
+              borderColor: isFullscreen ? "transparent" : colors.borderColor,
+              background: colors.tableBg,
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+          <table className="w-full border-collapse text-sm" style={{ minWidth: 1000 }}>
+            <thead>
+              {/* Category Group Headers (Row 1) */}
+              <tr className="h-[38px]">
+                <th
+                  colSpan={3}
+                  className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.studentInfoHeaderBg,
                   color: colors.studentInfoHeaderText,
                   borderColor: colors.borderColor,
-                  width: 370,
-                  minWidth: 370,
-                  maxWidth: 370,
                 }}
               >
                 Student Information
               </th>
               <th
                 colSpan={quizActivities.length + 1}
-                className="px-2 py-2.5 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors"
+                className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.quizHeaderBg,
                   color: colors.quizHeaderText,
@@ -2163,7 +2945,7 @@ export const GradingManagementView: React.FC = () => {
               </th>
               <th
                 colSpan={participationActivities.length + 1}
-                className="px-2 py-2.5 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors"
+                className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.participationHeaderBg,
                   color: colors.participationHeaderText,
@@ -2173,7 +2955,7 @@ export const GradingManagementView: React.FC = () => {
                 Class Participation (15%)
               </th>
               <th
-                className="px-2 py-2.5 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors"
+                className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.examHeaderBg,
                   color: colors.examHeaderText,
@@ -2183,7 +2965,7 @@ export const GradingManagementView: React.FC = () => {
                 Exam (60%)
               </th>
               <th
-                className="px-2 py-2.5 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors"
+                className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.totalGradeHeaderBg,
                   color: colors.totalGradeHeaderText,
@@ -2193,7 +2975,7 @@ export const GradingManagementView: React.FC = () => {
                 Total
               </th>
               <th
-                className="px-2 py-2.5 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors"
+                className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.roundedHeaderBg,
                   color: colors.roundedHeaderText,
@@ -2203,7 +2985,7 @@ export const GradingManagementView: React.FC = () => {
                 Rounded
               </th>
               <th
-                className="px-2 py-2.5 text-xs font-bold uppercase tracking-wider border-b select-none transition-colors"
+                className="px-2 py-2 text-xs font-bold uppercase tracking-wider border-b select-none transition-colors h-[38px]"
                 style={{
                   background: colors.gradeEquivalentHeaderBg,
                   color: colors.gradeEquivalentHeaderText,
@@ -2213,7 +2995,7 @@ export const GradingManagementView: React.FC = () => {
                 {periodLabel} Grade
               </th>
               <th
-                className="px-1 py-1.5 border-b w-8 transition-colors"
+                className="px-1 py-1.5 border-b w-8 transition-colors h-[38px]"
                 style={{
                   background: colors.studentInfoSubheaderBg,
                   borderColor: colors.borderColor,
@@ -2223,18 +3005,15 @@ export const GradingManagementView: React.FC = () => {
               </th>
             </tr>
 
-            {/* Column Headers */}
-            <tr>
-              {/* Student Info (sticky left) */}
+            {/* Column Headers (Row 2) */}
+            <tr className="h-[38px]">
+              {/* Student Info */}
               <th
-                className="sticky left-0 z-30 px-2 py-3 text-xs font-bold border-b border-r cursor-pointer select-none transition-colors"
+                className="px-2 py-2 text-xs font-bold border-b border-r cursor-pointer select-none transition-colors w-[50px] min-w-[50px] h-[38px]"
                 style={{
                   background: colors.studentInfoSubheaderBg,
                   color: colors.studentInfoSubheaderText,
                   borderColor: colors.borderColor,
-                  width: 50,
-                  minWidth: 50,
-                  maxWidth: 50,
                 }}
                 onClick={() => handleSort("number")}
               >
@@ -2246,14 +3025,11 @@ export const GradingManagementView: React.FC = () => {
                 </div>
               </th>
               <th
-                className="sticky left-[50px] z-30 px-2 py-3 text-xs font-bold border-b border-r cursor-pointer select-none transition-colors"
+                className="px-2 py-2 text-xs font-bold border-b border-r cursor-pointer select-none transition-colors w-[120px] min-w-[120px] h-[38px]"
                 style={{
                   background: colors.studentInfoSubheaderBg,
                   color: colors.studentInfoSubheaderText,
                   borderColor: colors.borderColor,
-                  width: 130,
-                  minWidth: 130,
-                  maxWidth: 130,
                 }}
                 onClick={() => handleSort("id")}
               >
@@ -2265,14 +3041,11 @@ export const GradingManagementView: React.FC = () => {
                 </div>
               </th>
               <th
-                className="sticky left-[180px] z-30 px-2 py-3 text-xs font-bold border-b border-r cursor-pointer select-none transition-colors"
+                className="px-3 py-2 text-xs font-bold border-b border-r cursor-pointer select-none transition-colors w-[180px] min-w-[180px] h-[38px]"
                 style={{
                   background: colors.studentInfoSubheaderBg,
                   color: colors.studentInfoSubheaderText,
                   borderColor: colors.borderColor,
-                  width: 190,
-                  minWidth: 190,
-                  maxWidth: 190,
                 }}
                 onClick={() => handleSort("name")}
               >
@@ -2288,7 +3061,7 @@ export const GradingManagementView: React.FC = () => {
               {quizActivities.map((q) => (
                 <th
                   key={q.id}
-                  className="px-1 py-3 text-xs font-bold border-b border-r group relative select-none transition-colors"
+                  className="px-1 py-2 text-xs font-bold border-b border-r group relative select-none transition-colors h-[38px]"
                   style={{
                     background: colors.quizSubheaderBg,
                     color: colors.quizSubheaderText,
@@ -2309,7 +3082,7 @@ export const GradingManagementView: React.FC = () => {
                 </th>
               ))}
               <th
-                className="px-1 py-3 text-xs font-extrabold border-b border-r select-none transition-colors"
+                className="px-1 py-2 text-xs font-extrabold border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.quizTotalHeaderBg,
                   color: colors.quizTotalHeaderText,
@@ -2324,7 +3097,7 @@ export const GradingManagementView: React.FC = () => {
               {participationActivities.map((p) => (
                 <th
                   key={p.id}
-                  className="px-1 py-3 text-xs font-bold border-b border-r group relative select-none transition-colors"
+                  className="px-1 py-2 text-xs font-bold border-b border-r group relative select-none transition-colors h-[38px]"
                   style={{
                     background: colors.participationSubheaderBg,
                     color: colors.participationSubheaderText,
@@ -2345,7 +3118,7 @@ export const GradingManagementView: React.FC = () => {
                 </th>
               ))}
               <th
-                className="px-1 py-3 text-xs font-extrabold border-b border-r select-none transition-colors"
+                className="px-1 py-2 text-xs font-extrabold border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.participationTotalHeaderBg,
                   color: colors.participationTotalHeaderText,
@@ -2358,7 +3131,7 @@ export const GradingManagementView: React.FC = () => {
 
               {/* Exam */}
               <th
-                className="px-1 py-3 text-xs font-bold border-b border-r select-none transition-colors"
+                className="px-1 py-2 text-xs font-bold border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.examSubheaderBg,
                   color: colors.examSubheaderText,
@@ -2371,7 +3144,7 @@ export const GradingManagementView: React.FC = () => {
 
               {/* Computed columns */}
               <th
-                className="px-1 py-3 text-xs font-bold border-b border-r select-none transition-colors"
+                className="px-1 py-2 text-xs font-bold border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.totalGradeHeaderBg,
                   color: colors.totalGradeHeaderText,
@@ -2382,7 +3155,7 @@ export const GradingManagementView: React.FC = () => {
                 Total Grade
               </th>
               <th
-                className="px-1 py-3 text-xs font-bold border-b border-r select-none transition-colors"
+                className="px-1 py-2 text-xs font-bold border-b border-r select-none transition-colors h-[38px]"
                 style={{
                   background: colors.roundedHeaderBg,
                   color: colors.roundedHeaderText,
@@ -2393,7 +3166,7 @@ export const GradingManagementView: React.FC = () => {
                 Rounded
               </th>
               <th
-                className="px-1 py-3 text-xs font-bold border-b select-none transition-colors"
+                className="px-1 py-2 text-xs font-bold border-b select-none transition-colors h-[38px]"
                 style={{
                   background: colors.gradeEquivalentHeaderBg,
                   color: colors.gradeEquivalentHeaderText,
@@ -2404,7 +3177,7 @@ export const GradingManagementView: React.FC = () => {
                 {periodLabel}
               </th>
               <th
-                className="px-1 py-2 border-b w-8 transition-colors"
+                className="px-1 py-2 border-b w-8 transition-colors h-[38px]"
                 style={{
                   background: colors.studentInfoSubheaderBg,
                   borderColor: colors.borderColor,
@@ -2414,26 +3187,23 @@ export const GradingManagementView: React.FC = () => {
               </th>
             </tr>
 
-            {/* MAX SCORE ROW */}
+            {/* MAX SCORE ROW (Row 3 in thead) */}
             <tr style={{ background: colors.maxScoreRowBg }}>
-              <td
+              <th
                 colSpan={3}
-                className="sticky left-0 z-30 px-2 py-1 text-xs font-bold text-center border-b border-r transition-colors"
+                className="px-2 py-1.5 text-xs font-bold text-center border-b border-r select-none transition-colors"
                 style={{
                   background: colors.maxScoreLabelBg,
                   color: colors.maxScoreLabelText,
                   borderColor: colors.borderColor,
-                  width: 370,
-                  minWidth: 370,
-                  maxWidth: 370,
                 }}
               >
                 MAX SCORE
-              </td>
+              </th>
               {quizActivities.map((q) => (
-                <td
+                <th
                   key={q.id}
-                  className="px-0 py-0 border-b border-r transition-colors"
+                  className="px-0 py-0 border-b border-r transition-colors font-normal"
                   style={{
                     background: colors.quizCellBg,
                     borderColor: colors.borderColor,
@@ -2443,9 +3213,9 @@ export const GradingManagementView: React.FC = () => {
                     value={q.maxScore}
                     onChange={(v) => handleMaxScoreChange(q.id, v, "quiz")}
                   />
-                </td>
+                </th>
               ))}
-              <td
+              <th
                 className="px-1 py-1 text-xs font-bold text-center border-b border-r transition-colors"
                 style={{
                   background: colors.quizTotalCellBg,
@@ -2454,11 +3224,11 @@ export const GradingManagementView: React.FC = () => {
                 }}
               >
                 {totalMaxQuiz}
-              </td>
+              </th>
               {participationActivities.map((p) => (
-                <td
+                <th
                   key={p.id}
-                  className="px-0 py-0 border-b border-r transition-colors"
+                  className="px-0 py-0 border-b border-r transition-colors font-normal"
                   style={{
                     background: colors.participationCellBg,
                     borderColor: colors.borderColor,
@@ -2468,9 +3238,9 @@ export const GradingManagementView: React.FC = () => {
                     value={p.maxScore}
                     onChange={(v) => handleMaxScoreChange(p.id, v, "participation")}
                   />
-                </td>
+                </th>
               ))}
-              <td
+              <th
                 className="px-1 py-1 text-xs font-bold text-center border-b border-r transition-colors"
                 style={{
                   background: colors.participationTotalCellBg,
@@ -2479,9 +3249,9 @@ export const GradingManagementView: React.FC = () => {
                 }}
               >
                 {totalMaxParticipation}
-              </td>
-              <td
-                className="px-0 py-0 border-b border-r transition-colors"
+              </th>
+              <th
+                className="px-0 py-0 border-b border-r transition-colors font-normal"
                 style={{
                   background: colors.examCellBg,
                   borderColor: colors.borderColor,
@@ -2495,8 +3265,8 @@ export const GradingManagementView: React.FC = () => {
                     }
                   />
                 )}
-              </td>
-              <td
+              </th>
+              <th
                 className="px-1 py-1 text-xs font-bold text-center border-b border-r transition-colors"
                 style={{
                   background: colors.totalGradeCellBg,
@@ -2505,22 +3275,22 @@ export const GradingManagementView: React.FC = () => {
                 }}
               >
                 100
-              </td>
-              <td
+              </th>
+              <th
                 className="px-1 py-1 border-b border-r transition-colors"
                 style={{
                   background: colors.roundedCellBg,
                   borderColor: colors.borderColor,
                 }}
               />
-              <td
+              <th
                 className="px-1 py-1 border-b transition-colors"
                 style={{
                   background: colors.gradeEquivalentCellBg,
                   borderColor: colors.borderColor,
                 }}
               />
-              <td
+              <th
                 className="border-b transition-colors"
                 style={{
                   background: colors.studentInfoSubheaderBg,
@@ -2586,42 +3356,33 @@ export const GradingManagementView: React.FC = () => {
                   >
                     {/* Student Number */}
                     <td
-                      className="sticky left-0 z-10 px-2 py-1 text-center text-sm font-bold border-b border-r select-none transition-colors"
+                      className="px-2 py-1 text-center text-xs md:text-sm font-bold border-b border-r select-none transition-colors w-[50px] min-w-[50px]"
                       style={{
                         background: rowStickyBg,
                         color: colors.studentNumberText,
                         borderColor: colors.borderColor,
-                        width: 50,
-                        minWidth: 50,
-                        maxWidth: 50,
                       }}
                     >
                       {student.studentNumber}
                     </td>
                     {/* Student ID */}
                     <td
-                      className="sticky left-[50px] z-10 px-2 py-1 text-sm font-semibold border-b border-r transition-colors"
+                      className="px-2 py-1 text-[11px] md:text-sm font-semibold border-b border-r transition-colors truncate font-mono w-[120px] min-w-[120px]"
                       style={{
                         background: rowStickyBg,
                         color: colors.studentIdText,
                         borderColor: colors.borderColor,
-                        width: 130,
-                        minWidth: 130,
-                        maxWidth: 130,
                       }}
                     >
                       {student.studentId}
                     </td>
                     {/* Student Name */}
                     <td
-                      className="sticky left-[180px] z-10 px-2 py-1 text-sm font-semibold border-b border-r transition-colors"
+                      className="px-3 py-1 text-xs md:text-sm font-semibold border-b border-r transition-colors w-[180px] min-w-[180px]"
                       style={{
                         background: rowStickyBg,
                         color: colors.studentNameText,
                         borderColor: colors.borderColor,
-                        width: 190,
-                        minWidth: 190,
-                        maxWidth: 190,
                       }}
                     >
                       <div className="flex items-center justify-between">
@@ -2831,81 +3592,30 @@ export const GradingManagementView: React.FC = () => {
         </table>
       </div>
         )}
-      {/* Grading Weights Legend */}
-      <div className="mt-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-[10px] font-semibold text-gray-500 dark:text-slate-400 shrink-0">
-        <div className="flex items-center gap-4 flex-wrap">
-        <span className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded shadow-2xs"
-            style={{
-              background: colors.quizHeaderBg,
-              border: `1px solid ${colors.borderColor}`,
-            }}
-          />
-          Quizzes 25%
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded shadow-2xs"
-            style={{
-              background: colors.participationHeaderBg,
-              border: `1px solid ${colors.borderColor}`,
-            }}
-          />
-          Participation 15%
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded shadow-2xs"
-            style={{
-              background: colors.examHeaderBg,
-              border: `1px solid ${colors.borderColor}`,
-            }}
-          />
-          Exam 60%
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded shadow-2xs"
-            style={{
-              background: colors.totalGradeHeaderBg,
-              border: `1px solid ${colors.borderColor}`,
-            }}
-          />
-          Total Grade
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded shadow-2xs"
-            style={{
-              background: colors.gradeEquivalentHeaderBg,
-              border: `1px solid ${colors.borderColor}`,
-            }}
-          />
-          Grade Equivalent
-        </span>
-
-        </div>
-
+      {/* Subjects Switcher & Grading Weights Legend */}
+      <div className="mt-4 flex flex-col gap-3 shrink-0">
         {/* Quick Subject Switcher Tabs */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-black tracking-wider uppercase text-gray-400 dark:text-slate-500">
+        <div className="flex items-center gap-2.5 w-full overflow-hidden">
+          <span className="text-[11px] font-black tracking-wider uppercase text-gray-400 dark:text-slate-500 shrink-0">
             Subjects:
           </span>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin flex-1">
             {records.map((r) => {
               const isCurrent = r.subject.id === activeSubjectId;
               return (
                 <button
                   key={r.subject.id}
                   onClick={() => setActiveSubjectId(r.subject.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     isCurrent
                       ? "bg-[#166534] dark:bg-emerald-600 text-white shadow-md shadow-emerald-950/40 border border-emerald-400/30"
                       : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700"
                   }`}
                 >
-                  <span>{r.subject.subjectCode || "Subject"}</span>
+                  <span>
+                    {r.subject.subjectCode || "Subject"}
+                    {r.subject.offerNumber ? ` - ${r.subject.offerNumber}` : ""}
+                  </span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
                     isCurrent ? "bg-white/20 text-white" : "bg-black/10 dark:bg-white/10 text-gray-500 dark:text-slate-400"
                   }`}>
@@ -2914,7 +3624,71 @@ export const GradingManagementView: React.FC = () => {
                 </button>
               );
             })}
+            {records.length > 1 && (
+              <button
+                onClick={() => setDeleteAllConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-900/40 transition cursor-pointer whitespace-nowrap shrink-0"
+                title="Delete all subjects bulk action"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete All</span>
+              </button>
+            )}
           </div>
+        </div>
+
+        {/* Grading Weights Legend (below Subjects) */}
+        <div className="flex items-center gap-4 flex-wrap text-[10px] font-semibold text-gray-500 dark:text-slate-400 pt-1 border-t border-gray-100 dark:border-slate-800/60">
+          <span className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded shadow-2xs"
+              style={{
+                background: colors.quizHeaderBg,
+                border: `1px solid ${colors.borderColor}`,
+              }}
+            />
+            Quizzes 25%
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded shadow-2xs"
+              style={{
+                background: colors.participationHeaderBg,
+                border: `1px solid ${colors.borderColor}`,
+              }}
+            />
+            Participation 15%
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded shadow-2xs"
+              style={{
+                background: colors.examHeaderBg,
+                border: `1px solid ${colors.borderColor}`,
+              }}
+            />
+            Exam 60%
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded shadow-2xs"
+              style={{
+                background: colors.totalGradeHeaderBg,
+                border: `1px solid ${colors.borderColor}`,
+              }}
+            />
+            Total Grade
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded shadow-2xs"
+              style={{
+                background: colors.gradeEquivalentHeaderBg,
+                border: `1px solid ${colors.borderColor}`,
+              }}
+            />
+            Grade Equivalent
+          </span>
         </div>
       </div>
       </div>
@@ -2927,6 +3701,13 @@ export const GradingManagementView: React.FC = () => {
             mode={studentModal.mode}
             onSave={handleSaveStudent}
             onClose={() => setStudentModal(null)}
+            onImportExcel={studentModal.mode === "add" ? handleImportStudents : undefined}
+            onDownloadTemplate={studentModal.mode === "add" ? () => {
+              exportStudentTemplateExcel(
+                activeRecord?.subject?.subjectCode || "MATH 101",
+                activeRecord?.subject?.offerNumber || "80062"
+              );
+            } : undefined}
           />
         )}
       </AnimatePresence>

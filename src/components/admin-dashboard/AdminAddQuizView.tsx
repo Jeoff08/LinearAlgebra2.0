@@ -142,6 +142,11 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
   selectedGradingPeriod = "prelim",
   setSelectedGradingPeriod,
 }) => {
+  // Determine allowed category when a subject is selected
+  const activeSubject = availableSubjects.find((s) => s.id === selectedSubjectId);
+  const activeSubjectCode = (activeSubject?.subjectCode || "").toUpperCase();
+  const isCalculusSubject = activeSubjectCode.includes("101") || activeSubjectCode.includes("102");
+  const isLinearAlgebraSubject = activeSubjectCode.includes("103");
   return (
     <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
       {/* Top Banner */}
@@ -339,93 +344,72 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+              <div className={`grid gap-3.5 pt-1 ${
+                isCalculusSubject || isLinearAlgebraSubject
+                  ? "grid-cols-1 max-w-sm"
+                  : "grid-cols-1 sm:grid-cols-2 max-w-xl"
+              }`}>
                 {/* Card 1: Linear Algebra */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGeneratorCategory("linear-algebra");
-                    setSelectedTopicIds([]);
-                  }}
-                  className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
-                    generatorCategory === "linear-algebra"
-                      ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
-                      : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
-                      <Layers className="w-5 h-5" />
+                {!isCalculusSubject && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGeneratorCategory("linear-algebra");
+                      setSelectedTopicIds([]);
+                    }}
+                    className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                      generatorCategory === "linear-algebra"
+                        ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
+                        : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-9 h-9 rounded-xl bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
+                        <Layers className="w-5 h-5" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                        28 Topics
+                      </span>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
-                      28 Topics
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
-                    Linear Algebra
-                  </h4>
-                  <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-snug">
-                    Matrices, determinants, eigenvalues, vector spaces, and transformations.
-                  </p>
-                </button>
+                    <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
+                      Linear Algebra
+                    </h4>
+                    <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-snug">
+                      Matrices, determinants, eigenvalues, vector spaces, and transformations.
+                    </p>
+                  </button>
+                )}
 
-                {/* Card 2: Calculus 1 */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGeneratorCategory("calculus-1");
-                    setSelectedTopicIds([]);
-                  }}
-                  className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
-                    generatorCategory === "calculus-1"
-                      ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
-                      : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5" />
+                {/* Card 2: Calculus 1 & 2 */}
+                {!isLinearAlgebraSubject && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGeneratorCategory("calculus-1");
+                      setSelectedTopicIds([]);
+                    }}
+                    className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                      generatorCategory === "calculus-1" || generatorCategory === "calculus-2"
+                        ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
+                        : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-9 h-9 rounded-xl bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                        60+ Topics
+                      </span>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
-                      30+ Topics
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
-                    Calculus 1
-                  </h4>
-                  <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-snug">
-                    Limits, continuity, derivatives, optimization, and definite integrals.
-                  </p>
-                </button>
-
-                {/* Card 3: Calculus 2 */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGeneratorCategory("calculus-2");
-                    setSelectedTopicIds([]);
-                  }}
-                  className={`p-4.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
-                    generatorCategory === "calculus-2"
-                      ? "border-[#166534] bg-[#166534]/10 dark:bg-[#166534]/20 ring-2 ring-[#166534] shadow-xs"
-                      : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 hover:bg-gray-50/70 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800/60"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#166534]/10 dark:bg-[#166534]/20 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
-                      <Zap className="w-5 h-5" />
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
-                      30+ Topics
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
-                    Calculus 2
-                  </h4>
-                  <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-snug">
-                    Integration techniques, polar coordinates, conics, and infinite series.
-                  </p>
-                </button>
+                    <h4 className="text-sm font-bold text-[#111827] dark:text-slate-100">
+                      Calculus 1 & 2
+                    </h4>
+                    <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-snug">
+                      Limits, derivatives, integrals, series, and analytic geometry.
+                    </p>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -497,10 +481,17 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-bold text-gray-400 dark:text-slate-400 block truncate">
-                          {topic.chapter}
-                        </span>
-                        <h5 className="text-xs font-bold text-[#111827] dark:text-slate-100 truncate">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-bold text-gray-400 dark:text-slate-400 block truncate">
+                            {topic.chapter}
+                          </span>
+                          {topic.categoryLabel && (
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
+                              {topic.categoryLabel}
+                            </span>
+                          )}
+                        </div>
+                        <h5 className="text-xs font-bold text-[#111827] dark:text-slate-100 truncate mt-0.5">
                           {topic.title}
                         </h5>
                         <p className="text-[11px] text-gray-500 dark:text-slate-400 line-clamp-1 mt-0.5">

@@ -10,11 +10,18 @@ import {
   HelpCircle,
   CheckCircle2,
   Clock,
+  Lock,
+  UserCheck,
 } from "lucide-react";
 import type {
   StudentAvailableQuiz,
   StudentQuizAttemptItem,
 } from "../../types/dashboard";
+import {
+  getQuizLockStatus,
+  requestQuizUnlock,
+  getStudentIdentifier,
+} from "../../utils/quizLockManager";
 
 interface UserOverviewViewProps {
   greeting: string;
@@ -141,6 +148,14 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
               >
                 <BookOpen className="w-4 h-4 text-[#166534] dark:text-emerald-400" />
                 <span>Browse Topics</span>
+              </button>
+
+              <button
+                onClick={() => onNavigate("attendance")}
+                className="bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:scale-98 text-[#166534] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer"
+              >
+                <UserCheck className="w-4 h-4 text-[#166534] dark:text-emerald-400" />
+                <span>Attendance ({userEnrolledSubject || "MATH 101"})</span>
               </button>
             </div>
           </div>
@@ -376,11 +391,15 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
             </div>
           ) : (
             <div className="divide-y divide-[#F3F4F6] dark:divide-slate-700/60 my-2">
-              {pendingAvailableQuizzes.slice(0, 4).map((quiz) => (
-                <div
-                  key={quiz.id}
-                  className="grid grid-cols-6 items-center py-3 px-1 text-xs hover:bg-[#F9FAFB] dark:hover:bg-slate-800/50 rounded-lg transition"
-                >
+              {pendingAvailableQuizzes.slice(0, 4).map((quiz) => {
+                const studentKey = getStudentIdentifier(user);
+                const lockStatus = getQuizLockStatus(quiz.id, studentKey);
+
+                return (
+                  <div
+                    key={quiz.id}
+                    className="grid grid-cols-6 items-center py-3 px-1 text-xs hover:bg-[#F9FAFB] dark:hover:bg-slate-800/50 rounded-lg transition"
+                  >
                   <div className="col-span-3 min-w-0 pr-2">
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span
@@ -422,7 +441,29 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
                     {quiz.questionsCount}
                   </div>
                   <div className="col-span-1 text-right">
-                    {quiz.attemptsCount > 0 ? (
+                    {lockStatus.isLocked ? (
+                      lockStatus.unlockRequested ? (
+                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800">
+                          Pending
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            requestQuizUnlock(
+                              quiz.id,
+                              studentKey,
+                              user?.name || user?.email || "Student",
+                              quiz.title
+                            );
+                            alert("Unlock request sent to instructor!");
+                          }}
+                          className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded transition cursor-pointer"
+                          title="Locked due to tab switching. Click to request unlock."
+                        >
+                          Unlock
+                        </button>
+                      )
+                    ) : quiz.attemptsCount > 0 ? (
                       <button
                         onClick={() => {
                           const past = myAttempts.find(
@@ -446,7 +487,8 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
                     )}
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
         </div>

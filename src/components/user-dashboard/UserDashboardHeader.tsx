@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
@@ -13,12 +13,22 @@ import {
   Sun,
   Moon,
   LogOut,
+  CheckCircle2,
+  X,
+  Unlock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type {
   StudentAvailableQuiz,
   StudentQuizAttemptItem,
 } from "../../types/dashboard";
+import {
+  getStudentIdentifier,
+  getStudentUnlockApprovedNotifications,
+  markStudentUnlockNotificationAsRead,
+  clearStudentUnlockNotifications,
+  type StudentUnlockApprovedNotification,
+} from "../../utils/quizLockManager";
 
 interface UserDashboardHeaderProps {
   displayName: string;
@@ -137,47 +147,210 @@ export const UserDashboardHeader: React.FC<UserDashboardHeaderProps> = ({
     onStartQuiz(quiz);
   };
 
+  const studentKey = getStudentIdentifier(user);
+  const [approvedUnlockNotifs, setApprovedUnlockNotifs] = useState<
+    StudentUnlockApprovedNotification[]
+  >([]);
+  const [unlockedNotificationToast, setUnlockedNotificationToast] =
+    useState<StudentUnlockApprovedNotification | null>(null);
+
+  const loadApprovedNotifs = () => {
+    setApprovedUnlockNotifs(getStudentUnlockApprovedNotifications(studentKey));
+  };
+
+  useEffect(() => {
+    loadApprovedNotifs();
+
+    const handleApproved = (e: any) => {
+      loadApprovedNotifs();
+      const detail = e.detail;
+      if (
+        !detail ||
+        !detail.studentKey ||
+        detail.studentKey.toLowerCase() === studentKey.toLowerCase()
+      ) {
+        setUnlockedNotificationToast({
+          id: Date.now().toString(),
+          quizId: detail?.quizId || "",
+          studentKey: detail?.studentKey || studentKey,
+          quizTitle: detail?.quizTitle || "Quiz",
+          approvedAt: new Date().toISOString(),
+          isRead: false,
+        });
+      }
+    };
+
+    const handleLockUpdated = () => {
+      loadApprovedNotifs();
+    };
+
+    window.addEventListener("quiz_unlock_approved", handleApproved);
+    window.addEventListener("quiz_lock_updated", handleLockUpdated);
+
+    return () => {
+      window.removeEventListener("quiz_unlock_approved", handleApproved);
+      window.removeEventListener("quiz_lock_updated", handleLockUpdated);
+    };
+  }, [studentKey]);
+
+  useEffect(() => {
+    if (!unlockedNotificationToast) return;
+    const timer = setTimeout(() => {
+      setUnlockedNotificationToast(null);
+    }, 7000);
+    return () => clearTimeout(timer);
+  }, [unlockedNotificationToast]);
+
+  const unreadApprovedCount = approvedUnlockNotifs.filter((n) => !n.isRead).length;
+  const totalStudentUnread = unreadQuizzes.length + unreadApprovedCount;
+
   return (
-    <header className="h-16 bg-white dark:bg-[#161F30] border-b border-[#EAEBED] dark:border-slate-800 px-4 sm:px-8 flex items-center justify-between shrink-0 z-20">
-      {/* Mobile Hamburger Button */}
-      <button
-        onClick={() => setMobileSidebarOpen(true)}
-        className="lg:hidden p-2 rounded-xl text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
-        aria-label="Open sidebar"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
-
-      {/* Right Header Controls: Notifications & User Profile */}
-      <div className="flex items-center gap-3 sm:gap-4 ml-auto">
-        {/* Notification Bell Button & Dropdown */}
-        <div className="relative">
-          <button
-            type="button"
+    <>
+      {/* Floating Quiz Unlocked Realtime Toast Alert */}
+      <AnimatePresence>
+        {unlockedNotificationToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
             onClick={() => {
-              setIsNotificationsOpen(!isNotificationsOpen);
-              setIsUserDropdownOpen(false);
+              setUnlockedNotificationToast(null);
+              onNavigate("quizzes");
             }}
-            className="relative p-2 rounded-xl text-gray-600 dark:text-slate-300 hover:text-[#166534] dark:hover:text-emerald-400 hover:bg-gray-100/80 dark:hover:bg-slate-800 transition cursor-pointer border border-gray-200 dark:border-slate-700 shadow-2xs"
-            title="New Quiz Notifications"
+            className="fixed top-5 right-6 z-[130] bg-white dark:bg-[#161F30] border-2 border-emerald-500 rounded-2xl shadow-2xl p-4 flex items-center gap-3.5 max-w-sm cursor-pointer hover:shadow-2xl transition"
           >
-            <Bell className="w-4 h-4" />
-            {unreadQuizzes.length > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#166534] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-[#161F30] shadow-xs">
-                {unreadQuizzes.length > 9 ? "9+" : unreadQuizzes.length}
-              </span>
-            )}
-          </button>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-green-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs animate-bounce">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+                  Quiz Unlocked by Admin!
+                </span>
+                <span className="text-[10px] text-gray-400 dark:text-slate-500">
+                  Just now
+                </span>
+              </div>
+              <p className="text-xs font-bold text-gray-900 dark:text-slate-100 truncate mt-0.5">
+                {unlockedNotificationToast.quizTitle}
+              </p>
+              <p className="text-[11px] text-gray-600 dark:text-slate-300 truncate">
+                Your unlock request was approved! Click to view in quizzes catalog.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setUnlockedNotificationToast(null);
+              }}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <AnimatePresence>
-            {isNotificationsOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-2xl shadow-xl z-50 overflow-hidden"
-              >
+      <header className="h-16 bg-white dark:bg-[#161F30] border-b border-[#EAEBED] dark:border-slate-800 px-4 sm:px-8 flex items-center justify-between shrink-0 z-20">
+        {/* Mobile Hamburger Button */}
+        <button
+          onClick={() => setMobileSidebarOpen(true)}
+          className="lg:hidden p-2 rounded-xl text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+          aria-label="Open sidebar"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* Right Header Controls: Notifications & User Profile */}
+        <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+          {/* Notification Bell Button & Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsNotificationsOpen(!isNotificationsOpen);
+                setIsUserDropdownOpen(false);
+              }}
+              className="relative p-2 rounded-xl text-gray-600 dark:text-slate-300 hover:text-[#166534] dark:hover:text-emerald-400 hover:bg-gray-100/80 dark:hover:bg-slate-800 transition cursor-pointer border border-gray-200 dark:border-slate-700 shadow-2xs"
+              title="Quiz Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {totalStudentUnread > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-emerald-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-[#161F30] shadow-xs">
+                  {totalStudentUnread > 9 ? "9+" : totalStudentUnread}
+                </span>
+              )}
+            </button>
+
+            <AnimatePresence>
+              {isNotificationsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#161F30] border border-[#EAEBED] dark:border-slate-700 rounded-2xl shadow-xl z-50 overflow-hidden"
+                >
+                  {/* Approved Quiz Unlocks Section */}
+                  {approvedUnlockNotifs.length > 0 && (
+                    <div className="p-3 bg-emerald-50/90 dark:bg-emerald-950/50 border-b border-emerald-200 dark:border-emerald-900/60 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-emerald-900 dark:text-emerald-200 uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          Approved Quizzes ({approvedUnlockNotifs.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearStudentUnlockNotifications(studentKey);
+                            loadApprovedNotifs();
+                          }}
+                          className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      {approvedUnlockNotifs.map((appr) => (
+                        <div
+                          key={appr.id}
+                          onClick={() => {
+                            markStudentUnlockNotificationAsRead(appr.id);
+                            loadApprovedNotifs();
+                            setIsNotificationsOpen(false);
+                            const matchingQuiz = availableQuizzes.find(
+                              (q) => q.id === appr.quizId
+                            );
+                            if (matchingQuiz) onStartQuiz(matchingQuiz);
+                            else onNavigate("quizzes");
+                          }}
+                          className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border transition cursor-pointer ${
+                            !appr.isRead
+                              ? "bg-white dark:bg-slate-800 border-emerald-300 dark:border-emerald-700 shadow-xs"
+                              : "bg-white/60 dark:bg-slate-800/60 border-gray-200 dark:border-slate-700"
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-gray-900 dark:text-slate-100 truncate">
+                                {appr.quizTitle}
+                              </span>
+                              {!appr.isRead && (
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold truncate mt-0.5">
+                              Unlocked by Instructor • Ready to take
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-lg shrink-0">
+                            Take Now →
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 <div className="p-3.5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between bg-[#FAFBFD] dark:bg-slate-800/60">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-green-50 dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 flex items-center justify-center">
@@ -454,7 +627,8 @@ export const UserDashboardHeader: React.FC<UserDashboardHeaderProps> = ({
         </div>
       </div>
     </header>
-  );
+  </>
+);
 };
 
 export default UserDashboardHeader;

@@ -70,6 +70,8 @@ export interface SubjectGradingRecord {
   subject: GradingSubject;
   students: GradingStudent[];
   periods: Record<GradingPeriod, PeriodGradingData>;
+  /** Optional custom raw SERMS overrides (studentId -> { prelim, qg2, qg3, qg4 }) */
+  sermsRawGrades?: Record<string, { prelim?: number | null; qg2?: number | null; qg3?: number | null; qg4?: number | null }>;
 }
 
 // =====================================================================

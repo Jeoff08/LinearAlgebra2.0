@@ -13,8 +13,15 @@ import {
   Square,
   CheckCircle2,
   Loader2,
+  ShieldAlert,
+  Unlock,
 } from "lucide-react";
 import type { QuizItem } from "../../types/dashboard";
+import {
+  getAllUnlockRequests,
+  adminUnlockQuiz,
+  type UnlockRequestItem,
+} from "../../utils/quizLockManager";
 
 interface AdminPublishedQuizzesViewProps {
   quizzes: QuizItem[];
@@ -47,6 +54,18 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
   const [selectedQuizIds, setSelectedQuizIds] = useState<Set<string>>(new Set());
   const [isUpdatingBulk, setIsUpdatingBulk] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [unlockRequests, setUnlockRequests] = useState<UnlockRequestItem[]>([]);
+
+  const loadRequests = () => {
+    setUnlockRequests(getAllUnlockRequests());
+  };
+
+  useEffect(() => {
+    loadRequests();
+    const handleUpdate = () => loadRequests();
+    window.addEventListener("quiz_lock_updated", handleUpdate);
+    return () => window.removeEventListener("quiz_lock_updated", handleUpdate);
+  }, []);
 
   // Auto-dismiss toast notification after 3 seconds
   useEffect(() => {
@@ -246,6 +265,70 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
           )}
         </div>
       </div>
+
+      {/* Student Unlock Requests Banner */}
+      {unlockRequests.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 rounded-2xl p-4 sm:p-5 shadow-xs"
+        >
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-black text-sm">
+              <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+              <span>Student Quiz Unlock Requests ({unlockRequests.length})</span>
+            </div>
+            <span className="text-xs text-amber-700 dark:text-amber-300 font-semibold">
+              Locked due to Alt-Tab / Window Switching violations
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            {unlockRequests.map((req) => (
+              <div
+                key={`${req.quizId}_${req.studentKey}`}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-amber-200 dark:border-slate-700 shadow-xs"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-gray-900 dark:text-gray-100">
+                      {req.studentName}
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+                      {req.studentKey}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    Quiz:{" "}
+                    <span className="font-semibold text-gray-700 dark:text-gray-200">
+                      {req.quizTitle}
+                    </span>
+                    {" • "}Requested{" "}
+                    {new Date(req.requestedAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    adminUnlockQuiz(req.quizId, req.studentKey);
+                    setToastMessage(
+                      `Unlocked quiz "${req.quizTitle}" for student ${req.studentName}!`
+                    );
+                  }}
+                  className="px-3.5 py-1.5 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>Approve & Unlock</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Floating / Sticky Bulk Action Bar for Selected Quizzes */}
       {selectedQuizIds.size > 0 && (

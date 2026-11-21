@@ -16,109 +16,6 @@ const STORAGE_KEY = "mathworkspace_grading_data";
 function reconcileStudentSubjects(records: SubjectGradingRecord[]): boolean {
   let modified = false;
 
-  const rec101 = records.find((r) => r.subject?.subjectCode?.toUpperCase().includes("101"));
-  let rec102 = records.find((r) => r.subject?.subjectCode?.toUpperCase().includes("102"));
-  let rec103 = records.find((r) => r.subject?.subjectCode?.toUpperCase().includes("103"));
-
-  if (!rec102) {
-    rec102 = createDefaultSubjectRecord("MATH 102", "Integral Calculus", "80063");
-    records.push(rec102);
-    modified = true;
-  }
-
-  if (!rec103) {
-    rec103 = createDefaultSubjectRecord("MATH 103", "Linear Algebra", "80064");
-    records.push(rec103);
-    modified = true;
-  }
-
-  if (rec101 && rec102) {
-    // Find any student in MATH 101 who chose MATH 102 (e.g. Jeoff Montebon)
-    const studentsFor102 = rec101.students.filter((st) => {
-      const name = (st.fullName || "").toLowerCase();
-      return name.includes("jeoff") || name.includes("montebon");
-    });
-
-    if (studentsFor102.length > 0) {
-      studentsFor102.forEach((st) => {
-        // Remove from MATH 101
-        rec101.students = rec101.students.filter(
-          (s) => s.id !== st.id && s.fullName.toLowerCase() !== st.fullName.toLowerCase()
-        );
-
-        // Find any scores for this student in MATH 101 prelim
-        const stScoresIn101 = rec101.periods.prelim.scores.filter((s) => s.studentId === st.id);
-        rec101.periods.prelim.scores = rec101.periods.prelim.scores.filter((s) => s.studentId !== st.id);
-
-        // Ensure in MATH 102
-        let in102 = rec102!.students.find(
-          (s) => s.id === st.id || s.fullName.toLowerCase().trim() === st.fullName.toLowerCase().trim()
-        );
-        if (!in102) {
-          in102 = {
-            id: st.id,
-            studentNumber: String(rec102!.students.length + 1),
-            studentId: st.studentId || "2026-0001",
-            fullName: st.fullName,
-          };
-          rec102!.students.push(in102);
-        }
-
-        // Move scores over to MATH 102 prelim
-        if (stScoresIn101.length > 0) {
-          const act102 = rec102!.periods.prelim.quizActivities[0];
-          if (act102) {
-            const highestScore = Math.max(...stScoresIn101.map((s) => s.score ?? 0));
-            if (act102.maxScore === 0) {
-              const act101 = rec101.periods.prelim.quizActivities[0];
-              act102.maxScore = act101?.maxScore || 10;
-            }
-            rec102!.periods.prelim.scores = setScore(
-              rec102!.periods.prelim.scores,
-              in102.id,
-              act102.id,
-              highestScore
-            );
-          }
-        }
-      });
-
-      // Renumber students in MATH 101 and MATH 102
-      rec101.students.forEach((s, i) => { s.studentNumber = String(i + 1); });
-      rec102.students.forEach((s, i) => { s.studentNumber = String(i + 1); });
-      modified = true;
-    }
-  }
-
-  // Restore Quiz 2 in MATH 101 if it was accidentally zeroed out
-  if (rec101) {
-    const p101 = rec101.periods?.prelim;
-    if (p101 && Array.isArray(p101.quizActivities) && p101.quizActivities.length >= 2) {
-      // Do not force maxScore on Quiz 2 if cleared
-    }
-  }
-
-  // Clean up duplicate scores in Quiz 2 ONLY for MATH 102 (never touch MATH 101)
-  if (rec102) {
-    const prelim = rec102.periods?.prelim;
-    if (prelim && Array.isArray(prelim.quizActivities) && Array.isArray(prelim.scores)) {
-      const q1 = prelim.quizActivities[0];
-      const q2 = prelim.quizActivities[1];
-      if (q1 && q2) {
-        rec102.students.forEach((st) => {
-          const s1 = prelim.scores.find((s) => s.studentId === st.id && s.activityId === q1.id);
-          const s2 = prelim.scores.find((s) => s.studentId === st.id && s.activityId === q2.id);
-
-          if (s1 && s2 && s1.score !== null && s1.score === s2.score) {
-            prelim.scores = prelim.scores.filter((s) => !(s.studentId === st.id && s.activityId === q2.id));
-            q2.maxScore = 0;
-            modified = true;
-          }
-        });
-      }
-    }
-  }
-
   // Reconcile any quizzes accidentally placed in Quiz 10 instead of the incremental slot (e.g. Quiz 4)
   // across all periods (prelim, midterm, semi-final, final)
   records.forEach((record) => {
@@ -203,24 +100,7 @@ function loadFromStorage(): SubjectGradingRecord[] {
       saveToStorage(initial);
       return initial;
     }
-    // Ensure MATH 102 and MATH 103 exist if not initialized previously
-    const has102 = parsed.some((r) =>
-      r.subject?.subjectCode?.toLowerCase().includes("102")
-    );
-    if (!has102) {
-      parsed.push(
-        createDefaultSubjectRecord("MATH 102", "Integral Calculus", "80063")
-      );
-    }
-    const has103 = parsed.some((r) =>
-      r.subject?.subjectCode?.toLowerCase().includes("103")
-    );
-    if (!has103) {
-      parsed.push(
-        createDefaultSubjectRecord("MATH 103", "Linear Algebra", "80064")
-      );
-    }
-    // Reconcile students into their proper subjects
+    // Reconcile activities in parsed records
     reconcileStudentSubjects(parsed);
     saveToStorage(parsed);
     return parsed;
@@ -240,6 +120,13 @@ function loadFromStorage(): SubjectGradingRecord[] {
 function saveToStorage(records: SubjectGradingRecord[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("grading_data_updated", {
+          detail: { records, timestamp: Date.now() },
+        })
+      );
+    }
   } catch (e) {
     console.error("Failed to save grading data:", e);
   }
@@ -326,8 +213,49 @@ export function useGradingData() {
 
         if (cloudRecords.length > 0) {
           reconcileStudentSubjects(cloudRecords);
-          setRecords(cloudRecords);
-          saveToStorage(cloudRecords);
+          setRecords((prev) => {
+            const merged = cloudRecords.map((cloudRec) => {
+              const localRec = prev.find((p) => p.subject.id === cloudRec.subject.id);
+              if (!localRec) return cloudRec;
+
+              const mergedPeriods = { ...cloudRec.periods };
+              (Object.keys(mergedPeriods) as GradingPeriod[]).forEach((pKey) => {
+                const cloudP = mergedPeriods[pKey];
+                const localP = localRec.periods?.[pKey];
+                if (cloudP && localP) {
+                  // Preserve maxScores if local has higher or active maxScore (e.g. Quiz 2 maxScore: 10)
+                  cloudP.quizActivities = cloudP.quizActivities.map((cAct, idx) => {
+                    const lAct = localP.quizActivities?.[idx];
+                    return lAct && lAct.maxScore > cAct.maxScore ? { ...cAct, maxScore: lAct.maxScore } : cAct;
+                  });
+                  // Merge scores: keep any local scores not present or null in cloud
+                  const cloudScores = [...(cloudP.scores || [])];
+                  (localP.scores || []).forEach((lScore) => {
+                    const existingIdx = cloudScores.findIndex(
+                      (cs) => cs.studentId === lScore.studentId && cs.activityId === lScore.activityId
+                    );
+                    if (existingIdx === -1) {
+                      cloudScores.push(lScore);
+                    } else if (cloudScores[existingIdx].score === null && lScore.score !== null) {
+                      cloudScores[existingIdx] = lScore;
+                    }
+                  });
+                  cloudP.scores = cloudScores;
+                }
+              });
+
+              return {
+                ...cloudRec,
+                periods: mergedPeriods,
+                students: localRec.students.length > cloudRec.students.length ? localRec.students : cloudRec.students,
+                sermsRawGrades: { ...(cloudRec.sermsRawGrades || {}), ...(localRec.sermsRawGrades || {}) },
+              };
+            });
+
+            reconcileStudentSubjects(merged);
+            saveToStorage(merged);
+            return merged;
+          });
         }
       } catch (err) {
         console.warn("Could not load grading records from Supabase:", err);
@@ -805,11 +733,20 @@ export function useGradingData() {
               };
 
               uniqueQuizzes.forEach((uQuiz) => {
-                const rawQuizPeriod = uQuiz.period || localStorage.getItem(`quiz_period_${uQuiz.id}`) || "prelim";
-                const quizPeriodKey: GradingPeriod =
-                  rawQuizPeriod === "midterm" || rawQuizPeriod === "semi-final" || rawQuizPeriod === "final"
-                    ? rawQuizPeriod
-                    : "prelim";
+                const rawQuizPeriod = String(uQuiz.period || localStorage.getItem(`quiz_period_${uQuiz.id}`) || "prelim").toLowerCase().trim();
+                let quizPeriodKey: GradingPeriod = "prelim";
+                if (rawQuizPeriod === "midterm") {
+                  quizPeriodKey = "midterm";
+                } else if (
+                  rawQuizPeriod === "semi-final" ||
+                  rawQuizPeriod === "semifinal" ||
+                  rawQuizPeriod === "semi_final" ||
+                  rawQuizPeriod === "semi final"
+                ) {
+                  quizPeriodKey = "semi-final";
+                } else if (rawQuizPeriod === "final" || rawQuizPeriod === "finals") {
+                  quizPeriodKey = "final";
+                }
                 quizzesByPeriod[quizPeriodKey].push(uQuiz);
               });
 
@@ -865,45 +802,6 @@ export function useGradingData() {
                     );
                     if (!existingScoreEntry || existingScoreEntry.score === null || existingScoreEntry.score !== bestScore) {
                       targetPeriod.scores = setScore(periodScores, currentStudent.id, targetActivity.id, bestScore);
-                      recordModified = true;
-                      hasAnyUpdates = true;
-                    }
-                  }
-                });
-
-                // Clean up any empty slots that have no quiz in this period (e.g. if only 1 quiz exists for this period, Quiz 2..10 must be clean)
-                const usedSlotIndices = new Set<number>();
-                periodQuizzes.forEach((uQuiz, periodIdx) => {
-                  let sIdx = periodIdx;
-                  const storedQuizNum = localStorage.getItem(`quiz_number_${uQuiz.id}`);
-                  if (storedQuizNum) {
-                    const pNum = parseInt(storedQuizNum, 10);
-                    if (pNum >= 1 && pNum <= 10) sIdx = pNum - 1;
-                  } else if (uQuiz.quizNumber && uQuiz.quizNumber >= 1 && uQuiz.quizNumber <= 10) {
-                    sIdx = uQuiz.quizNumber - 1;
-                  } else {
-                    const numMatch = (uQuiz.title || "").match(/quiz\s*(\d+)/i);
-                    if (numMatch && numMatch[1]) {
-                      const pNum = parseInt(numMatch[1], 10);
-                      if (pNum >= 1 && pNum <= 10) sIdx = pNum - 1;
-                    }
-                  }
-                  if (sIdx >= 0 && sIdx < 10) usedSlotIndices.add(sIdx);
-                });
-
-                // For any quiz slot >= periodQuizzes.length that is NOT used by any quiz, ensure it has maxScore=0 and no student scores
-                targetPeriod.quizActivities.forEach((act, actIdx) => {
-                  if (actIdx >= periodQuizzes.length && !usedSlotIndices.has(actIdx)) {
-                    if (act.maxScore > 0) {
-                      act.maxScore = 0;
-                      recordModified = true;
-                      hasAnyUpdates = true;
-                    }
-                    const hasGhostScore = targetPeriod.scores.some((s) => s.studentId === currentStudent.id && s.activityId === act.id);
-                    if (hasGhostScore) {
-                      targetPeriod.scores = targetPeriod.scores.filter(
-                        (s) => !(s.studentId === currentStudent.id && s.activityId === act.id)
-                      );
                       recordModified = true;
                       hasAnyUpdates = true;
                     }
@@ -1162,9 +1060,46 @@ export function useGradingData() {
         return {
           ...rec,
           periods: resetPeriods,
+          sermsRawGrades: {},
         };
       })
     );
+  }, []);
+
+  const setSermsRawGrade = useCallback(
+    (
+      studentId: string,
+      field: "prelim" | "qg2" | "qg3" | "qg4",
+      value: number | null
+    ) => {
+      setRecords((prev) =>
+        prev.map((r) => {
+          if (r.subject.id !== activeSubjectId) return r;
+          const currentSerms = { ...(r.sermsRawGrades || {}) };
+          const studentEntry = { ...(currentSerms[studentId] || {}) };
+          if (value === null || isNaN(value)) {
+            delete studentEntry[field];
+          } else {
+            studentEntry[field] = value;
+          }
+          if (Object.keys(studentEntry).length === 0) {
+            delete currentSerms[studentId];
+          } else {
+            currentSerms[studentId] = studentEntry;
+          }
+          return {
+            ...r,
+            sermsRawGrades: currentSerms,
+          };
+        })
+      );
+    },
+    [activeSubjectId]
+  );
+
+  const deleteAllSubjects = useCallback(() => {
+    setRecords([]);
+    setActiveSubjectId(null);
   }, []);
 
   return {
@@ -1179,9 +1114,11 @@ export function useGradingData() {
     addSubject,
     updateSubject,
     deleteSubject,
+    deleteAllSubjects,
     updateRecord,
     importRecord,
     togglePublishGrades,
     clearAllGradingScores,
+    setSermsRawGrade,
   };
 }

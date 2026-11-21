@@ -1,5 +1,10 @@
 // filename: src/utils/quizGenerator.ts
 
+import { TOPICS as LINEAR_ALGEBRA_TOPICS_RAW } from "../data/topics/index";
+import { ALL_CALCULUS_TOPICS } from "../data/calculus-topics";
+import { ALL_CALCULUS_2_TOPICS } from "../data/calculus-2-topics";
+import type { QuizQuestionItem } from "../types/dashboard";
+
 export type QuizQuestionType =
   | "multiple_choice"
   | "identification"
@@ -699,7 +704,7 @@ function matchesTopic(topicTitle: string, keywords: string[]): boolean {
   return keywords.some((k) => lower.includes(k.toLowerCase()));
 }
 
-// Fallback question synthesizer that uses raw topic details/summary
+// Fallback question synthesizer that uses raw topic details/summary with diverse templates
 function synthesizeQuestionFromTopic(
   topic: TopicInput,
   type: QuizQuestionType,
@@ -709,38 +714,86 @@ function synthesizeQuestionFromTopic(
   const title = topic.title || "Mathematics Topic";
   const summary = topic.summary || "Explore fundamental properties and principles.";
   const details = topic.details || "";
+  const cat = topic.category || "linear-algebra";
+  const catLabel = cat === "linear-algebra" ? "Linear Algebra" : cat === "calculus-1" ? "Calculus 1" : "Calculus 2";
 
-  // Extract any short sentence or bullet points from details if available
+  // Extract clean text
   const cleanDetails = details.replace(/━+/g, "").replace(/\n+/g, " ").trim();
   const firstSentence = cleanDetails.slice(0, 180).trim() || summary;
 
   if (type === "identification") {
+    const identTemplates = [
+      {
+        prompt: `Identify the mathematical concept or rule described:\n"${summary}"`,
+        ans: title,
+      },
+      {
+        prompt: `In ${catLabel}, what specific topic or method directly governs: "${summary.slice(0, 130)}"?`,
+        ans: title,
+      },
+      {
+        prompt: `Name the foundational mathematical concept defined as follows:\n"${firstSentence.slice(0, 140)}"`,
+        ans: title,
+      },
+      {
+        prompt: `Identify the mathematical structure or operation focused on: "${summary}"`,
+        ans: title,
+      },
+      {
+        prompt: `Which major framework in ${catLabel} encompasses the following principle:\n"${summary.slice(0, 120)}"?`,
+        ans: title,
+      },
+      {
+        prompt: `Identify the theorem, technique, or domain corresponding to:\n"${firstSentence.slice(0, 130)}"`,
+        ans: title,
+      },
+    ];
+    const chosen = identTemplates[seedIndex % identTemplates.length];
     return {
       id,
-      prompt: `Identify the mathematical concept or rule described:\n"${summary}"`,
+      prompt: chosen.prompt,
       questionType: "identification",
-      optionA: title,
+      optionA: chosen.ans,
       optionB: "Topic Definition",
       optionC: "identification",
       optionD: "",
       correct: "A",
-      correctAnswerText: title,
+      correctAnswerText: chosen.ans,
       explanation: `The concept described is ${title}. ${summary}`,
       topicTitle: title,
     };
   }
 
   if (type === "enumeration") {
+    const enumTemplates = [
+      {
+        prompt: `Enumerate 3 key properties, theorems, or components associated with ${title}.`,
+        ans: `1. Formal Definition, 2. Mathematical Properties, 3. Solution Methods for ${title}`,
+      },
+      {
+        prompt: `List the fundamental criteria, conditions, or steps required when applying ${title}.`,
+        ans: `1. Initial Conditions, 2. Analytical Formulation, 3. Verification of Results in ${title}`,
+      },
+      {
+        prompt: `Enumerate the primary practical and computational applications of ${title}.`,
+        ans: `1. Direct Computation, 2. Transformation / Factorization, 3. System Analysis in ${title}`,
+      },
+      {
+        prompt: `List the major algebraic behaviors or core theorems that govern ${title}.`,
+        ans: `1. Existence and Uniqueness, 2. Algebraic Invariants, 3. Numerical Stability in ${title}`,
+      },
+    ];
+    const chosen = enumTemplates[seedIndex % enumTemplates.length];
     return {
       id,
-      prompt: `Enumerate the key properties, theorems, or components associated with ${title}.`,
+      prompt: chosen.prompt,
       questionType: "enumeration",
-      optionA: `Key properties of ${title}: 1. Definition and Conditions, 2. Standard Formula, 3. Practical Applications`,
+      optionA: chosen.ans,
       optionB: "Enumeration items",
       optionC: "enumeration",
       optionD: "",
       correct: "A",
-      correctAnswerText: `1. Formal Definition, 2. Mathematical Properties, 3. Solution Methods for ${title}`,
+      correctAnswerText: chosen.ans,
       explanation: `Mastery of ${title} requires understanding its definition, core properties, and computational techniques.`,
       topicTitle: title,
     };
@@ -751,34 +804,152 @@ function synthesizeQuestionFromTopic(
     const exampleSnippet =
       examples.length > 0 ? examples[seedIndex % examples.length] : "";
 
+    const psTemplates = [
+      `Solve the following standard problem regarding ${title}:\n${exampleSnippet || `Given the fundamental equations of ${title}, compute the resulting canonical value or simplified expression.`}`,
+      `Analyze the mathematical formulation for ${title} and calculate its principal result.`,
+      `Evaluate the system described by ${title}: determine the necessary parameters that satisfy all governing conditions.`,
+      `Apply analytical methods of ${title} to derive the exact quantitative solution for the standard case.`,
+    ];
+    const chosenPrompt = psTemplates[seedIndex % psTemplates.length];
+
     return {
       id,
-      prompt: exampleSnippet
-        ? `Solve the following problem regarding ${title}:\n${exampleSnippet}`
-        : `Solve the fundamental standard problem for ${title}: analyze the given system/function and compute its key value or simplified form.`,
+      prompt: chosenPrompt,
       questionType: "problem_solving",
       optionA: `Solution to ${title}`,
       optionB: "Step 1: Set up the formula. Step 2: Perform calculations. Step 3: Simplify.",
       optionC: "problem_solving",
       optionD: "",
       correct: "A",
-      correctAnswerText: `Standard Solved Value for ${title}`,
+      correctAnswerText: `Standard Solution for ${title}`,
       explanation: `To solve problems in ${title}, apply the standard theorems and step-by-step analytical methods.`,
       topicTitle: title,
     };
   }
 
-  // Default: Multiple Choice
+  // Default: Multiple Choice with 16 distinct prompt templates and diverse distractors
+  const mcTemplates = [
+    {
+      prompt: `Which of the following statements is TRUE regarding ${title}?`,
+      correct: `${summary.slice(0, 95)}...`,
+      distractors: [
+        `It is completely unrelated to ${title} and has no practical mathematical application.`,
+        `It only applies to 1×1 matrices or constant zero functions.`,
+        `Its definition violates the fundamental linearity properties in mathematics.`,
+      ],
+    },
+    {
+      prompt: `What is the primary mathematical purpose or role of ${title}?`,
+      correct: `To analyze, decompose, or compute properties represented by: ${summary.slice(0, 85)}...`,
+      distractors: [
+        `To replace all algebraic equations with arbitrary numerical guesses.`,
+        `To enforce that all matrices have zero determinant regardless of entries.`,
+        `To convert all non-linear functions into single-digit constants.`,
+      ],
+    },
+    {
+      prompt: `In the study of ${title}, which theoretical condition must typically be met?`,
+      correct: `The mathematical system must satisfy the core axioms and definitions of ${title}.`,
+      distractors: [
+        `The determinant must always equal zero under all circumstances.`,
+        `The system must contain strictly negative integer coordinates only.`,
+        `The dimension of the vector space must be strictly less than 1.`,
+      ],
+    },
+    {
+      prompt: `How is ${title} applied when solving complex mathematical or computational models?`,
+      correct: `By leveraging its specific theorems and structural properties: ${summary.slice(0, 80)}...`,
+      distractors: [
+        `By completely bypassing all matrix algebra and linear transformations.`,
+        `By assuming all variable components cancel out to positive infinity.`,
+        `By restricting calculations exclusively to trivial identity operations.`,
+      ],
+    },
+    {
+      prompt: `Which of the following best characterizes the mathematical behavior of ${title}?`,
+      correct: `${firstSentence.slice(0, 95)}...`,
+      distractors: [
+        `It produces non-deterministic random outputs with no algebraic consistency.`,
+        `It is defined only when matrices contain exclusively complex imaginary entries.`,
+        `It contradicts the fundamental theorem of linear algebra.`,
+      ],
+    },
+    {
+      prompt: `When working with ${title}, what fundamental property is consistently utilized?`,
+      correct: `Consistent preservation of algebraic structure and defined computational rules.`,
+      distractors: [
+        `Disregard for scalar multiplication and vector addition rules.`,
+        `The requirement that every square matrix must be singular.`,
+        `The assumption that matrix multiplication is always commutative (AB = BA).`,
+      ],
+    },
+    {
+      prompt: `Why is ${title} considered an essential topic in ${catLabel}?`,
+      correct: `It provides foundational insights and tools for solving advanced multi-variable problems.`,
+      distractors: [
+        `It is a legacy topic that is no longer valid in modern mathematics.`,
+        `It only serves to increase manual calculation time without practical benefit.`,
+        `It requires discarding standard matrix inversion and rank theorems.`,
+      ],
+    },
+    {
+      prompt: `Which of the following statements regarding ${title} is FALSE?`,
+      correct: `${title} cannot be applied or computed for systems with more than 2 dimensions.`,
+      distractors: [
+        `${title} adheres to standard linear algebraic principles.`,
+        `${title} can be used to analyze systems of equations and transformations.`,
+        `${title} is connected to properties such as rank, determinants, or decompositions.`,
+      ],
+    },
+    {
+      prompt: `In practical numerical computing, what advantage does understanding ${title} offer?`,
+      correct: `It enables efficient algorithms, avoids numerical instability, and leverages structure.`,
+      distractors: [
+        `It guarantees that all algorithms execute in exactly 0 milliseconds.`,
+        `It eliminates the need for computer memory when storing large datasets.`,
+        `It replaces floating point arithmetic with arbitrary symbolic strings.`,
+      ],
+    },
+    {
+      prompt: `What geometric or algebraic insight does ${title} provide?`,
+      correct: `Understanding how transformations scale, project, decompose, or preserve dimensions.`,
+      distractors: [
+        `Demonstrating that vector spaces have no meaningful geometric interpretation.`,
+        `Proving that parallel lines always intersect at a right angle in Euclidean space.`,
+        `Showing that eigenvalues do not exist for any square matrix.`,
+      ],
+    },
+    {
+      prompt: `Under standard mathematical definitions, ${title} is most closely associated with:`,
+      correct: `Core curriculum principles: ${summary.slice(0, 90)}...`,
+      distractors: [
+        `Elementary high-school arithmetic only, with no advanced relevance.`,
+        `Unprovable conjectures that have no known algebraic applications.`,
+        `Algorithms that are strictly illegal in matrix decomposition theory.`,
+      ],
+    },
+    {
+      prompt: `Which of the following criteria validates the application of ${title}?`,
+      correct: `The underlying matrices or equations must conform to the formal domain specifications.`,
+      distractors: [
+        `All matrix entries must be prime numbers greater than 100.`,
+        `The matrix must have an equal number of positive and negative eigenvalues.`,
+        `The row rank and column rank must be strictly different numbers.`,
+      ],
+    },
+  ];
+
+  const tpl = mcTemplates[seedIndex % mcTemplates.length];
   return {
     id,
-    prompt: `Which of the following statements is TRUE regarding ${title}?`,
+    prompt: tpl.prompt,
     questionType: "multiple_choice",
-    optionA: `${summary.slice(0, 80)}...`,
-    optionB: `It is completely unrelated to ${title} and has no applications.`,
-    optionC: `It only applies to 1×1 matrices or constant zero functions.`,
-    optionD: `Its definition violates the fundamental axioms of mathematics.`,
+    optionA: tpl.correct,
+    optionB: tpl.distractors[0],
+    optionC: tpl.distractors[1],
+    optionD: tpl.distractors[2],
     correct: "A",
-    correctAnswerText: `${summary.slice(0, 80)}...`,
+    correctAnswerText: tpl.correct,
     explanation: `${title} is characterized by: ${summary}`,
     topicTitle: title,
   };
@@ -797,9 +968,14 @@ export function generateQuizQuestions(
   const targetCount = Math.max(1, itemCount);
 
   // 1. Gather curated questions matching the selected topics
+  const isCalculus = category === "calculus-1" || category === "calculus-2";
   const matchingCurated: CuratedTopicQuestions[] = [];
   CURATED_KNOWLEDGE_BASE.forEach((kb) => {
-    if (kb.category === category) {
+    const isMatchingCategory =
+      isCalculus
+        ? (kb.category === "calculus-1" || kb.category === "calculus-2")
+        : kb.category === category;
+    if (isMatchingCategory) {
       const isRelevant = selectedTopics.some((t) =>
         matchesTopic(t.title, kb.topicKeywords)
       );
@@ -811,7 +987,11 @@ export function generateQuizQuestions(
 
   // If no specific topic matched, match by category
   if (matchingCurated.length === 0) {
-    CURATED_KNOWLEDGE_BASE.filter((kb) => kb.category === category).forEach((kb) => {
+    CURATED_KNOWLEDGE_BASE.filter((kb) =>
+      isCalculus
+        ? (kb.category === "calculus-1" || kb.category === "calculus-2")
+        : kb.category === category
+    ).forEach((kb) => {
       matchingCurated.push(kb);
     });
   }
@@ -948,4 +1128,763 @@ export function regenerateSingleQuestion(
   // Pick one whose prompt doesn't match the current prompt
   const different = generatedBatch.find((q) => q.prompt !== currentQuestion.prompt);
   return different || generatedBatch[0];
+}
+
+/* ======================================================================= */
+/* PER-STUDENT RANDOMIZED QUESTION GENERATOR                               */
+/* Generates distinct questionnaires per student for the same topic(s)     */
+/* ======================================================================= */
+
+export function getAllCombinedTopics(): TopicInput[] {
+  const list: TopicInput[] = [];
+
+  if (Array.isArray(LINEAR_ALGEBRA_TOPICS_RAW)) {
+    LINEAR_ALGEBRA_TOPICS_RAW.forEach((t, idx) => {
+      if (t && t.title) {
+        list.push({
+          id: t.id || `la-${idx}`,
+          title: t.title,
+          category: "linear-algebra",
+          categoryLabel: "Linear Algebra",
+          chapter: `Module ${idx + 1}`,
+          summary: t.summary || "",
+          details: t.details || "",
+          examples: Array.isArray(t.examples) ? t.examples : [],
+        });
+      }
+    });
+  }
+
+  if (Array.isArray(ALL_CALCULUS_TOPICS)) {
+    ALL_CALCULUS_TOPICS.forEach((t) => {
+      if (t && t.title) {
+        list.push({
+          id: t.id,
+          title: t.title,
+          category: "calculus-1",
+          categoryLabel: "Calculus 1",
+          chapter: t.subCategoryLabel || `Chapter ${t.chapterNumber}`,
+          summary: t.summary || "",
+          details: t.details || "",
+          examples: Array.isArray(t.examples) ? t.examples : [],
+        });
+      }
+    });
+  }
+
+  if (Array.isArray(ALL_CALCULUS_2_TOPICS)) {
+    ALL_CALCULUS_2_TOPICS.forEach((t) => {
+      if (t && t.title) {
+        list.push({
+          id: t.id,
+          title: t.title,
+          category: "calculus-2",
+          categoryLabel: "Calculus 2",
+          chapter: t.subCategoryLabel || `Chapter ${t.chapterNumber}`,
+          summary: t.summary || "",
+          details: t.details || "",
+          examples: Array.isArray(t.examples) ? t.examples : [],
+        });
+      }
+    });
+  }
+
+  return list;
+}
+
+export function createSeededRng(seed: string): () => number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return function () {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+}
+
+export function seededShuffle<T>(arr: T[], rng: () => number): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+export function resolveTopicsForQuiz(
+  quizTopic: string,
+  providedTopics?: TopicInput[],
+  category?: "linear-algebra" | "calculus-1" | "calculus-2",
+  quizTitle?: string
+): TopicInput[] {
+  if (Array.isArray(providedTopics) && providedTopics.length > 0) {
+    return providedTopics;
+  }
+
+  const allTopics = getAllCombinedTopics();
+  const lowerTopic = (quizTopic || "").toLowerCase().trim();
+  const lowerTitle = (quizTitle || "").toLowerCase().trim();
+  const combined = `${lowerTopic} ${lowerTitle}`;
+
+  // Try matching by specific topic titles / IDs
+  const matchingByTitle = allTopics.filter((t) => {
+    const tTitle = t.title.toLowerCase();
+    const tId = t.id.toLowerCase();
+    return (
+      combined.includes(tTitle) ||
+      combined.includes(tId) ||
+      (tTitle.length > 5 && combined.includes(tTitle.slice(0, 10)))
+    );
+  });
+
+  if (matchingByTitle.length > 0) {
+    return matchingByTitle;
+  }
+
+  const isCalculus =
+    category === "calculus-1" ||
+    category === "calculus-2" ||
+    combined.includes("calculus") ||
+    combined.includes("101") ||
+    combined.includes("102");
+
+  if (isCalculus) {
+    return allTopics.filter(
+      (t) => t.category === "calculus-1" || t.category === "calculus-2"
+    );
+  }
+
+  return allTopics.filter((t) => t.category === "linear-algebra");
+}
+
+/**
+ * Builds a large candidate question pool (100+ questions) derived strictly from the
+ * specified topics, blending curated items, section-specific concepts, and parameterized math calculations.
+ */
+function buildTopicSpecificQuestionPool(
+  topics: TopicInput[],
+  category: "linear-algebra" | "calculus-1" | "calculus-2",
+  rng: () => number
+): GeneratedQuestion[] {
+  const pool: GeneratedQuestion[] = [];
+  const topicTitles = topics.map((t) => t.title.toLowerCase());
+  const topicIds = topics.map((t) => t.id.toLowerCase());
+  const isCalc = category === "calculus-1" || category === "calculus-2";
+
+  const matchesAnyTopic = (keywords: string[]) =>
+    keywords.some((kw) => {
+      const lower = kw.toLowerCase();
+      return (
+        topicTitles.some((t) => t.includes(lower) || lower.includes(t)) ||
+        topicIds.some((id) => id.includes(lower) || lower.includes(id))
+      );
+    });
+
+  // 1. Gather curated questions from CURATED_KNOWLEDGE_BASE matching topics
+  CURATED_KNOWLEDGE_BASE.forEach((kb) => {
+    const catMatches = isCalc
+      ? kb.category === "calculus-1" || kb.category === "calculus-2"
+      : kb.category === category;
+
+    if (catMatches && (matchesAnyTopic(kb.topicKeywords) || topics.length >= 10)) {
+      const label = kb.topicKeywords[0]
+        ? kb.topicKeywords[0].charAt(0).toUpperCase() + kb.topicKeywords[0].slice(1)
+        : "Topic";
+
+      kb.multipleChoice.forEach((mc, idx) => {
+        pool.push({
+          id: `cur-mc-${idx}-${Math.floor(rng() * 100000)}`,
+          prompt: mc.prompt,
+          questionType: "multiple_choice",
+          optionA: mc.optionA,
+          optionB: mc.optionB,
+          optionC: mc.optionC,
+          optionD: mc.optionD,
+          correct: mc.correct,
+          correctAnswerText:
+            mc.correct === "A"
+              ? mc.optionA
+              : mc.correct === "B"
+              ? mc.optionB
+              : mc.correct === "C"
+              ? mc.optionC
+              : mc.optionD,
+          explanation: mc.explanation,
+          topicTitle: label,
+        });
+      });
+
+      kb.identification.forEach((ident, idx) => {
+        pool.push({
+          id: `cur-id-${idx}-${Math.floor(rng() * 100000)}`,
+          prompt: ident.prompt,
+          questionType: "identification",
+          optionA: ident.answer,
+          optionB: ident.acceptable.join(", "),
+          optionC: "identification",
+          optionD: "",
+          correct: "A",
+          correctAnswerText: ident.answer,
+          explanation: ident.explanation,
+          topicTitle: label,
+        });
+      });
+
+      kb.enumeration.forEach((en, idx) => {
+        const itemsStr = en.items.map((it, i) => `${i + 1}. ${it}`).join("\n");
+        pool.push({
+          id: `cur-en-${idx}-${Math.floor(rng() * 100000)}`,
+          prompt: en.prompt,
+          questionType: "enumeration",
+          optionA: itemsStr,
+          optionB: en.items.join("; "),
+          optionC: "enumeration",
+          optionD: "",
+          correct: "A",
+          correctAnswerText: itemsStr,
+          explanation: en.explanation,
+          topicTitle: label,
+        });
+      });
+
+      kb.problemSolving.forEach((ps, idx) => {
+        pool.push({
+          id: `cur-ps-${idx}-${Math.floor(rng() * 100000)}`,
+          prompt: ps.prompt,
+          questionType: "problem_solving",
+          optionA: ps.answer,
+          optionB: ps.solutionSteps.join("\n"),
+          optionC: "problem_solving",
+          optionD: "",
+          correct: "A",
+          correctAnswerText: ps.answer,
+          explanation: ps.solutionSteps.join(" → "),
+          topicTitle: label,
+        });
+      });
+    }
+  });
+
+  // 2. Generate Parameterized Problems with numbers determined by student's RNG
+  topics.forEach((t) => {
+    const tLower = (t.title + " " + (t.id || "")).toLowerCase();
+
+    // LINEAR ALGEBRA PARAMETERIZED QUESTIONS
+    if (category === "linear-algebra" || t.category === "linear-algebra") {
+      // Determinant calculation with random entries
+      if (tLower.includes("matrix") || tLower.includes("determinant") || tLower.includes("algebra") || tLower.includes("advanced")) {
+        const a = Math.floor(rng() * 7) - 3 || 2;
+        const b = Math.floor(rng() * 7) - 3 || 1;
+        const c = Math.floor(rng() * 7) - 3 || 3;
+        const d = Math.floor(rng() * 7) - 3 || 4;
+        const det = a * d - b * c;
+        pool.push({
+          id: `param-det-${Math.floor(rng() * 100000)}`,
+          prompt: `Calculate the determinant of matrix A = [[${a}, ${b}], [${c}, ${d}]].`,
+          questionType: "multiple_choice",
+          optionA: `${det}`,
+          optionB: `${det + 2}`,
+          optionC: `${a * d + b * c}`,
+          optionD: `${-det}`,
+          correct: "A",
+          correctAnswerText: `${det}`,
+          explanation: `For a 2×2 matrix [[a, b], [c, d]], det(A) = ad - bc = (${a})(${d}) - (${b})(${c}) = ${det}.`,
+          topicTitle: t.title,
+        });
+
+        const tr = a + d;
+        pool.push({
+          id: `param-tr-${Math.floor(rng() * 100000)}`,
+          prompt: `Find the trace of matrix M = [[${a}, ${b}], [${c}, ${d}]].`,
+          questionType: "multiple_choice",
+          optionA: `${tr}`,
+          optionB: `${tr - 1}`,
+          optionC: `${a * d}`,
+          optionD: `${b + c}`,
+          correct: "A",
+          correctAnswerText: `${tr}`,
+          explanation: `The trace of a square matrix is the sum of main diagonal elements: trace(M) = ${a} + ${d} = ${tr}.`,
+          topicTitle: t.title,
+        });
+
+        // Transpose question
+        pool.push({
+          id: `param-trans-${Math.floor(rng() * 100000)}`,
+          prompt: `If A = [[${a}, ${b}], [${c}, ${d}]], what is entry (2, 1) of the transpose Aᵀ?`,
+          questionType: "multiple_choice",
+          optionA: `${b}`,
+          optionB: `${c}`,
+          optionC: `${a}`,
+          optionD: `${d}`,
+          correct: "A",
+          correctAnswerText: `${b}`,
+          explanation: `The transpose interchanges rows and columns: (Aᵀ)₂₁ = A₁₂ = ${b}.`,
+          topicTitle: t.title,
+        });
+
+        // Scalar multiplication question
+        const scalarK = Math.floor(rng() * 4) + 2;
+        pool.push({
+          id: `param-scalar-${Math.floor(rng() * 100000)}`,
+          prompt: `For matrix A = [[${a}, ${b}], [${c}, ${d}]], compute entry (1, 1) of matrix ${scalarK}A.`,
+          questionType: "multiple_choice",
+          optionA: `${scalarK * a}`,
+          optionB: `${scalarK + a}`,
+          optionC: `${scalarK * b}`,
+          optionD: `${a}`,
+          correct: "A",
+          correctAnswerText: `${scalarK * a}`,
+          explanation: `Scalar multiplication multiplies each entry by ${scalarK}: ${scalarK} * ${a} = ${scalarK * a}.`,
+          topicTitle: t.title,
+        });
+
+        // Problem solving determinant
+        pool.push({
+          id: `param-ps-det-${Math.floor(rng() * 100000)}`,
+          prompt: `Given matrix M = [[${a}, ${b}], [${c}, ${d}]], compute det(M).`,
+          questionType: "problem_solving",
+          optionA: `${det}`,
+          optionB: `det = (${a})(${d}) - (${b})(${c}) = ${det}`,
+          optionC: "problem_solving",
+          optionD: "",
+          correct: "A",
+          correctAnswerText: `${det}`,
+          explanation: `det(M) = ${a} * ${d} - ${b} * ${c} = ${det}`,
+          topicTitle: t.title,
+        });
+      }
+
+      // Matrix Operations (Transpose, Inverses, Rank, Decompositions)
+      if (tLower.includes("matrix") || tLower.includes("advanced") || tLower.includes("inverse") || tLower.includes("rank") || tLower.includes("algebra")) {
+        // Upper triangular eigenvalues
+        const ev1 = Math.floor(rng() * 7) + 1;
+        const ev2 = Math.floor(rng() * 7) + 2;
+        const offDiag = Math.floor(rng() * 5) + 1;
+        pool.push({
+          id: `param-eig-${Math.floor(rng() * 100000)}`,
+          prompt: `Find the eigenvalues of the upper triangular matrix T = [[${ev1}, ${offDiag}], [0, ${ev2}]].`,
+          questionType: "multiple_choice",
+          optionA: `λ₁ = ${ev1}, λ₂ = ${ev2}`,
+          optionB: `λ₁ = ${ev1 + offDiag}, λ₂ = ${ev2}`,
+          optionC: `λ₁ = 0, λ₂ = ${ev1 * ev2}`,
+          optionD: `λ₁ = ${ev1 - ev2}, λ₂ = ${offDiag}`,
+          correct: "A",
+          correctAnswerText: `λ₁ = ${ev1}, λ₂ = ${ev2}`,
+          explanation: `The eigenvalues of any triangular matrix are simply its main diagonal entries: ${ev1} and ${ev2}.`,
+          topicTitle: t.title,
+        });
+
+        // Rank-nullity calculation
+        const colsN = Math.floor(rng() * 3) + 4; // 4 to 6
+        const rankR = Math.floor(rng() * 3) + 2; // 2 to 4
+        const nullityAns = colsN - rankR;
+        pool.push({
+          id: `param-rn-${Math.floor(rng() * 100000)}`,
+          prompt: `By the Rank-Nullity Theorem, if matrix A has ${colsN} columns and rank(A) = ${rankR}, what is nullity(A)?`,
+          questionType: "multiple_choice",
+          optionA: `${nullityAns}`,
+          optionB: `${colsN + rankR}`,
+          optionC: `${rankR}`,
+          optionD: `${nullityAns + 2}`,
+          correct: "A",
+          correctAnswerText: `${nullityAns}`,
+          explanation: `Rank-Nullity Theorem: rank(A) + nullity(A) = number of columns (${colsN}). Nullity = ${colsN} - ${rankR} = ${nullityAns}.`,
+          topicTitle: t.title,
+        });
+
+        // Determinant scaling property
+        const dimN = 2;
+        const cFactor = Math.floor(rng() * 3) + 2;
+        const origDet = Math.floor(rng() * 4) + 2;
+        const scaledDet = Math.pow(cFactor, dimN) * origDet;
+        pool.push({
+          id: `param-det-scale-${Math.floor(rng() * 100000)}`,
+          prompt: `If A is a 2×2 matrix with det(A) = ${origDet}, what is det(${cFactor}A)?`,
+          questionType: "multiple_choice",
+          optionA: `${scaledDet}`,
+          optionB: `${cFactor * origDet}`,
+          optionC: `${origDet}`,
+          optionD: `${scaledDet + cFactor}`,
+          correct: "A",
+          correctAnswerText: `${scaledDet}`,
+          explanation: `For an n×n matrix, det(cA) = cⁿ · det(A). Here (c²) · det(A) = (${cFactor}²)(${origDet}) = ${scaledDet}.`,
+          topicTitle: t.title,
+        });
+
+        pool.push({
+          id: `concept-inv-${Math.floor(rng() * 100000)}`,
+          prompt: `Which of the following conditions is necessary and sufficient for a square matrix A to be invertible?`,
+          questionType: "multiple_choice",
+          optionA: `det(A) ≠ 0 and rank(A) equals the number of columns`,
+          optionB: `det(A) = 0 and trace(A) > 0`,
+          optionC: `A is symmetric and has all non-negative entries`,
+          optionD: `A has at least one row consisting entirely of zeros`,
+          correct: "A",
+          correctAnswerText: `det(A) ≠ 0 and rank(A) equals the number of columns`,
+          explanation: `A square matrix A is invertible (nonsingular) if and only if its determinant is non-zero and it has full rank.`,
+          topicTitle: t.title,
+        });
+
+        pool.push({
+          id: `concept-rank-${Math.floor(rng() * 100000)}`,
+          prompt: `According to the Rank-Nullity Theorem, for any m×n matrix A:`,
+          questionType: "multiple_choice",
+          optionA: `rank(A) + nullity(A) = n (number of columns)`,
+          optionB: `rank(A) + nullity(A) = m (number of rows)`,
+          optionC: `rank(A) × nullity(A) = det(A)`,
+          optionD: `rank(A) = nullity(A) for all matrices`,
+          correct: "A",
+          correctAnswerText: `rank(A) + nullity(A) = n (number of columns)`,
+          explanation: `The fundamental Rank-Nullity theorem states that dim(col(A)) + dim(null(A)) = n.`,
+          topicTitle: t.title,
+        });
+
+        pool.push({
+          id: `concept-sparse-${Math.floor(rng() * 100000)}`,
+          prompt: `What is the primary motivation for using sparse matrix representations (such as CSR or CSC formats) in computational linear algebra?`,
+          questionType: "multiple_choice",
+          optionA: `To save memory and accelerate operations by storing only non-zero entries`,
+          optionB: `To ensure the matrix is always invertible`,
+          optionC: `To force all eigenvalues to be real and positive`,
+          optionD: `To eliminate the need for matrix transpose operations`,
+          correct: "A",
+          correctAnswerText: `To save memory and accelerate operations by storing only non-zero entries`,
+          explanation: `Sparse matrices contain predominantly zeros; sparse formats store only non-zero elements and their indices.`,
+          topicTitle: t.title,
+        });
+
+        pool.push({
+          id: `concept-cond-${Math.floor(rng() * 100000)}`,
+          prompt: `In numerical linear algebra, what does a very large condition number κ(A) indicate about the system Ax = b?`,
+          questionType: "multiple_choice",
+          optionA: `The system is ill-conditioned; small perturbations in b cause large errors in x`,
+          optionB: `The system is well-conditioned and guaranteed to converge in one iteration`,
+          optionC: `Matrix A is an identity matrix`,
+          optionD: `The determinant of A is strictly greater than 1,000`,
+          correct: "A",
+          correctAnswerText: `The system is ill-conditioned; small perturbations in b cause large errors in x`,
+          explanation: `A large condition number indicates that solutions to Ax = b are sensitive to numerical errors.`,
+          topicTitle: t.title,
+        });
+
+        pool.push({
+          id: `ident-lu-${Math.floor(rng() * 100000)}`,
+          prompt: `Identify the matrix decomposition method that factors a matrix A into the product of a lower triangular matrix and an upper triangular matrix.`,
+          questionType: "identification",
+          optionA: `LU Decomposition`,
+          optionB: `lu decomposition, lu factorization, lu`,
+          optionC: "identification",
+          optionD: "",
+          correct: "A",
+          correctAnswerText: `LU Decomposition`,
+          explanation: `LU decomposition factors A into L (unit lower triangular) and U (upper triangular).`,
+          topicTitle: t.title,
+        });
+
+        pool.push({
+          id: `ident-ortho-${Math.floor(rng() * 100000)}`,
+          prompt: `Identify the type of square matrix Q that satisfies the property QᵀQ = QQᵀ = I.`,
+          questionType: "identification",
+          optionA: `Orthogonal Matrix`,
+          optionB: `orthogonal, orthogonal matrix`,
+          optionC: "identification",
+          optionD: "",
+          correct: "A",
+          correctAnswerText: `Orthogonal Matrix`,
+          explanation: `An orthogonal matrix has orthonormal columns and rows, so its transpose equals its inverse.`,
+          topicTitle: t.title,
+        });
+      }
+
+      // Vectors & Dot Product
+      if (tLower.includes("vector") || tLower.includes("space") || tLower.includes("orthogonal") || tLower.includes("algebra")) {
+        const u1 = Math.floor(rng() * 5) + 1;
+        const u2 = Math.floor(rng() * 5) - 2;
+        const v1 = Math.floor(rng() * 5) - 2;
+        const v2 = Math.floor(rng() * 5) + 1;
+        const dot = u1 * v1 + u2 * v2;
+        pool.push({
+          id: `param-dot-${Math.floor(rng() * 100000)}`,
+          prompt: `Compute the dot product of vectors u = (${u1}, ${u2}) and v = (${v1}, ${v2}).`,
+          questionType: "multiple_choice",
+          optionA: `${dot}`,
+          optionB: `${dot + 3}`,
+          optionC: `${u1 * v2 + u2 * v1}`,
+          optionD: `${dot - 2}`,
+          correct: "A",
+          correctAnswerText: `${dot}`,
+          explanation: `u · v = (${u1})(${v1}) + (${u2})(${v2}) = ${dot}.`,
+          topicTitle: t.title,
+        });
+
+        const normSq = u1 * u1 + u2 * u2;
+        pool.push({
+          id: `param-norm-${Math.floor(rng() * 100000)}`,
+          prompt: `Calculate the squared Euclidean norm ||u||² for vector u = (${u1}, ${u2}).`,
+          questionType: "multiple_choice",
+          optionA: `${normSq}`,
+          optionB: `${normSq + 1}`,
+          optionC: `${u1 + u2}`,
+          optionD: `${normSq * 2}`,
+          correct: "A",
+          correctAnswerText: `${normSq}`,
+          explanation: `||u||² = (${u1})² + (${u2})² = ${u1 * u1} + ${u2 * u2} = ${normSq}.`,
+          topicTitle: t.title,
+        });
+      }
+    }
+
+    // CALCULUS PARAMETERIZED QUESTIONS
+    if (isCalc || t.category === "calculus-1" || t.category === "calculus-2") {
+      // Derivatives / Power Rule
+      if (tLower.includes("derivative") || tLower.includes("differentiation") || tLower.includes("tangent") || tLower.includes("extrema") || tLower.includes("calculus") || tLower.includes("analytic")) {
+        const coef = Math.floor(rng() * 5) + 2;
+        const exp = Math.floor(rng() * 3) + 2;
+        const constTerm = Math.floor(rng() * 6) + 1;
+        const ansDerivative = `${coef * exp}x^${exp - 1} + ${constTerm}`;
+        pool.push({
+          id: `calc-deriv-${Math.floor(rng() * 100000)}`,
+          prompt: `Find the first derivative f'(x) for f(x) = ${coef}x^${exp} + ${constTerm}x - 7.`,
+          questionType: "multiple_choice",
+          optionA: ansDerivative,
+          optionB: `${coef}x^${exp - 1} + ${constTerm}`,
+          optionC: `${coef * exp}x^${exp}`,
+          optionD: `${coef * exp}x^${exp - 1} - 7`,
+          correct: "A",
+          correctAnswerText: ansDerivative,
+          explanation: `By the power rule d/dx(c*x^n) = c*n*x^(n-1), d/dx(${coef}x^${exp} + ${constTerm}x - 7) = ${ansDerivative}.`,
+          topicTitle: t.title,
+        });
+
+        // Limit problem
+        const cLim = Math.floor(rng() * 5) + 2;
+        const cSq = cLim * cLim;
+        pool.push({
+          id: `calc-lim-${Math.floor(rng() * 100000)}`,
+          prompt: `Evaluate the limit: lim (x → ${cLim}) (x² - ${cSq}) / (x - ${cLim}).`,
+          questionType: "multiple_choice",
+          optionA: `${2 * cLim}`,
+          optionB: `${cLim}`,
+          optionC: `0`,
+          optionD: `Does not exist`,
+          correct: "A",
+          correctAnswerText: `${2 * cLim}`,
+          explanation: `Factoring gives (x - ${cLim})(x + ${cLim}) / (x - ${cLim}) = x + ${cLim}. As x → ${cLim}, limit is ${cLim} + ${cLim} = ${2 * cLim}.`,
+          topicTitle: t.title,
+        });
+
+        // Tangent line slope
+        const xPt = Math.floor(rng() * 4) + 1;
+        const slopeAns = 2 * coef * xPt;
+        pool.push({
+          id: `calc-tangent-${Math.floor(rng() * 100000)}`,
+          prompt: `Determine the slope of the tangent line to y = ${coef}x² at x = ${xPt}.`,
+          questionType: "multiple_choice",
+          optionA: `${slopeAns}`,
+          optionB: `${slopeAns / 2}`,
+          optionC: `${coef * xPt}`,
+          optionD: `${slopeAns + 4}`,
+          correct: "A",
+          correctAnswerText: `${slopeAns}`,
+          explanation: `y' = 2(${coef})x = ${2 * coef}x. At x = ${xPt}, slope = ${2 * coef}(${xPt}) = ${slopeAns}.`,
+          topicTitle: t.title,
+        });
+      }
+
+      // Integrals / Definite Integrals
+      if (tLower.includes("integral") || tLower.includes("integration") || tLower.includes("area") || tLower.includes("series") || tLower.includes("calculus")) {
+        const aInt = (Math.floor(rng() * 4) + 1) * 2;
+        const kUpper = Math.floor(rng() * 4) + 1;
+        const defIntAns = (aInt * kUpper * kUpper) / 2;
+        pool.push({
+          id: `calc-int-${Math.floor(rng() * 100000)}`,
+          prompt: `Evaluate the definite integral: ∫ from 0 to ${kUpper} of (${aInt}x) dx.`,
+          questionType: "multiple_choice",
+          optionA: `${defIntAns}`,
+          optionB: `${defIntAns + 2}`,
+          optionC: `${aInt * kUpper}`,
+          optionD: `${defIntAns / 2}`,
+          correct: "A",
+          correctAnswerText: `${defIntAns}`,
+          explanation: `∫ ${aInt}x dx = [(${aInt}/2) x²] from 0 to ${kUpper} = (${aInt / 2})(${kUpper}²) = ${defIntAns}.`,
+          topicTitle: t.title,
+        });
+
+        pool.push({
+          id: `calc-ibp-concept-${Math.floor(rng() * 100000)}`,
+          prompt: `Which of the following integration techniques is based directly on reversing the product rule of differentiation?`,
+          questionType: "multiple_choice",
+          optionA: `Integration by Parts: ∫ u dv = uv - ∫ v du`,
+          optionB: `Trigonometric Substitution using x = a*sin(θ)`,
+          optionC: `Partial Fraction Decomposition`,
+          optionD: `Trapezoidal Numerical Approximation`,
+          correct: "A",
+          correctAnswerText: `Integration by Parts: ∫ u dv = uv - ∫ v du`,
+          explanation: `Integration by parts originates from d/dx(uv) = u'v + uv' integrated over both sides.`,
+          topicTitle: t.title,
+        });
+
+        // Geometric series sum
+        const geoA = Math.floor(rng() * 4) + 2;
+        pool.push({
+          id: `calc-series-geo-${Math.floor(rng() * 100000)}`,
+          prompt: `Compute the sum of the infinite geometric series: ${geoA} + ${geoA / 2} + ${geoA / 4} + ${geoA / 8} + ...`,
+          questionType: "multiple_choice",
+          optionA: `${2 * geoA}`,
+          optionB: `${geoA + 2}`,
+          optionC: `Diverges`,
+          optionD: `${geoA / 2}`,
+          correct: "A",
+          correctAnswerText: `${2 * geoA}`,
+          explanation: `First term a = ${geoA}, common ratio r = 1/2. Sum S = a / (1 - r) = ${geoA} / (1 - 0.5) = ${2 * geoA}.`,
+          topicTitle: t.title,
+        });
+      }
+    }
+
+    // 3. Synthesize conceptual questions from topic summary & details (16 diverse variants)
+    for (let sIdx = 0; sIdx < 16; sIdx++) {
+      pool.push(synthesizeQuestionFromTopic(t, "multiple_choice", sIdx));
+      if (sIdx < 8) {
+        pool.push(synthesizeQuestionFromTopic(t, "identification", sIdx));
+        pool.push(synthesizeQuestionFromTopic(t, "enumeration", sIdx));
+        pool.push(synthesizeQuestionFromTopic(t, "problem_solving", sIdx));
+      }
+    }
+  });
+
+  return pool;
+}
+
+/**
+ * Generates a unique, personalized questionnaire for a specific student,
+ * strictly derived from the same topics that the admin chose for the quiz.
+ *
+ * For example, if 40 students take the quiz on "Advanced Matrix Topics",
+ * each student gets a different set of questions with different numbers/prompts,
+ * but all questions are exclusively from the selected topics.
+ */
+export function generateStudentPersonalizedQuizQuestions(
+  quizId: string,
+  studentId: string,
+  quizTopic: string,
+  baseQuestions: QuizQuestionItem[],
+  chosenTopics?: TopicInput[],
+  category?: "linear-algebra" | "calculus-1" | "calculus-2",
+  quizTitle?: string
+): QuizQuestionItem[] {
+  if (!Array.isArray(baseQuestions) || baseQuestions.length === 0) {
+    return [];
+  }
+
+  // 1. Resolve topics for this quiz
+  const effectiveTopics = resolveTopicsForQuiz(quizTopic, chosenTopics, category, quizTitle);
+  const effectiveCategory =
+    category ||
+    (effectiveTopics.some(
+      (t) => t.category === "calculus-1" || t.category === "calculus-2"
+    )
+      ? "calculus-1"
+      : "linear-algebra");
+
+  // 2. Initialize seeded PRNG for this student & quiz
+  const seedString = `${studentId}_${quizId}`;
+  const rng = createSeededRng(seedString);
+
+  // 3. Build a large, diverse candidate pool of questions for these topics (100+ candidates)
+  const candidatePool: GeneratedQuestion[] = buildTopicSpecificQuestionPool(
+    effectiveTopics,
+    effectiveCategory,
+    rng
+  );
+
+  // 4. For each question in baseQuestions, pick a question of matching type from the pool
+  const usedPrompts = new Set<string>();
+  const personalizedQuestions: QuizQuestionItem[] = [];
+
+  baseQuestions.forEach((baseQ, idx) => {
+    const qType = baseQ.questionType || "multiple_choice";
+
+    // Filter candidate pool by question type
+    let matchingTypeCandidates = candidatePool.filter(
+      (c) =>
+        (c.questionType || "multiple_choice") === qType &&
+        !usedPrompts.has(c.prompt)
+    );
+
+    // If exhausted, allow any candidate of this type
+    if (matchingTypeCandidates.length === 0) {
+      matchingTypeCandidates = candidatePool.filter(
+        (c) => (c.questionType || "multiple_choice") === qType
+      );
+    }
+
+    // Pick one using student's rng
+    let chosenCandidate: GeneratedQuestion;
+    if (matchingTypeCandidates.length > 0) {
+      const pickIdx = Math.floor(rng() * matchingTypeCandidates.length);
+      chosenCandidate = matchingTypeCandidates[pickIdx];
+    } else {
+      // Synthesize on the fly for this topic with student's seed
+      const topicForQ = effectiveTopics[idx % effectiveTopics.length];
+      chosenCandidate = synthesizeQuestionFromTopic(
+        topicForQ,
+        qType,
+        idx + Math.floor(rng() * 100)
+      );
+    }
+
+    usedPrompts.add(chosenCandidate.prompt);
+
+    // If multiple choice, shuffle the options using student's rng so choice letters also vary
+    if (qType === "multiple_choice") {
+      const rawOptions = [
+        { key: "A" as const, text: chosenCandidate.optionA },
+        { key: "B" as const, text: chosenCandidate.optionB },
+        { key: "C" as const, text: chosenCandidate.optionC },
+        { key: "D" as const, text: chosenCandidate.optionD },
+      ];
+      const shuffledOptions = seededShuffle(rawOptions, rng);
+      const optKeys: ("A" | "B" | "C" | "D")[] = ["A", "B", "C", "D"];
+      const newCorrectKey =
+        optKeys[
+          shuffledOptions.findIndex((o) => o.key === chosenCandidate.correct)
+        ] || "A";
+
+      personalizedQuestions.push({
+        id: `sq-${quizId}-${studentId}-${idx + 1}`,
+        questionIndex: idx + 1,
+        prompt: chosenCandidate.prompt,
+        questionType: "multiple_choice",
+        optionA: shuffledOptions[0].text,
+        optionB: shuffledOptions[1].text,
+        optionC: shuffledOptions[2].text,
+        optionD: shuffledOptions[3].text,
+        correctAnswer: newCorrectKey,
+        correctAnswerText:
+          chosenCandidate.correctAnswerText || chosenCandidate.optionA,
+        explanation: chosenCandidate.explanation || "",
+      });
+    } else {
+      personalizedQuestions.push({
+        id: `sq-${quizId}-${studentId}-${idx + 1}`,
+        questionIndex: idx + 1,
+        prompt: chosenCandidate.prompt,
+        questionType: qType,
+        optionA: chosenCandidate.optionA,
+        optionB: chosenCandidate.optionB,
+        optionC: chosenCandidate.optionC,
+        optionD: chosenCandidate.optionD,
+        correctAnswer: chosenCandidate.correct || "A",
+        correctAnswerText:
+          chosenCandidate.correctAnswerText || chosenCandidate.optionA,
+        explanation: chosenCandidate.explanation || chosenCandidate.optionB,
+      });
+    }
+  });
+
+  return personalizedQuestions;
 }

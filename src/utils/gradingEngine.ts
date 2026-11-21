@@ -267,3 +267,128 @@ export function generateGradeBreakdown(comp: StudentGradeComputation): string {
 
   return lines.join("\n");
 }
+
+// =====================================================================
+// Cumulative Grade Computations (SERMS Raw Data & Cumulative Terms)
+//
+// Exact formulas from the Excel grading sheet:
+//   MIDTERM     = (PRELIM + QG2) / 2         — Excel: =(CN6+CO6)/2
+//   SEMI-FINAL  = (MIDTERM + QG3) / 2        — Excel: =(CP6+CQ6)/2
+//   FINAL       = (SEMI-FINAL + QG4) / 2     — Excel: =(CR6+CS6)/2
+//   FINAL GRADE = FINAL                      — Excel: =CT6
+//
+// Each cumulative grade uses the PREVIOUS cumulative grade, not PRELIM.
+// Full decimal precision is kept during calculation.
+// Rounding is applied only at the display/recording layer.
+// =====================================================================
+
+export interface CumulativeGradeResult {
+  prelim: number | null;          // PRELIM – Raw grade from the Prelim grading period
+  qg2: number | null;             // QG2 – Raw grade from the second grading period (Midterm)
+  midterm: number | null;         // MIDTERM – Cumulative grade = (PRELIM + QG2) / 2
+  qg3: number | null;             // QG3 – Raw grade from the third grading period (Semi-Final)
+  semiFinal: number | null;       // SEMI-FINAL – Cumulative grade = (MIDTERM + QG3) / 2
+  qg4: number | null;             // QG4 – Raw grade from the fourth grading period (Final)
+  finalCumulative: number | null; // FINAL – Cumulative grade = (SEMI-FINAL + QG4) / 2
+  finalGrade: number | null;      // FINAL GRADE = FINAL (strictly equal to finalCumulative)
+  runningGrade: number | null;    // Latest available cumulative (for partial/ongoing UI display)
+  isPartial: boolean;             // true if not all 4 grading periods are completed but some grade exists
+}
+
+/**
+ * Computes cumulative grades using the exact SERMS formulas.
+ *
+ * Computation flow (each step uses the PREVIOUS cumulative, not PRELIM):
+ *   1. Get PRELIM grade
+ *   2. Get QG2 grade → MIDTERM = (PRELIM + QG2) / 2
+ *   3. Get QG3 grade → SEMI-FINAL = (MIDTERM + QG3) / 2
+ *   4. Get QG4 grade → FINAL = (SEMI-FINAL + QG4) / 2
+ *   5. FINAL GRADE = FINAL
+ *
+ * Validation:
+ *   - If a required previous grading period is missing, subsequent cumulative grades are null.
+ *   - Full decimal precision is maintained during all intermediate calculations.
+ *   - FINAL GRADE is strictly equal to FINAL (no independent rounding).
+ *
+ * Example verification:
+ *   PRELIM=2.90, QG2=2.50, QG3=2.20, QG4=2.00
+ *   MIDTERM     = (2.90 + 2.50) / 2 = 2.70
+ *   SEMI-FINAL  = (2.70 + 2.20) / 2 = 2.45
+ *   FINAL       = (2.45 + 2.00) / 2 = 2.225
+ *   FINAL GRADE = 2.225
+ */
+export function computeCumulativeGrades(
+  prelim: number | null,
+  qg2: number | null,
+  qg3: number | null,
+  qg4: number | null
+): CumulativeGradeResult {
+  // Validate inputs — reject NaN / Infinity
+  const validPrelim = prelim !== null && Number.isFinite(prelim) ? prelim : null;
+  const validQg2 = qg2 !== null && Number.isFinite(qg2) ? qg2 : null;
+  const validQg3 = qg3 !== null && Number.isFinite(qg3) ? qg3 : null;
+  const validQg4 = qg4 !== null && Number.isFinite(qg4) ? qg4 : null;
+
+  // A. MIDTERM = (PRELIM + QG2) / 2  — Excel: =(CN6+CO6)/2
+  const midterm =
+    validPrelim !== null && validQg2 !== null
+      ? (validPrelim + validQg2) / 2
+      : null;
+
+  // B. SEMI-FINAL = (MIDTERM + QG3) / 2  — Excel: =(CP6+CQ6)/2
+  //    Uses computed MIDTERM (not PRELIM) per SERMS chain
+  const semiFinal =
+    midterm !== null && validQg3 !== null
+      ? (midterm + validQg3) / 2
+      : null;
+
+  // C. FINAL = (SEMI-FINAL + QG4) / 2  — Excel: =(CR6+CS6)/2
+  //    Uses computed SEMI-FINAL per SERMS chain
+  const finalCumulative =
+    semiFinal !== null && validQg4 !== null
+      ? (semiFinal + validQg4) / 2
+      : null;
+
+  // D. FINAL GRADE = FINAL  — Excel: =CT6  (strictly equal, no rounding)
+  const finalGrade = finalCumulative;
+
+  // Running/partial cumulative for UI display when not all periods are complete:
+  //   Shows the latest available cumulative with a "Partial" indicator
+  const runningGrade =
+    finalCumulative !== null ? finalCumulative
+    : semiFinal !== null ? semiFinal
+    : midterm !== null ? midterm
+    : validPrelim !== null ? validPrelim
+    : null;
+
+  const isComplete = finalCumulative !== null;
+
+  return {
+    prelim: validPrelim,
+    qg2: validQg2,
+    midterm,
+    qg3: validQg3,
+    semiFinal,
+    qg4: validQg4,
+    finalCumulative,
+    finalGrade,
+    runningGrade,
+    isPartial: !isComplete && runningGrade !== null,
+  };
+}
+
+/**
+ * Format a SERMS grade for display according to the system rules:
+ * - Keeps full decimal precision up to 3 or 4 decimal places if present (e.g. 2.225 -> "2.225")
+ * - Formats standard numbers with at least 2 decimal places (e.g. 2.7 -> "2.70", 2.45 -> "2.45")
+ * - Returns "—" if null or invalid
+ */
+export function formatSermsValue(val: number | null | undefined): string {
+  if (val === null || val === undefined || isNaN(val) || !Number.isFinite(val)) return "—";
+  const str = val.toString();
+  const decimals = str.includes(".") ? str.split(".")[1].length : 0;
+  if (decimals >= 3) {
+    return val.toFixed(Math.min(decimals, 4));
+  }
+  return val.toFixed(2);
+}

@@ -7,6 +7,7 @@ import {
   HelpCircle,
   History,
   User,
+  UserCheck,
   LogOut,
   X,
 } from "lucide-react";
@@ -157,6 +158,22 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
             >
               <History className="w-4 h-4 shrink-0" />
               {!isTopicCalculatorOpen && <span>Quizzes History</span>}
+            </button>
+
+            {/* Attendance */}
+            <button
+              onClick={() => onNavigate("attendance")}
+              className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-left cursor-pointer ${
+                isTopicCalculatorOpen ? "justify-center !px-0" : ""
+              } ${
+                activeNav === "attendance"
+                  ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                  : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+              }`}
+              title="Attendance"
+            >
+              <UserCheck className="w-4 h-4 shrink-0" />
+              {!isTopicCalculatorOpen && <span>Attendance</span>}
             </button>
 
             {/* ACCOUNT Section */}
@@ -322,6 +339,21 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                 >
                   <History className="w-4 h-4" />
                   <span>Quizzes History</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    onNavigate("attendance");
+                    setMobileSidebarOpen(false);
+                  }}
+                  className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
+                    activeNav === "attendance"
+                      ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
+                      : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>Attendance</span>
                 </button>
 
                 <div className="pt-3 pb-1">
