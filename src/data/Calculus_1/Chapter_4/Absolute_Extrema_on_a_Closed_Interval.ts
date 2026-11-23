@@ -14,6 +14,8 @@ The key idea is:
   maximum and absolute minimum can be found by checking its critical numbers 
   and endpoints.
 
+"image": "src/assets_2.3/175.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT ARE ABSOLUTE EXTREMA?
@@ -201,12 +203,7 @@ At x = 3:
 
 Now compare:
 
-  x     |  f(x)
-  ───────┼────────
-  -1    |  -2
-   0    |   2
-   2    |  -2
-   3    |   2
+"image": "src/assets_2.3/176.png"
 
 The largest value is 2.
 
@@ -347,17 +344,7 @@ It is important to distinguish between absolute extrema (global) and local extre
 
 These concepts are related but different.
 
-Absolute maximum:
-  The highest value over the entire interval.
-
-Local maximum:
-  A value that is higher than nearby values.
-
-Absolute minimum:
-  The lowest value over the entire interval.
-
-Local minimum:
-  A value that is lower than nearby values.
+"image": "src/assets_2.3/177.png"
 
 For example, a function could have two local maximums: 10 and 15.
 
@@ -464,33 +451,11 @@ Find the absolute maximum and minimum of:
 Step 1: Differentiate
   f'(x) = 1 - 4/x²
 
-Write it as:
-  f'(x) = (x² - 4)/x²
-
-Set:
-  (x² - 4)/x² = 0
-
-The numerator must equal zero:
-  x² - 4 = 0
-
-Therefore:
-  x = ±2
-
-Only x = 2 is inside [1, 5].
+"image": "src/assets_2.3/178.png"
 
 Step 2: Evaluate candidates
 
-Left endpoint:
-  f(1) = 1 + 4/1 = 5
-
-Critical number:
-  f(2) = 2 + 4/2 = 4
-
-Right endpoint:
-  f(5) = 5 + 4/5 = 29/5 = 5.8
-
-Compare:
-  5, 4, 5.8
+"image": "src/assets_2.3/179.png"
 
 Therefore:
   Absolute minimum = 4 at x = 2
@@ -526,16 +491,7 @@ The same mathematical idea is being used:
 
 To clarify terminology, here is a side-by-side comparison of key concepts. An absolute maximum is the greatest value of the function on the entire interval, while a local maximum is the greatest value relative to its immediate neighbors. Similarly for minima. A critical number is an interior point where the derivative is zero or does not exist; these are the only places where local extrema can occur (if the function is differentiable). The endpoints are not critical numbers but are still candidates for absolute extrema. The Extreme Value Theorem guarantees that a continuous function on a closed interval will have both absolute extrema. This table consolidates these definitions and relationships, helping you avoid confusion when solving problems.
 
-  Concept                Meaning
-  ───────────────────────────────────────────────────────────────────────────
-  Absolute maximum       Greatest value on the entire interval
-  Absolute minimum       Smallest value on the entire interval
-  Local maximum          Greatest compared with nearby values
-  Local minimum          Smallest compared with nearby values
-  Critical number        f'(x) = 0 or f'(x) DNE
-  Closed interval        [a, b]
-  Endpoint               x = a or x = b
-  EVT                    Continuous function on [a, b] has absolute max and min
+"image": "src/assets_2.3/180.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

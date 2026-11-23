@@ -2,8 +2,9 @@ import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { UserPlus, Lock, Mail, User, Eye, EyeOff, ArrowLeft, LayoutGrid, BookOpen, Hash } from "lucide-react";
+import { UserPlus, Lock, Mail, User, Eye, EyeOff, ArrowLeft, LayoutGrid, BookOpen, Hash, CheckCircle2 } from "lucide-react";
 import imageLogo from "../assets/image logo.png";
+import { isSameStudentName } from "../utils/studentMatching";
 
 export default function RegisterPage() {
   const { register, isAuthenticated, loading, user } = useAuth();
@@ -21,6 +22,54 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [rosterMatchNotice, setRosterMatchNotice] = useState<string | null>(null);
+
+  const checkRosterMatch = (idVal: string, nameVal: string) => {
+    try {
+      const raw = localStorage.getItem("mathworkspace_grading_data");
+      if (!raw) return;
+      const records = JSON.parse(raw);
+      if (!Array.isArray(records)) return;
+
+      const cleanId = idVal.trim().toUpperCase();
+      const cleanName = nameVal.trim();
+
+      for (const rec of records) {
+        if (Array.isArray(rec.students)) {
+          const match = rec.students.find(
+            (s: any) =>
+              (cleanId && s.studentId && s.studentId.trim().toUpperCase() === cleanId) ||
+              (cleanName && cleanName.length >= 3 && s.fullName && isSameStudentName(s.fullName, cleanName))
+          );
+          if (match) {
+            if (match.fullName && (!nameVal || isSameStudentName(match.fullName, nameVal))) {
+              setName(match.fullName);
+            }
+            if (match.studentId && !idVal) {
+              setStudentId(match.studentId);
+            }
+            if (rec.subject?.subjectCode) {
+              setSubjectCode(rec.subject.subjectCode);
+            }
+            if (rec.subject?.offerNumber) {
+              setOfferNumber(rec.subject.offerNumber);
+            }
+            if (match.block && !block) {
+              setBlock(match.block);
+            }
+            const subLabel = rec.subject?.offerNumber
+              ? `${rec.subject.subjectCode} - ${rec.subject.offerNumber}`
+              : rec.subject?.subjectCode || "Class Roster";
+            setRosterMatchNotice(`Verified Class Roster Match: ${match.fullName} • ${subLabel}`);
+            return;
+          }
+        }
+      }
+      setRosterMatchNotice(null);
+    } catch {
+      // non-blocking
+    }
+  };
 
   // Load available subjects from grading system or defaults for auto-complete
   useEffect(() => {
@@ -80,14 +129,52 @@ export default function RegisterPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+
+    let finalName = name.trim();
+    let finalStudentId = studentId.trim();
+    let finalSubjectCode = subjectCode.trim();
+    let finalOfferNumber = offerNumber.trim();
+    let finalBlock = block.trim();
+
+    // Check against admin's uploaded Excel file in grading data
+    try {
+      const raw = localStorage.getItem("mathworkspace_grading_data");
+      if (raw) {
+        const records = JSON.parse(raw);
+        if (Array.isArray(records)) {
+          for (const rec of records) {
+            if (Array.isArray(rec.students)) {
+              const matched = rec.students.find(
+                (st: any) =>
+                  (finalStudentId && st.studentId && st.studentId.trim().toUpperCase() === finalStudentId.toUpperCase()) ||
+                  (finalName && st.fullName && isSameStudentName(st.fullName, finalName))
+              );
+              if (matched) {
+                if (matched.fullName) finalName = matched.fullName.trim();
+                if (matched.studentId && !matched.studentId.startsWith("2026-") && matched.studentId !== "2026-0000") {
+                  finalStudentId = matched.studentId.trim();
+                }
+                if (rec.subject?.subjectCode) finalSubjectCode = rec.subject.subjectCode.trim();
+                if (rec.subject?.offerNumber) finalOfferNumber = rec.subject.offerNumber.trim();
+                if (matched.block && !finalBlock) finalBlock = matched.block.trim();
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // non-blocking
+    }
+
     const err = await register(
-      name,
+      finalName,
       email,
       password,
-      block,
-      subjectCode,
-      offerNumber,
-      studentId
+      finalBlock,
+      finalSubjectCode,
+      finalOfferNumber,
+      finalStudentId
     );
     setSubmitting(false);
     if (err) {
@@ -155,6 +242,14 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Class Roster Auto-Detection Match Notice */}
+          {rosterMatchNotice && (
+            <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/15 p-3 text-xs font-semibold text-emerald-300 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{rosterMatchNotice}</span>
+            </div>
+          )}
+
           {/* Register Form */}
           <form onSubmit={onSubmit} className="space-y-3.5">
             {/* Full Name Field */}
@@ -170,7 +265,10 @@ export default function RegisterPage() {
                 id="name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  checkRosterMatch(studentId, e.target.value);
+                }}
                 placeholder="Alex Morgan"
                 required
                 autoComplete="name"
@@ -193,7 +291,10 @@ export default function RegisterPage() {
                   id="studentId"
                   type="text"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
+                  onChange={(e) => {
+                    setStudentId(e.target.value);
+                    checkRosterMatch(e.target.value, name);
+                  }}
                   placeholder="e.g. 2026-02182"
                   required
                   className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"

@@ -8,17 +8,7 @@ const topic = {
   details: `
 A horizontal asymptote is a horizontal line that a graph approaches as x becomes extremely large in the positive or negative direction.
 
-In other words, a horizontal asymptote describes the end behavior of a function.
-
-If:
-  lim(x→∞) f(x) = L
-or:
-  lim(x→-∞) f(x) = L
-
-then the line:
-  y = L
-
-is a horizontal asymptote of the graph of f.
+"image": "src/assets_2.3/201.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -66,6 +56,8 @@ Vertical asymptote:
   The graph approaches this line as x approaches a from one or both sides.
   Example: x = 0 for f(x) = 1/x.
 
+"image": "src/assets_2.3/202.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 3. FINDING HORIZONTAL ASYMPTOTES FOR RATIONAL FUNCTIONS
@@ -95,6 +87,8 @@ Example:
 
   Horizontal asymptote: y = 0
 
+"image": "src/assets_2.3/203.png"
+
 Case 2: Degree of numerator = degree of denominator
   The horizontal asymptote is:
     y = leading coefficient of numerator / leading coefficient of denominator
@@ -109,6 +103,8 @@ Example:
 
   Horizontal asymptote: y = 3/2
 
+"image": "src/assets_2.3/204.png"
+
 Case 3: Degree of numerator > degree of denominator
   There is no horizontal asymptote.
   The function grows without bound or has an oblique asymptote.
@@ -121,6 +117,8 @@ Example:
 
   Since 3 > 2, there is no horizontal asymptote.
 
+"image": "src/assets_2.3/205.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 4. FINDING HORIZONTAL ASYMPTOTES USING LIMITS
@@ -129,35 +127,8 @@ Example:
 The most general method for finding horizontal asymptotes is to evaluate the limits of the function as x approaches positive infinity and negative infinity. If either limit exists and equals a finite number L, then the line y = L is a horizontal asymptote. This approach works for any function, not just rational functions. To evaluate such limits, we often divide the numerator and denominator by the highest power of x in the denominator, or use known limits for exponential, logarithmic, and trigonometric functions. For example, for f(x) = (2x+3)/(x-1), dividing numerator and denominator by x gives (2 + 3/x)/(1 - 1/x), which tends to 2 as x→∞. It is important to check both sides separately, as some functions have different limits on the left and right. This limit method is the definition of a horizontal asymptote and is always reliable.
 
 To find a horizontal asymptote, evaluate:
-  lim(x→∞) f(x)
-and:
-  lim(x→-∞) f(x)
 
-If either limit is a finite number L, then:
-  y = L
-
-is a horizontal asymptote.
-
-Example:
-  f(x) = (2x + 3)/(x - 1)
-
-Find:
-  lim(x→∞) (2x + 3)/(x - 1)
-
-Divide by x:
-  = (2 + 3/x)/(1 - 1/x)
-
-As x → ∞:
-  3/x → 0 and 1/x → 0
-
-Therefore:
-  lim(x→∞) (2 + 0)/(1 - 0) = 2
-
-Similarly:
-  lim(x→-∞) (2x + 3)/(x - 1) = 2
-
-So the horizontal asymptote is:
-  y = 2
+"image": "src/assets_2.3/206.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -168,33 +139,7 @@ It is possible for a function to have two distinct horizontal asymptotes, one as
 
 Some functions approach different values on the left and right sides.
 
-Example:
-  f(x) = eˣ
-
-As x → ∞:
-  eˣ → ∞
-
-So no horizontal asymptote on the right.
-
-As x → -∞:
-  eˣ → 0
-
-So:
-  y = 0
-
-is a horizontal asymptote on the left.
-
-Example:
-  f(x) = arctan(x)
-
-As x → ∞:
-  arctan(x) → π/2
-
-As x → -∞:
-  arctan(x) → -π/2
-
-So there are two horizontal asymptotes:
-  y = π/2 and y = -π/2
+"image": "src/assets_2.3/207.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -205,20 +150,7 @@ Not every function has a horizontal asymptote. When a function grows without bou
 
 If the function grows without bound as x → ∞ or x → -∞, there is no horizontal asymptote.
 
-Examples:
-
-f(x) = x²
-  As x → ∞, x² → ∞.
-  As x → -∞, x² → ∞.
-  No horizontal asymptote.
-
-f(x) = eˣ
-  As x → ∞, eˣ → ∞.
-  No horizontal asymptote on the right.
-
-f(x) = x³ + 2x
-  As x → ∞, the function → ∞.
-  No horizontal asymptote.
+"image": "src/assets_2.3/208.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -229,19 +161,8 @@ A common misconception is that a graph cannot cross its horizontal asymptote. In
 
 A horizontal asymptote does not mean the graph can never cross the line.
 
-In fact, a graph can cross a horizontal asymptote.
 
-For example:
-  f(x) = (x² + 1)/(x² - 1)
-
-As x → ∞:
-  f(x) → 1
-
-So y = 1 is a horizontal asymptote.
-
-However, the graph may cross y = 1 for some finite values of x.
-
-The asymptote only describes the behavior as x → ±∞.
+"image": "src/assets_2.3/209.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -260,6 +181,8 @@ Example 1:
   Horizontal asymptote:
     y = 5/2
 
+"image": "src/assets_2.3/210.png"
+
 Example 2:
   f(x) = (2x + 5)/(3x² + 1)
 
@@ -268,6 +191,8 @@ Example 2:
 
   Since 1 < 2:
     Horizontal asymptote: y = 0
+
+"image": "src/assets_2.3/211.png"
 
 Example 3:
   f(x) = (x⁴ + 2x²)/(x² + 1)
@@ -278,6 +203,8 @@ Example 3:
   Since 4 > 2:
     No horizontal asymptote.
 
+"image": "src/assets_2.3/212.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 9. QUICK REFERENCE TABLE
@@ -285,11 +212,7 @@ Example 3:
 
 This table summarizes the rules for horizontal asymptotes of rational functions. For non-rational functions, you must compute the limits directly. The table is a useful memory aid. When the numerator degree is less than the denominator, the asymptote is always y = 0. When they are equal, it's the ratio of leading coefficients. When the numerator degree is greater, there is no horizontal asymptote. Additionally, remember that a function can have two different horizontal asymptotes if the limits at ∞ and -∞ are different. This table provides a quick check for common problems.
 
-  Situation                                        Horizontal Asymptote
-  ─────────────────────────────────────────────────────────────────────────────────────────
-  deg(num) < deg(den)                             y = 0
-  deg(num) = deg(den)                             y = leading coefficient ratio
-  deg(num) > deg(den)                             No horizontal asymptote
+"image": "src/assets_2.3/213.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

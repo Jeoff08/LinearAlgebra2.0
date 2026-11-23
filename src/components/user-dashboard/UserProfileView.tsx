@@ -25,6 +25,7 @@ import {
   computeCumulativeGrades,
   formatSermsValue,
 } from "../../utils/gradingEngine";
+import { isSameStudentName } from "../../utils/studentMatching";
 import type { CumulativeGradeResult } from "../../utils/gradingEngine";
 import {
   formatGradeEquivalent,
@@ -222,20 +223,20 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
         if (!rec.subject?.gradesPublished) return false;
         // Only show subjects where this student is enrolled
         return rec.students?.some((s) => {
-          const matchId = currentStudentId && s.studentId?.trim().toLowerCase() === currentStudentId;
-          const matchInternalId = s.id === currentUserId;
-          const matchEmail = (s as any).email?.trim().toLowerCase() === currentEmail;
-          const matchName = currentName && s.fullName?.trim().toLowerCase() === currentName;
+          const matchId = currentStudentId && s.studentId && s.studentId.trim().toLowerCase() === currentStudentId;
+          const matchInternalId = s.id === currentUserId || (s as any).userId === currentUserId;
+          const matchEmail = (s as any).email && (s as any).email.trim().toLowerCase() === currentEmail;
+          const matchName = currentName && isSameStudentName(s.fullName, currentName);
           return matchId || matchInternalId || matchEmail || matchName;
         });
       })
       .map((rec) => {
         // Find this student's record
         const student = rec.students.find((s) => {
-          const matchId = currentStudentId && s.studentId?.trim().toLowerCase() === currentStudentId;
-          const matchInternalId = s.id === currentUserId;
-          const matchEmail = (s as any).email?.trim().toLowerCase() === currentEmail;
-          const matchName = currentName && s.fullName?.trim().toLowerCase() === currentName;
+          const matchId = currentStudentId && s.studentId && s.studentId.trim().toLowerCase() === currentStudentId;
+          const matchInternalId = s.id === currentUserId || (s as any).userId === currentUserId;
+          const matchEmail = (s as any).email && (s as any).email.trim().toLowerCase() === currentEmail;
+          const matchName = currentName && isSameStudentName(s.fullName, currentName);
           return matchId || matchInternalId || matchEmail || matchName;
         });
 
@@ -329,7 +330,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
         const sermsPrelim = getSermsRawForPeriod("prelim");
         const sermsQg2 = getSermsRawForPeriod("midterm");
         const sermsQg3 = getSermsRawForPeriod("semi-final");
-        const sermsQg4 = getSermsRawForPeriod("final");
+        const sermsQg4 = getSermsRawForPeriod("final") ?? 5.0;
 
         const sermsCumulative = computeCumulativeGrades(sermsPrelim, sermsQg2, sermsQg3, sermsQg4);
 
@@ -851,7 +852,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                       </span>
                     ) : entry.sermsCumulative.runningGrade !== null ? (
                       <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                        Running Cumulative: {formatSermsValue(entry.sermsCumulative.runningGrade)} (Partial)
+                        Running Cumulative: {formatSermsValue(entry.sermsCumulative.runningGrade)}
                       </span>
                     ) : null}
                   </div>
@@ -898,11 +899,15 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                         {formatSermsValue(entry.sermsCumulative.qg4)}
                       </span>
                     </div>
-                    {/* Final Grade */}
+                    {/* Final Grade (rounded to 1 decimal) */}
                     <div className="p-2 rounded-xl bg-emerald-600 text-white col-span-2 sm:col-span-1 shadow-xs">
                       <span className="text-[9px] font-extrabold text-emerald-200 uppercase block">FINAL GRADE</span>
                       <span className="text-sm font-black text-white">
-                        {formatSermsValue(entry.sermsCumulative.finalGrade ?? entry.sermsCumulative.runningGrade)}
+                        {(() => {
+                          const raw = entry.sermsCumulative.finalGrade ?? entry.sermsCumulative.runningGrade;
+                          if (raw === null || raw === undefined || !Number.isFinite(raw)) return "—";
+                          return (Math.round(raw * 10) / 10).toFixed(1);
+                        })()}
                       </span>
                     </div>
                   </div>

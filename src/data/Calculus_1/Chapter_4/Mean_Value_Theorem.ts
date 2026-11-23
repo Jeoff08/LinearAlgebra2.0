@@ -8,11 +8,7 @@ const topic = {
   details: `
 The Mean Value Theorem is one of the most important theorems in differential calculus because it connects the average rate of change of a function over an interval with its instantaneous rate of change at some point inside that interval.
 
-In simple terms:
-
-  If a function is continuous and smooth enough, then at some point between 
-  two endpoints, the instantaneous slope of the function is exactly equal to 
-  its average slope over the entire interval.
+"image": "src/assets_2.3/226.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -506,13 +502,7 @@ Meaning:
 
 This table summarizes the differences between Rolle's Theorem and the Mean Value Theorem. Both require continuity and differentiability, but Rolle's Theorem has the additional condition f(a) = f(b). The conclusion of Rolle's Theorem is f'(c) = 0, while the MVT's conclusion is more general: f'(c) = (f(b) - f(a))/(b - a). Geometrically, Rolle's Theorem says there is a horizontal tangent (slope 0), while the MVT says the tangent is parallel to the secant line. If you understand the MVT, you can easily derive Rolle's Theorem by setting f(a) = f(b). This comparison helps in remembering both theorems and their applications.
 
-  Feature                   Rolle's Theorem            Mean Value Theorem
-  ─────────────────────────────────────────────────────────────────────────────────────────
-  Continuous on [a, b]      ✅                         ✅
-  Differentiable on (a, b)  ✅                         ✅
-  Endpoint condition        f(a) = f(b)                No equality required
-  Conclusion                f'(c) = 0                  f'(c) = (f(b)-f(a))/(b-a)
-  Geometric idea            Horizontal tangent         Tangent parallel to secant
+"image": "src/assets_2.3/227.png"
 
 Easy memory trick:
   Rolle's Theorem: Same endpoints → somewhere the slope is zero.

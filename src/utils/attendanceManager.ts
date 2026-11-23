@@ -3,6 +3,8 @@
 // Real-time synchronization via localStorage + CustomEvents
 // =====================================================================
 
+import { isSameStudentName } from "./studentMatching";
+
 export type AttendanceStatus = "present" | "late" | "absent" | "excused";
 
 export interface AttendanceRecord {
@@ -308,9 +310,10 @@ export function getStudentEnrolledSubject(studentOrUser?: any): string {
         const studentId = (
           studentOrUser.studentId ||
           studentOrUser.student_id ||
-          studentOrUser.id ||
+          studentOrUser.id_number ||
           ""
         ).toString().trim().toUpperCase();
+        const userId = (studentOrUser.id || "").toString().trim();
         const name = (
           studentOrUser.fullName ||
           studentOrUser.name ||
@@ -321,9 +324,11 @@ export function getStudentEnrolledSubject(studentOrUser?: any): string {
 
         for (const rec of records) {
           const matched = rec.students?.some((st: any) => {
-            const stId = (st.id || st.studentId || "").toString().trim().toUpperCase();
-            if (studentId && stId && (stId === studentId || st.studentId?.toUpperCase() === studentId)) return true;
-            if (name && st.fullName?.toLowerCase().trim() === name) return true;
+            const stStudentId = (st.studentId || st.id_number || "").toString().trim().toUpperCase();
+            const stInternalId = (st.id || "").toString().trim().toUpperCase();
+            if (studentId && (stStudentId === studentId || stInternalId === studentId)) return true;
+            if (userId && (st.id === userId || st.userId === userId)) return true;
+            if (name && isSameStudentName(st.fullName, name)) return true;
             return false;
           });
           if (matched && rec.subject) {

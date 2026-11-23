@@ -15,6 +15,8 @@ In simple words:
   Differentiate the outside function, keep the inside function unchanged, 
   then multiply by the derivative of the inside function.
 
+"image": "src/assets/160.png",
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT IS A COMPOSITE FUNCTION?
@@ -38,6 +40,8 @@ Example:
     f(g(x)) = (x + 3)²
 
   This is a composite function.
+
+"image": "src/assets/161.png",
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -64,6 +68,8 @@ So the correct derivative is:
   y' = 15(3x + 1)⁴
 
 The extra 3 comes from the derivative of the inside function.
+
+"image": "src/assets/162.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -526,14 +532,7 @@ For example:
 21. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Function                  Derivative
-  ──────────────────────────────────────────────────────────────────────────
-  f(x) = (g(x))ⁿ            f'(x) = n(g(x))ⁿ⁻¹ · g'(x)
-  f(x) = √(g(x))            f'(x) = g'(x)/(2√(g(x)))
-  f(x) = 1/(g(x))ⁿ          f'(x) = -n g'(x)/(g(x))ⁿ⁺¹
-  f(x) = sin(g(x))          f'(x) = cos(g(x)) · g'(x)
-  f(x) = e^(g(x))           f'(x) = e^(g(x)) · g'(x)
-  f(x) = ln(g(x))           f'(x) = g'(x)/g(x)
+"image": "src/assets/163.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

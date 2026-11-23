@@ -8,12 +8,7 @@ const topic = {
   details: `
 The maximum and minimum values of a function describe how large or how small the output of a function can become over a particular domain or interval.
 
-These ideas are extremely important in calculus because they help us answer questions such as:
-  • What is the highest point of a graph?
-  • What is the lowest point?
-  • Where does a function reach its greatest value?
-  • Where does a function reach its smallest value?
-  • How can we optimize profit, area, distance, cost, or volume?
+"image": "src/assets_2.3/222.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -52,6 +47,8 @@ Notice the distinction:
   • Maximum value: 4
   • Location: x = 0
   • Point on graph: (0, 4)
+
+"image": "src/assets_2.3/223.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -100,13 +97,7 @@ Suppose f(x) = x² - 4x + 5 has a minimum at (2, 1).
   • The x-value where the minimum occurs is: x = 2
   • The minimum value is: 1
 
-So don't confuse the three.
-
-  Term        |  Meaning
-  ─────────────┼─────────────────────────────────
-  x = 2       |  Where the minimum occurs
-  (2, 1)      |  Minimum point
-  1           |  Minimum value
+"image": "src/assets_2.3/224.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -597,16 +588,7 @@ This is one of the most important workflows in Calculus 1.
 
 This table summarizes the key definitions and tests related to extrema. It is a handy reference for solving problems. Remember that absolute extrema are global, while local extrema are regional. Critical points are the only possible locations for local extrema, but they must be tested. The first derivative test uses sign changes of f', while the second derivative test uses the concavity at the critical point. Endpoints are always candidates for absolute extrema on closed intervals.
 
-  Concept                Definition
-  ───────────────────────────────────────────────────────────────────────────
-  Absolute maximum       f(c) ≥ f(x) for all x
-  Absolute minimum       f(c) ≤ f(x) for all x
-  Local maximum          f(c) ≥ f(x) for x near c
-  Local minimum          f(c) ≤ f(x) for x near c
-  Critical number        f'(c) = 0 or f'(c) does not exist
-  Local max (1st test)   f': + → -
-  Local min (1st test)   f': - → +
-  Second derivative      f''(c) > 0 → min, f''(c) < 0 → max
+"image": "src/assets_2.3/225.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

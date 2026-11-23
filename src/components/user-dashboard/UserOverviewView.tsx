@@ -70,7 +70,7 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
     const filtered = myAttempts.filter((att: StudentQuizAttemptItem) => {
       const t = (att.topic || "").toLowerCase();
       const title = (att.quizTitle || "").toLowerCase();
-      if (enrolled === "MATH 102") {
+      if (enrolled.includes("102")) {
         return (
           t.includes("calculus 2") ||
           t.includes("calculus-2") ||
@@ -79,11 +79,19 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
           title.includes("calculus 2")
         );
       }
-      if (enrolled === "MATH 103") {
+      if (enrolled.includes("103")) {
         return (
           t.includes("linear") ||
           title.includes("103") ||
           title.includes("linear")
+        );
+      }
+      if (enrolled.includes("GEC") || enrolled.includes("4")) {
+        return (
+          t.includes("modern") ||
+          t.includes("gec") ||
+          title.includes("gec") ||
+          title.includes("modern")
         );
       }
       return (

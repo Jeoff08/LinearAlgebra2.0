@@ -6,13 +6,8 @@ const topic = {
   summary:
     "An important theorem in differential calculus stating that if a function is continuous on [a,b], differentiable on (a,b), and f(a) = f(b), then there exists at least one c in (a,b) such that f'(c) = 0.",
   details: `
-Rolle's Theorem is an important theorem in differential calculus that tells us when a function must have at least one point where its derivative is zero.
 
-In simple terms:
-
-  If a function starts and ends at the same height, and the function is smooth 
-  and continuous between those points, then somewhere in between, the graph 
-  must have a horizontal tangent.
+"image": "src/assets_2.3/228.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -72,6 +67,8 @@ Therefore:
   Horizontal tangent ⇒ f'(c) = 0
 
 for the point we're identifying.
+
+"image": "src/assets_2.3/229.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -164,6 +161,8 @@ So the horizontal tangent occurs at:
 The function starts at height 0, falls to -1, and then returns to height 0.
 
 The point x = 2 is where the graph is momentarily flat.
+
+"image": "src/assets_2.3/230.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -434,12 +433,7 @@ In visual terms:
 
 This table summarizes the key requirements and conclusion of Rolle's Theorem. The three conditions must all be satisfied: continuity on the closed interval, differentiability on the open interval, and equal endpoint values. The conclusion is that there exists at least one point c in the open interval where the derivative is zero. This is a concise way to remember the theorem. The geometric interpretation is that a smooth curve that starts and ends at the same height must have a horizontal tangent somewhere in between. This summary is useful for quick reference when solving problems.
 
-  Requirement                     |  Meaning
-  ─────────────────────────────────┼─────────────────────────────────────────
-  f continuous on [a, b]         |  No breaks, holes, or jumps
-  f differentiable on (a, b)     |  No corners/cusps in the interior
-  f(a) = f(b)                    |  Same starting and ending height
-  f'(c) = 0                      |  Horizontal tangent exists somewhere inside
+"image": "src/assets_2.3/231.png"
 
 The formula to memorize:
   f(a) = f(b) ⇒ ∃ c ∈ (a, b) such that f'(c) = 0

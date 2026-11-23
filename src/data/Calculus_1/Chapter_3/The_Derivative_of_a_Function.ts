@@ -20,6 +20,8 @@ It can also be written as:
 or:
   y'
 
+"image": "src/assets/164.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT DOES A DERIVATIVE MEAN?
@@ -36,6 +38,8 @@ This means:
   At x = 3, slope = 6
   At x = -1, slope = -2
 
+"image": "src/assets/165.png"
+
 So the derivative gives us information about the behavior of the original function.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -51,6 +55,8 @@ For y = f(x), the derivative at x = a is the slope of the tangent line at (a, f(
 
 The slope of the tangent line is:
   f'(a)
+
+"image": "src/assets/166.png"
 
 This is one of the most important interpretations of the derivative.
 
@@ -76,6 +82,8 @@ We begin with the slope between two points:
 Then we make the two points closer and closer together.
 
 As h → 0, the secant line approaches the tangent line.
+
+"image": "src/assets/167.png"
 
 The resulting slope is:
   f'(a)
@@ -565,16 +573,7 @@ The derivative is therefore a fundamental tool throughout Calculus.
 24. QUICK REFERENCE TABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Rule                  Formula
-  ──────────────────────────────────────────────────────────────────────────
-  Constant Rule         d/dx [c] = 0
-  Power Rule            d/dx [xⁿ] = nxⁿ⁻¹
-  Constant Multiple     d/dx [c f(x)] = c f'(x)
-  Sum Rule              d/dx [f(x) + g(x)] = f'(x) + g'(x)
-  Difference Rule       d/dx [f(x) - g(x)] = f'(x) - g'(x)
-  Product Rule          d/dx [f(x)g(x)] = f'(x)g(x) + f(x)g'(x)
-  Quotient Rule         d/dx [f(x)/g(x)] = (f'(x)g(x) - f(x)g'(x))/[g(x)]²
-  Chain Rule            d/dx [f(g(x))] = f'(g(x)) · g'(x)
+"image": "src/assets/168.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

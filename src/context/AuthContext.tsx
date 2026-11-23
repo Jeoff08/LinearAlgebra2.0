@@ -11,6 +11,7 @@ import { api } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import type { PublicUser } from '../types/models'
 import { createDefaultSubjectRecord } from '../types/grading'
+import { isSameStudentName } from '../utils/studentMatching'
 
 type AuthContextValue = {
   user: PublicUser | null
@@ -141,65 +142,132 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ]
         }
 
-        const inputCode = (subjectCode || '').toLowerCase().trim()
-        const inputOffer = (offerNumber || '').toLowerCase().trim()
-        const is102 = inputCode.includes('102') || inputOffer.includes('102')
+        const studentName = name.trim()
+        const inputStudentId = (
+          studentId?.trim() ||
+          result.user.student_id ||
+          result.user.id_number ||
+          ''
+        ).toUpperCase()
 
+        // 1. First, check if the student is already enrolled in ANY existing subject record (from Excel upload)
         let target = records.find((r: any) => {
-          const subCode = (r.subject?.subjectCode || '').toLowerCase().trim()
-          const subOffer = (r.subject?.offerNumber || '').toLowerCase().trim()
-          if (is102) {
-            return subCode.includes('102')
+          if (Array.isArray(r.students)) {
+            return r.students.some((s: any) =>
+              (inputStudentId && s.studentId && s.studentId.toUpperCase() === inputStudentId) ||
+              isSameStudentName(s.fullName, studentName)
+            )
           }
-          if (inputCode && subCode === inputCode) return true
-          if (inputOffer && subOffer === inputOffer) return true
-          const subDigits = subCode.match(/\d+/)?.[0]
-          if (subDigits && inputCode.includes(subDigits)) return true
           return false
         })
 
-        // If user registered for MATH 102 and record doesn't exist yet, create it
-        if (!target && is102) {
-          target = createDefaultSubjectRecord('MATH 102', 'Integral Calculus', '80063')
-          records.push(target)
-        }
-
-        // If not 102 and no matching record, create subject or use first
+        // 2. If not found by student roster, locate or create by subject code or offer number
         if (!target) {
-          if (subjectCode && subjectCode.trim()) {
-            target = createDefaultSubjectRecord(subjectCode.trim(), 'Mathematics', offerNumber?.trim() || '')
+          const inputCode = (subjectCode || '').toLowerCase().trim()
+          const inputOffer = (offerNumber || '').toLowerCase().trim()
+          const is102 = inputCode.includes('102') || inputOffer.includes('102')
+
+          target = records.find((r: any) => {
+            const subCode = (r.subject?.subjectCode || '').toLowerCase().trim()
+            const subOffer = (r.subject?.offerNumber || '').toLowerCase().trim()
+            if (is102) {
+              return subCode.includes('102')
+            }
+            if (inputCode && subCode === inputCode) return true
+            if (inputOffer && subOffer === inputOffer) return true
+            const subDigits = subCode.match(/\d+/)?.[0]
+            if (subDigits && inputCode.includes(subDigits)) return true
+            return false
+          })
+
+          // If user registered for MATH 102 and record doesn't exist yet, create it
+          if (!target && is102) {
+            target = createDefaultSubjectRecord('MATH 102', 'Integral Calculus', '80063')
             records.push(target)
-          } else {
-            target = records[0]
+          }
+
+          // If not 102 and no matching record, create subject or use first
+          if (!target) {
+            if (subjectCode && subjectCode.trim()) {
+              target = createDefaultSubjectRecord(subjectCode.trim(), 'Mathematics', offerNumber?.trim() || '')
+              records.push(target)
+            } else {
+              target = records[0]
+            }
           }
         }
 
         if (target) {
-          const studentName = name.trim()
-          const resolvedStudentId = (
-            studentId?.trim() ||
-            result.user.student_id ||
-            result.user.id_number ||
-            `2026-${result.user.id.slice(0, 5)}`
-          ).toUpperCase()
-
           if (!Array.isArray(target.students)) {
             target.students = []
           }
 
+          // Check if this student already exists in this subject's roster (e.g. from Excel upload)
           const existingIdx = target.students.findIndex(
             (s: any) =>
               s.id === result.user.id ||
-              s.studentId === resolvedStudentId ||
-              s.fullName.toLowerCase() === studentName.toLowerCase()
+              s.userId === result.user.id ||
+              (inputStudentId && s.studentId && s.studentId.toUpperCase() === inputStudentId) ||
+              isSameStudentName(s.fullName, studentName)
           )
 
           if (existingIdx >= 0) {
-            target.students[existingIdx].studentId = resolvedStudentId
-            target.students[existingIdx].fullName = studentName
+            const existing = target.students[existingIdx]
+            const oldId = existing.id
+            existing.userId = result.user.id
+            existing.email = result.user.email
+
+            // Preserve official student ID from Excel if available (e.g. "2023-00076")
+            if (existing.studentId && !existing.studentId.startsWith('2026-') && existing.studentId !== '2026-0000') {
+              // keep existing.studentId intact
+            } else if (inputStudentId && !inputStudentId.startsWith('2026-')) {
+              existing.studentId = inputStudentId
+            } else if (!existing.studentId) {
+              existing.studentId = inputStudentId || `2026-${result.user.id.slice(0, 5)}`
+            }
+
+            if (!existing.fullName) {
+              existing.fullName = studentName
+            }
+            if (existing.block || block) {
+              existing.block = existing.block || block
+            }
+
+            // Update user in state so that their profile holds the official name and ID from Excel
+            const updatedUser = {
+              ...result.user,
+              name: existing.fullName || result.user.name,
+              student_id: existing.studentId || result.user.student_id,
+              id_number: existing.studentId || result.user.id_number,
+              subject_code: target.subject?.subjectCode || result.user.subject_code,
+              offer_number: target.subject?.offerNumber || result.user.offer_number,
+            }
+            setUser(updatedUser)
+
+            // Migrate scores if oldId was a temporary Excel ID
+            if (oldId && oldId !== result.user.id) {
+              existing.id = result.user.id
+              Object.keys(target.periods || {}).forEach((pKey) => {
+                const p = target.periods[pKey]
+                if (Array.isArray(p?.scores)) {
+                  p.scores.forEach((sc: any) => {
+                    if (sc.studentId === oldId) {
+                      sc.studentId = result.user.id
+                    }
+                  })
+                }
+              })
+            }
           } else {
+            // New distinct student (differing name / surname from other students)
+            const resolvedStudentId = (
+              inputStudentId ||
+              `2026-${result.user.id.slice(0, 5)}`
+            ).toUpperCase()
+
             target.students.push({
               id: result.user.id,
+              userId: result.user.id,
               studentNumber: String(target.students.length + 1),
               studentId: resolvedStudentId,
               fullName: studentName,

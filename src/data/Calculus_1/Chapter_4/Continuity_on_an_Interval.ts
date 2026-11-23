@@ -6,9 +6,8 @@ const topic = {
   summary:
     "A function is continuous on an interval if it is continuous at every point in that interval, with one-sided limits used at endpoints for closed intervals.",
   details: `
-Continuity on an interval extends the idea of continuity at a single point to an entire interval of the domain. In simple terms, a function is continuous on an interval if its graph can be traced across that interval without lifting your pencil from the paper.
 
-This concept is important because many calculus theorems especially the Extreme Value Theorem and Intermediate Value Theorem require a function to be continuous on an interval.
+"image": "src/assets_2.3/193.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -90,21 +89,8 @@ For an open interval (a, b), the function must be continuous at every point c sa
   a < c < b
 
 Therefore:
-  f is continuous on (a, b)
 
-if:
-  lim(x→c) f(x) = f(c)
-
-for every c ∈ (a, b).
-
-Example:
-  Consider f(x) = x³ - 2x + 1.
-
-  Polynomial functions are continuous everywhere.
-
-  Therefore, f(x) = x³ - 2x + 1 is continuous on (-∞, ∞).
-
-  It is also continuous on any smaller interval, such as (0, 5).
+"image": "src/assets_2.3/194.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -115,31 +101,7 @@ Continuity on a closed interval [a, b] requires more care because the endpoints 
 
 This is slightly different.
 
-Suppose we want f(x) to be continuous on [a, b].
-
-Inside the interval, the function must be continuous normally:
-  lim(x→c) f(x) = f(c)
-
-for every a < c < b.
-
-However, at the endpoints we only approach from inside the interval.
-
-At the left endpoint a:
-  lim(x→a⁺) f(x) = f(a)
-
-At the right endpoint b:
-  lim(x→b⁻) f(x) = f(b)
-
-Therefore, f is continuous on [a, b] if:
-
-  Interior points:
-    lim(x→c) f(x) = f(c) for every c ∈ (a, b)
-
-  Left endpoint:
-    lim(x→a⁺) f(x) = f(a)
-
-  Right endpoint:
-    lim(x→b⁻) f(x) = f(b)
+"image": "src/assets_2.3/195.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -200,25 +162,7 @@ Hence:
 
 Not all functions are continuous on every interval. Consider f(x) = 1/(x - 2) on the interval [0, 4]. The function is undefined at x = 2, which is inside the interval. Since the function does not exist at x = 2, it cannot be continuous there. Moreover, the limit as x approaches 2 does not exist as a finite number; the function has a vertical asymptote. Therefore, f is not continuous on [0, 4]. However, it is continuous on intervals that do not contain 2, such as [0, 1] or [3, 4]. This example highlights that the domain of the function must include the entire interval for continuity to be possible. Any point where the function is undefined or has an infinite discontinuity will break continuity. When checking continuity, always identify any points where the function is not defined or has a vertical asymptote.
 
-Consider f(x) = 1/(x - 2).
-
-Suppose the interval is [0, 4].
-
-The function is undefined at x = 2.
-
-Since 2 is inside the interval, 2 ∈ [0, 4], the function cannot be continuous on the entire interval.
-
-In fact:
-  lim(x→2) 1/(x - 2)
-
-does not exist as a finite limit.
-
-The graph has a vertical asymptote at x = 2.
-
-Therefore:
-  f(x) = 1/(x - 2) is not continuous on [0, 4].
-
-However, it is continuous on intervals that do not contain 2, such as [0, 1] or [3, 4].
+"image": "src/assets_2.3/196.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -268,18 +212,7 @@ Graphically, continuity on an interval means that the graph can be drawn without
 
 Graphically, continuity on an interval means that the graph has no breaks, holes, or jumps within that interval.
 
-For example:
-  f(x) = x²
-
-has a smooth graph.
-
-There are no:
-  • holes
-  • jumps
-  • vertical asymptotes
-  • undefined points
-
-so it is continuous everywhere.
+"image": "src/assets_2.3/197.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -290,32 +223,7 @@ Discontinuities come in several forms. A removable discontinuity occurs when the
 
 A function may fail to be continuous because of different types of discontinuities.
 
-Removable discontinuity:
-  Example:
-    f(x) = (x² - 1)/(x - 1)
-
-  Factor:
-    f(x) = ((x - 1)(x + 1))/(x - 1)
-
-  so f(x) = x + 1, x ≠ 1.
-
-  There is a hole at x = 1.
-
-  Therefore, the function is not continuous at x = 1.
-
-Jump discontinuity:
-  A jump occurs when the left-hand and right-hand limits are different:
-    lim(x→a⁻) f(x) ≠ lim(x→a⁺) f(x)
-
-  Therefore, the two sides of the graph do not meet.
-
-Infinite discontinuity:
-  This happens when the function approaches infinity near a point.
-
-  For example:
-    f(x) = 1/(x - 2)
-
-  At x = 2, there is a vertical asymptote.
+"image": "src/assets_2.3/198.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -401,12 +309,7 @@ and:
 
 The requirements for continuity depend on the type of interval. On an open interval (a, b), we only need ordinary two-sided continuity at every interior point. On a closed interval [a, b], we need continuity inside plus right-continuity at a and left-continuity at b. On a half-open interval [a, b), we need right-continuity at a and continuity inside; there is no condition at b because b is not included. Similarly, for (a, b], we need continuity inside and left-continuity at b. This summary is useful for quickly determining what conditions to check. For instance, if you are asked whether a function is continuous on [0, ∞), you need to check right-continuity at 0 and continuity for all x > 0. Understanding these distinctions ensures that you apply the correct definition for each interval type. The table below summarizes these requirements for quick reference.
 
-  Interval      Continuity Requirement
-  ──────────────────────────────────────────────────────────────────────────
-  (a, b)        Continuous at every interior point
-  [a, b]        Continuous inside + right-continuous at a + left-continuous at b
-  [a, b)        Right-continuous at a, continuous inside
-  (a, b]        Continuous inside, left-continuous at b
+"image": "src/assets_2.3/200.png"
 
 For a closed interval:
   lim(x→a⁺) f(x) = f(a)
@@ -422,20 +325,7 @@ are particularly important.
 
 Think of an interval as a road that you are traveling along. If a function is continuous on that interval, the graph is like a smooth road with no interruptions. For a closed interval [a, b], you start at a and travel to b without encountering any holes, jumps, or barriers. At the starting point a, you only need to be able to start moving forward (right-continuity). At the ending point b, you only need to be able to arrive from behind (left-continuity). For an open interval, the endpoints are not part of the road, so you only need smoothness everywhere in between. This analogy helps remember why one-sided limits are used at endpoints: you cannot approach from outside the interval because there is no road there. It also reinforces the idea that continuity is about unbrokenness within the interval. The "no lifting your pencil" test is a visual version of this road analogy.
 
-Think of an interval as a road.
-
-If a function is continuous on the interval, the graph is like a road with no breaks.
-
-For [a, b], you need to be able to travel:
-  a → b
-
-without encountering:
-  • a hole
-  • a jump
-  • an undefined point
-  • a vertical asymptote
-
-The endpoints are special because you only need to approach them from inside the interval.
+"image": "src/assets_2.3/199.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

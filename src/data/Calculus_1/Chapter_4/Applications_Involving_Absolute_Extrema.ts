@@ -6,17 +6,8 @@ const topic = {
   summary:
     "Real-world optimization problems where we use absolute maximum and minimum values of a function to determine the greatest or smallest possible outcome, such as maximum area, minimum cost, or maximum profit.",
   details: `
-Applications involving absolute extrema are problems where we use absolute maximum and absolute minimum values of a function to solve a real-world problem.
 
-These applications are especially important in optimization because we often want to determine:
-  • the greatest possible value of something,
-  • the smallest possible value of something,
-  • the maximum profit,
-  • the minimum cost,
-  • the maximum area or volume,
-  • the minimum amount of material needed,
-  • the maximum distance or height, or
-  • the minimum time or energy required.
+"image": "src/assets_2.3/185.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -122,62 +113,20 @@ Suppose you have 40 meters of fencing and want to build a rectangular enclosure.
 What dimensions give the maximum possible area?
 
 Step 1: Define the variables
-  Let x = width and y = length.
 
-  Because the rectangle has four sides:
-    2x + 2y = 40
-
-  Divide by 2:
-    x + y = 20
-
-  Therefore:
-    y = 20 - x
+"image": "src/assets_2.3/186.png"
 
 Step 2: Create the area function
-  The area of a rectangle is:
-    A = xy
 
-  Substitute y = 20 - x:
-    A(x) = x(20 - x)
-
-  Therefore:
-    A(x) = 20x - x²
-
-  The possible values of x are:
-    0 ≤ x ≤ 20
-
-  So we need to find the absolute maximum of A(x) = 20x - x² on [0, 20].
+"image": "src/assets_2.3/187.png"
 
 Step 3: Differentiate
-  A'(x) = 20 - 2x
 
-  Set the derivative equal to zero:
-    20 - 2x = 0
-
-  Thus:
-    2x = 20
-    x = 10
-
-  So x = 10 is a critical number.
+"image": "src/assets_2.3/188.png"
 
 Step 4: Evaluate the candidates
-  The candidates are:
-    x = 0, x = 10, x = 20
 
-  Evaluate the area:
-    A(0) = 20(0) - 0² = 0
-    A(10) = 20(10) - 10² = 200 - 100 = 100
-    A(20) = 20(20) - 20² = 0
-
-  Therefore:
-    A_max = 100 m²
-
-  The dimensions are:
-    10 m × 10 m
-
-Conclusion:
-  The rectangle with the largest possible area is a square.
-  Maximum area = 100 m²
+"image": "src/assets_2.3/189.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -197,24 +146,12 @@ Suppose production is restricted to:
 We want to determine the minimum cost.
 
 Step 1: Differentiate
-  C'(x) = 2x - 20
 
-Set equal to zero:
-  2x - 20 = 0
-
-Therefore:
-  x = 10
+"image": "src/assets_2.3/190.png"
 
 Step 2: Check the endpoints
-  Evaluate:
-    C(0) = 150
-    C(10) = 100 - 200 + 150 = 50
-    C(20) = 400 - 400 + 150 = 150
 
-The smallest value is 50.
-
-Therefore, the minimum cost occurs when:
-  x = 10
+"image": "src/assets_2.3/191.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -414,20 +351,7 @@ When solving an application involving absolute extrema, you can follow this stru
 
 Absolute extrema are not limited to abstract functions; they appear in nearly every field that uses quantitative analysis. In geometry, we maximize area or volume given fixed perimeters or surface areas. In business, we maximize profit or revenue and minimize cost. In physics, we maximize height or range of projectiles. In engineering, we minimize material usage or energy consumption. In economics, we find optimal production levels. In logistics, we minimize distance or time. In agriculture, we maximize crop yield. In packaging, we minimize surface area for a given volume. The list is extensive. Each application follows the same pattern: define a function, find its absolute extrema on a feasible domain, and interpret the result. Mastering this skill equips you to solve practical problems across many disciplines. The examples provided in this topic are a small sample of the vast array of possible applications.
 
-  Application         What we might maximize/minimize
-  ────────────────────────────────────────────────────────────────────
-  Rectangle           Maximum area
-  Box                 Maximum volume
-  Manufacturing       Minimum cost
-  Business            Maximum profit
-  Sales               Maximum revenue
-  Projectile          Maximum height
-  Transportation      Minimum distance
-  Construction        Minimum material
-  Engineering         Maximum efficiency
-  Agriculture         Maximum crop area
-  Packaging           Minimum surface area
-  Economics           Maximum revenue/profit
+"image": "src/assets_2.3/192.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

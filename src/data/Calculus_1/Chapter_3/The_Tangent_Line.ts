@@ -19,6 +19,8 @@ The tangent line is closely connected to:
   • Instantaneous rate of change
   • Linear approximation
 
+"image": "src/assets/169.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHAT IS A TANGENT LINE?
@@ -40,6 +42,8 @@ The slope of the tangent line is:
 
 Therefore, the equation of the tangent line is:
   y - f(a) = f'(a)(x - a)
+
+"image": "src/assets/170.png"
 
 This is the point-slope form of the tangent line equation.
 
@@ -248,6 +252,8 @@ This means:
   At x = 2, slope = 4
   At x = 3, slope = 6
 
+"image": "src/assets/171.png"
+
 The derivative gives us a formula for the slope at every point on the curve.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -407,13 +413,7 @@ The concept of the tangent line leads directly to the definition of the derivati
 
 This table summarizes the key formulas and concepts related to the tangent line. Keep these handy when solving problems.
 
-  Concept                Formula
-  ───────────────────────────────────────────────────────────────────────────
-  Tangent Slope          f'(a) = lim(h→0) (f(a+h) - f(a))/h
-  Tangent Line           y - f(a) = f'(a)(x - a)
-  Horizontal Tangent     f'(a) = 0 → y = f(a)
-  Vertical Tangent       f'(a) is undefined
-  Linear Approximation   L(x) = f(a) + f'(a)(x - a)
+"image": "src/assets/172.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -6,12 +6,8 @@ const topic = {
   summary:
     "Describes what happens to a function when x becomes extremely large in the positive or negative direction, used to identify horizontal asymptotes and end behavior of functions.",
   details: `
-Limits at Infinity describe what happens to a function when x becomes extremely large in the positive or negative direction. In other words, instead of asking what happens when x approaches a particular number such as 2, we ask what happens when:
-  x → ∞
-or:
-  x → -∞.
 
-This topic is especially important because it allows us to understand the end behavior of a function and identify horizontal asymptotes.
+"image": "src/assets_2.3/214.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -55,14 +51,7 @@ means that f(x) approaches L as x becomes increasingly negative.
 Example:
   Consider f(x) = 2 + 1/x.
 
-  Let's examine what happens as x gets larger:
-
-    x       f(x)
-    ───────────────
-    10      2.1
-    100     2.01
-    1,000   2.001
-    10,000  2.0001
+"image": "src/assets_2.3/216.png"
 
   The values are getting closer and closer to 2.
 
@@ -141,6 +130,8 @@ Thus:
 and the horizontal asymptote is:
   y = 3
 
+"image": "src/assets_2.3/215.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 5. THE MOST IMPORTANT RULE FOR RATIONAL FUNCTIONS
@@ -175,6 +166,8 @@ Example:
 
   Horizontal asymptote: y = 2
 
+"image": "src/assets_2.3/217.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 6. CASE 2: NUMERATOR DEGREE IS SMALLER
@@ -207,6 +200,8 @@ Why?
 
   And 5/x → 0.
 
+"image": "src/assets_2.3/218.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 7. CASE 3: NUMERATOR DEGREE IS LARGER
@@ -237,6 +232,8 @@ As x → ∞, (2 - x)/(x² + 1) → 0, so the function behaves approximately lik
 Thus it has an oblique/slant asymptote:
   y = x
 
+"image": "src/assets_2.3/219.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 8. THE SHORTCUT TABLE
@@ -247,13 +244,7 @@ This table summarizes the rules for rational functions at infinity. It is a valu
 For:
   lim(x→±∞) P(x)/Q(x)
 
-compare the degrees:
-
-  Degree Relationship                            Limit Behavior
-  ───────────────────────────────────────────────────────────────────────────────────────
-  Numerator degree < denominator degree           0
-  Numerator degree = denominator degree           Ratio of leading coefficients
-  Numerator degree > denominator degree           Usually ±∞ or polynomial/oblique behavior
+"image": "src/assets_2.3/220.png"
 
 This degree comparison is one of the fastest ways to evaluate rational-function limits at infinity.
 
@@ -592,13 +583,7 @@ Negative infinity:
 Horizontal asymptote:
   If lim(x→±∞) f(x) = L, then y = L is a horizontal asymptote.
 
-Rational-function shortcut:
-
-  Situation                                    Result
-  ─────────────────────────────────────────────────────────────────────────────────────
-  Top degree < bottom degree                    0
-  Top degree = bottom degree                    Leading coefficient ratio
-  Top degree > bottom degree                    Usually ±∞ or oblique/polynomial end behavior
+"image": "src/assets_2.3/221.png"
 
 Most important intuition:
   Limits at infinity tell you what a function does at the far ends of its graph.

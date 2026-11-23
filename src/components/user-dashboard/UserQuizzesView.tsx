@@ -22,6 +22,7 @@ import {
   getQuizLockStatus,
   requestQuizUnlock,
 } from "../../utils/quizLockManager";
+import { isSubjectMatch } from "../../utils/studentMatching";
 
 interface UserQuizzesViewProps {
   availableQuizzes: StudentAvailableQuiz[];
@@ -65,20 +66,17 @@ export const UserQuizzesView: React.FC<UserQuizzesViewProps> = ({
 
   // Calculate counts for each subject
   const counts = useMemo(() => {
-    const norm = (s?: string) => (s || "MATH 101").toUpperCase().trim();
-    const enrolledNorm = norm(userEnrolledSubject);
-
     let enrolled = 0;
     let math101 = 0;
     let math102 = 0;
     let math103 = 0;
 
     availableQuizzes.forEach((q) => {
-      const qSub = norm(q.designatedSubject);
-      if (qSub === enrolledNorm) enrolled++;
-      if (qSub === "MATH 101") math101++;
-      if (qSub === "MATH 102") math102++;
-      if (qSub === "MATH 103") math103++;
+      const qSub = (q.designatedSubject || "").toUpperCase().trim();
+      if (isSubjectMatch(qSub, userEnrolledSubject)) enrolled++;
+      if (qSub.includes("101")) math101++;
+      if (qSub.includes("102")) math102++;
+      if (qSub.includes("103")) math103++;
     });
 
     return {
@@ -91,18 +89,15 @@ export const UserQuizzesView: React.FC<UserQuizzesViewProps> = ({
   }, [availableQuizzes, userEnrolledSubject]);
 
   const filteredAvailableQuizzes = useMemo(() => {
-    const norm = (s?: string) => (s || "MATH 101").toUpperCase().trim();
-    const enrolledNorm = norm(userEnrolledSubject);
-
     return availableQuizzes.filter((quiz) => {
-      const quizSub = norm(quiz.designatedSubject);
+      const quizSub = (quiz.designatedSubject || "").toUpperCase().trim();
 
       // Subject Filtering
       let matchesSubject = true;
       if (selectedSubjectFilter === "enrolled") {
-        matchesSubject = quizSub === enrolledNorm;
+        matchesSubject = isSubjectMatch(quizSub, userEnrolledSubject);
       } else if (selectedSubjectFilter !== "all") {
-        matchesSubject = quizSub === selectedSubjectFilter.toUpperCase().trim();
+        matchesSubject = isSubjectMatch(quizSub, selectedSubjectFilter);
       }
 
       // Topic Filtering

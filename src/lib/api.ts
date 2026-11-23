@@ -1,5 +1,6 @@
 import type { AuthResult, PdfItem, PublicUser } from '../types/models'
 import { isSupabaseConfigured, supabase } from './supabase'
+import { isSameStudentName } from '../utils/studentMatching'
 
 function requireClient() {
   if (!supabase || !isSupabaseConfigured) {
@@ -67,9 +68,51 @@ export const api = {
   }): Promise<AuthResult> {
     try {
       const client = requireClient()
-      const resolvedStudentId = input.studentId?.trim() || ''
+      let resolvedStudentId = input.studentId?.trim() || ''
+      let resolvedName = input.name?.trim() || ''
+      let resolvedSubjectCode = input.subjectCode?.trim() || ''
+      let resolvedOfferNumber = input.offerNumber?.trim() || ''
+      let resolvedBlock = input.block?.trim() || ''
 
-      // Check if ID Number is already in use by another student
+      // Look up student in uploaded Excel grading records to base account details on the official roster
+      try {
+        const rawGrading = localStorage.getItem("mathworkspace_grading_data")
+        if (rawGrading) {
+          const subjects = JSON.parse(rawGrading)
+          if (Array.isArray(subjects)) {
+            for (const subj of subjects) {
+              if (Array.isArray(subj.students)) {
+                const match = subj.students.find((s: any) =>
+                  (resolvedStudentId && s.studentId && s.studentId.trim().toUpperCase() === resolvedStudentId.toUpperCase()) ||
+                  (resolvedName && s.fullName && isSameStudentName(s.fullName, resolvedName))
+                )
+                if (match) {
+                  if (match.studentId && !match.studentId.startsWith("2026-") && match.studentId !== "2026-0000") {
+                    resolvedStudentId = match.studentId.trim()
+                  }
+                  if (match.fullName) {
+                    resolvedName = match.fullName.trim() // Official Excel name in admin
+                  }
+                  if (subj.subject?.subjectCode) {
+                    resolvedSubjectCode = subj.subject.subjectCode.trim()
+                  }
+                  if (subj.subject?.offerNumber) {
+                    resolvedOfferNumber = subj.subject.offerNumber.trim()
+                  }
+                  if (match.block && !resolvedBlock) {
+                    resolvedBlock = match.block.trim()
+                  }
+                  break
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // non-blocking
+      }
+
+      // Check if ID Number is already in use by another registered user profile in Supabase
       if (resolvedStudentId) {
         try {
           const { data: existingProfiles } = await client
@@ -84,28 +127,6 @@ export const api = {
         } catch {
           // If check fails (e.g. offline/schema), proceed
         }
-
-        // Also check local grading records
-        try {
-          const rawGrading = localStorage.getItem("mathworkspace_grading_data")
-          if (rawGrading) {
-            const subjects = JSON.parse(rawGrading)
-            if (Array.isArray(subjects)) {
-              for (const subj of subjects) {
-                if (Array.isArray(subj.students)) {
-                  const match = subj.students.find(
-                    (s: any) => s.studentId?.toLowerCase() === resolvedStudentId.toLowerCase()
-                  )
-                  if (match) {
-                    return toAuthError(`Student ID "${resolvedStudentId}" is already taken by another student.`)
-                  }
-                }
-              }
-            }
-          }
-        } catch {
-          // non-blocking
-        }
       }
 
       const { data, error } = await client.auth.signUp({
@@ -113,12 +134,12 @@ export const api = {
         password: input.password,
         options: {
           data: {
-            name: input.name.trim() || 'User',
+            name: resolvedName || 'User',
             student_id: resolvedStudentId,
             id_number: resolvedStudentId,
-            block: input.block?.trim() || '',
-            subject_code: input.subjectCode?.trim() || '',
-            offer_number: input.offerNumber?.trim() || '',
+            block: resolvedBlock,
+            subject_code: resolvedSubjectCode,
+            offer_number: resolvedOfferNumber,
           },
         },
       })

@@ -15,6 +15,8 @@ The main idea is:
   If we already know the limits of two functions, we can often determine the 
   limit of a more complicated expression by combining those known limits.
 
+"image": "src/assets_2.3/181.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. WHY DO WE NEED LIMIT THEOREMS?
@@ -430,28 +432,7 @@ Instead, 0/0 is an indeterminate form.
 
 You need additional algebraic manipulation.
 
-Example:
-  lim(x→2) (x² - 4)/(x - 2)
-
-  Direct substitution gives:
-    (2² - 4)/(2 - 2) = 0/0
-
-  We cannot stop there.
-
-  Factor the numerator:
-    x² - 4 = (x - 2)(x + 2)
-
-  Therefore:
-    ((x - 2)(x + 2))/(x - 2)
-
-  Cancel:
-    x + 2
-
-  Now evaluate:
-    lim(x→2) (x + 2) = 4
-
-  Therefore:
-    lim(x→2) (x² - 4)/(x - 2) = 4
+"image": "src/assets_2.3/182.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -467,16 +448,8 @@ then:
   lim(x→a) |f(x)| = |L|
 
 Example:
-  Evaluate: lim(x→3) |x - 5|
 
-  First:
-    lim(x→3) (x - 5) = -2
-
-  Therefore:
-    |-2| = 2
-
-  Thus:
-    lim(x→3) |x - 5| = 2
+"image": "src/assets_2.3/184.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -497,21 +470,8 @@ Then:
 This is sometimes called the composition theorem for limits.
 
 Example:
-  Evaluate: lim(x→2) (x² + 1)³
 
-  Let g(x) = x² + 1.
-
-  As x → 2:
-    g(x) → 5
-
-  Now the outside function is:
-    f(u) = u³
-
-  Therefore:
-    f(5) = 5³ = 125
-
-  So:
-    lim(x→2) (x² + 1)³ = 125
+"image": "src/assets_2.3/183.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -6,13 +6,8 @@ const topic = {
   summary:
     "Optimization problems where we determine the largest (absolute maximum) or smallest (absolute minimum) value a function attains over a specified domain or closed interval.",
   details: `
-Absolute maximum and minimum problems are optimization problems where we want to determine the largest or smallest value that a function actually attains over a specified domain or interval.
 
-These are also called absolute extrema:
-  • Absolute maximum: the greatest output value of the function.
-  • Absolute minimum: the smallest output value of the function.
-
-This topic builds directly on critical points, endpoints, the Extreme Value Theorem, and derivative tests.
+"image": "src/assets_2.3/240.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

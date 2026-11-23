@@ -42,6 +42,7 @@ import {
   isDateScheduledForSubject,
   setDateSessionOverride,
 } from "../../utils/attendanceManager";
+import { isSameStudentName } from "../../utils/studentMatching";
 
 interface AdminAttendanceViewProps {
   students: StudentItem[];
@@ -492,32 +493,51 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
       const currentSubjectDisplay = offer ? `${subCode} - ${offer}` : subCode;
 
       matchingRec.students.forEach((gst: any, idx: number) => {
-        const gstId = (gst.id || gst.studentId || "").toString().trim();
+        const gstOfficialStudentId = (gst.studentId || gst.id_number || gst.student_id || "").toString().trim();
+        const gstInternalId = (gst.id || "").toString().trim();
         const gstName = (gst.fullName || "").trim();
 
         // Match with online student profile if available
         const matchedOnline = students.find((st) => {
-          const stId = (st.studentId || st.id || "").toString().trim().toLowerCase();
-          const stName = (st.name || "").trim().toLowerCase();
-          return (
-            (gstId && stId && stId === gstId.toLowerCase()) ||
-            (gstName && stName && stName === gstName.toLowerCase())
-          );
+          const stOfficialId = (st.studentId || "").toString().trim().toUpperCase();
+          const stInternalId = (st.id || "").toString().trim().toLowerCase();
+          const stName = (st.name || "").trim();
+
+          // 1. Official Student ID match (e.g. "2023-00076")
+          if (gstOfficialStudentId && stOfficialId && gstOfficialStudentId.toUpperCase() === stOfficialId) {
+            return true;
+          }
+          // 2. Direct internal ID or userId match
+          if (gstInternalId && (gstInternalId.toLowerCase() === stInternalId || (gst.userId && gst.userId === st.id))) {
+            return true;
+          }
+          // 3. Smart Name match (only if same student, separating different students who share surname)
+          if (gstName && stName && isSameStudentName(gstName, stName)) {
+            return true;
+          }
+          return false;
         });
+
+        // The student's ID in attendance must match the student ID in the grading sheet! (e.g. "2023-00076")
+        const displayStudentId =
+          gstOfficialStudentId ||
+          (matchedOnline?.studentId && !matchedOnline.studentId.startsWith("2026-") ? matchedOnline.studentId : "") ||
+          gstInternalId ||
+          `2023-${String(idx + 1).padStart(4, "0")}`;
 
         const studentItem: StudentItem = matchedOnline
           ? {
               ...matchedOnline,
-              id: matchedOnline.id || gstId || `st-${idx}`,
-              studentId: gstId || matchedOnline.studentId,
+              id: matchedOnline.id || gstInternalId || `st-${idx}`,
+              studentId: displayStudentId,
               name: gstName || matchedOnline.name,
-              email: matchedOnline.email || `${gstId || `student-${idx}`}@workspace.edu`,
+              email: matchedOnline.email || `${displayStudentId.toLowerCase().replace(/[^a-z0-9]/g, "") || `student-${idx}`}@workspace.edu`,
             }
           : {
-              id: gstId || `st-local-${idx}`,
-              studentId: gstId || `2026-${String(idx + 1).padStart(4, "0")}`,
+              id: gstInternalId || `st-local-${idx}`,
+              studentId: displayStudentId,
               name: gstName || `Student ${idx + 1}`,
-              email: `${gstId ? gstId.toLowerCase().replace(/[^a-z0-9]/g, "") : `student${idx + 1}`}@workspace.edu`,
+              email: `${displayStudentId ? displayStudentId.toLowerCase().replace(/[^a-z0-9]/g, "") : `student${idx + 1}`}@workspace.edu`,
               quizzesTaken: 0,
               averageScore: 0,
               lastActive: "Never",
@@ -527,6 +547,9 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
         const key = (studentItem.id || studentItem.studentId || studentItem.name).toLowerCase();
         enrolledKeys.add(key);
         if (studentItem.studentId) enrolledKeys.add(studentItem.studentId.toLowerCase());
+        if (studentItem.id) enrolledKeys.add(studentItem.id.toLowerCase());
+        if (gstOfficialStudentId) enrolledKeys.add(gstOfficialStudentId.toLowerCase());
+        if (gstInternalId) enrolledKeys.add(gstInternalId.toLowerCase());
 
         enrolledStudents.push({
           student: studentItem,
@@ -543,9 +566,14 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
 
       const matches = enNorm === selNorm || (selNorm.includes(enNorm) && enNorm.length > 3);
       if (matches) {
-        const key = (st.id || st.studentId || st.name).toLowerCase();
+        const key = (st.id || "").toLowerCase();
         const idKey = (st.studentId || "").toLowerCase();
-        if (!enrolledKeys.has(key) && (!idKey || !enrolledKeys.has(idKey))) {
+        const isAlreadyEnrolled =
+          (key && enrolledKeys.has(key)) ||
+          (idKey && enrolledKeys.has(idKey)) ||
+          enrolledStudents.some((e) => isSameStudentName(e.student.name, st.name));
+
+        if (!isAlreadyEnrolled) {
           enrolledStudents.push({
             student: st,
             enrolledSubject: selectedSubject,
@@ -1121,7 +1149,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                           {student.name}
                         </h4>
                         <p className="text-[11px] text-gray-400 dark:text-slate-400 font-mono">
-                          {student.studentId || "2026-0000"} • {student.email}
+                          {student.studentId || "2026-0000"}
                         </p>
                       </div>
                     </div>
@@ -1281,14 +1309,9 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
 
                       {/* Student Name */}
                       <td className="py-3.5 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-gray-900 dark:text-slate-100 text-sm">
-                            {student.name}
-                          </span>
-                          <span className="text-[11px] text-gray-400 dark:text-slate-500 font-normal">
-                            {student.email}
-                          </span>
-                        </div>
+                        <span className="font-bold text-gray-900 dark:text-slate-100 text-sm">
+                          {student.name}
+                        </span>
                       </td>
 
                       {/* Subject */}
@@ -1697,7 +1720,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                                 </span>
                               </div>
                               <p className="text-[11px] text-gray-500 dark:text-slate-400 font-mono">
-                                {st.studentId || "No ID"} • {st.email}
+                                {st.studentId || "No ID"}
                               </p>
                             </div>
                           </div>

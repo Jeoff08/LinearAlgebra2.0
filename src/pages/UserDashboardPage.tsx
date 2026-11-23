@@ -34,6 +34,7 @@ import {
   getQuizLockStatus,
   requestQuizUnlock,
 } from "../utils/quizLockManager";
+import { isSameStudentName, isSubjectMatch } from "../utils/studentMatching";
 
 /**
  * Resolves the designated academic subject (MATH 101, MATH 102, or MATH 103)
@@ -1286,62 +1287,58 @@ export default function UserDashboardPage() {
   };
 
   const userEnrolledSubject = useMemo(() => {
-    // 1. Direct from user profile if available
-    const subCode = (user as any)?.subject_code || (user as any)?.subjectCode;
-    if (subCode) {
-      const s = String(subCode).toUpperCase();
-      if (s.includes("102")) return "MATH 102";
-      if (s.includes("103")) return "MATH 103";
-      if (s.includes("101")) return "MATH 101";
-      return s;
-    }
-
-    // 2. Look up in localStorage grading data
+    // 1. Look up in localStorage grading data first (official enrolled subject from Excel upload)
     try {
       const rawGrading = localStorage.getItem("mathworkspace_grading_data");
       if (rawGrading) {
         const records = JSON.parse(rawGrading);
         if (Array.isArray(records)) {
-          const userName = (user?.name || "").toLowerCase().trim();
+          const userName = (user?.name || "").trim();
           const userId = user?.id;
+          const userStudentId = ((user as any)?.student_id || (user as any)?.id_number || "").toString().trim().toUpperCase();
           for (const rec of records) {
             const found = rec.students?.some(
               (st: any) =>
-                (userId && st.id === userId) ||
-                (userName && st.fullName?.toLowerCase().trim() === userName)
+                (userId && (st.id === userId || st.userId === userId)) ||
+                (userStudentId && st.studentId && st.studentId.toString().trim().toUpperCase() === userStudentId) ||
+                (userName && isSameStudentName(st.fullName, userName))
             );
             if (found && rec.subject?.subjectCode) {
-              const code = rec.subject.subjectCode.toUpperCase();
-              if (code.includes("102")) return "MATH 102";
-              if (code.includes("103")) return "MATH 103";
-              if (code.includes("101")) return "MATH 101";
-              return rec.subject.subjectCode;
+              const code = rec.subject.subjectCode.toUpperCase().trim();
+              const offer = (rec.subject.offerNumber || "").trim();
+              return offer ? `${code} - ${offer}` : code;
             }
           }
         }
       }
     } catch {}
 
-    // 3. Known student name rule (Jeoff Montebon -> MATH 102)
-    const name = (user?.name || "").toLowerCase();
-    if (name.includes("jeoff") || name.includes("montebon")) {
-      return "MATH 102";
+    // 2. Direct from user profile if available
+    const subCode = (user as any)?.subject_code || (user as any)?.subjectCode;
+    const offerNum = (user as any)?.offer_number || (user as any)?.offerNumber;
+    if (subCode) {
+      const code = String(subCode).toUpperCase().trim();
+      const offer = offerNum ? String(offerNum).trim() : "";
+      if (offer && !code.includes(offer)) {
+        return `${code} - ${offer}`;
+      }
+      return code;
     }
 
     return "MATH 101";
   }, [user]);
 
   const enrolledAttempts = useMemo(() => {
-    const norm = (s?: string) => (s || "MATH 101").toUpperCase().trim();
-    const enrolled = norm(userEnrolledSubject);
     return myAttempts.filter((att) => {
       const parentQuiz = availableQuizzes.find((q) => q.id === att.quizId);
-      const qSub = parentQuiz ? norm(parentQuiz.designatedSubject) : "";
-      if (qSub) return qSub === enrolled;
+      if (parentQuiz && parentQuiz.designatedSubject) {
+        return isSubjectMatch(parentQuiz.designatedSubject, userEnrolledSubject);
+      }
 
       const t = (att.topic || "").toLowerCase();
       const title = (att.quizTitle || "").toLowerCase();
-      if (enrolled === "MATH 102") {
+      const enrolled = (userEnrolledSubject || "").toUpperCase().trim();
+      if (enrolled.includes("102")) {
         return (
           t.includes("calculus 2") ||
           t.includes("calculus-2") ||
@@ -1350,11 +1347,19 @@ export default function UserDashboardPage() {
           title.includes("calculus 2")
         );
       }
-      if (enrolled === "MATH 103") {
+      if (enrolled.includes("103")) {
         return (
           t.includes("linear") ||
           title.includes("103") ||
           title.includes("linear")
+        );
+      }
+      if (enrolled.includes("GEC") || enrolled.includes("4")) {
+        return (
+          t.includes("modern") ||
+          t.includes("gec") ||
+          title.includes("gec") ||
+          title.includes("modern")
         );
       }
       return (
@@ -1388,14 +1393,10 @@ export default function UserDashboardPage() {
   );
 
   const pendingAvailableQuizzes = useMemo(() => {
-    const norm = (s?: string) => (s || "MATH 101").toUpperCase().trim();
-    const enrolled = norm(userEnrolledSubject);
-
-    // Strictly filter available quizzes to only the student's enrolled subject (e.g. MATH 102)
+    // Filter available published quizzes to only the student's enrolled subject
     return availableQuizzes.filter((quiz) => {
       const notTaken = !myAttempts.some((attempt) => attempt.quizId === quiz.id);
-      const quizSub = norm(quiz.designatedSubject);
-      return notTaken && quizSub === enrolled;
+      return notTaken && isSubjectMatch(quiz.designatedSubject, userEnrolledSubject);
     });
   }, [availableQuizzes, myAttempts, userEnrolledSubject]);
 

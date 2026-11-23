@@ -67,6 +67,11 @@ import {
   importMultiSubjectGradingFromExcel,
 } from "../../utils/gradingExcel";
 import {
+  exportCustomGradingExcel,
+  type ExportPeriodOption,
+  type ExportSubjectScope,
+} from "../../utils/exportGradingDesign";
+import {
   lookupGradeEquivalent,
   getGradeRemarks,
   formatGradeEquivalent,
@@ -894,6 +899,44 @@ export const GradingManagementView: React.FC = () => {
     message: string;
   } | null>(null);
 
+  // Custom Excel Export state
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportPeriodScope, setExportPeriodScope] = useState<ExportPeriodOption>("all");
+  const [exportSubjectScope, setExportSubjectScope] = useState<ExportSubjectScope>("current");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExecuteExport = useCallback(async () => {
+    if (!activeRecord) return;
+    setIsExporting(true);
+    try {
+      await exportCustomGradingExcel({
+        periodScope: exportPeriodScope,
+        subjectScope: exportSubjectScope,
+        currentRecord: activeRecord,
+        allRecords: records,
+      });
+      const scopeLabel =
+        exportPeriodScope === "all"
+          ? "Full Sheet + Cumulative SERMS"
+          : exportPeriodScope === "cumulative"
+          ? "Cumulative SERMS"
+          : exportPeriodScope.toUpperCase();
+      setImportToast({
+        type: "success",
+        message: `Grading sheet exported successfully! (${scopeLabel})`,
+      });
+      setIsExportModalOpen(false);
+    } catch (err: any) {
+      console.error("Export error:", err);
+      setImportToast({
+        type: "error",
+        message: `Failed to export Excel file: ${err?.message || "Unknown error"}`,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [activeRecord, exportPeriodScope, exportSubjectScope, records]);
+
   const tableRef = useRef<HTMLDivElement>(null);
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1667,7 +1710,16 @@ export const GradingManagementView: React.FC = () => {
             Import Scores
           </button>
           <button
-            onClick={() => activeRecord && exportGradingToExcel(activeRecord)}
+            onClick={() => {
+              if (selectedTab === "cumulative") {
+                setExportPeriodScope("cumulative");
+              } else if (selectedTab !== "overall") {
+                setExportPeriodScope(selectedTab);
+              } else {
+                setExportPeriodScope("all");
+              }
+              setIsExportModalOpen(true);
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#166534] dark:bg-emerald-600 hover:bg-[#14532d] dark:hover:bg-emerald-700 transition cursor-pointer shadow-sm"
           >
             <Download className="w-3.5 h-3.5" />
@@ -2018,6 +2070,219 @@ export const GradingManagementView: React.FC = () => {
                 >
                   <Trash2 className="w-4 h-4" />
                   <span>Delete All ({records.length})</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== Custom Excel Export Modal ===== */}
+      <AnimatePresence>
+        {isExportModalOpen && activeRecord && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto"
+            onClick={() => !isExporting && setIsExportModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#161F30] rounded-2xl p-6 shadow-2xl border border-gray-100 dark:border-slate-700 max-w-lg w-full relative"
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-[#166534] dark:text-emerald-400 shrink-0 border border-emerald-200 dark:border-emerald-800/60">
+                    <FileSpreadsheet className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-slate-100">
+                      Export Grading Sheet to Excel
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      Institutional design with 60° rotated headers &amp; formulas
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => !isExporting && setIsExportModalOpen(false)}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Scope 1: Period Selection */}
+              <div className="mb-4">
+                <label className="block text-[11px] font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Select Period / Content to Export
+                </label>
+                <div className="space-y-1.5">
+                  {[
+                    {
+                      id: "all" as ExportPeriodOption,
+                      title: "All (Full Grading Sheet + Cumulative SERMS)",
+                      desc: "Complete sheet with Prelim, Midterm, Semi-Final, Final + 8-col Cumulative SERMS table",
+                      badge: "Recommended",
+                      badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+                    },
+                    {
+                      id: "cumulative" as ExportPeriodOption,
+                      title: "Cumulative Grade Only (SERMS Table)",
+                      desc: "8-col SERMS table: PRELIM, QG2, MIDTERM, QG3, SEMI-FINAL, QG4, FINAL, FINAL GRADE",
+                      badge: "SERMS",
+                      badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+                    },
+                    {
+                      id: "prelim" as ExportPeriodOption,
+                      title: "Prelim Period Only",
+                      desc: "Prelim quizzes, class participation, exam, and prelim grade",
+                    },
+                    {
+                      id: "midterm" as ExportPeriodOption,
+                      title: "Midterm Period Only",
+                      desc: "Midterm quizzes, class participation, exam, and midterm grade",
+                    },
+                    {
+                      id: "semi-final" as ExportPeriodOption,
+                      title: "Semi-Final Period Only",
+                      desc: "Semi-Final quizzes, class participation, exam, and semi-final grade",
+                    },
+                    {
+                      id: "final" as ExportPeriodOption,
+                      title: "Final Period Only",
+                      desc: "Final quizzes, class participation, exam, and final grade",
+                    },
+                  ].map((opt) => {
+                    const isSelected = exportPeriodScope === opt.id;
+                    return (
+                      <div
+                        key={opt.id}
+                        onClick={() => setExportPeriodScope(opt.id)}
+                        className={`flex items-start gap-3 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${
+                          isSelected
+                            ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm"
+                            : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="periodScope"
+                          checked={isSelected}
+                          onChange={() => setExportPeriodScope(opt.id)}
+                          className="mt-0.5 accent-emerald-600 cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900 dark:text-slate-100">
+                              {opt.title}
+                            </span>
+                            {opt.badge && (
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${opt.badgeColor}`}>
+                                {opt.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+                            {opt.desc}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Scope 2: Subject Scope */}
+              <div className="mb-4">
+                <label className="block text-[11px] font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Select Subject Scope
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div
+                    onClick={() => setExportSubjectScope("current")}
+                    className={`p-2.5 rounded-xl border text-xs cursor-pointer transition select-none flex items-start gap-2.5 ${
+                      exportSubjectScope === "current"
+                        ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm"
+                        : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="subjectScope"
+                      checked={exportSubjectScope === "current"}
+                      onChange={() => setExportSubjectScope("current")}
+                      className="mt-0.5 accent-emerald-600 cursor-pointer"
+                    />
+                    <div className="truncate">
+                      <span className="font-bold block text-gray-900 dark:text-slate-100">
+                        Current Subject
+                      </span>
+                      <span className="text-[11px] text-gray-500 dark:text-slate-400 truncate block">
+                        {activeRecord.subject.subjectCode || "Subject"} ({activeRecord.subject.offerNumber || "N/A"})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setExportSubjectScope("all")}
+                    className={`p-2.5 rounded-xl border text-xs cursor-pointer transition select-none flex items-start gap-2.5 ${
+                      exportSubjectScope === "all"
+                        ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm"
+                        : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="subjectScope"
+                      checked={exportSubjectScope === "all"}
+                      onChange={() => setExportSubjectScope("all")}
+                      className="mt-0.5 accent-emerald-600 cursor-pointer"
+                    />
+                    <div>
+                      <span className="font-bold block text-gray-900 dark:text-slate-100">
+                        All Subjects
+                      </span>
+                      <span className="text-[11px] text-gray-500 dark:text-slate-400 block">
+                        {records.length} {records.length === 1 ? "sheet" : "sheets (separate tabs)"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature highlights banner */}
+              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl p-2.5 mb-5 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>
+                  Rotated 60° headers, custom color-coding, student roster styling, and live Excel formulas included.
+                </span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => setIsExportModalOpen(false)}
+                  className="flex-1 h-9 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={handleExecuteExport}
+                  className="flex-1 h-9 rounded-xl text-white text-xs font-bold bg-[#166534] dark:bg-emerald-600 hover:bg-[#14532d] dark:hover:bg-emerald-700 transition cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{isExporting ? "Generating Excel..." : "Download Excel (.xlsx)"}</span>
                 </button>
               </div>
             </motion.div>
@@ -2713,8 +2978,11 @@ export const GradingManagementView: React.FC = () => {
                       qg4 = sermsOverrides.qg4;
                     }
 
+                    // QG4 defaults to 5.0 when not yet entered (partial / baseline grade)
+                    const effectiveQg4 = qg4 !== null ? qg4 : 5.0;
+
                     // Compute cumulative grades with exact formulas
-                    const cum = computeCumulativeGrades(prelimRaw, qg2, qg3, qg4);
+                    const cum = computeCumulativeGrades(prelimRaw, qg2, qg3, effectiveQg4);
 
                     return (
                       <tr
@@ -2821,21 +3089,21 @@ export const GradingManagementView: React.FC = () => {
                           {formatSermsValue(cum.semiFinal)}
                         </td>
 
-                        {/* 6. QG4 (Raw Data in SERMS) - Automatically populated from Final period grade */}
+                        {/* 6. QG4 (Raw Data in SERMS) - Automatically populated from Final period grade (default 5.0) */}
                         <td
                           className="px-1 py-1 text-center border-b border-r"
                           style={{
                             borderColor: colors.borderColor,
-                            background: qg4 !== null ? colors.gradeEquivalentCellBg : undefined,
+                            background: colors.gradeEquivalentCellBg,
                           }}
                         >
                           <SermsRawGradeCell
-                            value={qg4}
-                            placeholder="—"
-                            bg={qg4 !== null ? colors.gradeEquivalentCellBg : undefined}
-                            textColor={qg4 !== null ? colors.gradeEquivalentCellText : colors.studentIdText}
+                            value={effectiveQg4}
+                            placeholder="5.00"
+                            bg={colors.gradeEquivalentCellBg}
+                            textColor={colors.gradeEquivalentCellText}
                             onChange={(val) => setSermsRawGrade(student.id, "qg4", val)}
-                            title="QG4: Automatic from Final. Click to override"
+                            title="QG4: Raw grade in SERMS (default 5.00)"
                           />
                         </td>
 
@@ -2852,12 +3120,12 @@ export const GradingManagementView: React.FC = () => {
                           {formatSermsValue(cum.finalCumulative)}
                         </td>
 
-                        {/* FINAL GRADE - SERMS: FINAL GRADE = FINAL (with Partial running grade display) */}
+                        {/* FINAL GRADE - SERMS: FINAL GRADE = ROUND(FINAL, 1) */}
                         {(() => {
-                          // Display: use runningGrade so partial grades are visible; use finalGrade for the official value
                           const displayGrade = cum.finalGrade !== null ? cum.finalGrade : cum.runningGrade;
-                          const hasGrade = displayGrade !== null;
-                          const isFail = hasGrade && displayGrade! > 3.0;
+                          const roundedDisplay = displayGrade !== null ? Math.round(displayGrade * 10) / 10 : null;
+                          const hasGrade = roundedDisplay !== null;
+                          const isFail = hasGrade && roundedDisplay! > 3.0;
                           return (
                             <td
                               className="px-3 py-2 text-center text-sm font-black border-b"
@@ -2875,25 +3143,13 @@ export const GradingManagementView: React.FC = () => {
                                   : colors.gpaCellText,
                               }}
                               title={
-                                cum.isPartial
-                                  ? `Partial / Running Grade: ${formatSermsValue(displayGrade)} (awaiting remaining periods)`
-                                  : cum.finalGrade !== null
-                                  ? `SERMS Final Grade: ${formatSermsValue(cum.finalGrade)} (FINAL GRADE = FINAL)`
+                                cum.finalGrade !== null
+                                  ? `SERMS Final Grade: ${roundedDisplay!.toFixed(1)} (Rounded from ${formatSermsValue(cum.finalCumulative)})`
                                   : "No grade data"
                               }
                             >
                               {hasGrade ? (
-                                <div className="inline-flex items-center gap-1">
-                                  <span>{formatSermsValue(displayGrade)}</span>
-                                  {cum.isPartial && (
-                                    <span
-                                      className="text-[9px] font-extrabold uppercase px-1 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30"
-                                      title="Partial Grade (ongoing terms — FINAL GRADE requires all 4 periods)"
-                                    >
-                                      Partial
-                                    </span>
-                                  )}
-                                </div>
+                                <span>{roundedDisplay!.toFixed(1)}</span>
                               ) : (
                                 "—"
                               )}

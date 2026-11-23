@@ -5,6 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
+import { isSameStudentName } from "../utils/studentMatching";
 import quizLoaderLogo from "../assets/Logo(2).png";
 import {
   generateQuizQuestions,
@@ -1289,16 +1290,16 @@ export default function AdminDashboardPage() {
                   const alreadyExists = studentList.some(
                     (existing) =>
                       existing.id === st.id ||
-                      existing.name.toLowerCase().trim() === sName.toLowerCase() ||
-                      (st.studentId && existing.studentId && existing.studentId.toLowerCase() === st.studentId.toLowerCase())
+                      (st.studentId && existing.studentId && existing.studentId.toLowerCase() === st.studentId.toLowerCase() && !existing.studentId.startsWith("2026-")) ||
+                      isSameStudentName(existing.name, sName)
                   );
                   if (!alreadyExists) {
                     studentList.push({
                       id: st.id || `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
                       name: sName,
-                      email: st.email || `${sName.toLowerCase().replace(/\\s+/g, '')}@student.edu`,
-                      studentId: st.studentId || "2026-0000",
-                      block: st.block || "Block A",
+                      email: st.email || "",
+                      studentId: st.studentId || "2023-0000",
+                      block: st.block || "",
                       avatarUrl: "",
                       quizzesTaken: 0,
                       averageScore: 0,
@@ -1346,25 +1347,35 @@ export default function AdminDashboardPage() {
                   else if (pOffer && pOffer === (rec.subject?.offerNumber || "").toLowerCase().trim()) belongs = true;
 
                   if (belongs) {
-                    const profIdNumber = ((p as any).student_id || (p as any).id_number || `2026-${p.id.slice(0, 5)}`).toUpperCase().trim();
+                    const profIdNumber = ((p as any).student_id || (p as any).id_number || '').toUpperCase().trim();
                     const profName = p.name || "Student";
                     const existing = rec.students.find(
                       (st: any) =>
                         st.id === p.id ||
-                        st.studentId === profIdNumber ||
-                        st.fullName?.toLowerCase().trim() === profName.toLowerCase().trim()
+                        st.userId === p.id ||
+                        (profIdNumber && !profIdNumber.startsWith("2026-") && st.studentId && st.studentId.toUpperCase() === profIdNumber) ||
+                        isSameStudentName(st.fullName, profName)
                     );
                     if (existing) {
-                      if (existing.studentId !== profIdNumber || existing.fullName !== profName) {
+                      // Preserve existing studentId from Excel if profIdNumber is empty or a fallback
+                      if (profIdNumber && (!existing.studentId || existing.studentId.startsWith("2026-") || existing.studentId === "2026-0000")) {
                         existing.studentId = profIdNumber;
+                        updatedAny = true;
+                      }
+                      if (!existing.userId) {
+                        existing.userId = p.id;
+                        updatedAny = true;
+                      }
+                      if (!existing.fullName) {
                         existing.fullName = profName;
                         updatedAny = true;
                       }
                     } else {
                       rec.students.push({
                         id: p.id,
+                        userId: p.id,
                         studentNumber: String(rec.students.length + 1),
-                        studentId: profIdNumber,
+                        studentId: profIdNumber || `2026-${p.id.slice(0, 5)}`,
                         fullName: profName,
                       });
                       updatedAny = true;

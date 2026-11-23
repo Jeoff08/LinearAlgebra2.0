@@ -25,6 +25,8 @@ The most important rules are:
   • Quotient Rule
   • General Power Rule
 
+"image": "src/assets/173.png"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. CONSTANT RULE
@@ -392,29 +394,7 @@ The differentiation theorems we have covered Constant, Power, Constant Multiple,
 
 Here is a useful summary:
 
-  Constant Rule:
-    d/dx (c) = 0
-
-  Power Rule:
-    d/dx (xⁿ) = nxⁿ⁻¹
-
-  Constant Multiple Rule:
-    d/dx [c f(x)] = c f'(x)
-
-  Sum Rule:
-    d/dx [f(x) + g(x)] = f'(x) + g'(x)
-
-  Difference Rule:
-    d/dx [f(x) - g(x)] = f'(x) - g'(x)
-
-  Product Rule:
-    d/dx [fg] = f'g + fg'
-
-  Quotient Rule:
-    d/dx (f/g) = (f'g - fg')/g²
-
-  General Power Rule:
-    d/dx [g(x)]ⁿ = n[g(x)]ⁿ⁻¹ · g'(x)
+"image": "src/assets/174.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -504,16 +484,7 @@ Step 4: Simplify the result
 
 This table summarizes all the key differentiation rules for algebraic functions. It serves as a handy reference for solving problems. Notice that the General Power Rule encompasses the Chain Rule; it is a special case when the exponent is a function of x. Keep this table accessible as you practice, and soon you will memorize these formulas.
 
-  Rule                  Formula
-  ──────────────────────────────────────────────────────────────────────────
-  Constant              d/dx (c) = 0
-  Power                 d/dx (xⁿ) = nxⁿ⁻¹
-  Constant Multiple     d/dx [c f(x)] = c f'(x)
-  Sum                   d/dx [f(x) + g(x)] = f'(x) + g'(x)
-  Difference            d/dx [f(x) - g(x)] = f'(x) - g'(x)
-  Product               d/dx [f(x)g(x)] = f'(x)g(x) + f(x)g'(x)
-  Quotient              d/dx [f(x)/g(x)] = (f'(x)g(x) - f(x)g'(x))/[g(x)]²
-  General Power         d/dx [g(x)]ⁿ = n[g(x)]ⁿ⁻¹ · g'(x)
+"image": "src/assets/174.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

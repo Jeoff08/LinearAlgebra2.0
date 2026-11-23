@@ -349,8 +349,10 @@ export function computeCumulativeGrades(
       ? (semiFinal + validQg4) / 2
       : null;
 
-  // D. FINAL GRADE = FINAL  — Excel: =CT6  (strictly equal, no rounding)
-  const finalGrade = finalCumulative;
+  // D. FINAL GRADE = FINAL rounded to 1 decimal place  — Excel: =ROUND(CT6,1)
+  const finalGrade = finalCumulative !== null
+    ? Math.round(finalCumulative * 10) / 10
+    : null;
 
   // Running/partial cumulative for UI display when not all periods are complete:
   //   Shows the latest available cumulative with a "Partial" indicator

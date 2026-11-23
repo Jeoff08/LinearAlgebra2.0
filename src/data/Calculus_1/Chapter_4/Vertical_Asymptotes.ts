@@ -6,14 +6,8 @@ const topic = {
   summary:
     "A vertical line x = a that a function approaches as x gets closer to a particular value, with the function becoming unbounded (±∞) near that value.",
   details: `
-A vertical asymptote is a vertical line that a function approaches as x gets closer and closer to a particular value.
 
-It is written in the form:
-  x = a
-
-where a is a specific x-value.
-
-Unlike a horizontal asymptote, which describes what happens when x → ±∞, a vertical asymptote describes what happens when x approaches a particular number.
+ "image": "src/assets_2.3/232.png" 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -136,12 +130,16 @@ Vertical asymptote:
   Example: f(x) = 1/(x - 2)
   Vertical asymptote: x = 2
 
+"image": "src/assets_2.3/233.png"
+
 Horizontal asymptote:
   y = L
   We examine x → ±∞.
   The function approaches a finite y-value.
   Example: f(x) = (2x + 1)/(x + 3)
   Horizontal asymptote: y = 2
+
+"image": "src/assets_2.3/234.png"
 
 Easy memory trick:
   Vertical: x = a → Think specific x-value.
@@ -236,23 +234,7 @@ The cancellation rule is one of the most important concepts when identifying ver
 
 This is where students often make mistakes.
 
-Suppose:
-  f(x) = (x² - 4)/(x - 2)
-
-Factor the numerator:
-  x² - 4 = (x - 2)(x + 2)
-
-Therefore:
-  f(x) = ((x - 2)(x + 2))/(x - 2)
-
-Cancel:
-  f(x) = x + 2
-
-but remember that the original function is undefined at x = 2.
-
-So x = 2 is not a vertical asymptote.
-
-Instead, the graph has a hole at x = 2.
+"image": "src/assets_2.3/235.png"
 
 This distinction is extremely important.
 
@@ -263,25 +245,7 @@ This distinction is extremely important.
 
 The difference between a hole and a vertical asymptote is determined by whether the discontinuity is removable or infinite. A hole occurs when a factor cancels, meaning the limit exists at that point (though the function is not defined there). A vertical asymptote occurs when a factor remains in the denominator after cancellation, meaning the limit is infinite. For example, f(x) = 1/(x - 2) has no cancellation, so x = 2 is a vertical asymptote. In contrast, g(x) = ((x - 2)(x + 3))/(x - 2) cancels to g(x) = x + 3, with a hole at x = 2. The hole is a single missing point on an otherwise continuous graph, while the vertical asymptote is a break where the graph goes to infinity. Recognizing this difference is essential for correctly graphing functions and understanding their behavior.
 
-Compare these two functions.
-
-Function A:
-  f(x) = 1/(x - 2)
-
-At x = 2, the denominator is zero and nothing cancels.
-
-Therefore:
-  x = 2 is a vertical asymptote.
-
-Function B:
-  g(x) = ((x - 2)(x + 3))/(x - 2)
-
-Cancel:
-  g(x) = x + 3, with x ≠ 2
-
-Here the discontinuity is removable.
-
-So x = 2 is a hole, not a vertical asymptote.
+"image": "src/assets_2.3/236.png"
 
 Important rule:
   If a denominator factor cancels completely with a numerator factor, the 
@@ -540,29 +504,7 @@ Vertical asymptotes are closely related to the domain of a function. In many cas
 
 Vertical asymptotes are often related to values excluded from the domain.
 
-For example:
-  f(x) = 1/(x - 5)
-
-The denominator cannot be zero:
-  x - 5 ≠ 0
-
-Therefore:
-  x ≠ 5
-
-The domain is:
-  (-∞, 5) ∪ (5, ∞)
-
-And x = 5 is the vertical asymptote.
-
-However, remember:
-  Not every excluded domain value is a vertical asymptote.
-
-A hole is also an excluded value.
-
-For example:
-  f(x) = (x² - 4)/(x - 2)
-
-Here x = 2 is excluded, but it creates a hole rather than an asymptote.
+"image": "src/assets_2.3/237.png"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -573,14 +515,7 @@ The table below summarizes the key differences between vertical asymptotes and h
 
 This distinction is one of the most important things to understand.
 
-  Feature                Vertical Asymptote          Hole
-  ───────────────────────────────────────────────────────────────────────────
-  Function undefined?    Yes                         Yes
-  Denominator becomes 0  Yes                         Yes
-  Factor cancels?        No                          Yes
-  Function approaches    ±∞                          No
-  Example                1/(x - 2)                   (x - 2)/(x - 2)
-  Graph behavior         Goes infinitely up/down     Missing point
+"image": "src/assets_2.3/238.png"
 
 Quick test:
   After factoring:
@@ -721,16 +656,7 @@ and:
 
 This table summarizes the differences between horizontal and vertical asymptotes. Vertical asymptotes are vertical lines x = a where the function becomes unbounded as x approaches a. Horizontal asymptotes are horizontal lines y = L where the function approaches L as x goes to ±∞. Vertical asymptotes describe local behavior near a specific x-value, while horizontal asymptotes describe global end behavior. Both are important for understanding the graph of a function, but they represent different aspects. The table provides a quick reference for distinguishing between them. Understanding both types of asymptotes is essential for curve sketching and for analyzing functions.
 
-  Feature                Vertical Asymptote          Horizontal Asymptote
-  ───────────────────────────────────────────────────────────────────────────
-  Form                   x = a                       y = L
-  What happens?          f(x) → ±∞                   f(x) → L
-  x approaches           A specific number           ±∞
-  Usually found from     Denominator = 0 after       Limits at infinity /
-                         cancellation                degree comparison
-  Example                x = 2                       y = 3
-  Describes              Behavior near a specific    End behavior
-                         x-value                   
+"image": "src/assets_2.3/239.png"        
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
