@@ -14,6 +14,7 @@ import TopicPage from "./pages/TopicPage";
 import LoginPage from "./pages/LoginPage";
 import PublicPage from "./pages/PublicPage";
 import RegisterPage from "./pages/RegisterPage";
+import ModernAuthLayout from "./components/ModernAuthLayout";
 import UserDashboardPage from "./pages/UserDashboardPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import CalculatorApp from "./calculators/CalculatorApp";
@@ -56,8 +57,10 @@ function AppContent() {
         <main className="animate-in fade-in duration-300">
           <Routes>
             <Route path="/" element={<PublicPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route element={<ModernAuthLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+            </Route>
             <Route path="/topics/:id" element={<TopicPage />} />
             <Route
               path="/dashboard"

@@ -698,54 +698,161 @@ const CURATED_KNOWLEDGE_BASE: CuratedTopicQuestions[] = [
   },
 ];
 
-// Helper to sanitize keywords for matching
+// Helper to sanitize keywords for matching strictly against topic titles and IDs
 function matchesTopic(topicTitle: string, keywords: string[]): boolean {
   const lower = topicTitle.toLowerCase();
-  return keywords.some((k) => lower.includes(k.toLowerCase()));
+  return keywords.some((k) => {
+    const kLower = k.toLowerCase();
+    return lower === kLower || lower.includes(kLower) || kLower.includes(lower);
+  });
 }
 
-// Fallback question synthesizer that uses raw topic details/summary with diverse templates
+/**
+ * Helper to construct multiple-choice questions with dynamically shuffled options
+ * so the correct answer is evenly distributed across A, B, C, and D.
+ */
+function createShuffledMC(
+  id: string,
+  prompt: string,
+  correctOptionText: string,
+  distractors: [string, string, string],
+  explanation: string,
+  topicTitle: string,
+  rng: () => number
+): GeneratedQuestion {
+  const raw = [
+    { isCorrect: true, text: correctOptionText },
+    { isCorrect: false, text: distractors[0] },
+    { isCorrect: false, text: distractors[1] },
+    { isCorrect: false, text: distractors[2] },
+  ];
+  const shuffled = seededShuffle(raw, rng);
+  const keys: ("A" | "B" | "C" | "D")[] = ["A", "B", "C", "D"];
+  const correctIdx = shuffled.findIndex((o) => o.isCorrect);
+  const correctKey = keys[correctIdx >= 0 ? correctIdx : 0];
+
+  return {
+    id,
+    prompt,
+    questionType: "multiple_choice",
+    optionA: shuffled[0].text,
+    optionB: shuffled[1].text,
+    optionC: shuffled[2].text,
+    optionD: shuffled[3].text,
+    correct: correctKey,
+    correctAnswerText: correctOptionText,
+    explanation,
+    topicTitle,
+  };
+}
+
+/**
+ * Extracts distinct lesson sections from topic.details to build highly specific questions
+ */
+function extractTopicSections(details: string): { title: string; content: string }[] {
+  if (!details) return [];
+  const clean = details.replace(/\r/g, "");
+  const regex = /(?:^|\n)(?:[0-9]+[\.\)]\s+)?([A-Z0-9\s,\-\(\)\/\–]{3,60})\n[━─═]{3,}\n([\s\S]*?)(?=(?:\n(?:[0-9]+[\.\)]\s+)?[A-Z0-9\s,\-\(\)\/\–]{3,60}\n[━─═]{3,})|$)/g;
+  const sections: { title: string; content: string }[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(clean)) !== null) {
+    const sTitle = match[1].trim();
+    const sContent = match[2].trim();
+    if (sTitle && sContent && sTitle.length > 3) {
+      sections.push({ title: sTitle, content: sContent });
+    }
+  }
+  return sections;
+}
+
+/**
+ * Universal deep topic question synthesizer
+ * Generates 40+ unique questions per topic across all four question types,
+ * ensuring 100% strict adherence to the specified topic's mathematical domain.
+ */
 function synthesizeQuestionFromTopic(
   topic: TopicInput,
   type: QuizQuestionType,
-  seedIndex: number
+  seedIndex: number,
+  rng: () => number = Math.random
 ): GeneratedQuestion {
-  const id = `gen-${Date.now()}-${seedIndex}-${Math.random().toString(36).slice(2, 7)}`;
+  const id = `gen-${Date.now()}-${seedIndex}-${Math.floor(rng() * 1000000)}`;
   const title = topic.title || "Mathematics Topic";
-  const summary = topic.summary || "Explore fundamental properties and principles.";
+  const summary = topic.summary || "Explore fundamental properties, rules, and computational principles.";
   const details = topic.details || "";
   const cat = topic.category || "linear-algebra";
   const catLabel = cat === "linear-algebra" ? "Linear Algebra" : cat === "calculus-1" ? "Calculus 1" : "Calculus 2";
 
-  // Extract clean text
+  // Clean details
   const cleanDetails = details.replace(/━+/g, "").replace(/\n+/g, " ").trim();
   const firstSentence = cleanDetails.slice(0, 180).trim() || summary;
+  const sections = extractTopicSections(details);
+  const activeSection = sections.length > 0 ? sections[seedIndex % sections.length] : null;
 
+  // 1. IDENTIFICATION QUESTIONS (12+ Diverse Variants)
   if (type === "identification") {
     const identTemplates = [
       {
-        prompt: `Identify the mathematical concept or rule described:\n"${summary}"`,
+        prompt: `Identify the mathematical concept or rule defined as follows:\n"${summary}"`,
         ans: title,
+        exp: `The concept described is ${title}. ${summary}`,
       },
       {
-        prompt: `In ${catLabel}, what specific topic or method directly governs: "${summary.slice(0, 130)}"?`,
+        prompt: `In ${catLabel}, what specific topic or method directly governs:\n"${firstSentence.slice(0, 140)}"?`,
         ans: title,
+        exp: `${title} is the governing framework in ${catLabel}.`,
       },
       {
-        prompt: `Name the foundational mathematical concept defined as follows:\n"${firstSentence.slice(0, 140)}"`,
+        prompt: `Name the foundational concept represented in the following mathematical formulation:\n"${summary.slice(0, 130)}"`,
         ans: title,
+        exp: `This formulation defines ${title}.`,
       },
       {
-        prompt: `Identify the mathematical structure or operation focused on: "${summary}"`,
+        prompt: `Identify the mathematical structure or operation focused on:\n"${summary}"`,
         ans: title,
+        exp: `${title} provides the analytical basis for this operation.`,
       },
       {
         prompt: `Which major framework in ${catLabel} encompasses the following principle:\n"${summary.slice(0, 120)}"?`,
         ans: title,
+        exp: `The framework is ${title}.`,
       },
       {
-        prompt: `Identify the theorem, technique, or domain corresponding to:\n"${firstSentence.slice(0, 130)}"`,
+        prompt: `Identify the theorem, technique, or topic corresponding to:\n"${firstSentence.slice(0, 130)}"`,
         ans: title,
+        exp: `The topic is ${title}.`,
+      },
+      {
+        prompt: `In ${catLabel}, what term represents the mathematical procedure or definition used in:\n"${summary.slice(0, 110)}"?`,
+        ans: title,
+        exp: `The procedure/definition is ${title}.`,
+      },
+      {
+        prompt: `Name the primary analytical method applied to analyze:\n"${summary.slice(0, 115)}"`,
+        ans: title,
+        exp: `The analytical method is ${title}.`,
+      },
+      {
+        prompt: `Identify the core topic in ${catLabel} characterized by:\n"${firstSentence.slice(0, 125)}"`,
+        ans: title,
+        exp: `This is characterized by ${title}.`,
+      },
+      {
+        prompt: `What is the standard mathematical title given to the study of:\n"${summary.slice(0, 100)}"?`,
+        ans: title,
+        exp: `The study is known as ${title}.`,
+      },
+      {
+        prompt: activeSection
+          ? `Identify the topic whose curriculum includes the section: "${activeSection.title}".`
+          : `Name the foundational concept governing ${title} in ${catLabel}.`,
+        ans: title,
+        exp: `${title} contains this foundational analysis.`,
+      },
+      {
+        prompt: `Name the mathematical domain that evaluates:\n"${summary.slice(0, 135)}"`,
+        ans: title,
+        exp: `The mathematical domain is ${title}.`,
       },
     ];
     const chosen = identTemplates[seedIndex % identTemplates.length];
@@ -759,28 +866,45 @@ function synthesizeQuestionFromTopic(
       optionD: "",
       correct: "A",
       correctAnswerText: chosen.ans,
-      explanation: `The concept described is ${title}. ${summary}`,
+      explanation: chosen.exp,
       topicTitle: title,
     };
   }
 
+  // 2. ENUMERATION QUESTIONS (8+ Diverse Variants)
   if (type === "enumeration") {
     const enumTemplates = [
       {
         prompt: `Enumerate 3 key properties, theorems, or components associated with ${title}.`,
-        ans: `1. Formal Definition, 2. Mathematical Properties, 3. Solution Methods for ${title}`,
+        ans: `1. Formal Definition of ${title}\n2. Governing Theorems & Formulas\n3. Computational Solution Procedures`,
       },
       {
         prompt: `List the fundamental criteria, conditions, or steps required when applying ${title}.`,
-        ans: `1. Initial Conditions, 2. Analytical Formulation, 3. Verification of Results in ${title}`,
+        ans: `1. Verify Domain & Hypotheses\n2. Set Up the Governing Equation for ${title}\n3. Simplify and Validate Results`,
       },
       {
-        prompt: `Enumerate the primary practical and computational applications of ${title}.`,
-        ans: `1. Direct Computation, 2. Transformation / Factorization, 3. System Analysis in ${title}`,
+        prompt: `Enumerate the primary practical, analytical, and computational applications of ${title}.`,
+        ans: `1. Direct Quantitative Evaluation\n2. Transformation & Optimization\n3. Multi-Variable System Modeling in ${title}`,
       },
       {
         prompt: `List the major algebraic behaviors or core theorems that govern ${title}.`,
-        ans: `1. Existence and Uniqueness, 2. Algebraic Invariants, 3. Numerical Stability in ${title}`,
+        ans: `1. Existence & Uniqueness Criteria\n2. Invariance & Linearity Properties\n3. Analytical Stability in ${title}`,
+      },
+      {
+        prompt: `Enumerate the sequential steps taken to solve a standard problem involving ${title}.`,
+        ans: `1. Identify Known Parameters\n2. Apply the Standard ${title} Formulation\n3. Evaluate and Check Boundary Cases`,
+      },
+      {
+        prompt: `List 3 common classifications, cases, or representations encountered in ${title}.`,
+        ans: `1. Standard Case\n2. Boundary / Degenerate Case\n3. Higher-Order / Asymptotic Case in ${title}`,
+      },
+      {
+        prompt: `Enumerate the essential prerequisites and foundational concepts needed before mastering ${title}.`,
+        ans: `1. Basic Algebraic & Function Operations\n2. Coordinate Geometry & Analytic Formulations\n3. Theorem Verification for ${title}`,
+      },
+      {
+        prompt: `List the key analytical advantages gained from mastering ${title}.`,
+        ans: `1. Simplification of Complex Mathematical Models\n2. Exact Closed-Form Derivations\n3. Rigorous Theoretical Foundations for ${title}`,
       },
     ];
     const chosen = enumTemplates[seedIndex % enumTemplates.length];
@@ -789,334 +913,810 @@ function synthesizeQuestionFromTopic(
       prompt: chosen.prompt,
       questionType: "enumeration",
       optionA: chosen.ans,
-      optionB: "Enumeration items",
+      optionB: chosen.ans.replace(/\n/g, "; "),
       optionC: "enumeration",
       optionD: "",
       correct: "A",
       correctAnswerText: chosen.ans,
-      explanation: `Mastery of ${title} requires understanding its definition, core properties, and computational techniques.`,
+      explanation: `Mastery of ${title} requires thorough knowledge of its definition, core properties, and computational techniques.`,
       topicTitle: title,
     };
   }
 
+  // 3. PROBLEM SOLVING QUESTIONS (12+ Diverse Variants)
   if (type === "problem_solving") {
     const examples = topic.examples ?? [];
-    const exampleSnippet =
-      examples.length > 0 ? examples[seedIndex % examples.length] : "";
+    const exampleSnippet = examples.length > 0 ? examples[seedIndex % examples.length] : "";
 
     const psTemplates = [
-      `Solve the following standard problem regarding ${title}:\n${exampleSnippet || `Given the fundamental equations of ${title}, compute the resulting canonical value or simplified expression.`}`,
-      `Analyze the mathematical formulation for ${title} and calculate its principal result.`,
-      `Evaluate the system described by ${title}: determine the necessary parameters that satisfy all governing conditions.`,
-      `Apply analytical methods of ${title} to derive the exact quantitative solution for the standard case.`,
+      {
+        prompt: `Solve the following problem regarding ${title}:\n${exampleSnippet || `Given the fundamental equations of ${title}, compute the resulting canonical value or simplified expression.`}`,
+        ans: `Standard Solution for ${title}`,
+        steps: `Step 1: Formulate the governing equation for ${title}.\nStep 2: Substitute given parameters into the equation.\nStep 3: Simplify algebraic and numerical terms.\nStep 4: Conclude with the verified exact solution.`,
+      },
+      {
+        prompt: `Analyze the mathematical system governed by ${title} and calculate its principal result for standard initial conditions.`,
+        ans: `Derived Value for ${title}`,
+        steps: `Step 1: Identify all given system constraints in ${title}.\nStep 2: Apply the governing transformation or differentiation/integration formula.\nStep 3: Solve for the unknown parameter.\nStep 4: Check that the result satisfies domain conditions.`,
+      },
+      {
+        prompt: `Apply analytical methods of ${title} to derive the exact quantitative solution for the standard case.`,
+        ans: `Exact Analytical Solution`,
+        steps: `Step 1: Set up the definition of ${title}.\nStep 2: Perform required operations step-by-step.\nStep 3: Simplify to lowest terms.`,
+      },
+      {
+        prompt: `Evaluate the mathematical expression under the rules of ${title} and verify that all conditions are satisfied.`,
+        ans: `Verified Result for ${title}`,
+        steps: `Step 1: Check hypotheses and domain bounds for ${title}.\nStep 2: Execute standard computation.\nStep 3: State the final verified value.`,
+      },
+      {
+        prompt: `Consider a scenario modeled by ${title}. Determine the value of the unknown variable that satisfies the governing equation.`,
+        ans: `Canonical Parameter for ${title}`,
+        steps: `Step 1: Write down the primary equation for ${title}.\nStep 2: Isolate the target variable.\nStep 3: Evaluate numerically or symbolically.`,
+      },
+      {
+        prompt: `Using the core theorems of ${title}, determine the critical value or rate of change corresponding to the standard benchmark.`,
+        ans: `Critical Benchmark for ${title}`,
+        steps: `Step 1: Apply the foundational theorem of ${title}.\nStep 2: Differentiate, integrate, or factor as required.\nStep 3: Conclude with the exact benchmark value.`,
+      },
+      {
+        prompt: `Demonstrate the step-by-step solution for evaluating expressions governed by ${title}.`,
+        ans: `Step-by-Step Evaluation for ${title}`,
+        steps: `Step 1: Identify the operational form of ${title}.\nStep 2: Apply arithmetic and algebraic simplification.\nStep 3: Verify consistency with definition.`,
+      },
+      {
+        prompt: `Compute the exact result for the following case involving ${title}:\nGiven standard coefficients, determine the resulting magnitude or coordinate.`,
+        ans: `Calculated Exact Result`,
+        steps: `Step 1: State the formula for ${title}.\nStep 2: Substitute given coefficients.\nStep 3: Compute final arithmetic result.`,
+      },
+      {
+        prompt: `Given a continuous/linear model governed by ${title}, solve for the equilibrium or root condition.`,
+        ans: `Equilibrium Condition for ${title}`,
+        steps: `Step 1: Set governing relation to zero or target bound.\nStep 2: Solve algebraically.\nStep 3: Confirm root is in the domain of ${title}.`,
+      },
+      {
+        prompt: `Derive the closed-form expression resulting from applying ${title} to standard inputs.`,
+        ans: `Closed-Form Result for ${title}`,
+        steps: `Step 1: Expand standard input according to ${title}.\nStep 2: Cancel redundant terms.\nStep 3: Express final answer in standard form.`,
+      },
+      {
+        prompt: `Execute a full analytical evaluation of ${title} for the primary case and state the complete step-by-step reasoning.`,
+        ans: `Complete Analytical Result`,
+        steps: `Step 1: State definitions and theorems of ${title}.\nStep 2: Execute transformation/evaluation.\nStep 3: Verify accuracy.`,
+      },
+      {
+        prompt: `Calculate the final value when applying ${title} to the fundamental benchmark scenario.`,
+        ans: `Benchmark Value for ${title}`,
+        steps: `Step 1: Recall the standard formulation of ${title}.\nStep 2: Substitute benchmark values.\nStep 3: Simplify to obtain exact output.`,
+      },
     ];
-    const chosenPrompt = psTemplates[seedIndex % psTemplates.length];
-
+    const chosen = psTemplates[seedIndex % psTemplates.length];
     return {
       id,
-      prompt: chosenPrompt,
+      prompt: chosen.prompt,
       questionType: "problem_solving",
-      optionA: `Solution to ${title}`,
-      optionB: "Step 1: Set up the formula. Step 2: Perform calculations. Step 3: Simplify.",
+      optionA: chosen.ans,
+      optionB: chosen.steps,
       optionC: "problem_solving",
       optionD: "",
       correct: "A",
-      correctAnswerText: `Standard Solution for ${title}`,
-      explanation: `To solve problems in ${title}, apply the standard theorems and step-by-step analytical methods.`,
+      correctAnswerText: chosen.ans,
+      explanation: chosen.steps.replace(/\n/g, " → "),
       topicTitle: title,
     };
   }
 
-  // Default: Multiple Choice with 16 distinct prompt templates and diverse distractors
-  const mcTemplates = [
+  // 4. MULTIPLE CHOICE QUESTIONS (24+ Diverse Variants with Dynamically Shuffled Options)
+  const mcTemplates: Array<{
+    prompt: string;
+    correct: string;
+    distractors: [string, string, string];
+    exp: string;
+  }> = [
     {
-      prompt: `Which of the following statements is TRUE regarding ${title}?`,
-      correct: `${summary.slice(0, 95)}...`,
+      prompt: `What is the primary definition and mathematical meaning of ${title}?`,
+      correct: `${summary.slice(0, 110)}${summary.length > 110 ? "..." : ""}`,
       distractors: [
-        `It is completely unrelated to ${title} and has no practical mathematical application.`,
-        `It only applies to 1×1 matrices or constant zero functions.`,
-        `Its definition violates the fundamental linearity properties in mathematics.`,
+        `It is defined only for constant zero functions and 1×1 trivial identities.`,
+        `It is an arbitrary numerical guess with no formal algebraic foundation.`,
+        `It represents an operation that strictly contradicts standard linearity properties.`,
       ],
+      exp: `${title} is defined as: ${summary}`,
     },
     {
-      prompt: `What is the primary mathematical purpose or role of ${title}?`,
-      correct: `To analyze, decompose, or compute properties represented by: ${summary.slice(0, 85)}...`,
+      prompt: `What is the primary objective when studying or applying ${title}?`,
+      correct: `To systematically analyze and solve problems using: ${summary.slice(0, 95)}...`,
       distractors: [
-        `To replace all algebraic equations with arbitrary numerical guesses.`,
-        `To enforce that all matrices have zero determinant regardless of entries.`,
-        `To convert all non-linear functions into single-digit constants.`,
+        `To replace all analytical formulations with random floating point estimations.`,
+        `To enforce that all functions or matrices evaluate to zero regardless of inputs.`,
+        `To eliminate all algebraic variables and convert systems into single constants.`,
       ],
+      exp: `The primary objective of ${title} is grounded in: ${summary}`,
     },
     {
-      prompt: `In the study of ${title}, which theoretical condition must typically be met?`,
-      correct: `The mathematical system must satisfy the core axioms and definitions of ${title}.`,
+      prompt: `Which of the following statements is universally TRUE regarding ${title}?`,
+      correct: `It strictly adheres to the formal mathematical theorems and definitions of ${title}.`,
       distractors: [
-        `The determinant must always equal zero under all circumstances.`,
-        `The system must contain strictly negative integer coordinates only.`,
-        `The dimension of the vector space must be strictly less than 1.`,
+        `It violates the basic axioms of real numbers and vector space operations.`,
+        `It is only valid when all coordinate entries are negative integers.`,
+        `It cannot be computed or evaluated for systems with more than one variable.`,
       ],
-    },
-    {
-      prompt: `How is ${title} applied when solving complex mathematical or computational models?`,
-      correct: `By leveraging its specific theorems and structural properties: ${summary.slice(0, 80)}...`,
-      distractors: [
-        `By completely bypassing all matrix algebra and linear transformations.`,
-        `By assuming all variable components cancel out to positive infinity.`,
-        `By restricting calculations exclusively to trivial identity operations.`,
-      ],
-    },
-    {
-      prompt: `Which of the following best characterizes the mathematical behavior of ${title}?`,
-      correct: `${firstSentence.slice(0, 95)}...`,
-      distractors: [
-        `It produces non-deterministic random outputs with no algebraic consistency.`,
-        `It is defined only when matrices contain exclusively complex imaginary entries.`,
-        `It contradicts the fundamental theorem of linear algebra.`,
-      ],
-    },
-    {
-      prompt: `When working with ${title}, what fundamental property is consistently utilized?`,
-      correct: `Consistent preservation of algebraic structure and defined computational rules.`,
-      distractors: [
-        `Disregard for scalar multiplication and vector addition rules.`,
-        `The requirement that every square matrix must be singular.`,
-        `The assumption that matrix multiplication is always commutative (AB = BA).`,
-      ],
-    },
-    {
-      prompt: `Why is ${title} considered an essential topic in ${catLabel}?`,
-      correct: `It provides foundational insights and tools for solving advanced multi-variable problems.`,
-      distractors: [
-        `It is a legacy topic that is no longer valid in modern mathematics.`,
-        `It only serves to increase manual calculation time without practical benefit.`,
-        `It requires discarding standard matrix inversion and rank theorems.`,
-      ],
+      exp: `${title} strictly satisfies the formal definitions and properties in ${catLabel}.`,
     },
     {
       prompt: `Which of the following statements regarding ${title} is FALSE?`,
-      correct: `${title} cannot be applied or computed for systems with more than 2 dimensions.`,
+      correct: `${title} produces non-deterministic outputs that violate basic mathematical rules.`,
       distractors: [
-        `${title} adheres to standard linear algebraic principles.`,
-        `${title} can be used to analyze systems of equations and transformations.`,
-        `${title} is connected to properties such as rank, determinants, or decompositions.`,
+        `${title} conforms to standard principles in ${catLabel}.`,
+        `${title} can be rigorously verified using algebraic or analytical methods.`,
+        `${title} plays an important role in solving multi-step mathematical problems.`,
       ],
+      exp: `${title} is a fully rigorous and deterministic mathematical concept.`,
     },
     {
-      prompt: `In practical numerical computing, what advantage does understanding ${title} offer?`,
-      correct: `It enables efficient algorithms, avoids numerical instability, and leverages structure.`,
+      prompt: `Under standard mathematical conventions, what condition must be satisfied to apply ${title}?`,
+      correct: `The mathematical inputs must lie within the defined domain and satisfy governing hypotheses.`,
       distractors: [
-        `It guarantees that all algorithms execute in exactly 0 milliseconds.`,
-        `It eliminates the need for computer memory when storing large datasets.`,
-        `It replaces floating point arithmetic with arbitrary symbolic strings.`,
+        `All numerical coefficients must be prime numbers strictly greater than 50.`,
+        `The determinant of every associated matrix must be negative infinity.`,
+        `The underlying function must be completely discontinuous at every point.`,
       ],
+      exp: `Applying ${title} requires validating domain and initial hypotheses.`,
     },
     {
-      prompt: `What geometric or algebraic insight does ${title} provide?`,
-      correct: `Understanding how transformations scale, project, decompose, or preserve dimensions.`,
+      prompt: `What geometric or structural insight does ${title} provide in ${catLabel}?`,
+      correct: `Understanding the magnitude, orientation, rate of change, or transformation of the system.`,
       distractors: [
-        `Demonstrating that vector spaces have no meaningful geometric interpretation.`,
-        `Proving that parallel lines always intersect at a right angle in Euclidean space.`,
-        `Showing that eigenvalues do not exist for any square matrix.`,
+        `Showing that coordinate geometry has no valid representation in Euclidean space.`,
+        `Proving that parallel lines always intersect at right angles on the Cartesian plane.`,
+        `Demonstrating that geometric dimensions are completely meaningless in calculus.`,
       ],
+      exp: `${title} provides clear geometric and structural insights into the behavior of mathematical systems.`,
     },
     {
-      prompt: `Under standard mathematical definitions, ${title} is most closely associated with:`,
-      correct: `Core curriculum principles: ${summary.slice(0, 90)}...`,
+      prompt: `When evaluating an expression or equation involving ${title}, what is the standard first step?`,
+      correct: `Identify the governing formulas, check domain conditions, and set up the problem correctly.`,
       distractors: [
-        `Elementary high-school arithmetic only, with no advanced relevance.`,
-        `Unprovable conjectures that have no known algebraic applications.`,
-        `Algorithms that are strictly illegal in matrix decomposition theory.`,
+        `Multiply all terms by zero to eliminate the variable components.`,
+        `Disregard all operational signs and assume all outputs equal 1.`,
+        `Swap all independent and dependent variables arbitrarily.`,
       ],
+      exp: `Standard evaluation of ${title} begins with verifying conditions and formulating the governing relation.`,
     },
     {
-      prompt: `Which of the following criteria validates the application of ${title}?`,
-      correct: `The underlying matrices or equations must conform to the formal domain specifications.`,
+      prompt: `Why is ${title} considered an essential topic in ${catLabel}?`,
+      correct: `It establishes foundational analytical tools required for higher-level mathematics and applications.`,
       distractors: [
-        `All matrix entries must be prime numbers greater than 100.`,
-        `The matrix must have an equal number of positive and negative eigenvalues.`,
-        `The row rank and column rank must be strictly different numbers.`,
+        `It is an obsolete concept with no modern scientific or engineering relevance.`,
+        `It is taught solely to increase manual computation time without practical benefit.`,
+        `It replaces exact mathematics with unverified approximations.`,
       ],
+      exp: `${title} is essential because it builds foundational knowledge for solving complex problems.`,
+    },
+    {
+      prompt: `Which of the following best characterizes the algebraic behavior of ${title}?`,
+      correct: `${firstSentence.slice(0, 110)}${firstSentence.length > 110 ? "..." : ""}`,
+      distractors: [
+        `Outputs fluctuate randomly without any underlying mathematical pattern.`,
+        `It is defined exclusively for imaginary numbers with zero real part.`,
+        `It violates the fundamental laws of arithmetic and algebra.`,
+      ],
+      exp: `The behavior of ${title} is described as: ${firstSentence}`,
+    },
+    {
+      prompt: `What common pitfall or misconception should students avoid when working with ${title}?`,
+      correct: `Applying rules blindly without checking domain constraints and hypothesis conditions.`,
+      distractors: [
+        `Assuming that mathematical proofs must be backed by rigorous theorems.`,
+        `Checking work using alternative calculation methods.`,
+        `Keeping track of operational signs and arithmetic order of operations.`,
+      ],
+      exp: `Students must always check domain restrictions and hypotheses when applying ${title}.`,
+    },
+    {
+      prompt: `In computational mathematics, what advantage does mastering ${title} offer?`,
+      correct: `It enables efficient problem-solving, avoids instability, and leverages mathematical structure.`,
+      distractors: [
+        `It guarantees that all computational algorithms execute with zero memory footprint.`,
+        `It replaces symbolic mathematics with arbitrary guesses.`,
+        `It removes the need for numerical stability and error analysis.`,
+      ],
+      exp: `${title} provides the structural foundation for efficient and accurate computation.`,
+    },
+    {
+      prompt: `How does ${title} relate to the fundamental theorems of ${catLabel}?`,
+      correct: `It directly connects to core theorems, providing computational and theoretical support.`,
+      distractors: [
+        `It completely disproves the fundamental theorems of mathematics.`,
+        `It operates in total isolation with zero connection to other mathematical topics.`,
+        `It is incompatible with standard differentiation, integration, or matrix algebra.`,
+      ],
+      exp: `${title} is deeply connected to the core theorems and structure of ${catLabel}.`,
+    },
+    {
+      prompt: `Which of the following mathematical properties is consistently preserved in ${title}?`,
+      correct: `Consistency of algebraic structure and adherence to established mathematical axioms.`,
+      distractors: [
+        `The guarantee that every output must equal positive infinity.`,
+        `Arbitrary violation of equality and identity properties.`,
+        `Disregard for scalar multiplication and addition rules.`,
+      ],
+      exp: `${title} consistently preserves formal algebraic and axiomatic structure.`,
+    },
+    {
+      prompt: `When analyzing boundary cases or extreme values in ${title}, what principle applies?`,
+      correct: `Examine the behavior as inputs approach boundary limits or critical points.`,
+      distractors: [
+        `Ignore boundary conditions because mathematical rules never apply at limits.`,
+        `Assume boundary values always produce undefined or invalid expressions.`,
+        `Set all boundary values to negative one without evaluation.`,
+      ],
+      exp: `Boundary analysis in ${title} requires careful limit and domain evaluation.`,
+    },
+    {
+      prompt: `What is the standard notation or symbolic representation used for ${title}?`,
+      correct: `The standard formal mathematical notation established in modern textbooks for ${title}.`,
+      distractors: [
+        `Random punctuation marks chosen arbitrarily during calculation.`,
+        `Non-standard symbols that contradict conventional mathematical notation.`,
+        `Exclusive use of plain descriptive sentences without any mathematical symbols.`,
+      ],
+      exp: `${title} employs standard formal mathematical notation.`,
+    },
+    {
+      prompt: `In multi-step mathematical derivations, how does ${title} function as a sub-step?`,
+      correct: `It simplifies sub-expressions, isolates variables, or decomposes complex structures.`,
+      distractors: [
+        `It introduces unnecessary random variables that increase complexity.`,
+        `It causes all intermediate calculations to diverge to infinity.`,
+        `It forces the problem to be restarted from the beginning.`,
+      ],
+      exp: `${title} acts as an essential tool to simplify, isolate, and decompose problems.`,
+    },
+    {
+      prompt: `Which classification accurately reflects the role of ${title} in the ${catLabel} curriculum?`,
+      correct: `A core topic providing essential theoretical understanding and practical problem-solving methods.`,
+      distractors: [
+        `An optional recreational puzzle with no connection to the curriculum.`,
+        `A disputed conjecture that has been refuted by modern mathematicians.`,
+        `A computational shortcut that is strictly prohibited on exams.`,
+      ],
+      exp: `${title} is a core accredited topic in the ${catLabel} curriculum.`,
+    },
+    {
+      prompt: `When solving problems involving ${title}, what verifies that an answer is correct?`,
+      correct: `Substituting the solution back into the original equations and verifying boundary conditions.`,
+      distractors: [
+        `Checking whether the answer is written in a specific decorative font.`,
+        `Assuming the answer is correct if it is a positive whole number.`,
+        `Discarding negative results regardless of whether they satisfy the equation.`,
+      ],
+      exp: `Verification in ${title} requires testing the solution against the original equation and domain.`,
+    },
+    {
+      prompt: `What is the connection between ${title} and real-world modeling in science and engineering?`,
+      correct: `It models quantitative relationships, rates, transformations, or physical distributions.`,
+      distractors: [
+        `It has zero application in physical, biological, or technological sciences.`,
+        `It is used solely for generating artistic abstract line drawings.`,
+        `It can only be applied in theoretical universes where gravity does not exist.`,
+      ],
+      exp: `${title} provides mathematical tools to model real-world relationships and physical systems.`,
+    },
+    {
+      prompt: `How does scalar multiplication or scaling behave in the context of ${title}?`,
+      correct: `It scales components uniformly in accordance with the linearity or transformation properties of ${title}.`,
+      distractors: [
+        `It inverts the direction of time and invalidates all prior steps.`,
+        `It multiplies the output by an unpredictable random factor.`,
+        `It converts non-zero vectors into undefined empty sets.`,
+      ],
+      exp: `Scaling in ${title} adheres strictly to distributive and linearity properties.`,
+    },
+    {
+      prompt: `Under which condition would an expression involving ${title} be considered undefined?`,
+      correct: `When division by zero occurs or when an operation is performed outside the valid domain.`,
+      distractors: [
+        `Whenever the calculated numerical answer happens to be an even number.`,
+        `Whenever the independent variable x is equal to 1.`,
+        `Whenever the solution requires more than two steps of calculation.`,
+      ],
+      exp: `Expressions in ${title} are undefined when domain bounds or division-by-zero rules are violated.`,
+    },
+    {
+      prompt: `What is the relationship between ${title} and inverse mathematical operations?`,
+      correct: `It can often be inverted or reversed under appropriate one-to-one or non-singular conditions.`,
+      distractors: [
+        `It has no inverse operation under any circumstances.`,
+        `Its inverse operation always produces negative infinity.`,
+        `Inverting it reverses the fundamental laws of arithmetic.`,
+      ],
+      exp: `Under standard conditions, ${title} possesses well-defined inverse formulations.`,
+    },
+    {
+      prompt: `How does symmetry or parity apply to functions and expressions in ${title}?`,
+      correct: `It can be categorized as even, odd, symmetric, or skew-symmetric to simplify analysis.`,
+      distractors: [
+        `Symmetry is mathematically impossible for systems involving ${title}.`,
+        `All functions in ${title} must be asymmetric under all conditions.`,
+        `Parity only applies to integer prime numbers.`,
+      ],
+      exp: `Symmetry and parity are key structural properties analyzed in ${title}.`,
+    },
+    {
+      prompt: `What concluding takeaway best summarizes the mathematical importance of ${title}?`,
+      correct: `It provides systematic rules, geometric insights, and exact methods for rigorous analysis.`,
+      distractors: [
+        `It should be avoided in favor of random unproven approximations.`,
+        `It has been completely superseded by non-mathematical speculation.`,
+        `It only works for problems that have already been solved.`,
+      ],
+      exp: `${title} delivers rigorous systematic rules and exact analytical methods for mathematics.`,
     },
   ];
 
   const tpl = mcTemplates[seedIndex % mcTemplates.length];
-  return {
+  return createShuffledMC(
     id,
-    prompt: tpl.prompt,
-    questionType: "multiple_choice",
-    optionA: tpl.correct,
-    optionB: tpl.distractors[0],
-    optionC: tpl.distractors[1],
-    optionD: tpl.distractors[2],
-    correct: "A",
-    correctAnswerText: tpl.correct,
-    explanation: `${title} is characterized by: ${summary}`,
-    topicTitle: title,
-  };
+    tpl.prompt,
+    tpl.correct,
+    tpl.distractors,
+    tpl.exp,
+    title,
+    rng
+  );
 }
 
 /**
- * Main Quiz Generation Function
+ * Builds a comprehensive candidate question pool (50+ questions per topic)
+ * derived strictly and exclusively from the chosen topics.
+ */
+function buildTopicSpecificQuestionPool(
+  topics: TopicInput[],
+  category: "linear-algebra" | "calculus-1" | "calculus-2",
+  rng: () => number
+): GeneratedQuestion[] {
+  const pool: GeneratedQuestion[] = [];
+  const isCalc = category === "calculus-1" || category === "calculus-2";
+
+  // Process each chosen topic individually to ensure 100% topic relevance
+  topics.forEach((t) => {
+    const tTitle = t.title.toLowerCase();
+    const tId = t.id.toLowerCase();
+    const tLower = `${tTitle} ${tId}`;
+
+    // 1. Gather curated questions from CURATED_KNOWLEDGE_BASE matching THIS specific topic
+    CURATED_KNOWLEDGE_BASE.forEach((kb) => {
+      const catMatches = isCalc
+        ? kb.category === "calculus-1" || kb.category === "calculus-2"
+        : kb.category === category;
+
+      // STRICT matching: only if THIS topic matches kb keywords
+      const topicMatchesKb = kb.topicKeywords.some((kw) => {
+        const kwLower = kw.toLowerCase();
+        return tTitle.includes(kwLower) || tId.includes(kwLower);
+      });
+
+      if (catMatches && topicMatchesKb) {
+        kb.multipleChoice.forEach((mc, idx) => {
+          pool.push(
+            createShuffledMC(
+              `cur-mc-${t.id}-${idx}-${Math.floor(rng() * 100000)}`,
+              mc.prompt,
+              mc.correct === "A" ? mc.optionA : mc.correct === "B" ? mc.optionB : mc.correct === "C" ? mc.optionC : mc.optionD,
+              [
+                mc.correct === "A" ? mc.optionB : mc.optionA,
+                mc.correct === "C" ? mc.optionB : mc.optionC,
+                mc.correct === "D" ? mc.optionC : mc.optionD,
+              ],
+              mc.explanation,
+              t.title,
+              rng
+            )
+          );
+        });
+
+        kb.identification.forEach((ident, idx) => {
+          pool.push({
+            id: `cur-id-${t.id}-${idx}-${Math.floor(rng() * 100000)}`,
+            prompt: ident.prompt,
+            questionType: "identification",
+            optionA: ident.answer,
+            optionB: ident.acceptable.join(", "),
+            optionC: "identification",
+            optionD: "",
+            correct: "A",
+            correctAnswerText: ident.answer,
+            explanation: ident.explanation,
+            topicTitle: t.title,
+          });
+        });
+
+        kb.enumeration.forEach((enQ, idx) => {
+          const itemsStr = enQ.items.map((it, i) => `${i + 1}. ${it}`).join("\n");
+          pool.push({
+            id: `cur-en-${t.id}-${idx}-${Math.floor(rng() * 100000)}`,
+            prompt: enQ.prompt,
+            questionType: "enumeration",
+            optionA: itemsStr,
+            optionB: enQ.items.join("; "),
+            optionC: "enumeration",
+            optionD: "",
+            correct: "A",
+            correctAnswerText: itemsStr,
+            explanation: enQ.explanation,
+            topicTitle: t.title,
+          });
+        });
+
+        kb.problemSolving.forEach((ps, idx) => {
+          pool.push({
+            id: `cur-ps-${t.id}-${idx}-${Math.floor(rng() * 100000)}`,
+            prompt: ps.prompt,
+            questionType: "problem_solving",
+            optionA: ps.answer,
+            optionB: ps.solutionSteps.join("\n"),
+            optionC: "problem_solving",
+            optionD: "",
+            correct: "A",
+            correctAnswerText: ps.answer,
+            explanation: ps.solutionSteps.join(" → "),
+            topicTitle: t.title,
+          });
+        });
+      }
+    });
+
+    // 2. Specialized Topic Parameterized Math Problems
+    // (Only matched when the topic title strictly aligns, preventing any cross-topic leakage!)
+
+    // --- ABSOLUTE VALUE ---
+    if (tLower.includes("absolute") || tLower.includes("value")) {
+      const aVal = Math.floor(rng() * 8) + 2;
+      const bVal = Math.floor(rng() * 6) + 1;
+      pool.push(
+        createShuffledMC(
+          `param-abs-eq-${Math.floor(rng() * 100000)}`,
+          `Solve the absolute value equation: |x - ${aVal}| = ${bVal}.`,
+          `x = ${aVal + bVal} or x = ${aVal - bVal}`,
+          [`x = ${aVal + bVal}`, `x = ${bVal - aVal}`, `x = ${aVal * bVal}`],
+          `|x - a| = b implies x - a = b or x - a = -b, yielding x = ${aVal + bVal} or x = ${aVal - bVal}.`,
+          t.title,
+          rng
+        )
+      );
+
+      const n1 = Math.floor(rng() * 9) - 4;
+      const n2 = Math.floor(rng() * 9) + 2;
+      const dist = Math.abs(n1 - n2);
+      pool.push(
+        createShuffledMC(
+          `param-abs-dist-${Math.floor(rng() * 100000)}`,
+          `Calculate the distance between points ${n1} and ${n2} on the real number line using absolute value.`,
+          `${dist}`,
+          [`${dist + 2}`, `${-dist}`, `${dist * 2}`],
+          `Distance is given by |${n1} - (${n2})| = |${n1 - n2}| = ${dist}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- DISTANCE & MIDPOINT FORMULA ---
+    if (tLower.includes("distance") || tLower.includes("midpoint")) {
+      const x1 = Math.floor(rng() * 6);
+      const y1 = Math.floor(rng() * 6);
+      const dx = 3;
+      const dy = 4;
+      const x2 = x1 + dx;
+      const y2 = y1 + dy;
+      pool.push(
+        createShuffledMC(
+          `param-dist-${Math.floor(rng() * 100000)}`,
+          `Find the distance between the points (${x1}, ${y1}) and (${x2}, ${y2}).`,
+          `5`,
+          [`${dx + dy}`, `25`, `7`],
+          `d = √[(x₂ - x₁)² + (y₂ - y₁)²] = √[(${dx})² + (${dy})²] = √(9 + 16) = √25 = 5.`,
+          t.title,
+          rng
+        )
+      );
+
+      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
+      pool.push(
+        createShuffledMC(
+          `param-mid-${Math.floor(rng() * 100000)}`,
+          `Determine the midpoint of the line segment joining (${x1}, ${y1}) and (${x2}, ${y2}).`,
+          `(${mx}, ${my})`,
+          [`(${x2 - x1}, ${y2 - y1})`, `(${x1 * 2}, ${y1 * 2})`, `(${my}, ${mx})`],
+          `Midpoint M = ((x₁ + x₂)/2, (y₁ + y₂)/2) = (${mx}, ${my}).`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- EQUATIONS OF A LINE & SLOPE ---
+    if (tLower.includes("line") || tLower.includes("slope")) {
+      const m = Math.floor(rng() * 5) + 1;
+      const b = Math.floor(rng() * 6) - 2;
+      pool.push(
+        createShuffledMC(
+          `param-line-slope-${Math.floor(rng() * 100000)}`,
+          `What is the slope of a line perpendicular to y = ${m}x + ${b}?`,
+          `-1/${m}`,
+          [`${m}`, `1/${m}`, `-${m}`],
+          `Perpendicular lines have negative reciprocal slopes: m_perp = -1/m = -1/${m}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- DERIVATIVES / DIFFERENTIATION RULES ---
+    if (
+      tLower.includes("derivative") ||
+      tLower.includes("differenti") ||
+      tLower.includes("power rule") ||
+      tLower.includes("product rule") ||
+      tLower.includes("quotient rule") ||
+      tLower.includes("chain rule")
+    ) {
+      const coef = Math.floor(rng() * 5) + 2;
+      const exp = Math.floor(rng() * 3) + 2;
+      const constTerm = Math.floor(rng() * 6) + 1;
+      const ansDerivative = `${coef * exp}x^${exp - 1} + ${constTerm}`;
+      pool.push(
+        createShuffledMC(
+          `calc-deriv-${Math.floor(rng() * 100000)}`,
+          `Find the first derivative f'(x) for f(x) = ${coef}x^${exp} + ${constTerm}x - 7.`,
+          ansDerivative,
+          [`${coef}x^${exp - 1} + ${constTerm}`, `${coef * exp}x^${exp}`, `${coef * exp}x^${exp - 1} - 7`],
+          `By the power rule d/dx(c*x^n) = c*n*x^(n-1), d/dx(${coef}x^${exp} + ${constTerm}x - 7) = ${ansDerivative}.`,
+          t.title,
+          rng
+        )
+      );
+
+      const xPt = Math.floor(rng() * 3) + 1;
+      const slopeAns = 2 * coef * xPt;
+      pool.push(
+        createShuffledMC(
+          `calc-tangent-${Math.floor(rng() * 100000)}`,
+          `Determine the slope of the tangent line to y = ${coef}x² at x = ${xPt}.`,
+          `${slopeAns}`,
+          [`${slopeAns / 2}`, `${coef * xPt}`, `${slopeAns + 4}`],
+          `y' = 2(${coef})x = ${2 * coef}x. At x = ${xPt}, slope = ${2 * coef}(${xPt}) = ${slopeAns}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- LIMITS & CONTINUITY ---
+    if (tLower.includes("limit") || tLower.includes("continuity") || tLower.includes("continuous")) {
+      const cLim = Math.floor(rng() * 4) + 2;
+      const cSq = cLim * cLim;
+      pool.push(
+        createShuffledMC(
+          `calc-lim-${Math.floor(rng() * 100000)}`,
+          `Evaluate the limit: lim (x → ${cLim}) (x² - ${cSq}) / (x - ${cLim}).`,
+          `${2 * cLim}`,
+          [`${cLim}`, `0`, `Does not exist`],
+          `Factoring gives (x - ${cLim})(x + ${cLim}) / (x - ${cLim}) = x + ${cLim}. As x → ${cLim}, limit is ${2 * cLim}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- INTEGRALS & FTC ---
+    if (
+      tLower.includes("integral") ||
+      tLower.includes("integration") ||
+      tLower.includes("antiderivative") ||
+      tLower.includes("fundamental theorem")
+    ) {
+      const aInt = (Math.floor(rng() * 3) + 1) * 2;
+      const kUpper = Math.floor(rng() * 3) + 1;
+      const defIntAns = (aInt * kUpper * kUpper) / 2;
+      pool.push(
+        createShuffledMC(
+          `calc-int-${Math.floor(rng() * 100000)}`,
+          `Evaluate the definite integral: ∫ from 0 to ${kUpper} of (${aInt}x) dx.`,
+          `${defIntAns}`,
+          [`${defIntAns + 2}`, `${aInt * kUpper}`, `${defIntAns / 2}`],
+          `∫ ${aInt}x dx = [(${aInt}/2) x²] from 0 to ${kUpper} = (${aInt / 2})(${kUpper}²) = ${defIntAns}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- SERIES & SEQUENCES ---
+    if (tLower.includes("series") || tLower.includes("sequence") || tLower.includes("taylor") || tLower.includes("maclaurin")) {
+      const geoA = Math.floor(rng() * 4) + 2;
+      pool.push(
+        createShuffledMC(
+          `calc-series-geo-${Math.floor(rng() * 100000)}`,
+          `Compute the sum of the infinite geometric series: ${geoA} + ${geoA / 2} + ${geoA / 4} + ${geoA / 8} + ...`,
+          `${2 * geoA}`,
+          [`${geoA + 2}`, `Diverges`, `${geoA / 2}`],
+          `First term a = ${geoA}, common ratio r = 1/2. Sum S = a / (1 - r) = ${geoA} / (1 - 0.5) = ${2 * geoA}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- LINEAR ALGEBRA: MATRICES, DETERMINANTS & INVERSES ---
+    if (
+      tLower.includes("matrix") ||
+      tLower.includes("determinant") ||
+      tLower.includes("inverse") ||
+      tLower.includes("cramer")
+    ) {
+      const a = Math.floor(rng() * 6) - 2 || 2;
+      const b = Math.floor(rng() * 6) - 2 || 1;
+      const c = Math.floor(rng() * 6) - 2 || 3;
+      const d = Math.floor(rng() * 6) - 2 || 4;
+      const det = a * d - b * c;
+      pool.push(
+        createShuffledMC(
+          `param-det-${Math.floor(rng() * 100000)}`,
+          `Calculate the determinant of matrix A = [[${a}, ${b}], [${c}, ${d}]].`,
+          `${det}`,
+          [`${det + 2}`, `${a * d + b * c}`, `${-det}`],
+          `For [[a, b], [c, d]], det(A) = ad - bc = (${a})(${d}) - (${b})(${c}) = ${det}.`,
+          t.title,
+          rng
+        )
+      );
+
+      const tr = a + d;
+      pool.push(
+        createShuffledMC(
+          `param-tr-${Math.floor(rng() * 100000)}`,
+          `Find the trace of matrix M = [[${a}, ${b}], [${c}, ${d}]].`,
+          `${tr}`,
+          [`${tr - 1}`, `${a * d}`, `${b + c}`],
+          `trace(M) = ${a} + ${d} = ${tr}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- LINEAR ALGEBRA: VECTORS, DOT PRODUCT, CROSS PRODUCT ---
+    if (
+      tLower.includes("vector") ||
+      tLower.includes("dot product") ||
+      tLower.includes("cross product") ||
+      tLower.includes("orthogon")
+    ) {
+      const u1 = Math.floor(rng() * 5) + 1;
+      const u2 = Math.floor(rng() * 5) - 2;
+      const v1 = Math.floor(rng() * 5) - 1;
+      const v2 = Math.floor(rng() * 5) + 2;
+      const dot = u1 * v1 + u2 * v2;
+      pool.push(
+        createShuffledMC(
+          `param-dot-${Math.floor(rng() * 100000)}`,
+          `Compute the dot product u · v for vectors u = (${u1}, ${u2}) and v = (${v1}, ${v2}).`,
+          `${dot}`,
+          [`${dot + 3}`, `${u1 * v2 + u2 * v1}`, `${dot - 2}`],
+          `u · v = (${u1})(${v1}) + (${u2})(${v2}) = ${dot}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // --- LINEAR ALGEBRA: EIGENVALUES & DIAGONALIZATION ---
+    if (tLower.includes("eigen") || tLower.includes("diagonal")) {
+      const ev1 = Math.floor(rng() * 5) + 1;
+      const ev2 = Math.floor(rng() * 5) + 3;
+      pool.push(
+        createShuffledMC(
+          `param-eigen-${Math.floor(rng() * 100000)}`,
+          `What are the eigenvalues of the diagonal matrix D = [[${ev1}, 0], [0, ${ev2}]]?`,
+          `λ₁ = ${ev1}, λ₂ = ${ev2}`,
+          [`λ₁ = ${ev1 + ev2}, λ₂ = 0`, `λ₁ = ${ev1 * ev2}, λ₂ = 1`, `λ₁ = -${ev1}, λ₂ = -${ev2}`],
+          `The eigenvalues of a diagonal matrix are simply its main diagonal entries: ${ev1} and ${ev2}.`,
+          t.title,
+          rng
+        )
+      );
+    }
+
+    // 3. Deep Topic-Specific Synthesizer (Generates 35+ unique questions per topic)
+    for (let sIdx = 0; sIdx < 28; sIdx++) {
+      pool.push(synthesizeQuestionFromTopic(t, "multiple_choice", sIdx, rng));
+      if (sIdx < 12) {
+        pool.push(synthesizeQuestionFromTopic(t, "identification", sIdx, rng));
+        pool.push(synthesizeQuestionFromTopic(t, "enumeration", sIdx, rng));
+        pool.push(synthesizeQuestionFromTopic(t, "problem_solving", sIdx, rng));
+      }
+    }
+  });
+
+  return pool;
+}
+
+/**
+ * Main quiz question generator used by the Admin "Add Quiz" workspace.
+ * Generates questions strictly based on the chosen topics, ensuring zero cross-topic leakage.
  */
 export function generateQuizQuestions(
   selectedTopics: TopicInput[],
   category: "linear-algebra" | "calculus-1" | "calculus-2",
   itemCount: number,
-  questionType: QuizQuestionType
+  questionType: QuizQuestionType,
+  randomSeed?: number
 ): GeneratedQuestion[] {
-  const result: GeneratedQuestion[] = [];
   const targetCount = Math.max(1, itemCount);
 
-  // 1. Gather curated questions matching the selected topics
-  const isCalculus = category === "calculus-1" || category === "calculus-2";
-  const matchingCurated: CuratedTopicQuestions[] = [];
-  CURATED_KNOWLEDGE_BASE.forEach((kb) => {
-    const isMatchingCategory =
-      isCalculus
-        ? (kb.category === "calculus-1" || kb.category === "calculus-2")
-        : kb.category === category;
-    if (isMatchingCategory) {
-      const isRelevant = selectedTopics.some((t) =>
-        matchesTopic(t.title, kb.topicKeywords)
-      );
-      if (isRelevant) {
-        matchingCurated.push(kb);
-      }
+  // If no topics selected, use all topics in this category
+  const effectiveTopics =
+    selectedTopics.length > 0
+      ? selectedTopics
+      : getAllCombinedTopics().filter((t) =>
+          category === "calculus-1" || category === "calculus-2"
+            ? t.category === "calculus-1" || t.category === "calculus-2"
+            : t.category === category
+        );
+
+  const seedNum = randomSeed ?? (Date.now() + Math.floor(Math.random() * 1000000));
+  const rng = createSeededRng(`admin_quiz_gen_${seedNum}`);
+
+  // Build the rich candidate pool strictly for effectiveTopics
+  const pool = buildTopicSpecificQuestionPool(effectiveTopics, category, rng);
+
+  // Filter pool by the requested question type
+  let matchingCandidates = pool.filter(
+    (q) => (q.questionType || "multiple_choice") === questionType
+  );
+
+  // If fewer candidates than needed, dynamically generate more on the fly
+  if (matchingCandidates.length < targetCount) {
+    let idx = matchingCandidates.length;
+    while (matchingCandidates.length < targetCount + 10) {
+      const t = effectiveTopics[idx % effectiveTopics.length];
+      matchingCandidates.push(synthesizeQuestionFromTopic(t, questionType, idx, rng));
+      idx++;
     }
-  });
-
-  // If no specific topic matched, match by category
-  if (matchingCurated.length === 0) {
-    CURATED_KNOWLEDGE_BASE.filter((kb) =>
-      isCalculus
-        ? (kb.category === "calculus-1" || kb.category === "calculus-2")
-        : kb.category === category
-    ).forEach((kb) => {
-      matchingCurated.push(kb);
-    });
   }
 
-  // 2. Pool curated questions of the requested type
-  const curatedPool: GeneratedQuestion[] = [];
+  // Shuffle pool using PRNG
+  const shuffled = seededShuffle(matchingCandidates, rng);
 
-  matchingCurated.forEach((kb) => {
-    const topicLabel = kb.topicKeywords[0]
-      ? kb.topicKeywords[0].charAt(0).toUpperCase() + kb.topicKeywords[0].slice(1)
-      : "Topic";
+  // Deduplicate by prompt text to ensure every question is distinct
+  const seenPrompts = new Set<string>();
+  const finalQuestions: GeneratedQuestion[] = [];
 
-    if (questionType === "multiple_choice") {
-      kb.multipleChoice.forEach((mc, idx) => {
-        const correctText =
-          mc.correct === "A"
-            ? mc.optionA
-            : mc.correct === "B"
-            ? mc.optionB
-            : mc.correct === "C"
-            ? mc.optionC
-            : mc.optionD;
-
-        curatedPool.push({
-          id: `mc-${idx}-${Math.random().toString(36).slice(2, 7)}`,
-          prompt: mc.prompt,
-          questionType: "multiple_choice",
-          optionA: mc.optionA,
-          optionB: mc.optionB,
-          optionC: mc.optionC,
-          optionD: mc.optionD,
-          correct: mc.correct,
-          correctAnswerText: correctText,
-          explanation: mc.explanation,
-          topicTitle: topicLabel,
-        });
-      });
-    } else if (questionType === "identification") {
-      kb.identification.forEach((ident, idx) => {
-        curatedPool.push({
-          id: `id-${idx}-${Math.random().toString(36).slice(2, 7)}`,
-          prompt: ident.prompt,
-          questionType: "identification",
-          optionA: ident.answer,
-          optionB: ident.acceptable.join(", "),
-          optionC: "identification",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: ident.answer,
-          explanation: ident.explanation,
-          topicTitle: topicLabel,
-        });
-      });
-    } else if (questionType === "enumeration") {
-      kb.enumeration.forEach((enumQ, idx) => {
-        const itemsStr = enumQ.items.map((it, i) => `${i + 1}. ${it}`).join("\n");
-        curatedPool.push({
-          id: `en-${idx}-${Math.random().toString(36).slice(2, 7)}`,
-          prompt: enumQ.prompt,
-          questionType: "enumeration",
-          optionA: itemsStr,
-          optionB: enumQ.items.join("; "),
-          optionC: "enumeration",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: itemsStr,
-          explanation: enumQ.explanation,
-          topicTitle: topicLabel,
-        });
-      });
-    } else if (questionType === "problem_solving") {
-      kb.problemSolving.forEach((ps, idx) => {
-        curatedPool.push({
-          id: `ps-${idx}-${Math.random().toString(36).slice(2, 7)}`,
-          prompt: ps.prompt,
-          questionType: "problem_solving",
-          optionA: ps.answer,
-          optionB: ps.solutionSteps.join("\n"),
-          optionC: "problem_solving",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: ps.answer,
-          explanation: ps.solutionSteps.join(" → "),
-          topicTitle: topicLabel,
-        });
-      });
+  for (const q of shuffled) {
+    if (!seenPrompts.has(q.prompt)) {
+      seenPrompts.add(q.prompt);
+      finalQuestions.push(q);
+      if (finalQuestions.length >= targetCount) break;
     }
-  });
-
-  // Shuffle curated pool
-  const shuffledCurated = [...curatedPool].sort(() => 0.5 - Math.random());
-
-  // 3. Fill with curated questions first
-  for (let i = 0; i < shuffledCurated.length && result.length < targetCount; i++) {
-    result.push(shuffledCurated[i]);
   }
 
-  // 4. If we still need more questions, synthesize from the selected topics
-  let topicIdx = 0;
-  const effectiveTopics = selectedTopics.length > 0 ? selectedTopics : [
-    {
-      id: "general",
-      title: category === "linear-algebra" ? "Linear Algebra" : category === "calculus-1" ? "Calculus 1" : "Calculus 2",
-      category,
-      summary: "Core mathematical methods and applications.",
-      details: "",
-    },
-  ];
-
-  while (result.length < targetCount) {
-    const currentTopic = effectiveTopics[topicIdx % effectiveTopics.length];
-    const synthesized = synthesizeQuestionFromTopic(
-      currentTopic,
-      questionType,
-      result.length
-    );
-    result.push(synthesized);
-    topicIdx++;
+  // If still need padding, synthesize unique numbered variations
+  let padIdx = 0;
+  while (finalQuestions.length < targetCount) {
+    const t = effectiveTopics[padIdx % effectiveTopics.length];
+    const extraQ = synthesizeQuestionFromTopic(t, questionType, padIdx + 150, rng);
+    finalQuestions.push(extraQ);
+    padIdx++;
   }
 
-  return result.slice(0, targetCount);
+  return finalQuestions.slice(0, targetCount);
 }
 
 /**
- * Regenerate a single question based on topics
+ * Regenerates a single question draft strictly based on the chosen topics
  */
 export function regenerateSingleQuestion(
   currentQuestion: GeneratedQuestion,
@@ -1124,8 +1724,7 @@ export function regenerateSingleQuestion(
   category: "linear-algebra" | "calculus-1" | "calculus-2",
   type: QuizQuestionType
 ): GeneratedQuestion {
-  const generatedBatch = generateQuizQuestions(selectedTopics, category, 5, type);
-  // Pick one whose prompt doesn't match the current prompt
+  const generatedBatch = generateQuizQuestions(selectedTopics, category, 15, type);
   const different = generatedBatch.find((q) => q.prompt !== currentQuestion.prompt);
   return different || generatedBatch[0];
 }
@@ -1260,513 +1859,6 @@ export function resolveTopicsForQuiz(
   return allTopics.filter((t) => t.category === "linear-algebra");
 }
 
-/**
- * Builds a large candidate question pool (100+ questions) derived strictly from the
- * specified topics, blending curated items, section-specific concepts, and parameterized math calculations.
- */
-function buildTopicSpecificQuestionPool(
-  topics: TopicInput[],
-  category: "linear-algebra" | "calculus-1" | "calculus-2",
-  rng: () => number
-): GeneratedQuestion[] {
-  const pool: GeneratedQuestion[] = [];
-  const topicTitles = topics.map((t) => t.title.toLowerCase());
-  const topicIds = topics.map((t) => t.id.toLowerCase());
-  const isCalc = category === "calculus-1" || category === "calculus-2";
-
-  const matchesAnyTopic = (keywords: string[]) =>
-    keywords.some((kw) => {
-      const lower = kw.toLowerCase();
-      return (
-        topicTitles.some((t) => t.includes(lower) || lower.includes(t)) ||
-        topicIds.some((id) => id.includes(lower) || lower.includes(id))
-      );
-    });
-
-  // 1. Gather curated questions from CURATED_KNOWLEDGE_BASE matching topics
-  CURATED_KNOWLEDGE_BASE.forEach((kb) => {
-    const catMatches = isCalc
-      ? kb.category === "calculus-1" || kb.category === "calculus-2"
-      : kb.category === category;
-
-    if (catMatches && (matchesAnyTopic(kb.topicKeywords) || topics.length >= 10)) {
-      const label = kb.topicKeywords[0]
-        ? kb.topicKeywords[0].charAt(0).toUpperCase() + kb.topicKeywords[0].slice(1)
-        : "Topic";
-
-      kb.multipleChoice.forEach((mc, idx) => {
-        pool.push({
-          id: `cur-mc-${idx}-${Math.floor(rng() * 100000)}`,
-          prompt: mc.prompt,
-          questionType: "multiple_choice",
-          optionA: mc.optionA,
-          optionB: mc.optionB,
-          optionC: mc.optionC,
-          optionD: mc.optionD,
-          correct: mc.correct,
-          correctAnswerText:
-            mc.correct === "A"
-              ? mc.optionA
-              : mc.correct === "B"
-              ? mc.optionB
-              : mc.correct === "C"
-              ? mc.optionC
-              : mc.optionD,
-          explanation: mc.explanation,
-          topicTitle: label,
-        });
-      });
-
-      kb.identification.forEach((ident, idx) => {
-        pool.push({
-          id: `cur-id-${idx}-${Math.floor(rng() * 100000)}`,
-          prompt: ident.prompt,
-          questionType: "identification",
-          optionA: ident.answer,
-          optionB: ident.acceptable.join(", "),
-          optionC: "identification",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: ident.answer,
-          explanation: ident.explanation,
-          topicTitle: label,
-        });
-      });
-
-      kb.enumeration.forEach((en, idx) => {
-        const itemsStr = en.items.map((it, i) => `${i + 1}. ${it}`).join("\n");
-        pool.push({
-          id: `cur-en-${idx}-${Math.floor(rng() * 100000)}`,
-          prompt: en.prompt,
-          questionType: "enumeration",
-          optionA: itemsStr,
-          optionB: en.items.join("; "),
-          optionC: "enumeration",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: itemsStr,
-          explanation: en.explanation,
-          topicTitle: label,
-        });
-      });
-
-      kb.problemSolving.forEach((ps, idx) => {
-        pool.push({
-          id: `cur-ps-${idx}-${Math.floor(rng() * 100000)}`,
-          prompt: ps.prompt,
-          questionType: "problem_solving",
-          optionA: ps.answer,
-          optionB: ps.solutionSteps.join("\n"),
-          optionC: "problem_solving",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: ps.answer,
-          explanation: ps.solutionSteps.join(" → "),
-          topicTitle: label,
-        });
-      });
-    }
-  });
-
-  // 2. Generate Parameterized Problems with numbers determined by student's RNG
-  topics.forEach((t) => {
-    const tLower = (t.title + " " + (t.id || "")).toLowerCase();
-
-    // LINEAR ALGEBRA PARAMETERIZED QUESTIONS
-    if (category === "linear-algebra" || t.category === "linear-algebra") {
-      // Determinant calculation with random entries
-      if (tLower.includes("matrix") || tLower.includes("determinant") || tLower.includes("algebra") || tLower.includes("advanced")) {
-        const a = Math.floor(rng() * 7) - 3 || 2;
-        const b = Math.floor(rng() * 7) - 3 || 1;
-        const c = Math.floor(rng() * 7) - 3 || 3;
-        const d = Math.floor(rng() * 7) - 3 || 4;
-        const det = a * d - b * c;
-        pool.push({
-          id: `param-det-${Math.floor(rng() * 100000)}`,
-          prompt: `Calculate the determinant of matrix A = [[${a}, ${b}], [${c}, ${d}]].`,
-          questionType: "multiple_choice",
-          optionA: `${det}`,
-          optionB: `${det + 2}`,
-          optionC: `${a * d + b * c}`,
-          optionD: `${-det}`,
-          correct: "A",
-          correctAnswerText: `${det}`,
-          explanation: `For a 2×2 matrix [[a, b], [c, d]], det(A) = ad - bc = (${a})(${d}) - (${b})(${c}) = ${det}.`,
-          topicTitle: t.title,
-        });
-
-        const tr = a + d;
-        pool.push({
-          id: `param-tr-${Math.floor(rng() * 100000)}`,
-          prompt: `Find the trace of matrix M = [[${a}, ${b}], [${c}, ${d}]].`,
-          questionType: "multiple_choice",
-          optionA: `${tr}`,
-          optionB: `${tr - 1}`,
-          optionC: `${a * d}`,
-          optionD: `${b + c}`,
-          correct: "A",
-          correctAnswerText: `${tr}`,
-          explanation: `The trace of a square matrix is the sum of main diagonal elements: trace(M) = ${a} + ${d} = ${tr}.`,
-          topicTitle: t.title,
-        });
-
-        // Transpose question
-        pool.push({
-          id: `param-trans-${Math.floor(rng() * 100000)}`,
-          prompt: `If A = [[${a}, ${b}], [${c}, ${d}]], what is entry (2, 1) of the transpose Aᵀ?`,
-          questionType: "multiple_choice",
-          optionA: `${b}`,
-          optionB: `${c}`,
-          optionC: `${a}`,
-          optionD: `${d}`,
-          correct: "A",
-          correctAnswerText: `${b}`,
-          explanation: `The transpose interchanges rows and columns: (Aᵀ)₂₁ = A₁₂ = ${b}.`,
-          topicTitle: t.title,
-        });
-
-        // Scalar multiplication question
-        const scalarK = Math.floor(rng() * 4) + 2;
-        pool.push({
-          id: `param-scalar-${Math.floor(rng() * 100000)}`,
-          prompt: `For matrix A = [[${a}, ${b}], [${c}, ${d}]], compute entry (1, 1) of matrix ${scalarK}A.`,
-          questionType: "multiple_choice",
-          optionA: `${scalarK * a}`,
-          optionB: `${scalarK + a}`,
-          optionC: `${scalarK * b}`,
-          optionD: `${a}`,
-          correct: "A",
-          correctAnswerText: `${scalarK * a}`,
-          explanation: `Scalar multiplication multiplies each entry by ${scalarK}: ${scalarK} * ${a} = ${scalarK * a}.`,
-          topicTitle: t.title,
-        });
-
-        // Problem solving determinant
-        pool.push({
-          id: `param-ps-det-${Math.floor(rng() * 100000)}`,
-          prompt: `Given matrix M = [[${a}, ${b}], [${c}, ${d}]], compute det(M).`,
-          questionType: "problem_solving",
-          optionA: `${det}`,
-          optionB: `det = (${a})(${d}) - (${b})(${c}) = ${det}`,
-          optionC: "problem_solving",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: `${det}`,
-          explanation: `det(M) = ${a} * ${d} - ${b} * ${c} = ${det}`,
-          topicTitle: t.title,
-        });
-      }
-
-      // Matrix Operations (Transpose, Inverses, Rank, Decompositions)
-      if (tLower.includes("matrix") || tLower.includes("advanced") || tLower.includes("inverse") || tLower.includes("rank") || tLower.includes("algebra")) {
-        // Upper triangular eigenvalues
-        const ev1 = Math.floor(rng() * 7) + 1;
-        const ev2 = Math.floor(rng() * 7) + 2;
-        const offDiag = Math.floor(rng() * 5) + 1;
-        pool.push({
-          id: `param-eig-${Math.floor(rng() * 100000)}`,
-          prompt: `Find the eigenvalues of the upper triangular matrix T = [[${ev1}, ${offDiag}], [0, ${ev2}]].`,
-          questionType: "multiple_choice",
-          optionA: `λ₁ = ${ev1}, λ₂ = ${ev2}`,
-          optionB: `λ₁ = ${ev1 + offDiag}, λ₂ = ${ev2}`,
-          optionC: `λ₁ = 0, λ₂ = ${ev1 * ev2}`,
-          optionD: `λ₁ = ${ev1 - ev2}, λ₂ = ${offDiag}`,
-          correct: "A",
-          correctAnswerText: `λ₁ = ${ev1}, λ₂ = ${ev2}`,
-          explanation: `The eigenvalues of any triangular matrix are simply its main diagonal entries: ${ev1} and ${ev2}.`,
-          topicTitle: t.title,
-        });
-
-        // Rank-nullity calculation
-        const colsN = Math.floor(rng() * 3) + 4; // 4 to 6
-        const rankR = Math.floor(rng() * 3) + 2; // 2 to 4
-        const nullityAns = colsN - rankR;
-        pool.push({
-          id: `param-rn-${Math.floor(rng() * 100000)}`,
-          prompt: `By the Rank-Nullity Theorem, if matrix A has ${colsN} columns and rank(A) = ${rankR}, what is nullity(A)?`,
-          questionType: "multiple_choice",
-          optionA: `${nullityAns}`,
-          optionB: `${colsN + rankR}`,
-          optionC: `${rankR}`,
-          optionD: `${nullityAns + 2}`,
-          correct: "A",
-          correctAnswerText: `${nullityAns}`,
-          explanation: `Rank-Nullity Theorem: rank(A) + nullity(A) = number of columns (${colsN}). Nullity = ${colsN} - ${rankR} = ${nullityAns}.`,
-          topicTitle: t.title,
-        });
-
-        // Determinant scaling property
-        const dimN = 2;
-        const cFactor = Math.floor(rng() * 3) + 2;
-        const origDet = Math.floor(rng() * 4) + 2;
-        const scaledDet = Math.pow(cFactor, dimN) * origDet;
-        pool.push({
-          id: `param-det-scale-${Math.floor(rng() * 100000)}`,
-          prompt: `If A is a 2×2 matrix with det(A) = ${origDet}, what is det(${cFactor}A)?`,
-          questionType: "multiple_choice",
-          optionA: `${scaledDet}`,
-          optionB: `${cFactor * origDet}`,
-          optionC: `${origDet}`,
-          optionD: `${scaledDet + cFactor}`,
-          correct: "A",
-          correctAnswerText: `${scaledDet}`,
-          explanation: `For an n×n matrix, det(cA) = cⁿ · det(A). Here (c²) · det(A) = (${cFactor}²)(${origDet}) = ${scaledDet}.`,
-          topicTitle: t.title,
-        });
-
-        pool.push({
-          id: `concept-inv-${Math.floor(rng() * 100000)}`,
-          prompt: `Which of the following conditions is necessary and sufficient for a square matrix A to be invertible?`,
-          questionType: "multiple_choice",
-          optionA: `det(A) ≠ 0 and rank(A) equals the number of columns`,
-          optionB: `det(A) = 0 and trace(A) > 0`,
-          optionC: `A is symmetric and has all non-negative entries`,
-          optionD: `A has at least one row consisting entirely of zeros`,
-          correct: "A",
-          correctAnswerText: `det(A) ≠ 0 and rank(A) equals the number of columns`,
-          explanation: `A square matrix A is invertible (nonsingular) if and only if its determinant is non-zero and it has full rank.`,
-          topicTitle: t.title,
-        });
-
-        pool.push({
-          id: `concept-rank-${Math.floor(rng() * 100000)}`,
-          prompt: `According to the Rank-Nullity Theorem, for any m×n matrix A:`,
-          questionType: "multiple_choice",
-          optionA: `rank(A) + nullity(A) = n (number of columns)`,
-          optionB: `rank(A) + nullity(A) = m (number of rows)`,
-          optionC: `rank(A) × nullity(A) = det(A)`,
-          optionD: `rank(A) = nullity(A) for all matrices`,
-          correct: "A",
-          correctAnswerText: `rank(A) + nullity(A) = n (number of columns)`,
-          explanation: `The fundamental Rank-Nullity theorem states that dim(col(A)) + dim(null(A)) = n.`,
-          topicTitle: t.title,
-        });
-
-        pool.push({
-          id: `concept-sparse-${Math.floor(rng() * 100000)}`,
-          prompt: `What is the primary motivation for using sparse matrix representations (such as CSR or CSC formats) in computational linear algebra?`,
-          questionType: "multiple_choice",
-          optionA: `To save memory and accelerate operations by storing only non-zero entries`,
-          optionB: `To ensure the matrix is always invertible`,
-          optionC: `To force all eigenvalues to be real and positive`,
-          optionD: `To eliminate the need for matrix transpose operations`,
-          correct: "A",
-          correctAnswerText: `To save memory and accelerate operations by storing only non-zero entries`,
-          explanation: `Sparse matrices contain predominantly zeros; sparse formats store only non-zero elements and their indices.`,
-          topicTitle: t.title,
-        });
-
-        pool.push({
-          id: `concept-cond-${Math.floor(rng() * 100000)}`,
-          prompt: `In numerical linear algebra, what does a very large condition number κ(A) indicate about the system Ax = b?`,
-          questionType: "multiple_choice",
-          optionA: `The system is ill-conditioned; small perturbations in b cause large errors in x`,
-          optionB: `The system is well-conditioned and guaranteed to converge in one iteration`,
-          optionC: `Matrix A is an identity matrix`,
-          optionD: `The determinant of A is strictly greater than 1,000`,
-          correct: "A",
-          correctAnswerText: `The system is ill-conditioned; small perturbations in b cause large errors in x`,
-          explanation: `A large condition number indicates that solutions to Ax = b are sensitive to numerical errors.`,
-          topicTitle: t.title,
-        });
-
-        pool.push({
-          id: `ident-lu-${Math.floor(rng() * 100000)}`,
-          prompt: `Identify the matrix decomposition method that factors a matrix A into the product of a lower triangular matrix and an upper triangular matrix.`,
-          questionType: "identification",
-          optionA: `LU Decomposition`,
-          optionB: `lu decomposition, lu factorization, lu`,
-          optionC: "identification",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: `LU Decomposition`,
-          explanation: `LU decomposition factors A into L (unit lower triangular) and U (upper triangular).`,
-          topicTitle: t.title,
-        });
-
-        pool.push({
-          id: `ident-ortho-${Math.floor(rng() * 100000)}`,
-          prompt: `Identify the type of square matrix Q that satisfies the property QᵀQ = QQᵀ = I.`,
-          questionType: "identification",
-          optionA: `Orthogonal Matrix`,
-          optionB: `orthogonal, orthogonal matrix`,
-          optionC: "identification",
-          optionD: "",
-          correct: "A",
-          correctAnswerText: `Orthogonal Matrix`,
-          explanation: `An orthogonal matrix has orthonormal columns and rows, so its transpose equals its inverse.`,
-          topicTitle: t.title,
-        });
-      }
-
-      // Vectors & Dot Product
-      if (tLower.includes("vector") || tLower.includes("space") || tLower.includes("orthogonal") || tLower.includes("algebra")) {
-        const u1 = Math.floor(rng() * 5) + 1;
-        const u2 = Math.floor(rng() * 5) - 2;
-        const v1 = Math.floor(rng() * 5) - 2;
-        const v2 = Math.floor(rng() * 5) + 1;
-        const dot = u1 * v1 + u2 * v2;
-        pool.push({
-          id: `param-dot-${Math.floor(rng() * 100000)}`,
-          prompt: `Compute the dot product of vectors u = (${u1}, ${u2}) and v = (${v1}, ${v2}).`,
-          questionType: "multiple_choice",
-          optionA: `${dot}`,
-          optionB: `${dot + 3}`,
-          optionC: `${u1 * v2 + u2 * v1}`,
-          optionD: `${dot - 2}`,
-          correct: "A",
-          correctAnswerText: `${dot}`,
-          explanation: `u · v = (${u1})(${v1}) + (${u2})(${v2}) = ${dot}.`,
-          topicTitle: t.title,
-        });
-
-        const normSq = u1 * u1 + u2 * u2;
-        pool.push({
-          id: `param-norm-${Math.floor(rng() * 100000)}`,
-          prompt: `Calculate the squared Euclidean norm ||u||² for vector u = (${u1}, ${u2}).`,
-          questionType: "multiple_choice",
-          optionA: `${normSq}`,
-          optionB: `${normSq + 1}`,
-          optionC: `${u1 + u2}`,
-          optionD: `${normSq * 2}`,
-          correct: "A",
-          correctAnswerText: `${normSq}`,
-          explanation: `||u||² = (${u1})² + (${u2})² = ${u1 * u1} + ${u2 * u2} = ${normSq}.`,
-          topicTitle: t.title,
-        });
-      }
-    }
-
-    // CALCULUS PARAMETERIZED QUESTIONS
-    if (isCalc || t.category === "calculus-1" || t.category === "calculus-2") {
-      // Derivatives / Power Rule
-      if (tLower.includes("derivative") || tLower.includes("differentiation") || tLower.includes("tangent") || tLower.includes("extrema") || tLower.includes("calculus") || tLower.includes("analytic")) {
-        const coef = Math.floor(rng() * 5) + 2;
-        const exp = Math.floor(rng() * 3) + 2;
-        const constTerm = Math.floor(rng() * 6) + 1;
-        const ansDerivative = `${coef * exp}x^${exp - 1} + ${constTerm}`;
-        pool.push({
-          id: `calc-deriv-${Math.floor(rng() * 100000)}`,
-          prompt: `Find the first derivative f'(x) for f(x) = ${coef}x^${exp} + ${constTerm}x - 7.`,
-          questionType: "multiple_choice",
-          optionA: ansDerivative,
-          optionB: `${coef}x^${exp - 1} + ${constTerm}`,
-          optionC: `${coef * exp}x^${exp}`,
-          optionD: `${coef * exp}x^${exp - 1} - 7`,
-          correct: "A",
-          correctAnswerText: ansDerivative,
-          explanation: `By the power rule d/dx(c*x^n) = c*n*x^(n-1), d/dx(${coef}x^${exp} + ${constTerm}x - 7) = ${ansDerivative}.`,
-          topicTitle: t.title,
-        });
-
-        // Limit problem
-        const cLim = Math.floor(rng() * 5) + 2;
-        const cSq = cLim * cLim;
-        pool.push({
-          id: `calc-lim-${Math.floor(rng() * 100000)}`,
-          prompt: `Evaluate the limit: lim (x → ${cLim}) (x² - ${cSq}) / (x - ${cLim}).`,
-          questionType: "multiple_choice",
-          optionA: `${2 * cLim}`,
-          optionB: `${cLim}`,
-          optionC: `0`,
-          optionD: `Does not exist`,
-          correct: "A",
-          correctAnswerText: `${2 * cLim}`,
-          explanation: `Factoring gives (x - ${cLim})(x + ${cLim}) / (x - ${cLim}) = x + ${cLim}. As x → ${cLim}, limit is ${cLim} + ${cLim} = ${2 * cLim}.`,
-          topicTitle: t.title,
-        });
-
-        // Tangent line slope
-        const xPt = Math.floor(rng() * 4) + 1;
-        const slopeAns = 2 * coef * xPt;
-        pool.push({
-          id: `calc-tangent-${Math.floor(rng() * 100000)}`,
-          prompt: `Determine the slope of the tangent line to y = ${coef}x² at x = ${xPt}.`,
-          questionType: "multiple_choice",
-          optionA: `${slopeAns}`,
-          optionB: `${slopeAns / 2}`,
-          optionC: `${coef * xPt}`,
-          optionD: `${slopeAns + 4}`,
-          correct: "A",
-          correctAnswerText: `${slopeAns}`,
-          explanation: `y' = 2(${coef})x = ${2 * coef}x. At x = ${xPt}, slope = ${2 * coef}(${xPt}) = ${slopeAns}.`,
-          topicTitle: t.title,
-        });
-      }
-
-      // Integrals / Definite Integrals
-      if (tLower.includes("integral") || tLower.includes("integration") || tLower.includes("area") || tLower.includes("series") || tLower.includes("calculus")) {
-        const aInt = (Math.floor(rng() * 4) + 1) * 2;
-        const kUpper = Math.floor(rng() * 4) + 1;
-        const defIntAns = (aInt * kUpper * kUpper) / 2;
-        pool.push({
-          id: `calc-int-${Math.floor(rng() * 100000)}`,
-          prompt: `Evaluate the definite integral: ∫ from 0 to ${kUpper} of (${aInt}x) dx.`,
-          questionType: "multiple_choice",
-          optionA: `${defIntAns}`,
-          optionB: `${defIntAns + 2}`,
-          optionC: `${aInt * kUpper}`,
-          optionD: `${defIntAns / 2}`,
-          correct: "A",
-          correctAnswerText: `${defIntAns}`,
-          explanation: `∫ ${aInt}x dx = [(${aInt}/2) x²] from 0 to ${kUpper} = (${aInt / 2})(${kUpper}²) = ${defIntAns}.`,
-          topicTitle: t.title,
-        });
-
-        pool.push({
-          id: `calc-ibp-concept-${Math.floor(rng() * 100000)}`,
-          prompt: `Which of the following integration techniques is based directly on reversing the product rule of differentiation?`,
-          questionType: "multiple_choice",
-          optionA: `Integration by Parts: ∫ u dv = uv - ∫ v du`,
-          optionB: `Trigonometric Substitution using x = a*sin(θ)`,
-          optionC: `Partial Fraction Decomposition`,
-          optionD: `Trapezoidal Numerical Approximation`,
-          correct: "A",
-          correctAnswerText: `Integration by Parts: ∫ u dv = uv - ∫ v du`,
-          explanation: `Integration by parts originates from d/dx(uv) = u'v + uv' integrated over both sides.`,
-          topicTitle: t.title,
-        });
-
-        // Geometric series sum
-        const geoA = Math.floor(rng() * 4) + 2;
-        pool.push({
-          id: `calc-series-geo-${Math.floor(rng() * 100000)}`,
-          prompt: `Compute the sum of the infinite geometric series: ${geoA} + ${geoA / 2} + ${geoA / 4} + ${geoA / 8} + ...`,
-          questionType: "multiple_choice",
-          optionA: `${2 * geoA}`,
-          optionB: `${geoA + 2}`,
-          optionC: `Diverges`,
-          optionD: `${geoA / 2}`,
-          correct: "A",
-          correctAnswerText: `${2 * geoA}`,
-          explanation: `First term a = ${geoA}, common ratio r = 1/2. Sum S = a / (1 - r) = ${geoA} / (1 - 0.5) = ${2 * geoA}.`,
-          topicTitle: t.title,
-        });
-      }
-    }
-
-    // 3. Synthesize conceptual questions from topic summary & details (16 diverse variants)
-    for (let sIdx = 0; sIdx < 16; sIdx++) {
-      pool.push(synthesizeQuestionFromTopic(t, "multiple_choice", sIdx));
-      if (sIdx < 8) {
-        pool.push(synthesizeQuestionFromTopic(t, "identification", sIdx));
-        pool.push(synthesizeQuestionFromTopic(t, "enumeration", sIdx));
-        pool.push(synthesizeQuestionFromTopic(t, "problem_solving", sIdx));
-      }
-    }
-  });
-
-  return pool;
-}
-
-/**
- * Generates a unique, personalized questionnaire for a specific student,
- * strictly derived from the same topics that the admin chose for the quiz.
- *
- * For example, if 40 students take the quiz on "Advanced Matrix Topics",
- * each student gets a different set of questions with different numbers/prompts,
- * but all questions are exclusively from the selected topics.
- */
 export function generateStudentPersonalizedQuizQuestions(
   quizId: string,
   studentId: string,
@@ -1833,7 +1925,8 @@ export function generateStudentPersonalizedQuizQuestions(
       chosenCandidate = synthesizeQuestionFromTopic(
         topicForQ,
         qType,
-        idx + Math.floor(rng() * 100)
+        idx + Math.floor(rng() * 100),
+        rng
       );
     }
 

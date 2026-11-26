@@ -11,7 +11,6 @@ import {
   BookOpen,
   AlertCircle,
   History,
-  TrendingUp,
   Activity,
   Lock,
   Unlock,
@@ -308,7 +307,7 @@ export const UserAttendanceView: React.FC<UserAttendanceViewProps> = ({
       </AnimatePresence>
 
       {/* ========== 2. STAT CARDS ROW (matching admin layout) ========== */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {/* Total Days */}
         <div className="bg-white dark:bg-[#161F30] rounded-xl border border-gray-200 dark:border-slate-800 p-4 shadow-sm">
           <span className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Total Days</span>
@@ -356,15 +355,6 @@ export const UserAttendanceView: React.FC<UserAttendanceViewProps> = ({
             <ShieldCheck className="w-5 h-5 text-blue-500" />
           </div>
           <span className="text-[10px] text-gray-400 dark:text-slate-500">Authorized</span>
-        </div>
-
-        {/* Turnout Rate */}
-        <div className="bg-white dark:bg-[#161F30] rounded-xl border border-gray-200 dark:border-slate-800 p-4 shadow-sm">
-          <span className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Turnout Rate</span>
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-2xl font-black text-gray-900 dark:text-white">{stats.rate}%</span>
-            <TrendingUp className="w-5 h-5 text-emerald-500" />
-          </div>
         </div>
       </div>
 

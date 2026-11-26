@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SidebarMovingBackground } from "../SidebarMovingBackground";
 import {
   LayoutDashboard,
   Calculator,
@@ -33,11 +34,12 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
     <>
       {/* Desktop Fixed Sidebar */}
       <aside
-        className={`hidden lg:flex bg-white dark:bg-[#161F30] border-r border-[#EAEBED] dark:border-slate-800 flex-col justify-between h-full shrink-0 select-none z-30 shadow-[1px_0_4px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out ${
+        className={`relative hidden lg:flex border-r border-[#EAEBED] dark:border-slate-800 flex-col justify-between h-full shrink-0 select-none z-30 shadow-[1px_0_4px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out overflow-hidden ${
           isTopicCalculatorOpen ? "w-[70px] p-3" : "w-[260px] p-5"
         }`}
       >
-        <div className="flex flex-col gap-6">
+        <SidebarMovingBackground />
+        <div className="relative z-10 flex flex-col gap-6">
           {/* Brand Logo Header */}
           <div
             className={`flex items-center gap-3 px-1 py-1 ${
@@ -54,7 +56,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                 <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D] dark:text-slate-100">
                   Math<span className="text-[#166534] dark:text-emerald-400">Workspace</span>
                 </span>
-                <span className="text-[0.72rem] font-semibold text-[#8C93A0] dark:text-slate-400">
+                <span className="text-[0.72rem] font-semibold text-gray-700 dark:text-slate-400">
                   Student Portal
                 </span>
               </div>
@@ -70,7 +72,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
               } ${
                 activeNav === "dashboard"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                  : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                  : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
               }`}
               title="Dashboard"
             >
@@ -81,7 +83,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
             {/* LEARN Section */}
             {!isTopicCalculatorOpen && (
               <div className="pt-4 pb-1">
-                <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                   LEARN
                 </span>
               </div>
@@ -94,7 +96,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
               } ${
                 activeNav === "calculators"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                  : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
               }`}
               title="Calculators"
             >
@@ -111,7 +113,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
               } ${
                 activeNav === "topics"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                  : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
               }`}
               title="Topics"
             >
@@ -124,7 +126,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
             {/* PRACTICE Section */}
             {!isTopicCalculatorOpen && (
               <div className="pt-4 pb-1">
-                <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                   PRACTICE
                 </span>
               </div>
@@ -137,7 +139,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
               } ${
                 activeNav === "quizzes"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                  : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
               }`}
               title="Quizzes"
             >
@@ -152,7 +154,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
               } ${
                 activeNav === "quizzes-history"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                  : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
               }`}
               title="Quizzes History"
             >
@@ -168,7 +170,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
               } ${
                 activeNav === "attendance"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                  : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
               }`}
               title="Attendance"
             >
@@ -179,7 +181,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
             {/* ACCOUNT Section */}
             {!isTopicCalculatorOpen && (
               <div className="pt-4 pb-1">
-                <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                   ACCOUNT
                 </span>
               </div>
@@ -192,7 +194,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
               } ${
                 activeNav === "profile"
                   ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                  : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                  : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
               }`}
               title="Profile"
             >
@@ -224,9 +226,10 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
             animate={{ x: 0 }}
             exit={{ x: -280 }}
             transition={{ type: "spring", damping: 25, stiffness: 220 }}
-            className="fixed top-0 left-0 bottom-0 w-[270px] bg-white dark:bg-[#161F30] z-50 lg:hidden flex flex-col justify-between p-5 border-r border-[#EAEBED] dark:border-slate-800 shadow-2xl"
+            className="fixed top-0 left-0 bottom-0 w-[270px] bg-white dark:bg-[#161F30] z-50 lg:hidden flex flex-col justify-between p-5 border-r border-[#EAEBED] dark:border-slate-800 shadow-2xl overflow-hidden"
           >
-            <div className="flex flex-col gap-6">
+            <SidebarMovingBackground />
+            <div className="relative z-10 flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center shadow-md shadow-[#166534]/30 border border-white/20 text-white font-serif text-2xl font-bold">
@@ -236,7 +239,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                     <span className="font-bold text-[#1F242D] dark:text-slate-100 text-base">
                       MathWorkspace
                     </span>
-                    <span className="text-[0.68rem] text-[#8C93A0] dark:text-slate-400">
+                    <span className="text-[0.68rem] text-gray-700 dark:text-slate-400">
                       Student Portal
                     </span>
                   </div>
@@ -258,7 +261,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                   className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm ${
                     activeNav === "dashboard"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                      : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800"
+                      : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -266,7 +269,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                 </button>
 
                 <div className="pt-3 pb-1">
-                  <span className="text-[0.68rem] font-bold text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                  <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                     LEARN
                   </span>
                 </div>
@@ -279,7 +282,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                   className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "calculators"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                      : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800"
+                      : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -296,7 +299,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                   className={`nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "topics"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                      : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800"
+                      : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -306,7 +309,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                 </button>
 
                 <div className="pt-3 pb-1">
-                  <span className="text-[0.68rem] font-bold text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                  <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                     PRACTICE
                   </span>
                 </div>
@@ -319,7 +322,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                   className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "quizzes"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                      : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800"
+                      : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                   }`}
                 >
                   <HelpCircle className="w-4 h-4" />
@@ -334,7 +337,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                   className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "quizzes-history"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                      : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800"
+                      : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                   }`}
                 >
                   <History className="w-4 h-4" />
@@ -349,7 +352,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                   className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "attendance"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                      : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800"
+                      : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                   }`}
                 >
                   <UserCheck className="w-4 h-4" />
@@ -357,7 +360,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                 </button>
 
                 <div className="pt-3 pb-1">
-                  <span className="text-[0.68rem] font-bold text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                  <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                     ACCOUNT
                   </span>
                 </div>
@@ -370,7 +373,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
                   className={`nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm ${
                     activeNav === "profile"
                       ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                      : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800"
+                      : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                   }`}
                 >
                   <User className="w-4 h-4" />
@@ -379,7 +382,7 @@ export const UserDashboardSidebar: React.FC<UserDashboardSidebarProps> = ({
               </nav>
             </div>
 
-            <div className="pt-4 border-t border-[#EAEBED] dark:border-slate-800">
+            <div className="relative z-10 pt-4 border-t border-[#EAEBED]/80 dark:border-slate-800/80">
               <button
                 onClick={onLogout}
                 className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 text-sm font-medium cursor-pointer"

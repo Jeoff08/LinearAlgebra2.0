@@ -32,7 +32,6 @@ import LINEAR_TOPICS from "../data/topics/index";
 import ALL_CALCULUS_TOPICS from "../data/calculus-topics";
 import ALL_CALCULUS_2_TOPICS from "../data/calculus-2-topics";
 import mathBg from "../assets/math.jpeg";
-import presentationIllustration from "../assets/new logo student.png";
 import TopicContentRenderer, { extractFirstImage } from "../components/TopicContentRenderer";
 
 import {
@@ -795,11 +794,8 @@ export default function TopicPage() {
           </header>
 
           {/* Center Presentation Stage */}
-          <main className="relative z-10 flex-1 min-h-0 overflow-hidden grid grid-cols-1 sm:grid-cols-[minmax(250px,36.7vw)_minmax(0,1fr)]">
-            <aside className="relative hidden sm:flex items-center justify-center overflow-hidden bg-[#202d70]">
-              <img src={presentationIllustration} alt="Student learning linear algebra" className="h-[72%] w-[94%] object-contain object-center drop-shadow-2xl" />
-            </aside>
-            <div className="min-w-0 h-full flex flex-col justify-center px-6 py-8 sm:px-[7vw] lg:px-[5.5vw]">
+          <main className="relative z-10 flex-1 min-h-0 overflow-hidden flex flex-col justify-center items-center">
+            <div className="min-w-0 w-full max-w-5xl h-full flex flex-col justify-center px-6 py-8 sm:px-[7vw] lg:px-[5.5vw]">
               
               {/* Topic Slide Container */}
               <div className="relative w-full max-h-[calc(100vh-96px)] flex flex-col transition-all duration-300">

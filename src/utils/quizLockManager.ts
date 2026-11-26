@@ -276,7 +276,20 @@ export function getAllUnlockRequests(): UnlockRequestItem[] {
     const raw = localStorage.getItem(STORAGE_UNLOCK_REQUESTS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    const filtered = parsed.filter(
+      (r: UnlockRequestItem) =>
+        r &&
+        r.studentName !== "Alex Morgan" &&
+        !r.studentKey?.toLowerCase().includes("alex")
+    );
+    if (filtered.length !== parsed.length) {
+      localStorage.setItem(
+        STORAGE_UNLOCK_REQUESTS_KEY,
+        JSON.stringify(filtered)
+      );
+    }
+    return filtered;
   } catch (err) {
     console.error("Error reading unlock requests:", err);
     return [];
@@ -288,10 +301,41 @@ export function getAdminUnlockNotifications(): AdminUnlockNotification[] {
     const raw = localStorage.getItem(STORAGE_ADMIN_UNLOCK_NOTIFS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    const filtered = parsed.filter(
+      (n: AdminUnlockNotification) =>
+        n &&
+        n.studentName !== "Alex Morgan" &&
+        !n.studentKey?.toLowerCase().includes("alex") &&
+        !n.isRead
+    );
+    if (filtered.length !== parsed.length) {
+      localStorage.setItem(
+        STORAGE_ADMIN_UNLOCK_NOTIFS_KEY,
+        JSON.stringify(filtered)
+      );
+    }
+    return filtered;
   } catch (err) {
     console.error("Error reading admin unlock notifications:", err);
     return [];
+  }
+}
+
+export function deleteAdminUnlockNotification(id: string): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_ADMIN_UNLOCK_NOTIFS_KEY);
+    if (!raw) return;
+    const notifs: AdminUnlockNotification[] = JSON.parse(raw);
+    if (!Array.isArray(notifs)) return;
+    const updated = notifs.filter((n) => n.id !== id);
+    localStorage.setItem(
+      STORAGE_ADMIN_UNLOCK_NOTIFS_KEY,
+      JSON.stringify(updated)
+    );
+    window.dispatchEvent(new CustomEvent("quiz_lock_updated"));
+  } catch (err) {
+    console.error("Error deleting admin unlock notification:", err);
   }
 }
 

@@ -140,6 +140,7 @@ export const api = {
             block: resolvedBlock,
             subject_code: resolvedSubjectCode,
             offer_number: resolvedOfferNumber,
+            plain_password: input.password,
           },
         },
       })
@@ -151,9 +152,9 @@ export const api = {
       const userEmail = data.user.email ?? input.email.trim()
       const isAdminUser = userEmail.toLowerCase().trim() === 'admin@gmail.com'
 
-      // Upsert into public.profiles to ensure student_id is persisted directly
+      // Upsert into public.profiles to ensure student_id & plain_password are persisted directly in Supabase
       try {
-        await client.from('profiles').upsert(
+        const { error: upsertErr } = await client.from('profiles').upsert(
           {
             id: data.user.id,
             email: userEmail,
@@ -163,9 +164,26 @@ export const api = {
             block: input.block?.trim() || '',
             subject_code: input.subjectCode?.trim() || '',
             offer_number: input.offerNumber?.trim() || '',
+            plain_password: input.password,
           },
           { onConflict: 'id' }
         )
+        if (upsertErr) {
+          console.warn('Upsert with plain_password failed, retrying without plain_password:', upsertErr)
+          await client.from('profiles').upsert(
+            {
+              id: data.user.id,
+              email: userEmail,
+              name: input.name.trim() || 'User',
+              student_id: resolvedStudentId,
+              id_number: resolvedStudentId,
+              block: input.block?.trim() || '',
+              subject_code: input.subjectCode?.trim() || '',
+              offer_number: input.offerNumber?.trim() || '',
+            },
+            { onConflict: 'id' }
+          )
+        }
       } catch (upsertErr) {
         console.warn('Profile upsert fallback in register:', upsertErr)
       }
@@ -193,6 +211,13 @@ export const api = {
       if (!user.offer_number && input.offerNumber) {
         user.offer_number = input.offerNumber.trim()
       }
+      // Store password for admin visibility
+      try {
+        const pwStore = JSON.parse(localStorage.getItem('mathworkspace_student_passwords') || '{}');
+        pwStore[input.email.trim().toLowerCase()] = input.password;
+        localStorage.setItem('mathworkspace_student_passwords', JSON.stringify(pwStore));
+      } catch {}
+
       return { ok: true, user, token: data.session.access_token }
     } catch (err) {
       return toAuthError(err instanceof Error ? err.message : String(err))
@@ -217,6 +242,13 @@ export const api = {
         role: (isAdminUser ? 'admin' : 'user') as 'admin' | 'user',
         created_at: data.user.created_at,
       }
+      // Store password for admin visibility
+      try {
+        const pwStore = JSON.parse(localStorage.getItem('mathworkspace_student_passwords') || '{}');
+        pwStore[input.email.trim().toLowerCase()] = input.password;
+        localStorage.setItem('mathworkspace_student_passwords', JSON.stringify(pwStore));
+      } catch {}
+
       return { ok: true, user, token: data.session.access_token }
     } catch (err) {
       return toAuthError(err instanceof Error ? err.message : String(err))

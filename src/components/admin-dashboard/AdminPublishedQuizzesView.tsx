@@ -15,6 +15,8 @@ import {
   Loader2,
   ShieldAlert,
   Unlock,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import type { QuizItem } from "../../types/dashboard";
 import {
@@ -29,8 +31,8 @@ interface AdminPublishedQuizzesViewProps {
   fetchQuizzesAndStats?: () => Promise<void>;
   handleNavClick: (nav: any) => void;
   setAdminReviewQuizModal: (quiz: QuizItem | null) => void;
-  handleDeleteQuiz: (quizId: string) => Promise<void>;
-  handleClearAllQuizzes?: () => Promise<void>;
+  handleDeleteQuiz: (quizId: string, skipConfirm?: boolean) => Promise<void>;
+  handleClearAllQuizzes?: (skipConfirm?: boolean) => Promise<void>;
   handleStartStudentPreviewQuiz: (quiz: QuizItem) => void;
   onToggleQuizReview?: (quizId: string, currentStatus?: boolean) => Promise<void>;
   onBulkToggleQuizReview?: (allow: boolean, targetQuizIds?: string[]) => Promise<void>;
@@ -55,6 +57,21 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
   const [isUpdatingBulk, setIsUpdatingBulk] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [unlockRequests, setUnlockRequests] = useState<UnlockRequestItem[]>([]);
+
+  // Confirmation Modals State
+  const [isConfirmClearAllOpen, setIsConfirmClearAllOpen] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState<QuizItem | null>(null);
+  const [isDeletingSingle, setIsDeletingSingle] = useState(false);
+
+  // Review Confirmation Modal State (for Allow Review / Lock Review)
+  const [reviewConfirmState, setReviewConfirmState] = useState<{
+    type: "single" | "bulk";
+    action: "allow" | "lock";
+    quiz?: QuizItem;
+    quizIds?: string[];
+  } | null>(null);
+  const [isUpdatingReviewConfirm, setIsUpdatingReviewConfirm] = useState(false);
 
   const loadRequests = () => {
     setUnlockRequests(getAllUnlockRequests());
@@ -142,14 +159,72 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
     });
   }, [quizzes, searchQuery, topicFilter]);
 
-  const handleConfirmDelete = async (quizId: string) => {
-    if (window.confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) {
-      setDeletingQuizId(quizId);
-      try {
-        await handleDeleteQuiz(quizId);
-      } finally {
-        setDeletingQuizId(null);
+  // Execute Clear All Quizzes after user confirms in custom modal
+  const executeClearAll = async () => {
+    if (!handleClearAllQuizzes) return;
+    setIsClearingAll(true);
+    try {
+      await handleClearAllQuizzes(true);
+      setIsConfirmClearAllOpen(false);
+      setToastMessage("All published quizzes have been cleared successfully.");
+    } catch (err: any) {
+      console.error("Failed to clear quizzes:", err);
+      setToastMessage("Failed to clear quizzes: " + (err.message || "Unknown error"));
+    } finally {
+      setIsClearingAll(false);
+    }
+  };
+
+  // Execute Single Quiz Delete after user confirms in custom modal
+  const executeDeleteSingleQuiz = async () => {
+    if (!quizToDelete) return;
+    const target = quizToDelete;
+    setIsDeletingSingle(true);
+    setDeletingQuizId(target.id);
+    try {
+      await handleDeleteQuiz(target.id, true);
+      setQuizToDelete(null);
+      setToastMessage(`Deleted "${target.title}" successfully.`);
+    } catch (err: any) {
+      console.error("Failed to delete quiz:", err);
+      setToastMessage("Failed to delete quiz: " + (err.message || "Unknown error"));
+    } finally {
+      setIsDeletingSingle(false);
+      setDeletingQuizId(null);
+    }
+  };
+
+  // Execute Review Toggle (Allow / Lock) after user confirms in custom modal
+  const executeConfirmReviewToggle = async () => {
+    if (!reviewConfirmState) return;
+    setIsUpdatingReviewConfirm(true);
+    try {
+      const willAllow = reviewConfirmState.action === "allow";
+      if (reviewConfirmState.type === "single" && reviewConfirmState.quiz) {
+        const q = reviewConfirmState.quiz;
+        await onToggleQuizReview?.(q.id, q.allowReview);
+        setToastMessage(
+          willAllow
+            ? `Review is now allowed for "${q.title}". Students can view answers.`
+            : `Review is now locked for "${q.title}". Students cannot view answers.`
+        );
+      } else if (reviewConfirmState.type === "bulk" && reviewConfirmState.quizIds) {
+        const ids = reviewConfirmState.quizIds;
+        await onBulkToggleQuizReview?.(willAllow, ids);
+        const count = ids.length;
+        setSelectedQuizIds(new Set());
+        setToastMessage(
+          willAllow
+            ? `Successfully allowed student review for ${count} quiz${count === 1 ? "" : "zes"}!`
+            : `Successfully locked student review for ${count} quiz${count === 1 ? "" : "zes"}!`
+        );
       }
+      setReviewConfirmState(null);
+    } catch (err: any) {
+      console.error("Failed to update quiz review state:", err);
+      setToastMessage("Failed to update review status: " + (err.message || "Unknown error"));
+    } finally {
+      setIsUpdatingReviewConfirm(false);
     }
   };
 
@@ -243,26 +318,36 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
             </button>
           )}
 
-          {/* Add Quiz Button */}
-          <button
-            onClick={() => handleNavClick("add-quiz")}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Quiz</span>
-          </button>
-
-          {/* Clear All Quizzes Button */}
-          {handleClearAllQuizzes && quizzes.length > 0 && (
+          {/* Action Buttons Group (Create Quiz & Clear All) */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Create Quiz Button */}
             <button
-              onClick={() => handleClearAllQuizzes()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition cursor-pointer shadow-xs"
-              title="Delete all published quizzes"
+              type="button"
+              onClick={() => handleNavClick("add-quiz")}
+              className="group relative flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 via-emerald-700 to-[#166534] hover:from-emerald-500 hover:via-emerald-600 hover:to-[#14532d] text-white text-xs font-extrabold rounded-xl shadow-xs hover:shadow-md border border-emerald-400/30 transition-all cursor-pointer active:scale-95"
+              title="Create and publish a new quiz"
             >
-              <Trash2 className="w-4 h-4" />
-              <span>Clear All Quizzes</span>
+              <span className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              </span>
+              <span className="tracking-wide">Create Quiz</span>
             </button>
-          )}
+
+            {/* Clear All Quizzes Button */}
+            {handleClearAllQuizzes && quizzes.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsConfirmClearAllOpen(true)}
+                className="group flex items-center gap-2 px-3 py-1.5 bg-rose-50/90 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/70 text-rose-700 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200/90 dark:border-rose-800/80 hover:border-rose-300 dark:hover:border-rose-700 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+                title="Delete all published quizzes"
+              >
+                <span className="w-5 h-5 rounded-lg bg-rose-100 dark:bg-rose-900/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0 group-hover:scale-105 transition-transform">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </span>
+                <span className="tracking-wide">Clear All Quizzes</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -351,7 +436,7 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
             <button
               type="button"
               disabled={isUpdatingBulk}
-              onClick={() => handleApplyBulkReview(true)}
+              onClick={() => setReviewConfirmState({ type: "bulk", action: "allow", quizIds: Array.from(selectedQuizIds) })}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
               title="Allow review for selected quizzes so students can see correct answers"
             >
@@ -365,7 +450,7 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
             <button
               type="button"
               disabled={isUpdatingBulk}
-              onClick={() => handleApplyBulkReview(false)}
+              onClick={() => setReviewConfirmState({ type: "bulk", action: "lock", quizIds: Array.from(selectedQuizIds) })}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
               title="Lock review for selected quizzes so students cannot see correct answers"
             >
@@ -526,7 +611,7 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
                     <td className="py-4 px-4 align-middle text-center whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => onToggleQuizReview?.(quiz.id, quiz.allowReview)}
+                        onClick={() => setReviewConfirmState({ type: "single", action: quiz.allowReview ? "lock" : "allow", quiz })}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
                           quiz.allowReview
                             ? "bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
@@ -558,7 +643,7 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
                         <button
                           type="button"
                           disabled={deletingQuizId === quiz.id}
-                          onClick={() => handleConfirmDelete(quiz.id)}
+                          onClick={() => setQuizToDelete(quiz)}
                           className="p-1.5 rounded-xl text-gray-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-transparent dark:border-slate-700/60 transition cursor-pointer"
                           title="Delete Quiz"
                         >
@@ -574,6 +659,330 @@ export const AdminPublishedQuizzesView: React.FC<AdminPublishedQuizzesViewProps>
           </div>
         </div>
       )}
+      {/* ========================================================================= */}
+      {/* CUSTOM CONFIRMATION MODAL: Clear All Published Quizzes */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {isConfirmClearAllOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-white dark:bg-[#161F30] rounded-3xl border border-gray-100 dark:border-slate-800 p-6 sm:p-7 max-w-md w-full shadow-2xl relative overflow-hidden space-y-5"
+            >
+              {/* Top Accent Strip */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-red-500 to-rose-600" />
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => !isClearingAll && setIsConfirmClearAllOpen(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-xl text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0 shadow-xs">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div className="space-y-1 pr-4">
+                  <h3 className="text-base font-extrabold text-gray-900 dark:text-white tracking-tight">
+                    Clear All Quizzes?
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
+                    Are you sure you want to delete all <strong className="text-gray-800 dark:text-slate-200 font-bold">{quizzes.length} published quizzes</strong>? This will permanently remove all student submissions and class attempt records.
+                  </p>
+                </div>
+              </div>
+
+              {/* Danger Callout Warning */}
+              <div className="p-3 rounded-2xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60 flex items-start gap-2.5">
+                <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] font-semibold text-rose-800 dark:text-rose-300 leading-snug">
+                  This action is permanent and cannot be undone. All quiz content and student scores will be erased.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isClearingAll}
+                  onClick={() => setIsConfirmClearAllOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isClearingAll}
+                  onClick={executeClearAll}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/30 transition flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+                >
+                  {isClearingAll ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Clearing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Yes, Clear Everything</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ========================================================================= */}
+      {/* CUSTOM CONFIRMATION MODAL: Delete Single Quiz */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {quizToDelete && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-white dark:bg-[#161F30] rounded-3xl border border-gray-100 dark:border-slate-800 p-6 sm:p-7 max-w-md w-full shadow-2xl relative overflow-hidden space-y-5"
+            >
+              {/* Top Accent Strip */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 to-red-600" />
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => !isDeletingSingle && setQuizToDelete(null)}
+                className="absolute top-4 right-4 p-1.5 rounded-xl text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0 shadow-xs">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div className="space-y-1 pr-4">
+                  <h3 className="text-base font-extrabold text-gray-900 dark:text-white tracking-tight">
+                    Delete Quiz?
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
+                    Are you sure you want to delete <strong className="text-gray-900 dark:text-slate-100">{quizToDelete.title}</strong>? All student attempts for this quiz will also be removed.
+                  </p>
+                </div>
+              </div>
+
+              {/* Danger Callout Warning */}
+              <div className="p-3 rounded-2xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60 flex items-start gap-2.5">
+                <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] font-semibold text-rose-800 dark:text-rose-300 leading-snug">
+                  This action cannot be undone. Student scores and attempts for this quiz will be deleted.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeletingSingle}
+                  onClick={() => setQuizToDelete(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingSingle}
+                  onClick={executeDeleteSingleQuiz}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/30 transition flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+                >
+                  {isDeletingSingle ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Yes, Delete Quiz</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ========================================================================= */}
+      {/* CUSTOM CONFIRMATION MODAL: Allow / Lock Student Review */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {reviewConfirmState && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-white dark:bg-[#161F30] rounded-3xl border border-gray-100 dark:border-slate-800 p-6 sm:p-7 max-w-md w-full shadow-2xl relative overflow-hidden space-y-5"
+            >
+              {/* Top Accent Strip */}
+              <div
+                className={`absolute top-0 left-0 right-0 h-1.5 ${
+                  reviewConfirmState.action === "allow"
+                    ? "bg-gradient-to-r from-emerald-500 via-emerald-600 to-[#166534]"
+                    : "bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700"
+                }`}
+              />
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => !isUpdatingReviewConfirm && setReviewConfirmState(null)}
+                className="absolute top-4 right-4 p-1.5 rounded-xl text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-start gap-4">
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
+                    reviewConfirmState.action === "allow"
+                      ? "bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-[#166534] dark:text-emerald-400"
+                      : "bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400"
+                  }`}
+                >
+                  {reviewConfirmState.action === "allow" ? (
+                    <Eye className="w-6 h-6" />
+                  ) : (
+                    <Lock className="w-6 h-6" />
+                  )}
+                </div>
+                <div className="space-y-1 pr-4">
+                  <h3 className="text-base font-extrabold text-gray-900 dark:text-white tracking-tight">
+                    {reviewConfirmState.action === "allow"
+                      ? reviewConfirmState.type === "bulk"
+                        ? `Allow Review for ${reviewConfirmState.quizIds?.length} Quizzes?`
+                        : "Allow Student Review?"
+                      : reviewConfirmState.type === "bulk"
+                      ? `Lock Review for ${reviewConfirmState.quizIds?.length} Quizzes?`
+                      : "Lock Student Review?"}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
+                    {reviewConfirmState.type === "single" && reviewConfirmState.quiz ? (
+                      reviewConfirmState.action === "allow" ? (
+                        <>
+                          Are you sure you want to allow student review for{" "}
+                          <strong className="text-gray-900 dark:text-slate-100 font-bold">
+                            {reviewConfirmState.quiz.title}
+                          </strong>
+                          ? Students who completed this quiz will be able to view correct answers and explanations.
+                        </>
+                      ) : (
+                        <>
+                          Are you sure you want to lock student review for{" "}
+                          <strong className="text-gray-900 dark:text-slate-100 font-bold">
+                            {reviewConfirmState.quiz.title}
+                          </strong>
+                          ? Correct answers and explanations will be hidden from students until re-allowed.
+                        </>
+                      )
+                    ) : reviewConfirmState.action === "allow" ? (
+                      <>
+                        Are you sure you want to allow student review for all{" "}
+                        <strong className="text-gray-900 dark:text-slate-100 font-bold">
+                          {reviewConfirmState.quizIds?.length} selected quizzes
+                        </strong>
+                        ? Students will be able to review their answers.
+                      </>
+                    ) : (
+                      <>
+                        Are you sure you want to lock student review for all{" "}
+                        <strong className="text-gray-900 dark:text-slate-100 font-bold">
+                          {reviewConfirmState.quizIds?.length} selected quizzes
+                        </strong>
+                        ? Correct answers will be hidden from students.
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Informational Callout Banner */}
+              <div
+                className={`p-3 rounded-2xl flex items-start gap-2.5 ${
+                  reviewConfirmState.action === "allow"
+                    ? "bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60"
+                    : "bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60"
+                }`}
+              >
+                {reviewConfirmState.action === "allow" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 leading-snug">
+                      Students will immediately gain permission to inspect their submissions and study correct solutions.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 leading-snug">
+                      Correct answers will remain locked to protect exam integrity and prevent answers from leaking.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isUpdatingReviewConfirm}
+                  onClick={() => setReviewConfirmState(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isUpdatingReviewConfirm}
+                  onClick={executeConfirmReviewToggle}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black text-white transition flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50 shadow-md ${
+                    reviewConfirmState.action === "allow"
+                      ? "bg-[#166534] hover:bg-[#14532d] shadow-emerald-900/20"
+                      : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/20"
+                  }`}
+                >
+                  {isUpdatingReviewConfirm ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : reviewConfirmState.action === "allow" ? (
+                    <>
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Yes, Allow Review</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Yes, Lock Review</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

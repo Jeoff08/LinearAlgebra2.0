@@ -21,8 +21,10 @@ import {
   X,
   Users,
   CalendarDays,
+  CalendarCheck,
+  CalendarPlus,
+  CalendarClock,
   Check,
-  Sparkles,
   RotateCcw,
 } from "lucide-react";
 import type { StudentItem } from "../../types/dashboard";
@@ -100,11 +102,11 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
     (dateStr: string, openSession: boolean) => {
       if (openSession) {
         setDateSessionOverride(selectedSubject, dateStr, true);
-        showToast(`🚀 Moved class session OPENED for ${selectedSubject} on ${dateStr}. Attendance marking is now enabled!`);
+        showToast(`Makeup class session opened for ${selectedSubject} on ${dateStr}. Attendance marking enabled.`);
       } else {
         // Revert = remove the override
         setDateSessionOverride(selectedSubject, dateStr, null);
-        showToast(`↩️ Moved class session REVERTED for ${selectedSubject} on ${dateStr}`);
+        showToast(`Makeup class session closed for ${selectedSubject} on ${dateStr}.`);
       }
       // Force schedule days reload (the config event will trigger re-read)
       setScheduleDays(getSubjectScheduleDays(selectedSubject));
@@ -685,7 +687,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
   ) => {
     if (isMarkingDisabled) {
       showToast(
-        `⚠️ Attendance marking is disabled: No class scheduled on ${currentDateSchedule.dayOfWeek} (${selectedDate}). Click "Open Moved Session" above to enable marking.`
+        `Attendance marking is disabled: No class scheduled on ${currentDateSchedule.dayOfWeek} (${selectedDate}). Click "Open Makeup Class" above to enable marking.`
       );
       return;
     }
@@ -705,7 +707,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
   const handleBulkMark = (status: AttendanceStatus) => {
     if (isMarkingDisabled) {
       showToast(
-        `⚠️ Attendance marking is disabled: No class scheduled on ${currentDateSchedule.dayOfWeek} (${selectedDate}). Click "Open Moved Session" above to enable marking.`
+        `Attendance marking is disabled: No class scheduled on ${currentDateSchedule.dayOfWeek} (${selectedDate}). Click "Open Makeup Class" above to enable marking.`
       );
       return;
     }
@@ -727,7 +729,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
   const isToday = selectedDate === getTodayDateString();
 
   return (
-    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300 pb-16">
+    <div className="p-6 sm:p-7 max-w-[1440px] w-full mx-auto flex flex-col gap-6 animate-in fade-in duration-300 pb-16">
       {/* Toast Notification */}
       <AnimatePresence>
         {actionToast && (
@@ -750,17 +752,18 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg sm:text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">
+              <h1 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">
                 Class Attendance Management
               </h1>
               {isToday && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  LIVE TODAY
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-[#166534] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Today
                 </span>
               )}
             </div>
-            <p className="text-[11px] sm:text-xs font-medium text-gray-500 dark:text-slate-400 mt-0.5">
-              Real-time student self attendance verification and manual attendance controls
+            <p className="text-[11px] sm:text-xs font-normal text-gray-500 dark:text-slate-400 mt-0.5">
+              Record and monitor daily student attendance, self check-in status, and class schedules
             </p>
           </div>
         </div>
@@ -771,31 +774,28 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
           <button
             type="button"
             onClick={handleRequestToggleSelfAttendance}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-3.5 py-2 rounded-2xl border text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 w-full sm:w-auto ${
+            className={`flex items-center justify-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors shadow-2xs cursor-pointer w-full sm:w-auto ${
               allowSelfCheckIn
-                ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
-                : "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40"
+                ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/70"
+                : "bg-gray-50 dark:bg-slate-800/80 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
             }`}
             title={
               allowSelfCheckIn
-                ? "Self Attendance is currently ALLOWED. Click to change."
-                : "Self Attendance is currently NOT ALLOWED. Click to change."
+                ? "Self check-in is currently OPEN for students. Click to lock."
+                : "Self check-in is currently CLOSED for students. Click to allow."
             }
           >
             {allowSelfCheckIn ? (
               <>
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <Unlock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Self Attendance: <strong className="uppercase">Allowed</strong></span>
+                <span>Student Check-in: <strong className="font-bold">Open</strong></span>
               </>
             ) : (
               <>
-                <span className="inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                <span>Self Attendance: <strong className="uppercase">Not Allowed</strong></span>
+                <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-slate-500" />
+                <Lock className="w-3.5 h-3.5 text-gray-500 dark:text-slate-400" />
+                <span>Student Check-in: <strong className="font-bold">Closed</strong></span>
               </>
             )}
           </button>
@@ -855,121 +855,114 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
 
       {/* Attendance Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
-        <div className="col-span-2 sm:col-span-1 bg-white dark:bg-[#161F30] p-3.5 sm:p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xs flex flex-col">
-          <span className="text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-            Total Students
-          </span>
-          <span className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-1">
-            {stats.total}
-          </span>
-          <span className="text-[10px] text-gray-400 mt-0.5">Enrolled Roster</span>
+        <div className="col-span-2 sm:col-span-1 bg-white dark:bg-[#161F30] p-4 rounded-2xl border border-gray-200/80 dark:border-slate-800 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+              Total Students
+            </span>
+            <Users className="w-4 h-4 text-gray-400 dark:text-slate-500" />
+          </div>
+          <div className="mt-2">
+            <span className="text-2xl font-black text-gray-900 dark:text-slate-100">
+              {stats.total}
+            </span>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 font-normal">Enrolled in section</p>
+          </div>
         </div>
 
         {/* Present Card */}
         <div
           onClick={() => setSideDrawerStatus("present")}
-          className={`bg-white dark:bg-[#161F30] p-4 rounded-2xl border shadow-xs flex flex-col cursor-pointer transition-all select-none group hover:shadow-md ${
+          className={`bg-white dark:bg-[#161F30] p-4 rounded-2xl border shadow-2xs flex flex-col justify-between cursor-pointer transition-all select-none hover:shadow-xs ${
             sideDrawerStatus === "present"
-              ? "border-emerald-500 ring-2 ring-emerald-500/30"
-              : "border-emerald-100 dark:border-emerald-900/40 hover:border-emerald-300 dark:hover:border-emerald-700"
+              ? "border-emerald-500 ring-2 ring-emerald-500/20"
+              : "border-gray-200/80 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-800"
           }`}
-          title="Click to view all Present students"
+          title="Click to view Present students"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider group-hover:underline">
+            <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
               Present
             </span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-            {stats.present}
-          </span>
-          <div className="flex items-center justify-between mt-0.5">
-            <span className="text-[10px] text-emerald-500/80">On time attendance</span>
-            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 opacity-60 group-hover:opacity-100 transition-opacity">
-              View ➔
+          <div className="mt-2">
+            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+              {stats.present}
             </span>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 font-normal">On time attendance</p>
           </div>
         </div>
 
         {/* Late Card */}
         <div
           onClick={() => setSideDrawerStatus("late")}
-          className={`bg-white dark:bg-[#161F30] p-4 rounded-2xl border shadow-xs flex flex-col cursor-pointer transition-all select-none group hover:shadow-md ${
+          className={`bg-white dark:bg-[#161F30] p-4 rounded-2xl border shadow-2xs flex flex-col justify-between cursor-pointer transition-all select-none hover:shadow-xs ${
             sideDrawerStatus === "late"
-              ? "border-amber-500 ring-2 ring-amber-500/30"
-              : "border-amber-100 dark:border-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700"
+              ? "border-amber-500 ring-2 ring-amber-500/20"
+              : "border-gray-200/80 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-800"
           }`}
-          title="Click to view all Late students"
+          title="Click to view Late students"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider group-hover:underline">
+            <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
               Late
             </span>
-            <Clock className="w-4 h-4 text-amber-500" />
+            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <span className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
-            {stats.late}
-          </span>
-          <div className="flex items-center justify-between mt-0.5">
-            <span className="text-[10px] text-amber-500/80">Arrived after call</span>
-            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 opacity-60 group-hover:opacity-100 transition-opacity">
-              View ➔
+          <div className="mt-2">
+            <span className="text-2xl font-black text-amber-600 dark:text-amber-400">
+              {stats.late}
             </span>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 font-normal">Arrived after call</p>
           </div>
         </div>
 
         {/* Absent Card */}
         <div
           onClick={() => setSideDrawerStatus("absent")}
-          className={`bg-white dark:bg-[#161F30] p-4 rounded-2xl border shadow-xs flex flex-col cursor-pointer transition-all select-none group hover:shadow-md ${
+          className={`bg-white dark:bg-[#161F30] p-4 rounded-2xl border shadow-2xs flex flex-col justify-between cursor-pointer transition-all select-none hover:shadow-xs ${
             sideDrawerStatus === "absent"
-              ? "border-rose-500 ring-2 ring-rose-500/30"
-              : "border-rose-100 dark:border-rose-900/40 hover:border-rose-300 dark:hover:border-rose-700"
+              ? "border-rose-500 ring-2 ring-rose-500/20"
+              : "border-gray-200/80 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-800"
           }`}
-          title="Click to view all Absent students"
+          title="Click to view Absent students"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider group-hover:underline">
+            <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
               Absent
             </span>
-            <XCircle className="w-4 h-4 text-rose-500" />
+            <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
           </div>
-          <span className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
-            {stats.absent}
-          </span>
-          <div className="flex items-center justify-between mt-0.5">
-            <span className="text-[10px] text-rose-500/80">Unexcused</span>
-            <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 opacity-60 group-hover:opacity-100 transition-opacity">
-              View ➔
+          <div className="mt-2">
+            <span className="text-2xl font-black text-rose-600 dark:text-rose-400">
+              {stats.absent}
             </span>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 font-normal">Unexcused</p>
           </div>
         </div>
 
         {/* Excused Card */}
         <div
           onClick={() => setSideDrawerStatus("excused")}
-          className={`bg-white dark:bg-[#161F30] p-4 rounded-2xl border shadow-xs flex flex-col cursor-pointer transition-all select-none group hover:shadow-md ${
+          className={`bg-white dark:bg-[#161F30] p-4 rounded-2xl border shadow-2xs flex flex-col justify-between cursor-pointer transition-all select-none hover:shadow-xs ${
             sideDrawerStatus === "excused"
-              ? "border-blue-500 ring-2 ring-blue-500/30"
-              : "border-blue-100 dark:border-blue-900/40 hover:border-blue-300 dark:hover:border-blue-700"
+              ? "border-sky-500 ring-2 ring-sky-500/20"
+              : "border-gray-200/80 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-800"
           }`}
-          title="Click to view all Excused students"
+          title="Click to view Excused students"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider group-hover:underline">
+            <span className="text-[11px] font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider">
               Excused
             </span>
-            <AlertCircle className="w-4 h-4 text-blue-500" />
+            <AlertCircle className="w-4 h-4 text-sky-600 dark:text-sky-400" />
           </div>
-          <span className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">
-            {stats.excused}
-          </span>
-          <div className="flex items-center justify-between mt-0.5">
-            <span className="text-[10px] text-blue-500/80">Authorized</span>
-            <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 opacity-60 group-hover:opacity-100 transition-opacity">
-              View ➔
+          <div className="mt-2">
+            <span className="text-2xl font-black text-sky-600 dark:text-sky-400">
+              {stats.excused}
             </span>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 font-normal">Authorized</p>
           </div>
         </div>
       </div>
@@ -1025,23 +1018,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-2 justify-between sm:justify-start">
-            {/* Subject Filter */}
-            <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 shrink-0">
-              <BookOpen className="w-3.5 h-3.5 text-gray-400" />
-              <select
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="bg-transparent text-xs font-bold text-gray-700 dark:text-slate-200 outline-none cursor-pointer"
-              >
-                {subjectOptions.map((s) => (
-                  <option key={s.code} value={s.code} className="dark:bg-[#161F30]">
-                    {s.code} ({s.studentCount})
-                  </option>
-                ))}
-              </select>
-            </div>
-
+          <div className="flex items-center gap-2 justify-end">
             {/* Mobile View Mode Switcher (Visible on small screens) */}
             <div className="flex sm:hidden items-center bg-gray-100 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700 shrink-0">
               <button
@@ -1071,56 +1048,56 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
         </div>
       </div>
 
-      {/* Disabled Marking Alert Banner when no class session scheduled */}
+      {/* Disabled Marking Alert Banner when no regular class session is scheduled */}
       {isMarkingDisabled && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 shadow-xs">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 shadow-2xs">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/60 flex items-center justify-center shrink-0 text-amber-700 dark:text-amber-300">
-              <Lock className="w-4 h-4" />
+              <CalendarClock className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-black">
-                Attendance Marking Disabled (No Class Scheduled)
+              <div className="text-xs font-bold text-gray-900 dark:text-slate-100">
+                No Regular Class Scheduled ({currentDateSchedule.dayOfWeek})
               </div>
-              <div className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
-                {selectedSubject} has no class scheduled on {currentDateSchedule.dayOfWeek}s ({selectedDate}). Click <strong>"Open Moved Session"</strong> to enable attendance marking for this date.
+              <div className="text-[11px] text-gray-600 dark:text-slate-400 font-normal mt-0.5">
+                {selectedSubject} has no regular class on {currentDateSchedule.dayOfWeek}s ({selectedDate}). If holding a makeup session, click to enable attendance marking.
               </div>
             </div>
           </div>
           <button
             type="button"
             onClick={() => handleToggleDateSession(selectedDate, true)}
-            className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-sm transition cursor-pointer flex items-center gap-1.5 shrink-0"
+            className="px-3.5 py-2 rounded-xl bg-[#166534] hover:bg-[#14532d] text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Open Moved Session</span>
+            <CalendarPlus className="w-4 h-4" />
+            <span>Open Makeup Class</span>
           </button>
         </div>
       )}
 
-      {/* Active Moved Session Notice Banner */}
+      {/* Active Makeup Session Notice Banner */}
       {currentDateSchedule.isSpecialSession && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-900 dark:text-purple-200 shadow-xs">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200 shadow-2xs">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/60 flex items-center justify-center shrink-0 text-purple-700 dark:text-purple-300">
-              <Sparkles className="w-4 h-4" />
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0 text-[#166534] dark:text-emerald-300">
+              <CalendarCheck className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-black">
-                🚀 Moved Class Session Active
+              <div className="text-xs font-bold text-gray-900 dark:text-slate-100">
+                Makeup Class Session Active
               </div>
-              <div className="text-[11px] text-purple-700 dark:text-purple-400 font-medium">
-                Temporary make-up class session is active for {selectedSubject} on {selectedDate} ({currentDateSchedule.dayOfWeek}). Attendance marking is enabled.
+              <div className="text-[11px] text-gray-600 dark:text-slate-400 font-normal mt-0.5">
+                Temporary makeup session is active for {selectedSubject} on {selectedDate} ({currentDateSchedule.dayOfWeek}). Attendance marking is enabled.
               </div>
             </div>
           </div>
           <button
             type="button"
             onClick={() => handleToggleDateSession(selectedDate, false)}
-            className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-800/60 text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/60 font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0"
+            className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-750 font-bold text-xs shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Revert Session</span>
+            <span>Close Makeup Session</span>
           </button>
         </div>
       )}
@@ -1400,7 +1377,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                               }`}
                               title={
                                 isMarkingDisabled
-                                  ? "Marking disabled: No class scheduled. Click 'Open Moved Session' to enable."
+                                  ? "Marking disabled: No class scheduled. Click 'Open Makeup Class' to enable."
                                   : "Mark Present"
                               }
                             >
@@ -1419,7 +1396,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                               }`}
                               title={
                                 isMarkingDisabled
-                                  ? "Marking disabled: No class scheduled. Click 'Open Moved Session' to enable."
+                                  ? "Marking disabled: No class scheduled. Click 'Open Makeup Class' to enable."
                                   : "Mark Late"
                               }
                             >
@@ -1438,7 +1415,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                               }`}
                               title={
                                 isMarkingDisabled
-                                  ? "Marking disabled: No class scheduled. Click 'Open Moved Session' to enable."
+                                  ? "Marking disabled: No class scheduled. Click 'Open Makeup Class' to enable."
                                   : "Mark Absent"
                               }
                             >
@@ -1457,7 +1434,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                               }`}
                               title={
                                 isMarkingDisabled
-                                  ? "Marking disabled: No class scheduled. Click 'Open Moved Session' to enable."
+                                  ? "Marking disabled: No class scheduled. Click 'Open Makeup Class' to enable."
                                   : "Mark Excused"
                               }
                             >
@@ -1737,7 +1714,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                                 Self Attendance
                               </span>
                             ) : (
-                              <span className="text-purple-600 dark:text-purple-400 font-bold">
+                              <span className="text-gray-700 dark:text-slate-300 font-semibold">
                                 Admin Marked
                               </span>
                             )}
@@ -1779,7 +1756,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                                   }`}
                                   title={
                                     isMarkingDisabled
-                                      ? "Marking disabled: No class scheduled on this date. Click 'Open Moved Session' to enable."
+                                      ? "Marking disabled: No class scheduled on this date. Click 'Open Makeup Class' to enable."
                                       : `Mark ${stKey}`
                                   }
                                 >
@@ -1964,24 +1941,24 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                       className={`h-11 rounded-2xl flex flex-col items-center justify-center relative text-xs font-bold transition-all cursor-pointer select-none group ${
                         isSel
                           ? isSpecial
-                            ? "bg-purple-600 text-white shadow-md shadow-purple-600/30 font-black scale-105 z-10"
-                            : "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-black scale-105 z-10"
+                            ? "bg-amber-600 text-white shadow-md shadow-amber-600/30 font-black scale-105 z-10"
+                            : "bg-[#166534] text-white shadow-md shadow-emerald-950/30 font-black scale-105 z-10"
                           : isTod
-                          ? "border-2 border-emerald-500/80 text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20 font-black"
+                          ? "border-2 border-emerald-500/80 text-[#166534] dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20 font-black"
                           : isSpecial && isCurrent
-                          ? "bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-800/50 text-purple-900 dark:text-purple-200 font-extrabold hover:bg-purple-100/60"
+                          ? "bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 text-amber-900 dark:text-amber-200 font-extrabold hover:bg-amber-100/60"
                           : isSched && isCurrent
                           ? "bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-800/50 text-emerald-900 dark:text-emerald-200 font-extrabold hover:bg-emerald-100/60"
                           : isCurrent
                           ? "text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800/80"
                           : "text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800/40"
                       }`}
-                      title={`${cell.dayOfWeekName}, ${cell.dateStr}${isSpecial ? " 🚀 (Moved Class Session)" : isSched ? " (Class Scheduled)" : ""}${hasRec ? " • Has Records" : ""}`}
+                      title={`${cell.dayOfWeekName}, ${cell.dateStr}${isSpecial ? " (Makeup Class Session)" : isSched ? " (Class Scheduled)" : ""}${hasRec ? " • Has Records" : ""}`}
                     >
                       <span>{cell.dayNum}</span>
                       <div className="flex items-center gap-0.5 absolute bottom-1">
                         {isSpecial && isCurrent && !isSel && (
-                          <span className="text-[8px] leading-none">🚀</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                         )}
                         {isSched && isCurrent && !isSel && !isSpecial && (
                           <span className="text-[9px] font-black leading-none text-emerald-600 dark:text-emerald-400">
@@ -1989,7 +1966,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                           </span>
                         )}
                         {hasRec && !isSel && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#166534] dark:bg-emerald-400" />
                         )}
                       </div>
                     </button>
@@ -2007,13 +1984,13 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                         {selectedDate}
                       </span>
                     </div>
-                    <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-slate-500">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
-                      <span>Class Day</span>
+                    <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-slate-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                      <span>Regular Class</span>
                     </div>
-                    <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-slate-500">
-                      <span className="text-[9px]">🚀</span>
-                      <span>Moved Session</span>
+                    <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-slate-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <span>Makeup Session</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -2027,22 +2004,22 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                   </div>
                 </div>
 
-                {/* Quick action: Open/Revert moved session for selected date */}
+                {/* Quick action: Open/Revert makeup session for selected date */}
                 {(() => {
                   const selInfo = isDateScheduledForSubject(selectedDate, selectedSubject);
                   if (selInfo.isSpecialSession) {
                     return (
-                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/50">
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm">🚀</span>
-                          <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300">
-                            Moved session OPEN for {selectedDate}
+                          <CalendarCheck className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                          <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                            Makeup session active for {selectedDate}
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleToggleDateSession(selectedDate, false)}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-purple-200 dark:border-purple-700 text-[10px] font-bold text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/40 transition cursor-pointer"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-[10px] font-bold text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 transition cursor-pointer"
                         >
                           <RotateCcw className="w-3 h-3" />
                           Revert
@@ -2055,11 +2032,11 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleToggleDateSession(selectedDate, true)}
-                        className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/50 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 text-[#166534] dark:text-emerald-300 transition cursor-pointer"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                        <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300">
-                          Open Moved Class Session for {selectedDate} ({selInfo.dayOfWeek})
+                        <CalendarPlus className="w-4 h-4" />
+                        <span className="text-[11px] font-bold">
+                          Open Makeup Class Session for {selectedDate} ({selInfo.dayOfWeek})
                         </span>
                       </button>
                     );

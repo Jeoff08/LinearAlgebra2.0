@@ -1061,11 +1061,26 @@ export default function AdminDashboardPage() {
         console.error("Error fetching attempts:", aError);
       }
 
-      // 3. Fetch student profiles (all registered users)
-      const { data: profilesData, error: pError } = await supabase
+      // 3. Fetch student profiles (all registered users) from Supabase
+      let profilesData: any[] | null = null;
+      let pError: any = null;
+
+      const profileResponse = await supabase
         .from("profiles")
-        .select("id, name, email, block, avatar_url, created_at, role, student_id, id_number")
+        .select("id, name, email, block, avatar_url, created_at, role, student_id, id_number, plain_password")
         .order("created_at", { ascending: false });
+
+      if (profileResponse.error) {
+        console.warn("Could not query plain_password column directly, falling back to standard profile columns:", profileResponse.error);
+        const fallbackRes = await supabase
+          .from("profiles")
+          .select("id, name, email, block, avatar_url, created_at, role, student_id, id_number")
+          .order("created_at", { ascending: false });
+        profilesData = fallbackRes.data;
+        pError = fallbackRes.error;
+      } else {
+        profilesData = profileResponse.data;
+      }
 
       if (pError) {
         console.error("Error fetching profiles:", pError);
@@ -1232,6 +1247,12 @@ export default function AdminDashboardPage() {
             prof.email?.toLowerCase().trim() !== "admin@gmail.com",
         );
 
+        // Fallback to localStorage stored passwords if profile doesn't have plain_password yet
+        let pwStore: Record<string, string> = {};
+        try {
+          pwStore = JSON.parse(localStorage.getItem('mathworkspace_student_passwords') || '{}');
+        } catch {}
+
         studentList = nonAdmins.map((prof: any) => {
           const userAttempts = (attemptsData || []).filter(
             (a: any) => a.user_id === prof.id,
@@ -1272,6 +1293,7 @@ export default function AdminDashboardPage() {
                   year: "numeric",
                 })
               : "Recent",
+            password: prof.plain_password || pwStore[(prof.email || "").toLowerCase().trim()] || "",
           };
         });
       }
@@ -1625,7 +1647,7 @@ export default function AdminDashboardPage() {
   };
 
   // Run the smart quiz generator
-  const handleGenerateQuiz = () => {
+  const handleGenerateQuiz = (isRegenerating = false) => {
     setIsShowingGenerateLoader(true);
     setIsGeneratingQuiz(true);
     setTimeout(() => {
@@ -1635,10 +1657,23 @@ export default function AdminDashboardPage() {
             ? (t.category === "calculus-1" || t.category === "calculus-2")
             : t.category === generatorCategory
         );
-        const chosenTopics =
+        let chosenTopics =
           selectedTopicIds.length > 0
             ? topicsInCat.filter((t) => selectedTopicIds.includes(t.id))
-            : topicsInCat;
+            : [];
+
+        // If no topics checked in selectedTopicIds but newQuizTopic is set (e.g. during regenerate all), match by newQuizTopic
+        if (chosenTopics.length === 0 && newQuizTopic) {
+          chosenTopics = topicsInCat.filter(
+            (t) =>
+              t.title.toLowerCase() === newQuizTopic.toLowerCase() ||
+              newQuizTopic.toLowerCase().includes(t.title.toLowerCase())
+          );
+        }
+
+        if (chosenTopics.length === 0) {
+          chosenTopics = topicsInCat;
+        }
 
         const effectiveSections: Array<{ type: QuizQuestionType; itemCount: number; pointsPerItem: number }> =
           questionTypeSections.length > 0
@@ -1702,7 +1737,9 @@ export default function AdminDashboardPage() {
             : `${catLabel} Comprehensive`;
 
         setNewQuizTopic(topicFocus);
-        setNewQuizTitle(`${topicFocus} - ${typeLabelStr} Quiz`);
+        if (!isRegenerating || !newQuizTitle.trim()) {
+          setNewQuizTitle(`${topicFocus} - ${typeLabelStr} Quiz`);
+        }
         setGeneratorStep(2);
       } catch (err) {
         console.error("Failed to generate quiz:", err);
@@ -1711,7 +1748,7 @@ export default function AdminDashboardPage() {
         setIsGeneratingQuiz(false);
         setIsShowingGenerateLoader(false);
       }
-    }, 2000);
+    }, 1500);
   };
 
   const handleRegenerateQuestion = (index: number) => {
@@ -1723,10 +1760,22 @@ export default function AdminDashboardPage() {
         ? (t.category === "calculus-1" || t.category === "calculus-2")
         : t.category === generatorCategory
     );
-    const chosenTopics =
+    let chosenTopics =
       selectedTopicIds.length > 0
         ? topicsInCat.filter((t) => selectedTopicIds.includes(t.id))
-        : topicsInCat;
+        : [];
+
+    if (chosenTopics.length === 0) {
+      const topicToMatch = currentQ.topicTitle || newQuizTopic;
+      if (topicToMatch) {
+        chosenTopics = topicsInCat.filter(
+          (t) =>
+            t.title.toLowerCase() === topicToMatch.toLowerCase() ||
+            topicToMatch.toLowerCase().includes(t.title.toLowerCase())
+        );
+      }
+    }
+    if (chosenTopics.length === 0) chosenTopics = topicsInCat;
 
     const qInput: GeneratedQuestion = {
       id: currentQ.id,
@@ -1771,7 +1820,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleRegenerateAllQuestions = () => {
-    handleGenerateQuiz();
+    handleGenerateQuiz(true);
   };
 
   const updateQuestionDraft = (
@@ -2003,8 +2052,9 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeleteQuiz = async (quizId: string) => {
+  const handleDeleteQuiz = async (quizId: string, skipConfirm = false) => {
     if (
+      !skipConfirm &&
       !window.confirm(
         "Are you sure you want to delete this quiz? All student attempts for it will also be deleted.",
       )
@@ -2026,8 +2076,9 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleClearAllQuizzes = async () => {
+  const handleClearAllQuizzes = async (skipConfirm = false) => {
     if (
+      !skipConfirm &&
       !window.confirm(
         "Are you sure you want to delete ALL published quizzes and all their student attempts? This cannot be undone.",
       )

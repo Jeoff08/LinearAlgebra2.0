@@ -1,9 +1,23 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useMemo, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { UserPlus, Lock, Mail, User, Eye, EyeOff, ArrowLeft, LayoutGrid, BookOpen, Hash, CheckCircle2 } from "lucide-react";
-import imageLogo from "../assets/image logo.png";
+import {
+  UserPlus,
+  Lock,
+  Mail,
+  User,
+  Eye,
+  EyeOff,
+  BookOpen,
+  Hash,
+  CheckCircle2,
+  LogIn,
+  Check,
+  ChevronRight,
+  AlertCircle,
+  LayoutGrid,
+} from "lucide-react";
 import { isSameStudentName } from "../utils/studentMatching";
 
 export default function RegisterPage() {
@@ -23,6 +37,34 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [rosterMatchNotice, setRosterMatchNotice] = useState<string | null>(null);
+
+  // Live input validations
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isNameValid = name.trim().length >= 3;
+  const isIdValid = studentId.trim().length >= 4;
+
+  // Dynamic Password Strength Calculator
+  const passwordStrength = useMemo(() => {
+    if (!password) return { score: 0, label: "", color: "bg-gray-200" };
+    let score = 0;
+    if (password.length >= 8) score += 1;
+    if (/[0-9]/.test(password)) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+    switch (score) {
+      case 1:
+        return { score: 1, label: "Weak", color: "bg-red-500", text: "text-red-600" };
+      case 2:
+        return { score: 2, label: "Fair", color: "bg-amber-500", text: "text-amber-600" };
+      case 3:
+        return { score: 3, label: "Good", color: "bg-emerald-500", text: "text-emerald-600" };
+      case 4:
+        return { score: 4, label: "Strong & Secure", color: "bg-[#166534]", text: "text-[#166534] font-bold" };
+      default:
+        return { score: 0, label: "Too short", color: "bg-red-400", text: "text-red-500" };
+    }
+  }, [password]);
 
   const checkRosterMatch = (idVal: string, nameVal: string) => {
     try {
@@ -71,7 +113,6 @@ export default function RegisterPage() {
     }
   };
 
-  // Load available subjects from grading system or defaults for auto-complete
   useEffect(() => {
     try {
       const raw = localStorage.getItem("mathworkspace_grading_data");
@@ -136,7 +177,6 @@ export default function RegisterPage() {
     let finalOfferNumber = offerNumber.trim();
     let finalBlock = block.trim();
 
-    // Check against admin's uploaded Excel file in grading data
     try {
       const raw = localStorage.getItem("mathworkspace_grading_data");
       if (raw) {
@@ -188,282 +228,301 @@ export default function RegisterPage() {
     }
   }
 
-
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#201D1D] overflow-x-hidden font-sans animate-in fade-in duration-300">
-      {/* Subtle Floating Back to Home Button */}
-      <Link
-        to="/"
-        className="absolute top-5 left-5 z-30 inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 dark:border-white/10 bg-white/90 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 text-gray-800 dark:text-slate-100 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold shadow-md transition-all hover:scale-105"
-      >
-        <ArrowLeft className="w-3.5 h-3.5 text-gray-600 dark:text-slate-300" />
-        <span>Home</span>
-      </Link>
+    <>
+      {/* ─────────────────────────────────────────────────────────────
+          AUTH FORM CARD (Glassmorphism Design)
+         ───────────────────────────────────────────────────────────── */}
+      <div className="w-full bg-[#0b1610]/75 backdrop-blur-2xl backdrop-saturate-150 rounded-3xl p-5 sm:p-7 lg:p-8 border border-white/20 border-t-white/30 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.08)_inset] relative">
+        {/* Heading & Subtitle */}
+        <div className="mb-4 text-left">
+          <h2
+            className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight"
+            style={{ color: "#FFFFFF" }}
+          >
+            <span className="text-white select-none" style={{ color: "#FFFFFF" }}>
+              Create Student{" "}
+            </span>
+            <span className="text-emerald-400 select-none" style={{ color: "#34d399" }}>
+              Account
+            </span>
+          </h2>
+          <p className="text-[11px] sm:text-xs text-emerald-100/70 font-normal mt-0.5 leading-relaxed">
+            Join your class roster and start exploring interactive mathematics.
+          </p>
+        </div>
 
-      {/* ── LEFT COLUMN: 3D Mathematics Art Visual ── */}
-      <div className="w-full md:w-1/2 h-44 sm:h-60 md:h-auto md:min-h-screen relative bg-[#231D1D] overflow-hidden flex items-center justify-center shrink-0">
-        <img
-          src={imageLogo}
-          alt="MathWorkspace Mathematics Artwork"
-          className="w-full h-full object-cover object-center"
-        />
-        {/* Subtle inner shadow overlay for seamless blend */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/30 pointer-events-none hidden md:block" />
-      </div>
+        {/* Error Feedback */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-3 p-2.5 rounded-2xl bg-red-950/70 backdrop-blur-md border border-red-500/40 text-red-200 text-xs font-semibold flex items-center gap-2"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+            <span>{error}</span>
+          </motion.div>
+        )}
 
-      {/* ── RIGHT COLUMN: Registration Form Matching Design ── */}
-      <div className="w-full md:w-1/2 min-h-0 md:min-h-screen bg-gradient-to-b from-[#565050] via-[#3C3737] to-[#201D1D] flex items-center justify-center px-4 sm:px-10 lg:px-16 py-8 sm:py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="w-full max-w-[430px] flex flex-col justify-center"
-        >
-          {/* Header Title & Subtitle */}
-          <div className="text-center mb-6">
-            <h1 className="text-3xl sm:text-[2.65rem] font-black tracking-tight leading-tight">
-              <span className="text-white">Create </span>
-              <span className="text-[#16a34a]">Account</span>
-            </h1>
-            <p className="text-xs sm:text-[13px] text-[#D1D5DB] leading-relaxed mt-2 font-normal">
-              Join us to start your mathematics journey with{" "}
-              <span className="text-[#16a34a] font-semibold">
-                MathWorkspace.
-              </span>
-            </p>
-            {/* Small red underline bar matching reference */}
-            <div className="w-9 h-[2.5px] bg-[#16a34a] mx-auto mt-2.5 rounded-full" />
-          </div>
-
-          {/* Feedback Alert */}
-          {error && (
-            <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-xs font-medium text-green-300">
-              {error}
-            </div>
-          )}
-
-          {/* Class Roster Auto-Detection Match Notice */}
+        {/* Class Roster Auto-Detection Match Notice */}
+        <AnimatePresence>
           {rosterMatchNotice && (
-            <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/15 p-3 text-xs font-semibold text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{rosterMatchNotice}</span>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="mb-3 p-2 rounded-2xl bg-emerald-950/70 backdrop-blur-md border border-emerald-500/40 text-emerald-200 text-xs font-semibold flex items-center gap-2"
+            >
+              <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                <Check className="w-2.5 h-2.5" />
+              </div>
+              <span className="leading-snug text-[11px]">{rosterMatchNotice}</span>
+            </motion.div>
           )}
+        </AnimatePresence>
 
-          {/* Register Form */}
-          <form onSubmit={onSubmit} className="space-y-3.5">
-            {/* Full Name Field */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="name"
-                className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
-              >
-                <User className="w-3.5 h-3.5 text-[#16a34a]" />
-                <span>Full Name</span>
-              </label>
+        {/* Registration Form */}
+        <form onSubmit={onSubmit} className="space-y-3">
+          {/* Full Name */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-emerald-100/80 mb-1.5 text-left">
+              <User className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Full Name</span>
+            </label>
+            <div className="relative flex items-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/25 transition-all overflow-hidden">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400/80 pointer-events-none z-10 flex items-center">
+                <User className="w-4 h-4" />
+              </div>
               <input
-                id="name"
                 type="text"
+                required
+                autoComplete="name"
+                placeholder="Full Name"
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
                   checkRosterMatch(studentId, e.target.value);
                 }}
-                placeholder="Alex Morgan"
-                required
-                autoComplete="name"
-                className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                className="auth-input has-left-icon has-right-icon w-full bg-transparent py-2.5 text-xs sm:text-sm font-normal text-white placeholder-zinc-500 outline-none rounded-full border-0 !bg-transparent"
               />
+              {isNameValid && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none z-10 flex items-center">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              )}
             </div>
+          </div>
 
-            {/* Student ID Number & Block Fields (2 Columns) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Student ID Number Field */}
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="studentId"
-                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
-                >
-                  <Hash className="w-3.5 h-3.5 text-[#16a34a]" />
-                  <span>ID Number</span>
-                </label>
+          {/* Student ID & Block (2-Columns on tablets and desktop) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-emerald-100/80 mb-1.5 text-left">
+                <Hash className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Student ID</span>
+              </label>
+              <div className="relative flex items-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/25 transition-all overflow-hidden">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400/80 pointer-events-none z-10 flex items-center">
+                  <Hash className="w-3.5 h-3.5" />
+                </div>
                 <input
-                  id="studentId"
                   type="text"
+                  required
+                  placeholder="Student ID"
                   value={studentId}
                   onChange={(e) => {
                     setStudentId(e.target.value);
                     checkRosterMatch(e.target.value, name);
                   }}
-                  placeholder="e.g. 2026-02182"
-                  required
-                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                  className="auth-input has-left-icon has-right-icon w-full bg-transparent py-2.5 text-xs sm:text-sm font-normal text-white placeholder-zinc-500 outline-none font-mono rounded-full border-0 !bg-transparent"
                 />
+                {isIdValid && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none z-10 flex items-center">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Block Field */}
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="block"
-                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5 text-[#16a34a]" />
-                  <span>Block / Section</span>
-                </label>
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-emerald-100/80 mb-1.5 text-left">
+                <LayoutGrid className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Block <span className="text-emerald-300/50 font-normal lowercase">(optional)</span></span>
+              </label>
+              <div className="relative flex items-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/25 transition-all overflow-hidden">
                 <input
-                  id="block"
                   type="text"
+                  placeholder="Block (optional)"
                   value={block}
                   onChange={(e) => setBlock(e.target.value)}
-                  placeholder="e.g. BSCS 1-A"
-                  required
-                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                  className="auth-input w-full bg-transparent py-2.5 px-4 text-xs sm:text-sm font-normal text-white placeholder-zinc-500 outline-none rounded-full border-0 !bg-transparent"
                 />
               </div>
             </div>
+          </div>
 
-            {/* Subject Code & Offer Number Fields (2 Columns) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Subject Code Field */}
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="subjectCode"
-                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
-                >
-                  <BookOpen className="w-3.5 h-3.5 text-[#16a34a]" />
-                  <span>Subject Code</span>
-                </label>
+          {/* Subject Code & Offer Number (2-Columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-emerald-100/80 mb-1.5 text-left">
+                <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Subject Code</span>
+              </label>
+              <div className="relative flex items-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/25 transition-all overflow-hidden">
                 <input
-                  id="subjectCode"
                   list="subject-code-suggestions"
                   type="text"
+                  placeholder="Subject Code"
                   value={subjectCode}
                   onChange={(e) => handleSubjectCodeChange(e.target.value)}
-                  placeholder="e.g. MATH 101"
-                  required
-                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                  className="auth-input w-full bg-transparent py-2.5 px-4 text-xs sm:text-sm font-normal text-white placeholder-zinc-500 outline-none rounded-full border-0 !bg-transparent"
                 />
-                <datalist id="subject-code-suggestions">
-                  {availableSubjects.map((s, idx) => (
-                    <option key={idx} value={s.subjectCode}>
-                      {s.subjectName ? `${s.subjectCode} — ${s.subjectName}` : s.subjectCode}
-                    </option>
-                  ))}
-                </datalist>
               </div>
+              <datalist id="subject-code-suggestions">
+                {availableSubjects.map((s, idx) => (
+                  <option key={idx} value={s.subjectCode}>
+                    {s.subjectName ? `${s.subjectCode} — ${s.subjectName}` : s.subjectCode}
+                  </option>
+                ))}
+              </datalist>
+            </div>
 
-              {/* Offer Number Field */}
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="offerNumber"
-                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
-                >
-                  <Hash className="w-3.5 h-3.5 text-[#16a34a]" />
-                  <span>Offer Number</span>
-                </label>
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-emerald-100/80 mb-1.5 text-left">
+                <Hash className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Offer Number</span>
+              </label>
+              <div className="relative flex items-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/25 transition-all overflow-hidden">
                 <input
-                  id="offerNumber"
                   list="offer-number-suggestions"
                   type="text"
+                  placeholder="Offer Number"
                   value={offerNumber}
                   onChange={(e) => setOfferNumber(e.target.value)}
-                  placeholder="e.g. 80062"
-                  required
-                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                  className="auth-input w-full bg-transparent py-2.5 px-4 text-xs sm:text-sm font-normal text-white placeholder-zinc-500 outline-none font-mono rounded-full border-0 !bg-transparent"
                 />
-                <datalist id="offer-number-suggestions">
-                  {availableSubjects
-                    .filter((s) => s.offerNumber)
-                    .map((s, idx) => (
-                      <option key={idx} value={s.offerNumber}>
-                        {s.subjectCode ? `${s.offerNumber} (${s.subjectCode})` : s.offerNumber}
-                      </option>
-                    ))}
-                </datalist>
               </div>
+              <datalist id="offer-number-suggestions">
+                {availableSubjects
+                  .filter((s) => s.offerNumber)
+                  .map((s, idx) => (
+                    <option key={idx} value={s.offerNumber}>
+                      {s.subjectCode ? `${s.offerNumber} (${s.subjectCode})` : s.offerNumber}
+                    </option>
+                  ))}
+              </datalist>
             </div>
+          </div>
 
-            {/* Email Address Field */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="email"
-                className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
-              >
-                <Mail className="w-3.5 h-3.5 text-[#16a34a]" />
-                <span>Email Address</span>
-              </label>
+          {/* Email Address */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-emerald-100/80 mb-1.5 text-left">
+              <Mail className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Email Address</span>
+            </label>
+            <div className="relative flex items-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/25 transition-all overflow-hidden">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400/80 pointer-events-none z-10 flex items-center">
+                <Mail className="w-4 h-4" />
+              </div>
               <input
-                id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
                 required
                 autoComplete="email"
-                className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] px-4 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="auth-input has-left-icon has-right-icon w-full bg-transparent py-2.5 text-xs sm:text-sm font-normal text-white placeholder-zinc-500 outline-none rounded-full border-0 !bg-transparent"
               />
+              {isEmailValid && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none z-10 flex items-center">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              )}
             </div>
+          </div>
 
-            {/* Password Field */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="password"
-                className="flex items-center gap-1.5 text-xs font-semibold text-gray-200"
-              >
-                <Lock className="w-3.5 h-3.5 text-[#16a34a]" />
-                <span>Password</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  autoComplete="new-password"
-                  className="w-full rounded-xl sm:rounded-2xl border border-white/10 bg-[#3D3838]/85 hover:bg-[#3D3838] focus:bg-[#3D3838] pl-4 pr-11 py-3 text-sm text-white placeholder-gray-400 outline-none focus:border-[#16a34a]/60 transition-all duration-200 font-mono tracking-wider"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition p-1 cursor-pointer"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
+          {/* Password with Strength Meter */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-emerald-100/80 mb-1.5 text-left">
+              <Lock className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Password</span>
+            </label>
+            <div className="relative flex items-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/25 transition-all overflow-hidden">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400/80 pointer-events-none z-10 flex items-center">
+                <Lock className="w-4 h-4" />
               </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="new-password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="auth-input has-left-icon has-right-icon w-full bg-transparent py-2.5 text-xs sm:text-sm font-normal text-white placeholder-zinc-500 outline-none rounded-full border-0 !bg-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-emerald-400 transition-colors cursor-pointer p-1.5 z-10 flex items-center"
+              >
+                {showPassword ? (
+                  <Eye className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <EyeOff className="w-4 h-4" />
+                )}
+              </button>
             </div>
 
-            {/* Create Account Button */}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full mt-2 rounded-xl sm:rounded-2xl bg-[#166534] hover:bg-[#166534] active:scale-[0.99] text-white py-3.5 px-4 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#166534]/30 hover:shadow-xl hover:shadow-[#166534]/40 transition-all duration-200 cursor-pointer disabled:opacity-50"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>{submitting ? "Creating account..." : "Sign up"}</span>
-            </button>
+            {/* Dynamic Password Strength Indicator */}
+            {password && (
+              <div className="mt-1.5 space-y-1">
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div
+                      key={step}
+                      className={`h-1 flex-1 rounded-full transition-colors duration-200 ${
+                        passwordStrength.score >= step
+                          ? passwordStrength.color
+                          : "bg-emerald-950/80 border border-emerald-900/60"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-emerald-100/60">Strength:</span>
+                  <span className={passwordStrength.text}>
+                    {passwordStrength.label}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
 
+          {/* Primary CTA Submit Button (Clean Modern Flat Design) */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full mt-3 rounded-full py-3 px-6 bg-[#166534] hover:bg-[#15803d] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 shadow-lg shadow-emerald-950/40"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>{submitting ? "Creating Account..." : "Create Student Account"}</span>
+            <ChevronRight className="w-3.5 h-3.5 text-emerald-300 ml-1" />
+          </button>
+        </form>
 
-          </form>
-
-          {/* Footer Navigation */}
-          <p className="text-center text-xs text-gray-400 mt-6 font-normal">
-            Already have an account?{" "}
+        {/* Footer Navigation */}
+        <div className="pt-4 border-t border-white/10 text-center mt-4">
+          <p className="text-xs text-emerald-100/60">
+            Already registered?{" "}
             <Link
               to="/login"
-              className="text-[#16a34a] hover:text-[#4ade80] font-semibold transition ml-0.5"
+              className="text-emerald-400 font-semibold hover:text-emerald-300 hover:underline ml-1"
             >
-              Sign in
+              Sign In
             </Link>
           </p>
-        </motion.div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -278,7 +278,7 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-xs bg-[#F59E0B]" />
                   <span className="text-[#4B5565] dark:text-slate-300 font-medium text-[11px] sm:text-xs">
-                    Average Score
+                    Attendance
                   </span>
                 </div>
                 <span className="font-bold text-[#1F242D] dark:text-slate-100 text-xs">
@@ -316,11 +316,11 @@ export const UserOverviewView: React.FC<UserOverviewViewProps> = ({
           <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[#F0F1F3] dark:border-slate-700/60">
             <div className="bg-[#F8F9FA] dark:bg-slate-800/60 border border-[#ECEFF3] dark:border-slate-700 rounded-[16px] p-3 flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(22,101,52,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)]">
-                <TrendingUp className="w-4 h-4" />
+                <UserCheck className="w-4 h-4" />
               </div>
               <div className="flex flex-col leading-tight">
                 <span className="text-[10px] font-medium text-[#8C93A0] dark:text-slate-400">
-                  Average Score
+                  Attendance
                 </span>
                 <span className="text-base font-bold text-[#1F242D] dark:text-slate-100">
                   {studentAverageScore} pts

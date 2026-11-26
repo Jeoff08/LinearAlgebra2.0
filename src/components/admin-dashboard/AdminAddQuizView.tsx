@@ -626,7 +626,7 @@ export const AdminAddQuizView: React.FC<AdminAddQuizViewProps> = ({
                   Number of Items (Questions)
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
-                  {[5, 10, 15, 20].map((cnt) => (
+                  {[5, 10, 15, 20, 25, 30].map((cnt) => (
                     <button
                       key={cnt}
                       type="button"

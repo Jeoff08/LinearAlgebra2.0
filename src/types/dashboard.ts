@@ -139,6 +139,7 @@ export interface StudentItem {
   averageScore: number;
   lastActive: string;
   joinedDate: string;
+  password?: string;
 }
 
 export interface ActivityItem {

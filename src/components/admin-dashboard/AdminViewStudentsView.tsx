@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
   Sliders,
@@ -6,8 +7,16 @@ import {
   Loader2,
   Edit,
   ArrowRightLeft,
+  Eye,
+  EyeOff,
+  Lock,
+  X,
+  ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 import type { StudentItem } from "../../types/dashboard";
+import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 interface AdminViewStudentsViewProps {
   students: StudentItem[];
@@ -38,6 +47,83 @@ export const AdminViewStudentsView: React.FC<AdminViewStudentsViewProps> = ({
   onlineStudentKeys,
   handleOpenMoveBlockModal,
 }) => {
+  const { user } = useAuth();
+  const [revealedPasswords, setRevealedPasswords] = useState<Set<string>>(new Set());
+  const [authModalStudent, setAuthModalStudent] = useState<StudentItem | null>(null);
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const [showAdminPasswordInput, setShowAdminPasswordInput] = useState(false);
+  const [adminAuthError, setAdminAuthError] = useState("");
+  const [isVerifyingAdmin, setIsVerifyingAdmin] = useState(false);
+
+  const handleTogglePasswordClick = (st: StudentItem) => {
+    if (revealedPasswords.has(st.id)) {
+      setRevealedPasswords((prev) => {
+        const next = new Set(prev);
+        next.delete(st.id);
+        return next;
+      });
+    } else {
+      setAuthModalStudent(st);
+      setAdminPasswordInput("");
+      setAdminAuthError("");
+    }
+  };
+
+  const handleVerifyAdminPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminPasswordInput.trim()) {
+      setAdminAuthError("Please enter your admin password.");
+      return;
+    }
+
+    setIsVerifyingAdmin(true);
+    setAdminAuthError("");
+
+    try {
+      const adminEmail = user?.email || "admin@gmail.com";
+      let isValid = false;
+
+      // 1. Check cached admin password in localStorage if available
+      try {
+        const pwStore = JSON.parse(localStorage.getItem("mathworkspace_student_passwords") || "{}");
+        if (pwStore[adminEmail.toLowerCase()] && pwStore[adminEmail.toLowerCase()] === adminPasswordInput) {
+          isValid = true;
+        }
+      } catch {}
+
+      // 2. Validate via Supabase authentication
+      if (!isValid && supabase) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: adminEmail,
+          password: adminPasswordInput,
+        });
+        if (!error) {
+          isValid = true;
+          try {
+            const pwStore = JSON.parse(localStorage.getItem("mathworkspace_student_passwords") || "{}");
+            pwStore[adminEmail.toLowerCase()] = adminPasswordInput;
+            localStorage.setItem("mathworkspace_student_passwords", JSON.stringify(pwStore));
+          } catch {}
+        }
+      }
+
+      if (isValid) {
+        if (authModalStudent) {
+          setRevealedPasswords((prev) => new Set(prev).add(authModalStudent.id));
+        }
+        setAuthModalStudent(null);
+        setAdminPasswordInput("");
+        setAdminAuthError("");
+      } else {
+        setAdminAuthError("Incorrect admin password. Please try again.");
+      }
+    } catch (err: any) {
+      setAdminAuthError(err?.message || "Verification failed. Please try again.");
+    } finally {
+      setIsVerifyingAdmin(false);
+    }
+  };
+
   return (
     <div className="p-6 sm:p-8 flex flex-col gap-6 max-w-[1440px] w-full mx-auto pb-24">
       {/* Header Banner */}
@@ -170,6 +256,7 @@ export const AdminViewStudentsView: React.FC<AdminViewStudentsViewProps> = ({
                 <tr className="border-b border-[#EAEBED] dark:border-slate-700 text-xs font-bold uppercase text-[#6B7280] dark:text-slate-400">
                   <th className="pb-3 px-4">Student Name</th>
                   <th className="pb-3 px-4">Email Address</th>
+                  <th className="pb-3 px-4">Password</th>
                   <th className="pb-3 px-6 text-center w-28">Block</th>
                   <th className="pb-3 px-6 text-center">Joined Date</th>
                   <th className="pb-3 px-6 text-right">Last Active</th>
@@ -233,6 +320,35 @@ export const AdminViewStudentsView: React.FC<AdminViewStudentsViewProps> = ({
                       <td className="py-3.5 px-4 text-xs text-[#4B5563] dark:text-slate-300">
                         {st.email}
                       </td>
+                      <td className="py-3.5 px-4 text-xs text-[#4B5563] dark:text-slate-300">
+                        {st.password ? (
+                          <div className="inline-flex items-center gap-2 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700/80 px-2.5 py-1 rounded-xl shadow-xs">
+                            <span className="font-mono text-xs select-all font-semibold tracking-wider text-gray-800 dark:text-slate-200">
+                              {revealedPasswords.has(st.id)
+                                ? st.password
+                                : "••••••••"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePasswordClick(st)}
+                              className="p-1 rounded-lg text-gray-400 hover:text-[#166534] dark:hover:text-emerald-400 hover:bg-[#166534]/10 transition cursor-pointer flex items-center justify-center"
+                              title={
+                                revealedPasswords.has(st.id)
+                                  ? "Hide password"
+                                  : "View password"
+                              }
+                            >
+                              {revealedPasswords.has(st.id) ? (
+                                <EyeOff className="w-3.5 h-3.5" />
+                              ) : (
+                                <Eye className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic">—</span>
+                        )}
+                      </td>
                       <td className="py-3.5 px-6 text-xs font-bold text-center">
                         {isBlockCustomizationMode ? (
                           <button
@@ -289,6 +405,139 @@ export const AdminViewStudentsView: React.FC<AdminViewStudentsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Admin Password Verification Modal */}
+      <AnimatePresence>
+        {authModalStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.18 }}
+              className="w-full max-w-md bg-white dark:bg-[#1E293B] rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#EAEBED] dark:border-slate-700 flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#166534] text-white flex items-center justify-center font-bold text-sm shadow-md shadow-[#166534]/20">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#111827] dark:text-white">
+                      Admin Verification
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      Enter your admin password to view credentials
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthModalStudent(null);
+                    setAdminPasswordInput("");
+                    setAdminAuthError("");
+                  }}
+                  className="p-1.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Student Target Summary */}
+              <div className="mt-4 p-3.5 bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60 rounded-2xl">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500 dark:text-slate-400 font-medium">Student Account:</span>
+                  {authModalStudent.studentId && (
+                    <span className="font-mono text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                      ID: {authModalStudent.studentId}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">
+                  {authModalStudent.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">
+                  {authModalStudent.email}
+                </p>
+              </div>
+
+              {/* Verification Form */}
+              <form onSubmit={handleVerifyAdminPassword} className="mt-4 flex flex-col gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
+                    Admin Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showAdminPasswordInput ? "text" : "password"}
+                      value={adminPasswordInput}
+                      onChange={(e) => {
+                        setAdminPasswordInput(e.target.value);
+                        if (adminAuthError) setAdminAuthError("");
+                      }}
+                      placeholder="Enter admin password..."
+                      autoFocus
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-[#F9FAFB] dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#166534] focus:ring-1 focus:ring-[#166534] dark:text-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPasswordInput(!showAdminPasswordInput)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 cursor-pointer p-0.5"
+                    >
+                      {showAdminPasswordInput ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {adminAuthError && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-600 dark:text-red-400">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{adminAuthError}</span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="mt-2 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthModalStudent(null);
+                      setAdminPasswordInput("");
+                      setAdminAuthError("");
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isVerifyingAdmin}
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#166534] hover:bg-[#15803d] active:scale-[0.98] transition shadow-sm shadow-[#166534]/20 cursor-pointer disabled:opacity-50"
+                  >
+                    {isVerifyingAdmin ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Verifying...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>Confirm & View</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

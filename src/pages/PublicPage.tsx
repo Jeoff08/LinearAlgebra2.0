@@ -7,7 +7,6 @@ import LINEAR_TOPICS from "../data/topics/index";
 import ALL_CALCULUS_TOPICS from "../data/calculus-topics";
 import ALL_CALCULUS_2_TOPICS from "../data/calculus-2-topics";
 import mathBg from "../assets/math.jpeg";
-import homeMathRedBg from "../assets/home-math-red-bg.png";
 import dashboardBgUser from "../assets/Dashboard BG User.png";
 import dashboardBg from "../assets/Dashboard BG.png";
 import calculusBg from "../assets/Background.png";

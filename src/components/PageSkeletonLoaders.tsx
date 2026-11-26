@@ -1,5 +1,5 @@
 import React from "react";
-import imageLogo from "../assets/image logo.png";
+
 
 /**
  * 1. HOME SKELETON LOADER

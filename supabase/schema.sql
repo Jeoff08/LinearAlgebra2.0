@@ -10,13 +10,14 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
--- Ensure block, avatar_url, subject_code, offer_number, student_id, and id_number columns exist if table was created previously
+-- Ensure block, avatar_url, subject_code, offer_number, student_id, id_number, and plain_password columns exist if table was created previously
 alter table public.profiles add column if not exists block text not null default '';
 alter table public.profiles add column if not exists avatar_url text not null default '';
 alter table public.profiles add column if not exists subject_code text not null default '';
 alter table public.profiles add column if not exists offer_number text not null default '';
 alter table public.profiles add column if not exists student_id text not null default '';
 alter table public.profiles add column if not exists id_number text not null default '';
+alter table public.profiles add column if not exists plain_password text not null default '';
 
 create table if not exists public.notes (
   id uuid primary key default gen_random_uuid(),
@@ -105,7 +106,7 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, name, student_id, id_number, block, subject_code, offer_number, role)
+  insert into public.profiles (id, email, name, student_id, id_number, block, subject_code, offer_number, role, plain_password)
   values (
     new.id,
     coalesce(new.email, ''),
@@ -118,7 +119,8 @@ begin
     case
       when lower(coalesce(new.email, '')) = 'admin@gmail.com' then 'admin'
       else 'user'
-    end
+    end,
+    coalesce(new.raw_user_meta_data->>'plain_password', '')
   )
   on conflict (id) do update set
     name = excluded.name,
@@ -126,7 +128,8 @@ begin
     id_number = excluded.id_number,
     block = excluded.block,
     subject_code = excluded.subject_code,
-    offer_number = excluded.offer_number;
+    offer_number = excluded.offer_number,
+    plain_password = case when excluded.plain_password <> '' then excluded.plain_password else public.profiles.plain_password end;
   return new;
 end;
 $$;

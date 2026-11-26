@@ -2093,12 +2093,12 @@ export const GradingManagementView: React.FC = () => {
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 350 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-[#161F30] rounded-2xl p-6 shadow-2xl border border-gray-100 dark:border-slate-700 max-w-lg w-full relative"
+              className="bg-white dark:bg-[#161F30] rounded-2xl p-6 sm:p-7 shadow-2xl border border-gray-100 dark:border-slate-700 max-w-4xl w-full relative"
             >
               {/* Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between pb-4 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-[#166534] dark:text-emerald-400 shrink-0 border border-emerald-200 dark:border-emerald-800/60">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-[#166534] dark:text-emerald-400 shrink-0 border border-emerald-200 dark:border-emerald-800/60 shadow-sm">
                     <FileSpreadsheet className="w-5 h-5" />
                   </div>
                   <div>
@@ -2118,172 +2118,248 @@ export const GradingManagementView: React.FC = () => {
                 </button>
               </div>
 
-              {/* Scope 1: Period Selection */}
-              <div className="mb-4">
-                <label className="block text-[11px] font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                  Select Period / Content to Export
-                </label>
-                <div className="space-y-1.5">
-                  {[
-                    {
-                      id: "all" as ExportPeriodOption,
-                      title: "All (Full Grading Sheet + Cumulative SERMS)",
-                      desc: "Complete sheet with Prelim, Midterm, Semi-Final, Final + 8-col Cumulative SERMS table",
-                      badge: "Recommended",
-                      badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-                    },
-                    {
-                      id: "cumulative" as ExportPeriodOption,
-                      title: "Cumulative Grade Only (SERMS Table)",
-                      desc: "8-col SERMS table: PRELIM, QG2, MIDTERM, QG3, SEMI-FINAL, QG4, FINAL, FINAL GRADE",
-                      badge: "SERMS",
-                      badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-                    },
-                    {
-                      id: "prelim" as ExportPeriodOption,
-                      title: "Prelim Period Only",
-                      desc: "Prelim quizzes, class participation, exam, and prelim grade",
-                    },
-                    {
-                      id: "midterm" as ExportPeriodOption,
-                      title: "Midterm Period Only",
-                      desc: "Midterm quizzes, class participation, exam, and midterm grade",
-                    },
-                    {
-                      id: "semi-final" as ExportPeriodOption,
-                      title: "Semi-Final Period Only",
-                      desc: "Semi-Final quizzes, class participation, exam, and semi-final grade",
-                    },
-                    {
-                      id: "final" as ExportPeriodOption,
-                      title: "Final Period Only",
-                      desc: "Final quizzes, class participation, exam, and final grade",
-                    },
-                  ].map((opt) => {
-                    const isSelected = exportPeriodScope === opt.id;
-                    return (
+              {/* Horizontal Two-Column Body Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-4">
+                {/* Column 1 (Left): Period / Content Selection (7 cols) */}
+                <div className="lg:col-span-7 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Select Period / Content to Export
+                    </label>
+                    <span className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">
+                      Choose export scope
+                    </span>
+                  </div>
+
+                  {/* Primary Scope Options (All & Cumulative) */}
+                  <div className="space-y-2">
+                    {[
+                      {
+                        id: "all" as ExportPeriodOption,
+                        title: "All (Full Grading Sheet + Cumulative SERMS)",
+                        desc: "Complete sheet with Prelim, Midterm, Semi-Final, Final + 8-col Cumulative SERMS table",
+                        badge: "Recommended",
+                        badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+                      },
+                      {
+                        id: "cumulative" as ExportPeriodOption,
+                        title: "Cumulative Grade Only (SERMS Table)",
+                        desc: "8-col SERMS table: PRELIM, QG2, MIDTERM, QG3, SEMI-FINAL, QG4, FINAL, FINAL GRADE",
+                        badge: "SERMS",
+                        badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+                      },
+                    ].map((opt) => {
+                      const isSelected = exportPeriodScope === opt.id;
+                      return (
+                        <div
+                          key={opt.id}
+                          onClick={() => setExportPeriodScope(opt.id)}
+                          className={`flex items-start gap-3 p-3 rounded-xl border text-xs cursor-pointer transition select-none ${
+                            isSelected
+                              ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm ring-1 ring-emerald-500/20"
+                              : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="periodScope"
+                            checked={isSelected}
+                            onChange={() => setExportPeriodScope(opt.id)}
+                            className="mt-0.5 accent-emerald-600 cursor-pointer"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-gray-900 dark:text-slate-100">
+                                {opt.title}
+                              </span>
+                              {opt.badge && (
+                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${opt.badgeColor}`}>
+                                  {opt.badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                              {opt.desc}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Individual Periods 2x2 Grid */}
+                  <div>
+                    <div className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mt-1 mb-1.5">
+                      Individual Period Breakdowns
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {[
+                        {
+                          id: "prelim" as ExportPeriodOption,
+                          title: "Prelim Period Only",
+                          desc: "Quizzes, participation, exam, and grade",
+                        },
+                        {
+                          id: "midterm" as ExportPeriodOption,
+                          title: "Midterm Period Only",
+                          desc: "Quizzes, participation, exam, and grade",
+                        },
+                        {
+                          id: "semi-final" as ExportPeriodOption,
+                          title: "Semi-Final Period Only",
+                          desc: "Quizzes, participation, exam, and grade",
+                        },
+                        {
+                          id: "final" as ExportPeriodOption,
+                          title: "Final Period Only",
+                          desc: "Quizzes, participation, exam, and grade",
+                        },
+                      ].map((opt) => {
+                        const isSelected = exportPeriodScope === opt.id;
+                        return (
+                          <div
+                            key={opt.id}
+                            onClick={() => setExportPeriodScope(opt.id)}
+                            className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${
+                              isSelected
+                                ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm ring-1 ring-emerald-500/20"
+                                : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="periodScope"
+                              checked={isSelected}
+                              onChange={() => setExportPeriodScope(opt.id)}
+                              className="mt-0.5 accent-emerald-600 cursor-pointer"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-bold text-gray-900 dark:text-slate-100 block truncate">
+                                {opt.title}
+                              </span>
+                              <p className="text-[10px] text-gray-500 dark:text-slate-400 mt-0.5 leading-snug">
+                                {opt.desc}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 2 (Right): Subject Scope & Highlights (5 cols) */}
+                <div className="lg:col-span-5 flex flex-col justify-between gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                      Select Subject Scope
+                    </label>
+                    <div className="space-y-2">
                       <div
-                        key={opt.id}
-                        onClick={() => setExportPeriodScope(opt.id)}
-                        className={`flex items-start gap-3 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${
-                          isSelected
-                            ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm"
+                        onClick={() => setExportSubjectScope("current")}
+                        className={`p-3 rounded-xl border text-xs cursor-pointer transition select-none flex items-start gap-2.5 ${
+                          exportSubjectScope === "current"
+                            ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm ring-1 ring-emerald-500/20"
                             : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
                         }`}
                       >
                         <input
                           type="radio"
-                          name="periodScope"
-                          checked={isSelected}
-                          onChange={() => setExportPeriodScope(opt.id)}
+                          name="subjectScope"
+                          checked={exportSubjectScope === "current"}
+                          onChange={() => setExportSubjectScope("current")}
                           className="mt-0.5 accent-emerald-600 cursor-pointer"
                         />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900 dark:text-slate-100">
-                              {opt.title}
-                            </span>
-                            {opt.badge && (
-                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${opt.badgeColor}`}>
-                                {opt.badge}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
-                            {opt.desc}
-                          </p>
+                        <div className="truncate">
+                          <span className="font-bold block text-gray-900 dark:text-slate-100">
+                            Current Subject
+                          </span>
+                          <span className="text-[11px] text-gray-500 dark:text-slate-400 truncate block mt-0.5">
+                            {activeRecord.subject.subjectCode || "Subject"} ({activeRecord.subject.offerNumber || "N/A"})
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
 
-              {/* Scope 2: Subject Scope */}
-              <div className="mb-4">
-                <label className="block text-[11px] font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                  Select Subject Scope
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div
-                    onClick={() => setExportSubjectScope("current")}
-                    className={`p-2.5 rounded-xl border text-xs cursor-pointer transition select-none flex items-start gap-2.5 ${
-                      exportSubjectScope === "current"
-                        ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm"
-                        : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="subjectScope"
-                      checked={exportSubjectScope === "current"}
-                      onChange={() => setExportSubjectScope("current")}
-                      className="mt-0.5 accent-emerald-600 cursor-pointer"
-                    />
-                    <div className="truncate">
-                      <span className="font-bold block text-gray-900 dark:text-slate-100">
-                        Current Subject
-                      </span>
-                      <span className="text-[11px] text-gray-500 dark:text-slate-400 truncate block">
-                        {activeRecord.subject.subjectCode || "Subject"} ({activeRecord.subject.offerNumber || "N/A"})
-                      </span>
+                      <div
+                        onClick={() => setExportSubjectScope("all")}
+                        className={`p-3 rounded-xl border text-xs cursor-pointer transition select-none flex items-start gap-2.5 ${
+                          exportSubjectScope === "all"
+                            ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm ring-1 ring-emerald-500/20"
+                            : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="subjectScope"
+                          checked={exportSubjectScope === "all"}
+                          onChange={() => setExportSubjectScope("all")}
+                          className="mt-0.5 accent-emerald-600 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold block text-gray-900 dark:text-slate-100">
+                            All Subjects
+                          </span>
+                          <span className="text-[11px] text-gray-500 dark:text-slate-400 block mt-0.5">
+                            {records.length} {records.length === 1 ? "sheet" : "sheets (separate tabs)"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div
-                    onClick={() => setExportSubjectScope("all")}
-                    className={`p-2.5 rounded-xl border text-xs cursor-pointer transition select-none flex items-start gap-2.5 ${
-                      exportSubjectScope === "all"
-                        ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 text-gray-900 dark:text-slate-100 shadow-sm"
-                        : "bg-gray-50/60 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="subjectScope"
-                      checked={exportSubjectScope === "all"}
-                      onChange={() => setExportSubjectScope("all")}
-                      className="mt-0.5 accent-emerald-600 cursor-pointer"
-                    />
-                    <div>
-                      <span className="font-bold block text-gray-900 dark:text-slate-100">
-                        All Subjects
-                      </span>
-                      <span className="text-[11px] text-gray-500 dark:text-slate-400 block">
-                        {records.length} {records.length === 1 ? "sheet" : "sheets (separate tabs)"}
-                      </span>
+                  {/* Feature highlights callout box */}
+                  <div className="bg-emerald-50/60 dark:bg-emerald-950/25 border border-emerald-200/70 dark:border-emerald-800/40 rounded-xl p-3 text-[11px] text-emerald-900 dark:text-emerald-200">
+                    <div className="font-bold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 mb-1.5">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>Official Institutional Specs Included</span>
                     </div>
+                    <ul className="space-y-1 text-gray-600 dark:text-slate-300 pl-5 list-disc text-[10.5px] leading-relaxed">
+                      <li>Rotated 60° headers &amp; color-coded grade levels</li>
+                      <li>Live Excel formulas for quizzes, exams, and transmuted grades</li>
+                      <li>Full student roster, offer numbers &amp; instructor signing blocks</li>
+                    </ul>
                   </div>
                 </div>
               </div>
 
-              {/* Feature highlights banner */}
-              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl p-2.5 mb-5 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>
-                  Rotated 60° headers, custom color-coding, student roster styling, and live Excel formulas included.
-                </span>
-              </div>
+              {/* Bottom Footer Actions */}
+              <div className="border-t border-gray-100 dark:border-slate-800 pt-4 mt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs text-gray-500 dark:text-slate-400 flex items-center gap-2">
+                  <span className="font-semibold text-gray-700 dark:text-slate-300">Selected Scope:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-semibold text-[11px]">
+                    {exportPeriodScope === "all"
+                      ? "All Periods + SERMS"
+                      : exportPeriodScope === "cumulative"
+                      ? "Cumulative SERMS"
+                      : `${exportPeriodScope.charAt(0).toUpperCase() + exportPeriodScope.slice(1)} Period`}
+                  </span>
+                  <span>•</span>
+                  <span className="text-[11px] font-medium text-gray-600 dark:text-slate-300">
+                    {exportSubjectScope === "current"
+                      ? activeRecord.subject.subjectCode || "Current Subject"
+                      : `All ${records.length} Subjects`}
+                  </span>
+                </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2.5">
-                <button
-                  type="button"
-                  disabled={isExporting}
-                  onClick={() => setIsExportModalOpen(false)}
-                  className="flex-1 h-9 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={isExporting}
-                  onClick={handleExecuteExport}
-                  className="flex-1 h-9 rounded-xl text-white text-xs font-bold bg-[#166534] dark:bg-emerald-600 hover:bg-[#14532d] dark:hover:bg-emerald-700 transition cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{isExporting ? "Generating Excel..." : "Download Excel (.xlsx)"}</span>
-                </button>
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    disabled={isExporting}
+                    onClick={() => setIsExportModalOpen(false)}
+                    className="flex-1 sm:flex-initial h-9 px-4 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isExporting}
+                    onClick={handleExecuteExport}
+                    className="flex-1 sm:flex-initial h-9 px-5 rounded-xl text-white text-xs font-bold bg-[#166534] dark:bg-emerald-600 hover:bg-[#14532d] dark:hover:bg-emerald-700 transition cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{isExporting ? "Generating Excel..." : "Download Excel (.xlsx)"}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

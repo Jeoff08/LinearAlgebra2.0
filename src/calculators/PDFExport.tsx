@@ -10,6 +10,7 @@ import {
   Settings,
   Printer,
 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
 export type PaperSize = "a4" | "short" | "long" | "legal";
 export type Orientation = "portrait" | "landscape";
@@ -93,6 +94,16 @@ const PDFExport: React.FC<PDFExportProps> = ({
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+
+  let isDarkMode = false;
+  try {
+    const { theme } = useTheme();
+    isDarkMode = theme === "dark";
+  } catch {
+    isDarkMode =
+      typeof document !== "undefined" &&
+      document.documentElement.classList.contains("dark");
+  }
 
   // Clean up animation frame on unmount
   useEffect(() => {
@@ -693,13 +704,35 @@ const PDFExport: React.FC<PDFExportProps> = ({
 
       {/* Dropdown Menu for Paper Size Selection */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white border border-gray-200 shadow-2xl z-50 p-3 animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
-              <Printer className="w-3.5 h-3.5 text-[#166534]" />
+        <div
+          className={`absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl shadow-2xl z-50 p-3 animate-in fade-in zoom-in-95 duration-150 border ${
+            isDarkMode
+              ? "bg-[#111827] border-slate-800 text-slate-100"
+              : "bg-white border-gray-200 text-gray-900"
+          }`}
+        >
+          <div
+            className={`flex items-center justify-between pb-2 mb-2 border-b ${
+              isDarkMode ? "border-slate-800" : "border-gray-100"
+            }`}
+          >
+            <div
+              className={`flex items-center gap-1.5 text-xs font-bold ${
+                isDarkMode ? "text-slate-100" : "text-gray-900"
+              }`}
+            >
+              <Printer
+                className={`w-3.5 h-3.5 ${
+                  isDarkMode ? "text-emerald-400" : "text-[#166534]"
+                }`}
+              />
               <span>Select Paper Size</span>
             </div>
-            <span className="text-[10px] text-gray-400 font-medium">
+            <span
+              className={`text-[10px] font-medium ${
+                isDarkMode ? "text-slate-500" : "text-gray-400"
+              }`}
+            >
               Fitted Export
             </span>
           </div>
@@ -717,30 +750,70 @@ const PDFExport: React.FC<PDFExportProps> = ({
                   onClick={() => handleSizeChange(sizeKey)}
                   className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between transition-colors text-xs cursor-pointer ${
                     isSelected
-                      ? "bg-[#F0FDF4] border border-[#166534]/30 text-[#166534] font-semibold"
+                      ? isDarkMode
+                        ? "bg-[#062417] border border-emerald-500/50 text-emerald-200 font-semibold"
+                        : "bg-emerald-50 border border-emerald-600/30 text-emerald-900 font-semibold"
+                      : isDarkMode
+                      ? "hover:bg-slate-800/60 text-slate-300 border border-transparent"
                       : "hover:bg-gray-50 text-gray-700 border border-transparent"
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-medium flex items-center gap-1.5">
+                    <span
+                      className={`font-medium flex items-center gap-1.5 ${
+                        isSelected
+                          ? isDarkMode
+                            ? "text-emerald-200"
+                            : "text-emerald-900"
+                          : isDarkMode
+                          ? "text-slate-100"
+                          : "text-gray-900"
+                      }`}
+                    >
                       {config.name}
                       {sizeKey === "long" && (
-                        <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-normal">
+                        <span
+                          className={`text-[9px] px-1 py-0.2 rounded font-normal border ${
+                            isDarkMode
+                              ? "bg-amber-950/60 text-amber-300 border-amber-800/40"
+                              : "bg-amber-100 text-amber-800 border-transparent"
+                          }`}
+                        >
                           Folio
                         </span>
                       )}
                       {sizeKey === "short" && (
-                        <span className="text-[9px] bg-sky-100 text-sky-800 px-1 py-0.2 rounded font-normal">
+                        <span
+                          className={`text-[9px] px-1 py-0.2 rounded font-normal border ${
+                            isDarkMode
+                              ? "bg-sky-950/60 text-sky-300 border-sky-800/40"
+                              : "bg-sky-100 text-sky-800 border-transparent"
+                          }`}
+                        >
                           Letter
                         </span>
                       )}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-mono mt-0.5">
+                    <span
+                      className={`text-[10px] font-mono mt-0.5 ${
+                        isSelected
+                          ? isDarkMode
+                            ? "text-emerald-400/80"
+                            : "text-emerald-700/80"
+                          : isDarkMode
+                          ? "text-slate-500"
+                          : "text-gray-400"
+                      }`}
+                    >
                       {config.desc}
                     </span>
                   </div>
                   {isSelected && (
-                    <div className="w-4 h-4 rounded-full bg-[#166534] text-white flex items-center justify-center flex-shrink-0">
+                    <div
+                      className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-white ${
+                        isDarkMode ? "bg-emerald-500" : "bg-[#166534]"
+                      }`}
+                    >
                       <Check className="w-2.5 h-2.5 stroke-[3]" />
                     </div>
                   )}
@@ -750,15 +823,33 @@ const PDFExport: React.FC<PDFExportProps> = ({
           </div>
 
           {/* Orientation Toggle */}
-          <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
-            <span className="text-gray-600 font-medium">Orientation:</span>
-            <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg text-[11px]">
+          <div
+            className={`mt-3 pt-2.5 border-t flex items-center justify-between text-xs ${
+              isDarkMode ? "border-slate-800" : "border-gray-100"
+            }`}
+          >
+            <span
+              className={`font-medium ${
+                isDarkMode ? "text-slate-400" : "text-gray-600"
+              }`}
+            >
+              Orientation:
+            </span>
+            <div
+              className={`flex items-center gap-1 p-0.5 rounded-lg text-[11px] ${
+                isDarkMode ? "bg-slate-800/80" : "bg-gray-100"
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setSelectedOrientation("portrait")}
                 className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
                   selectedOrientation === "portrait"
-                    ? "bg-white text-[#166534] font-bold shadow-xs"
+                    ? isDarkMode
+                      ? "bg-slate-700 text-emerald-400 font-bold shadow-xs"
+                      : "bg-white text-[#166534] font-bold shadow-xs"
+                    : isDarkMode
+                    ? "text-slate-400 hover:text-slate-200"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
               >
@@ -769,7 +860,11 @@ const PDFExport: React.FC<PDFExportProps> = ({
                 onClick={() => setSelectedOrientation("landscape")}
                 className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
                   selectedOrientation === "landscape"
-                    ? "bg-white text-[#166534] font-bold shadow-xs"
+                    ? isDarkMode
+                      ? "bg-slate-700 text-emerald-400 font-bold shadow-xs"
+                      : "bg-white text-[#166534] font-bold shadow-xs"
+                    : isDarkMode
+                    ? "text-slate-400 hover:text-slate-200"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
               >
@@ -783,7 +878,7 @@ const PDFExport: React.FC<PDFExportProps> = ({
             type="button"
             onClick={() => exportPDF()}
             disabled={downloadStatus !== "idle"}
-            className="w-full mt-3 py-2 px-3 bg-[#166534] hover:bg-[#14532D] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+            className="w-full mt-3 py-2 px-3 bg-[#166534] hover:bg-[#14532D] dark:bg-[#166534] dark:hover:bg-[#15803d] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download {currentConfig.name} PDF</span>

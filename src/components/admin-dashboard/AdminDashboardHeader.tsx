@@ -22,6 +22,7 @@ import type { ActivityItem } from "../../types/dashboard";
 import {
   getAdminUnlockNotifications,
   markAdminUnlockNotificationAsRead,
+  deleteAdminUnlockNotification,
   adminUnlockQuiz,
   type AdminUnlockNotification,
 } from "../../utils/quizLockManager";
@@ -274,19 +275,32 @@ export const AdminDashboardHeader: React.FC<AdminDashboardHeaderProps> = ({
                             Quiz: {req.quizTitle}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            adminUnlockQuiz(req.quizId, req.studentKey, req.quizTitle);
-                            markAdminUnlockNotificationAsRead(req.id);
-                            loadAdminNotifs();
-                          }}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg shadow-xs transition flex items-center gap-1 cursor-pointer shrink-0"
-                          title="Approve and unlock quiz for this student"
-                        >
-                          <Unlock className="w-3 h-3" />
-                          <span>Approve</span>
-                        </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              adminUnlockQuiz(req.quizId, req.studentKey, req.quizTitle);
+                              deleteAdminUnlockNotification(req.id);
+                              loadAdminNotifs();
+                            }}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg shadow-xs transition flex items-center gap-1 cursor-pointer shrink-0"
+                            title="Approve and unlock quiz for this student"
+                          >
+                            <Unlock className="w-3 h-3" />
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteAdminUnlockNotification(req.id);
+                              loadAdminNotifs();
+                            }}
+                            className="p-1 hover:bg-amber-100 dark:hover:bg-slate-700 text-gray-400 hover:text-red-500 rounded-lg transition cursor-pointer"
+                            title="Dismiss / remove unlock request"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

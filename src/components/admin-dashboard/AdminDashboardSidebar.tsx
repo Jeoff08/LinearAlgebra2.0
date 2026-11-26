@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SidebarMovingBackground } from "../SidebarMovingBackground";
 import {
   LayoutDashboard,
   Calculator,
@@ -44,11 +45,12 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
       {/* 1. LEFT SIDEBAR (Desktop Fixed)                                           */}
       {/* ========================================================================= */}
       <aside
-        className={`hidden lg:flex bg-white dark:bg-[#161F30] border-r border-[#EAEBED] dark:border-slate-800 flex-col justify-between h-full shrink-0 overflow-y-auto overflow-x-hidden select-none z-30 transition-all duration-300 ease-in-out ${
+        className={`relative hidden lg:flex bg-white dark:bg-[#161F30] border-r border-[#EAEBED] dark:border-slate-800 flex-col justify-between h-full shrink-0 overflow-y-auto overflow-x-hidden select-none z-30 transition-all duration-300 ease-in-out ${
           isTopicCalculatorOpen ? "w-[70px] p-2.5" : "w-[260px] px-4 py-3.5"
         }`}
       >
-        <div className="flex flex-col gap-3">
+        <SidebarMovingBackground />
+        <div className="relative z-10 flex flex-col gap-3">
           {/* Brand Logo Header */}
           <div
             className={`flex items-center gap-3 px-1 py-1 ${
@@ -73,7 +75,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ duration: 0.18 }}
-                      className="text-[0.72rem] font-semibold text-[#8C93A0] flex items-center gap-1.5"
+                      className="text-[0.72rem] font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-1.5"
                     >
                       <span className="text-[#166534] font-bold">
                         Student Portal
@@ -89,7 +91,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ duration: 0.18 }}
-                      className="text-[0.72rem] font-semibold text-[#8C93A0] dark:text-slate-400"
+                      className="text-[0.72rem] font-semibold text-gray-700 dark:text-slate-300"
                     >
                       Admin Dashboard
                     </motion.span>
@@ -120,7 +122,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "student-overview"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Dashboard"
                   >
@@ -131,7 +133,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* LEARN Section */}
                   {!isTopicCalculatorOpen && (
                     <div className="pt-2.5 pb-0.5">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                      <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                         LEARN
                       </span>
                     </div>
@@ -145,7 +147,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "calculators"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Calculators"
                   >
@@ -163,7 +165,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "topics"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Topics"
                   >
@@ -176,7 +178,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* PRACTICE Section */}
                   {!isTopicCalculatorOpen && (
                     <div className="pt-2.5 pb-0.5">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                      <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                         PRACTICE
                       </span>
                     </div>
@@ -190,7 +192,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "student-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Quizzes"
                   >
@@ -219,7 +221,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "history-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Quizzes History"
                   >
@@ -235,7 +237,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "quiz-results"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Quiz Results"
                   >
@@ -261,7 +263,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "dashboard"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Dashboard"
                   >
@@ -277,7 +279,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "calculators"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Calculators"
                   >
@@ -293,7 +295,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "topics"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Topics"
                   >
@@ -304,7 +306,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Section: Quiz Management */}
                   {!isTopicCalculatorOpen && (
                     <div className="pt-2.5 pb-0.5">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                      <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                         Quiz Management
                       </span>
                     </div>
@@ -318,7 +320,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "add-quiz"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Add Quiz"
                   >
@@ -334,7 +336,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "published-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Published Quizzes"
                   >
@@ -361,7 +363,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "quiz-results"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Quiz Results"
                   >
@@ -377,7 +379,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "history-quizzes"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="History Quizzes"
                   >
@@ -388,7 +390,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Section: User Management */}
                   {!isTopicCalculatorOpen && (
                     <div className="pt-2.5 pb-0.5">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                      <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                         User Management
                       </span>
                     </div>
@@ -402,7 +404,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "view-students"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="View Students"
                   >
@@ -418,7 +420,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "student-overview"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Student Overview"
                   >
@@ -434,7 +436,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "attendance"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Attendance"
                   >
@@ -444,7 +446,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                   {/* Section: Academic & Grading */}
                   {!isTopicCalculatorOpen && (
                     <div className="pt-2.5 pb-0.5">
-                      <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                      <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                         Academic & Grading
                       </span>
                     </div>
@@ -458,7 +460,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                     } ${
                       activeNav === "grading"
                         ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white shadow-[0_8px_20px_rgba(22,101,52,0.35),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-white/10 font-bold"
-                        : "text-[#4B5565] dark:text-slate-400 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                        : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                     }`}
                     title="Grading Sheet"
                   >
@@ -513,9 +515,10 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative w-[270px] bg-white dark:bg-[#161F30] border-r border-[#EAEBED] dark:border-slate-800 flex flex-col justify-between p-5 h-full z-10 shadow-2xl"
+              className="relative w-[270px] border-r border-[#EAEBED] dark:border-slate-800 flex flex-col justify-between p-5 h-full z-10 shadow-2xl overflow-hidden"
             >
-              <div className="flex flex-col gap-6">
+              <SidebarMovingBackground />
+              <div className="relative z-10 flex flex-col gap-6">
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] flex items-center justify-center shadow-md shadow-[#166534]/30 border border-white/20 shrink-0">
@@ -527,7 +530,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                       <span className="text-[1.05rem] font-black tracking-tight text-[#1F242D] dark:text-slate-100">
                         Math<span className="text-[#166534] dark:text-emerald-400">Workspace</span>
                       </span>
-                      <span className="text-[0.72rem] font-semibold text-[#8C93A0] dark:text-slate-400 flex items-center gap-1.5">
+                      <span className="text-[0.72rem] font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-1.5">
                         {isStudentViewMode ? (
                           <>
                             <span className="text-[#166534] dark:text-emerald-400 font-bold">
@@ -568,7 +571,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm transition-all text-left ${
                             activeNav === "student-overview"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -576,7 +579,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                         </button>
 
                         <div className="pt-2.5 pb-0.5">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                          <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                             LEARN
                           </span>
                         </div>
@@ -586,7 +589,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "calculators"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -600,7 +603,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "topics"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -610,7 +613,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                         </button>
 
                         <div className="pt-2.5 pb-0.5">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                          <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                             PRACTICE
                           </span>
                         </div>
@@ -620,7 +623,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "student-quizzes"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -643,7 +646,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "history-quizzes"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <History className="w-4 h-4 shrink-0" />
@@ -655,7 +658,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "quiz-results"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <BarChart3 className="w-4 h-4 shrink-0" />
@@ -690,7 +693,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm transition-all text-left ${
                             activeNav === "dashboard"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -701,7 +704,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm transition-all text-left ${
                             activeNav === "calculators"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <Calculator className="w-4 h-4 shrink-0" />
@@ -712,14 +715,14 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-sm transition-all text-left ${
                             activeNav === "topics"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <BookOpen className="w-4 h-4 shrink-0" />
                           <span>Topics</span>
                         </button>
                         <div className="pt-2.5 pb-0.5">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                          <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                             Quiz Management
                           </span>
                         </div>
@@ -728,7 +731,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "add-quiz"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <PlusSquare className="w-4 h-4 shrink-0" />
@@ -739,7 +742,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-sm text-left ${
                             activeNav === "published-quizzes"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -759,7 +762,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "quiz-results"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <BarChart3 className="w-4 h-4 shrink-0" />
@@ -770,14 +773,14 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "history-quizzes"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <History className="w-4 h-4 shrink-0" />
                           <span>History Quizzes</span>
                         </button>
                         <div className="pt-2.5 pb-0.5">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                          <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                             User Management
                           </span>
                         </div>
@@ -786,7 +789,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "view-students"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <Users className="w-4 h-4 shrink-0" />
@@ -797,7 +800,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "student-overview"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <GraduationCap className="w-4 h-4 shrink-0" />
@@ -808,14 +811,14 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "attendance"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <UserCheck className="w-4 h-4 shrink-0" />
                           <span>Attendance</span>
                         </button>
                         <div className="pt-2.5 pb-0.5">
-                          <span className="text-[0.68rem] font-bold tracking-wider text-[#9AA1B0] dark:text-slate-500 uppercase px-3.5">
+                          <span className="text-[0.68rem] font-extrabold tracking-wider text-gray-700 dark:text-slate-300 uppercase px-3.5">
                             Academic & Grading
                           </span>
                         </div>
@@ -824,7 +827,7 @@ export const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-all text-left ${
                             activeNav === "grading"
                               ? "bg-gradient-to-b from-[#15803d] via-[#166534] to-[#14532d] text-white font-bold"
-                              : "text-[#4B5565] dark:text-slate-300 hover:bg-[#F4F5F7] dark:hover:bg-slate-800 hover:text-[#1F242D] dark:hover:text-white"
+                              : "text-gray-900 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                           }`}
                         >
                           <FileSpreadsheet className="w-4 h-4 shrink-0" />
